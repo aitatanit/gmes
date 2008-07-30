@@ -1,0 +1,19 @@
+1. For Windows
+1.1. compile for the inplace test
+$ python setup.py build_ext --inplace --swig-opts="-c++ -outdir gmes" -c mingw32
+
+1.2. compile
+$ python setup.py build_ext -c mingw32
+
+1.3 compile & install
+# python setup.py install build_ext -c mingw32
+
+2. For Linux
+2.1. compile for the inplace test
+$ python setup.py build_ext --inplace --swig-opts="-c++ -outdir gmes"
+
+2.2. compile
+$ python setup.py build_ext --swig-opts="-c++"
+
+2.3 install
+# python setup.py install build_ext --swig-opts="-c++"
