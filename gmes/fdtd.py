@@ -347,15 +347,15 @@ class FDTD:
     def _show(self, component, axis, cut, amp_range, msecs, title):
         field = []
         
-        if isinstance(axis, constants.X):
-            if isinstance(component, constants.Ex):
+        if axis is constants.X:
+            if component is constants.Ex:
                 field = self.ex[cut, :, :]
                 low = self.space.ex_index_to_space((0,0,0))
                 high_idx = [i - 1 for i in self.ex.shape]
                 high = self.space.ex_index_to_space(high_idx)
                 cut = self.space.space_to_ex_index((cut, 0, 0))[0]
                 
-            elif isinstance(component, constants.Hx):
+            elif component is constants.Hx:
                 field = self.hx[cut, :, :]
                 low = self.space.hx_index_to_space((0,0,0))
                 high_idx = [i - 1 for i in self.hx.shape]
@@ -366,15 +366,15 @@ class FDTD:
             xlabel = 'z'
             ylabel = 'y'
             
-        elif isinstance(axis, constants.Y):
-            if isinstance(component, constants.Ey):
+        elif axis is constants.Y:
+            if component is constants.Ey:
                 field = self.ey[:, cut, :]
                 low = self.space.ey_index_to_space((0,0,0))
                 high_idx = [i - 1 for i in self.ey.shape]
                 high = self.space.ey_index_to_space(high_idx)
                 cut = self.space.space_to_ey_index((0, cut, 0))[1]
                 
-            elif isinstance(component, constants.Hy):
+            elif component is constants.Hy:
                 field = self.hy[:, cut, :]
                 low = self.space.hy_index_to_space((0,0,0))
                 high_idx = [i - 1 for i in self.hy.shape]
@@ -385,15 +385,15 @@ class FDTD:
             xlabel = 'z'
             ylabel = 'x'
             
-        elif isinstance(axis, constants.Z):
-            if isinstance(component, constants.Ez):
+        elif axis is constants.Z:
+            if component is constants.Ez:
                 field = self.ez[:, :, cut]
                 low = self.space.ez_index_to_space((0,0,0))
                 high_idx = [i - 1 for i in self.ez.shape]
                 high = self.space.ez_index_to_space(high_idx)
                 cut = self.space.space_to_ez_index((0, 0, cut))[2]
                 
-            elif isinstance(component, constants.Hz):
+            elif component is constants.Hz:
                 field = self.hz[:, :, cut]
                 low = self.space.ez_index_to_space((0,0,0))
                 high_idx = [i - 1 for i in self.hz.shape]
@@ -413,22 +413,22 @@ class FDTD:
         showcase.start()
 
     def show_ex(self, axis, cut, amp_range=(-1,1), msecs=2500):
-        self._show(constants.Ex(), axis, cut, amp_range, msecs, 'Ex field')
+        self._show(constants.Ex, axis, cut, amp_range, msecs, 'Ex field')
         
     def show_ey(self, axis, cut, amp_range=(-1,1), msecs=2500):
-        self._show(constants.Ey(), axis, cut, amp_range, msecs, 'Ey field')
+        self._show(constants.Ey, axis, cut, amp_range, msecs, 'Ey field')
         
     def show_ez(self, axis, cut, amp_range=(-1,1), msecs=2500):
-        self._show(constants.Ez(), axis, cut, amp_range, msecs, 'Ez field')
+        self._show(constants.Ez, axis, cut, amp_range, msecs, 'Ez field')
 
     def show_hx(self, axis, cut, amp_range=(-1,1), msecs=2500):
-        self._show(constants.Hx(), axis, cut, amp_range, msecs, 'Hx field')
+        self._show(constants.Hx, axis, cut, amp_range, msecs, 'Hx field')
         
     def show_hy(self, axis, cut, amp_range=(-1,1), msecs=2500):
-        self._show(constants.Hy(), axis, cut, amp_range, msecs, 'Hy field')
+        self._show(constants.Hy, axis, cut, amp_range, msecs, 'Hy field')
         
     def show_hz(self, axis, cut, amp_range=(-1,1), msecs=2500):
-        self._show(constants.Hz(), axis, cut, amp_range, msecs, 'Hz field')
+        self._show(constants.Hz, axis, cut, amp_range, msecs, 'Hz field')
         
     def write_ex(self, low=None, high=None, prefix=None, postfix=None):
         if low is None:
@@ -467,34 +467,34 @@ class FDTD:
         pass
         
     def snapshot_ex(self, axis, cut):
-        if axis == 'x':
+        if axis is constants.X:
             cut_idx = self.space.space_to_index((cut, 0, 0))[0]
             data = self.ex[cut_idx, :, :]
-        elif axis == 'y':
+        elif axis is constants.Y:
             cut_idx = self.space.space_to_index((0, cut, 0))[1]
             data = self.ex[:, cut_idx, :]
-        elif axis == 'z':
+        elif axis is constants.Z:
             cut_idx = self.space.space_to_index((0, 0, cut))[2]
             data = self.ex[:, :, cut_idx]
         else:
             pass
         
         filename = 't=' + str(self.time_step[1] * space.dt)
-        snapshot(data, filename, 'ex')
+        snapshot(data, filename, constants.Ex)
         
-    def snapshotEy(self, axis='z', cut=0, range=(-.1, .1), size=(400, 400)):
+    def snapshotEy(self, axis=constants.Z, cut=0, range=(-.1, .1), size=(400, 400)):
         pass
     
-    def snapshotEz(self, axis='z', cut=0, range=(-.1, .1), size=(400, 400)):
+    def snapshotEz(self, axis=constants.Z, cut=0, range=(-.1, .1), size=(400, 400)):
         pass
     
-    def snapshotHx(self, axis='z', cut=0, range=(-.1, .1), size=(400, 400)):
+    def snapshotHx(self, axis=constants.Z, cut=0, range=(-.1, .1), size=(400, 400)):
         pass
         
-    def snapshotHy(self, axis='z', cut=0, range=(-.1, .1), size=(400, 400)):
+    def snapshotHy(self, axis=constants.Z, cut=0, range=(-.1, .1), size=(400, 400)):
         pass
         
-    def snapshotHz(self, axis='z', cut=0, range=(-.1, .1), size=(400, 400)):
+    def snapshotHz(self, axis=constants.Z, cut=0, range=(-.1, .1), size=(400, 400)):
         pass
         
 

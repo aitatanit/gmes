@@ -32,8 +32,13 @@ PICO = 1e-12
 FEMTO = 1e-15
 ATTO = 1e-18
 
+# The following classes should be used as singletons.
 
-class Component: pass
+class Component:
+    def __init__(self):
+        raise SyntaxError
+    
+    
 class Electric(Component): pass
 class Ex(Electric): pass
 class Ey(Electric): pass
@@ -44,7 +49,11 @@ class Hy(Magnetic): pass
 class Hz(Magnetic): pass
 
 
-class Directional: pass
+class Directional:
+    def __init__(self):
+        raise SyntaxError
+    
+    
 class X(Directional): pass
 class Y(Directional): pass
 class Z(Directional): pass
