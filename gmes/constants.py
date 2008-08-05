@@ -36,7 +36,7 @@ ATTO = 1e-18
 
 class Component:
     def __init__(self):
-        raise SyntaxError
+        raise SyntaxError, 'component classes should be used as a class'
     
     
 class Electric(Component): pass
@@ -51,7 +51,7 @@ class Hz(Magnetic): pass
 
 class Directional:
     def __init__(self):
-        raise SyntaxError
+        raise SyntaxError, 'directional classes should be used as a class'
     
     
 class X(Directional): pass
