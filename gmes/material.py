@@ -21,7 +21,25 @@ class Material:
         """
         print " " * indentby, "material type object"
 
-
+    def get_pointwise_material_ex(self, idx, co):
+        raise NotImplementedError
+    
+    def get_pointwise_mateiral_ey(self, idx, co):
+        raise NotImplementedError
+    
+    def get_pointwise_material_ez(self, idx, co):
+        raise NotImplementedError
+    
+    def get_pointwise_material_hx(self, idx, co):
+        raise NotImplementedError
+    
+    def get_pointwise_material_hy(self, idx, co):
+        raise NotImplementedError
+    
+    def get_pointwise_material_hz(self, idx, co):
+        raise NotImplementedError
+    
+    
 class Dummy(Material):
     def display_info(self, indentby=0):
         """
