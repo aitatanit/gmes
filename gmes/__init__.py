@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 ##    gmes - GIST Maxwell's Equations Solver
 ##    Copyright (C) 2007  Kyungwon Chun
 ##
