@@ -127,7 +127,7 @@ class Dipole:
     def set_pointwise_source_hz(self, material_hz, space):
         if self.comp is constants.Hz:
             idx = space.space_to_hz_index(self.pos)
-            material_hz[idx] = DipoleHz(material_hz[idx], self.src_time, space.dt, self.amp, space.courant)
+            material_hz[idx] = DipoleHz(material_hz[idx], self.src_time, space.dt, self.amp)
 
 
 class TotalFieldScatteredField:
