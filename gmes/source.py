@@ -91,7 +91,7 @@ class Bandpass(SrcTime):
         
 class Dipole:
     def __init__(self, pos, component, src_time, amp=1):
-        self.pos = array(pos, 'd')
+        self.pos = array(pos, float)
         self.comp = component
         self.src_time = src_time
         self.amp = float(amp)
@@ -135,8 +135,8 @@ class TotalFieldScatteredField:
         self.theta = float(theta)
         self.phi = float(theta)
         self.psi = float(psi)
-        self.low = array(low, 'd')
-        self.high = array(high, 'd')
+        self.low = array(low, float)
+        self.high = array(high, float)
 
     def generate_aux_fdtd(self, space):
         pass
@@ -148,8 +148,8 @@ class Transparent:
                  hx_mode_file=None, hy_mode_file=None, hz_mode_file=None):
         # launching plane parameters
         self.direction = direction
-        self.center = array(center, 'd')
-        self.size = array(size, 'd')
+        self.center = array(center, float)
+        self.size = array(size, float)
         self.half_size = .5 * self.size
         self.freq = float(freq)
         self.polarization = polarization
@@ -161,11 +161,12 @@ class Transparent:
         go = geom_tree.object_of_point(self.center)
         self.epsilon_r = go.material.epsilon_r
         self.mu_r = go.material.mu_r
+        self.aux_fdtd = self.get_aux_fdtd(space)
         
     def get_aux_fdtd(self, space):
         # two 10 meshes for the ABC,
         # 1 ex point and 2 hy points for the free space
-        aux_size = array((0 , 0, 21), 'd') / space.res
+        aux_size = array((0 , 0, 21), float) / space.res
         aux_space = Cartesian(size=aux_size, resolution=space.res)
         aux_geom_list = (DefaultMaterial(material=Dielectric(self.epsilon_r, self.mu_r)),
                          Boundary(material=UPML(), thickness=10 / space.res[2], size=aux_size))
@@ -185,25 +186,25 @@ class Transparent:
             for i in xrange(low_idx[0], high_idx[0]):
                 for j in xrange(low_idx[1], high_idx[1]):
                     for k in xrange(low_idx[2], high_idx[2]):
-                        material_ex[(i,j,k)] = TransparentPlusYEx(material_ex[(i,j,k)], self.epsilon_r, self.amp, self.get_aux_fdtd(space))
+                        material_ex[(i,j,k)] = TransparentPlusYEx(material_ex[(i,j,k)], self.epsilon_r, self.amp, deepcopy(self.aux_fdtd))
         
         elif self.direction is constants.MinusY and self.polarization is constants.X:
             for i in xrange(low_idx[0], high_idx[0]):
                 for j in xrange(low_idx[1], high_idx[1]):
                     for k in xrange(low_idx[2], high_idx[2]):
-                        material_ex[(i,j,k)] = TransparentMinusYEx(material_ex[(i,j,k)], self.epsilon_r, self.amp, self.get_aux_fdtd(space))
+                        material_ex[(i,j,k)] = TransparentMinusYEx(material_ex[(i,j,k)], self.epsilon_r, self.amp, deepcopy(self.aux_fdtd))
                         
         elif self.direction is constants.PlusZ and self.polarization is constants.X:
             for i in xrange(low_idx[0], high_idx[0]):
                 for j in xrange(low_idx[1], high_idx[1]):
                     for k in xrange(low_idx[2], high_idx[2]):
-                        material_ex[(i,j,k)] = TransparentPlusZEx(material_ex[(i,j,k)], self.epsilon_r, self.amp, self.get_aux_fdtd(space))
+                        material_ex[(i,j,k)] = TransparentPlusZEx(material_ex[(i,j,k)], self.epsilon_r, self.amp, deepcopy(self.aux_fdtd))
         
         elif self.direction is constants.MinusZ and self.polarization is constants.X:
             for i in xrange(low_idx[0], high_idx[0]):
                 for j in xrange(low_idx[1], high_idx[1]):
                     for k in xrange(low_idx[2], high_idx[2]):
-                        material_ex[(i,j,k)] = TransparentMinusZEx(material_ex[(i,j,k)], self.epsilon_r, self.amp, self.get_aux_fdtd(space))
+                        material_ex[(i,j,k)] = TransparentMinusZEx(material_ex[(i,j,k)], self.epsilon_r, self.amp, deepcopy(self.aux_fdtd))
 
     def set_pointwise_source_ey(self, material_ey, space):
         high = self.center + self.half_size
@@ -216,25 +217,25 @@ class Transparent:
             for i in xrange(low_idx[0], high_idx[0]):
                 for j in xrange(low_idx[1], high_idx[1]):
                     for k in xrange(low_idx[2], high_idx[2]):
-                        material_ey[(i,j,k)] = TransparentPlusZEy(material_ey[(i,j,k)], self.epsilon_r, self.amp, self.get_aux_fdtd(space))
+                        material_ey[(i,j,k)] = TransparentPlusZEy(material_ey[(i,j,k)], self.epsilon_r, self.amp, deepcopy(self.aux_fdtd))
         
         elif self.direction is constants.MinusZ and self.polarization is constants.Y:
             for i in xrange(low_idx[0], high_idx[0]):
                 for j in xrange(low_idx[1], high_idx[1]):
                     for k in xrange(low_idx[2], high_idx[2]):
-                        material_ey[(i,j,k)] = TransparentMinusZEy(material_ey[(i,j,k)], self.epsilon_r, self.amp, self.get_aux_fdtd(space))
+                        material_ey[(i,j,k)] = TransparentMinusZEy(material_ey[(i,j,k)], self.epsilon_r, self.amp, deepcopy(self.aux_fdtd))
                         
         elif self.direction is constants.PlusX and self.polarization is constants.Y:
             for i in xrange(low_idx[0], high_idx[0]):
                 for j in xrange(low_idx[1], high_idx[1]):
                     for k in xrange(low_idx[2], high_idx[2]):
-                        material_ey[(i,j,k)] = TransparentPlusXEy(material_ey[(i,j,k)], self.epsilon_r, self.amp, self.get_aux_fdtd(space))
+                        material_ey[(i,j,k)] = TransparentPlusXEy(material_ey[(i,j,k)], self.epsilon_r, self.amp, deepcopy(self.aux_fdtd))
         
         elif self.direction is constants.MinusX and self.polarization is constants.Y:
             for i in xrange(low_idx[0], high_idx[0]):
                 for j in xrange(low_idx[1], high_idx[1]):
                     for k in xrange(low_idx[2], high_idx[2]):
-                        material_ey[(i,j,k)] = TransparentMinusXEy(material_ey[(i,j,k)], self.epsilon_r, self.amp, self.get_aux_fdtd(space))
+                        material_ey[(i,j,k)] = TransparentMinusXEy(material_ey[(i,j,k)], self.epsilon_r, self.amp, deepcopy(self.aux_fdtd))
 
     def set_pointwise_source_ez(self, material_ez, space):
         high = self.center + self.half_size
@@ -247,25 +248,25 @@ class Transparent:
             for i in xrange(low_idx[0], high_idx[0]):
                 for j in xrange(low_idx[1], high_idx[1]):
                     for k in xrange(low_idx[2], high_idx[2]):
-                        material_ez[(i,j,k)] = TransparentPlusYEz(material_ez[(i,j,k)], self.epsilon_r, self.amp, self.get_aux_fdtd(space))
+                        material_ez[(i,j,k)] = TransparentPlusYEz(material_ez[(i,j,k)], self.epsilon_r, self.amp, deepcopy(self.aux_fdtd))
         
         elif self.direction is constants.MinusY and self.polarization is constants.Z:
             for i in xrange(low_idx[0], high_idx[0]):
                 for j in xrange(low_idx[1], high_idx[1]):
                     for k in xrange(low_idx[2], high_idx[2]):
-                        material_ez[(i,j,k)] = TransparentMinusYEz(material_ez[(i,j,k)], self.epsilon_r, self.amp, self.get_aux_fdtd(space))
+                        material_ez[(i,j,k)] = TransparentMinusYEz(material_ez[(i,j,k)], self.epsilon_r, self.amp, deepcopy(self.aux_fdtd))
                         
         elif self.direction is constants.PlusX and self.polarization is constants.Z:
             for i in xrange(low_idx[0], high_idx[0]):
                 for j in xrange(low_idx[1], high_idx[1]):
                     for k in xrange(low_idx[2], high_idx[2]):
-                        material_ez[(i,j,k)] = TransparentPlusXEz(material_ez[(i,j,k)], self.epsilon_r, self.amp, self.get_aux_fdtd(space))
+                        material_ez[(i,j,k)] = TransparentPlusXEz(material_ez[(i,j,k)], self.epsilon_r, self.amp, deepcopy(self.aux_fdtd))
         
         elif self.direction is constants.MinusX and self.polarization is constants.Z:
             for i in xrange(low_idx[0], high_idx[0]):
                 for j in xrange(low_idx[1], high_idx[1]):
                     for k in xrange(low_idx[2], high_idx[2]):
-                        material_ez[(i,j,k)] = TransparentMinusXEz(material_ez[(i,j,k)], self.epsilon_r, self.amp, self.get_aux_fdtd(space))
+                        material_ez[(i,j,k)] = TransparentMinusXEz(material_ez[(i,j,k)], self.epsilon_r, self.amp, deepcopy(self.aux_fdtd))
 
     def set_pointwise_source_hx(self, material_hx, space):
         high = self.center + self.half_size
@@ -281,7 +282,7 @@ class Transparent:
             for i in xrange(low_idx[0], high_idx[0]):
                 for j in xrange(low_idx[1], high_idx[1]):
                     for k in xrange(low_idx[2], high_idx[2]):
-                        material_hx[(i,j,k)] = TransparentPlusYHx(material_hy[(i,j,k)], self.mu_r, self.amp, self.get_aux_fdtd(space))
+                        material_hx[(i,j,k)] = TransparentPlusYHx(material_hx[(i,j,k)], self.mu_r, self.amp, deepcopy(self.aux_fdtd))
         
         elif self.direction is constants.MinusY and self.polarization is constants.Z:
             high_idx = map(lambda x: x + 1, space.space_to_ez_index(high))
@@ -293,7 +294,7 @@ class Transparent:
             for i in xrange(low_idx[0], high_idx[0]):
                 for j in xrange(low_idx[1], high_idx[1]):
                     for k in xrange(low_idx[2], high_idx[2]):
-                        material_hx[(i,j,k)] = TransparentMinusYHx(material_hy[(i,j,k)], self.mu_r, -self.amp, self.get_aux_fdtd(space))
+                        material_hx[(i,j,k)] = TransparentMinusYHx(material_hx[(i,j,k)], self.mu_r, -self.amp, deepcopy(self.aux_fdtd))
                                 
         elif self.direction is constants.PlusZ and self.polarization is constants.Y:
             high_idx = map(lambda x: x + 1, space.space_to_ey_index(high))
@@ -305,7 +306,7 @@ class Transparent:
             for i in xrange(low_idx[0], high_idx[0]):
                 for j in xrange(low_idx[1], high_idx[1]):
                     for k in xrange(low_idx[2], high_idx[2]):
-                        material_hx[(i,j,k)] = TransparentPlusZHx(material_hx[(i,j,k)], self.mu_r, -self.amp, self.get_aux_fdtd(space))
+                        material_hx[(i,j,k)] = TransparentPlusZHx(material_hx[(i,j,k)], self.mu_r, -self.amp, deepcopy(self.aux_fdtd))
         
         elif self.direction is constants.MinusZ and self.polarization is constants.Y:
             high_idx = map(lambda x: x + 1, space.space_to_ey_index(high))
@@ -317,7 +318,7 @@ class Transparent:
             for i in xrange(low_idx[0], high_idx[0]):
                 for j in xrange(low_idx[1], high_idx[1]):
                     for k in xrange(low_idx[2], high_idx[2]):
-                        material_hx[(i,j,k)] = TransparentMinusZHx(material_hx[(i,j,k)], self.mu_r, self.amp, self.get_aux_fdtd(space))
+                        material_hx[(i,j,k)] = TransparentMinusZHx(material_hx[(i,j,k)], self.mu_r, self.amp, deepcopy(self.aux_fdtd))
 
     def set_pointwise_source_hy(self, material_hy, space):
         high = self.center + self.half_size
@@ -333,7 +334,7 @@ class Transparent:
             for i in xrange(low_idx[0], high_idx[0]):
                 for j in xrange(low_idx[1], high_idx[1]):
                     for k in xrange(low_idx[2], high_idx[2]):
-                        material_hy[(i,j,k)] = TransparentPlusZHy(material_hy[(i,j,k)], self.mu_r, self.amp, self.get_aux_fdtd(space))
+                        material_hy[(i,j,k)] = TransparentPlusZHy(material_hy[(i,j,k)], self.mu_r, self.amp, deepcopy(self.aux_fdtd))
         
         elif self.direction is constants.MinusZ and self.polarization is constants.X:
             high_idx = map(lambda x: x + 1, space.space_to_ex_index(high))
@@ -345,7 +346,7 @@ class Transparent:
             for i in xrange(low_idx[0], high_idx[0]):
                 for j in xrange(low_idx[1], high_idx[1]):
                     for k in xrange(low_idx[2], high_idx[2]):
-                        material_hy[(i,j,k)] = TransparentMinusZHy(material_hy[(i,j,k)], self.mu_r, -self.amp, self.get_aux_fdtd(space))
+                        material_hy[(i,j,k)] = TransparentMinusZHy(material_hy[(i,j,k)], self.mu_r, -self.amp, deepcopy(self.aux_fdtd))
 
         elif self.direction is constants.PlusX and self.polarization is constants.Z:
             high_idx = map(lambda x: x + 1, space.space_to_ez_index(high))
@@ -357,7 +358,7 @@ class Transparent:
             for i in xrange(low_idx[0], high_idx[0]):
                 for j in xrange(low_idx[1], high_idx[1]):
                     for k in xrange(low_idx[2], high_idx[2]):
-                        material_hy[(i,j,k)] = TransparentPlusXHy(material_hy[(i,j,k)], self.mu_r, -self.amp, self.get_aux_fdtd(space))
+                        material_hy[(i,j,k)] = TransparentPlusXHy(material_hy[(i,j,k)], self.mu_r, -self.amp, deepcopy(self.aux_fdtd))
         
         elif self.direction is constants.MinusX and self.polarization is constants.Z:
             high_idx = map(lambda x: x + 1, space.space_to_ex_index(high))
@@ -369,7 +370,7 @@ class Transparent:
             for i in xrange(low_idx[0], high_idx[0]):
                 for j in xrange(low_idx[1], high_idx[1]):
                     for k in xrange(low_idx[2], high_idx[2]):
-                        material_hy[(i,j,k)] = TransparentMinusXHy(material_hy[(i,j,k)], self.mu_r, self.amp, self.get_aux_fdtd(space))
+                        material_hy[(i,j,k)] = TransparentMinusXHy(material_hy[(i,j,k)], self.mu_r, self.amp, deepcopy(self.aux_fdtd))
                                                 
     def set_pointwise_source_hz(self, material_hz, space):
         high = self.center + self.half_size
@@ -385,7 +386,7 @@ class Transparent:
             for i in xrange(low_idx[0], high_idx[0]):
                 for j in xrange(low_idx[1], high_idx[1]):
                     for k in xrange(low_idx[2], high_idx[2]):
-                        material_hz[(i,j,k)] = TransparentPlusYHz(material_hz[(i,j,k)], self.mu_r, -self.amp, self.get_aux_fdtd(space))
+                        material_hz[(i,j,k)] = TransparentPlusYHz(material_hz[(i,j,k)], self.mu_r, -self.amp, deepcopy(self.aux_fdtd))
             
         elif self.direction is constants.MinusY and self.polarization is constants.X:
             high_idx = map(lambda x: x + 1, space.space_to_ex_index(high))
@@ -397,7 +398,7 @@ class Transparent:
             for i in xrange(low_idx[0], high_idx[0]):
                 for j in xrange(low_idx[1], high_idx[1]):
                     for k in xrange(low_idx[2], high_idx[2]):
-                        material_hz[(i,j,k)] = TransparentMinusYHz(material_hz[(i,j,k)], self.mu_r, self.amp, self.get_aux_fdtd(space))
+                        material_hz[(i,j,k)] = TransparentMinusYHz(material_hz[(i,j,k)], self.mu_r, self.amp, deepcopy(self.aux_fdtd))
                                                  
         elif self.direction is constants.PlusX and self.polarization is constants.Y:
             high_idx = map(lambda x: x + 1, space.space_to_ey_index(high))
@@ -409,7 +410,7 @@ class Transparent:
             for i in xrange(low_idx[0], high_idx[0]):
                 for j in xrange(low_idx[1], high_idx[1]):
                     for k in xrange(low_idx[2], high_idx[2]):
-                        material_hz[(i,j,k)] = TransparentPlusXHz(material_hz[(i,j,k)], self.mu_r, self.amp, self.get_aux_fdtd(space))
+                        material_hz[(i,j,k)] = TransparentPlusXHz(material_hz[(i,j,k)], self.mu_r, self.amp, deepcopy(self.aux_fdtd))
             
         elif self.direction is constants.MinusX and self.polarization is constants.Y:
             high_idx = map(lambda x: x + 1, space.space_to_ey_index(high))
@@ -421,6 +422,6 @@ class Transparent:
             for i in xrange(low_idx[0], high_idx[0]):
                 for j in xrange(low_idx[1], high_idx[1]):
                     for k in xrange(low_idx[2], high_idx[2]):
-                        material_hz[(i,j,k)] = TransparentMinusXHz(material_hz[(i,j,k)], self.mu_r, -self.amp, self.get_aux_fdtd(space))
+                        material_hz[(i,j,k)] = TransparentMinusXHz(material_hz[(i,j,k)], self.mu_r, -self.amp, deepcopy(self.aux_fdtd))
                         
                         

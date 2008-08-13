@@ -127,10 +127,10 @@ class PML(Material):
         for i in space.half_size:
             if i <= self.d: i = inf
             half_size.append(i)
-        self.half_size = array(half_size, 'd')
+        self.half_size = array(half_size, float)
         
         self.dt = space.dt
-        self.dw = array((space.dx, space.dy, space.dz), 'd')
+        self.dw = array((space.dx, space.dy, space.dz), float)
         self.sigma_opt = self.get_sigma_opt()
         
         self.initialized = True

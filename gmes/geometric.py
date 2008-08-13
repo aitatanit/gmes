@@ -20,12 +20,12 @@ class Cartesian:
     
     def __init__(self, size, a=1, resolution=15, courant=.5, dt=None):
         self.a = float(a)
-        self.half_size = 0.5 * array(size, 'd')
+        self.half_size = 0.5 * array(size, float)
         try:
             if len(resolution) == 3:
-                self.res = array(resolution, 'd')
+                self.res = array(resolution, float)
         except TypeError:
-            self.res = array((resolution,)*3, 'd')
+            self.res = array((resolution,)*3, float)
             
         self.courant = float(courant)
         
@@ -69,40 +69,40 @@ class Cartesian:
     def get_ex_storage(self):
         """Return an initialized array for Ex field component.
         """
-        return zeros(self.ex_shape, 'd')
+        return zeros(self.ex_shape, float)
     
     def get_ey_storage(self):
-        return zeros(self.ey_shape, 'd')
+        return zeros(self.ey_shape, float)
     
     def get_ez_storage(self):
-        return zeros(self.ez_shape, 'd')
+        return zeros(self.ez_shape, float)
     
     def get_hx_storage(self):
-        return zeros(self.hx_shape, 'd')
+        return zeros(self.hx_shape, float)
     
     def get_hy_storage(self):    
-        return zeros(self.hy_shape, 'd')
+        return zeros(self.hy_shape, float)
     
     def get_hz_storage(self):
-        return zeros(self.hz_shape, 'd')
+        return zeros(self.hz_shape, float)
 
     def get_material_ex_storage(self):
-        return empty(self.ex_shape, 'O')
+        return empty(self.ex_shape, object)
     
     def get_material_ey_storage(self):
-        return empty(self.ey_shape, 'O')
+        return empty(self.ey_shape, object)
     
     def get_material_ez_storage(self):
-        return empty(self.ez_shape, 'O')
+        return empty(self.ez_shape, object)
     
     def get_material_hx_storage(self):
-        return empty(self.hx_shape, 'O')
+        return empty(self.hx_shape, object)
     
     def get_material_hy_storage(self):    
-        return empty(self.hy_shape, 'O')
+        return empty(self.hy_shape, object)
     
     def get_material_hz_storage(self):
-        return empty(self.hz_shape, 'O')
+        return empty(self.hz_shape, object)
 
     def ex_index_to_space(self, idx):
         """Return space coordinates corresponding to the given index of Ex mesh point. 
@@ -250,8 +250,8 @@ class Cartesian:
     
 class GeomBox:
     def __init__(self, low=None, high=None):
-        self.low = array(low, 'd')
-        self.high = array(high, 'd')
+        self.low = array(low, float)
+        self.high = array(high, float)
         
     def union(self, box):
         self.low = map(min, self.low, box.low)
@@ -448,7 +448,7 @@ class GeomBoxTree:
 class GeometricObject:
     def __init__(self, material=None, center=(0,0,0)):
         self.material = material
-        self.center = array(center, 'd')
+        self.center = array(center, float)
     
     def init(self, space):
         pass
@@ -503,13 +503,13 @@ class Cone(GeometricObject):
 
         GeometricObject.__init__(self, material, center)
 
-        self.axis = array(axis, 'd') / norm(axis)
+        self.axis = array(axis, float) / norm(axis)
         self.height = float(height)
         
         self.box = self.geom_box()
         
     def in_object(self, x):
-        x = array(x, 'd')
+        x = array(x, float)
         r = x - self.center
         proj = dot(self.axis, r)
         if fabs(proj) <= .5 * self.height:
@@ -574,17 +574,17 @@ class Cylinder(Cone):
 class _Block(GeometricObject):
     def __init__(self, e1=(1,0,0), e2=(0,1,0), e3=(0,0,1), size=(0,0,0), material=None, center=(0,0,0)):
         GeometricObject.__init__(self, material, center)
-        self.e1 = array(e1, 'd') / norm(e1)
-        self.e2 = array(e2, 'd') / norm(e2)
-        self.e3 = array(e3, 'd') / norm(e3)
-        self.size = array(size, 'd')
+        self.e1 = array(e1, float) / norm(e1)
+        self.e2 = array(e2, float) / norm(e2)
+        self.e3 = array(e3, float) / norm(e3)
+        self.size = array(size, float)
         
         self.projection_matrix = array([self.e1, self.e2, self.e3])
         
         self.box = self.geom_box()
         
     def in_object(self, x):
-        x = array(x, 'd')
+        x = array(x, float)
         r = x - self.center
         proj = dot(self.projection_matrix, r)
 
@@ -629,10 +629,10 @@ class Ellipsoid(_Block):
     def __init__(self, e1=(1,0,0), e2=(0,1,0), e3=(0,0,1), size=(1,1,1), material=None, center=(0,0,0)):
         _Block.__init__(self, e1, e2, e3, size, material, center)
 
-        self.inverse_semi_axes = 2 / array(size, 'd')
+        self.inverse_semi_axes = 2 / array(size, float)
 
     def in_object(self, x):
-        x = array(x, 'd')
+        x = array(x, float)
         r = x - self.center
         proj = dot(self.projection_matrix, r)
         q = proj * self.inverse_semi_axes
@@ -670,7 +670,7 @@ class Sphere(Ellipsoid):
 class Boundary:
     def __init__(self, material=None, thickness=None, size=None, plusX=True, minusX=True, plusY=True, minusY=True, plusZ=True, minusZ=True):
         self.d = float(thickness)
-        self.size = array(size, 'd')
+        self.size = array(size, float)
         half_size = []
         for i in self.size:
             if i <= 2 * self.d:

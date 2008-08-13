@@ -2,7 +2,7 @@
 
 from threading import Thread
 
-from numpy.core import array
+from numpy import array
 
 from sys import modules
 if not 'matplotlib.backends' in modules:
@@ -16,7 +16,7 @@ class ShowLine(Thread):
         Thread.__init__(self)
         self.xdata = xdata
         self.ydata = ydata
-        self.yrange = array(yrange, 'd')
+        self.yrange = array(yrange, float)
         self.msecs= msecs
         self.xlabel = xlabel
         self.ylabel = ylabel
