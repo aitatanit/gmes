@@ -359,70 +359,73 @@ class FDTD(object):
         showcase.start()
         
     def _show(self, component, axis, cut, amp_range, msecs, title):
-        field = []
+        """A Wrapper method of show.ShowPlane.
         
-        if axis is constants.X:
-            if component is constants.Ex:
-                field = self.ex[cut, :, :]
-                low = self.space.ex_index_to_space((0,0,0))
-                high_idx = [i - 1 for i in self.ex.shape]
-                high = self.space.ex_index_to_space(high_idx)
-                cut = self.space.space_to_ex_index((cut, 0, 0))[0]
+        component: Specify electric or magnetic field component. 
+                This should be one of the gmes.constants.Component. 
+        axis: Specify the normal axis to the show plane.
+                This should be one of the gmes.constants.Directional.
+        cut: A scalar value which specifies the cut position on the axis.
+        amp_range: Specify the colorbar range.
+        msecs: Refresh rates in millisecond.
+        title: title string of the figure.
+        """
+        if component is constants.Ex:
+            field = self.ex
+            idx_to_spc_func = self.space.ex_index_to_space
                 
-            elif component is constants.Hx:
-                field = self.hx[cut, :, :]
-                low = self.space.hx_index_to_space((0,0,0))
-                high_idx = [i - 1 for i in self.hx.shape]
-                high = self.space.hx_index_to_space(high_idx)
-                cut = self.space.space_to_hx_index((cut, 0, 0))[0]
+        elif component is constants.Ey:
+            field = self.ey
+            idx_to_spc_func = self.space.ey_index_to_space
                 
+        elif component is constants.Ez:
+            field = self.ez
+            idx_to_spc_func = self.space.ez_index_to_space
+                
+        elif component is constants.Hx:
+            field = self.hx
+            idx_to_spc_func = self.space.hx_index_to_space
+
+        elif component is constants.Hy:
+            field = self.hy
+            idx_to_spc_func = self.space.hy_index_to_space
+                
+        elif component is constants.Hz:
+            field = self.hz
+            idx_to_spc_func = self.space.hz_index_to_space
+                
+        if axis is constants.X:                
+            cut_idx = idx_to_spc_func((cut, 0, 0))[0]
+            field_cut = field[cut_idx, :, :]
+            low = idx_to_spc_func((0,0,0))
+            high_idx = [i - 1 for i in field.shape]
+            high = idx_to_spc_func(high_idx)
             extent = (low[2], high[2], low[1], high[1])
-            xlabel = 'z'
-            ylabel = 'y'
+            xlabel, ylabel = 'z', 'y'
             
         elif axis is constants.Y:
-            if component is constants.Ey:
-                field = self.ey[:, cut, :]
-                low = self.space.ey_index_to_space((0,0,0))
-                high_idx = [i - 1 for i in self.ey.shape]
-                high = self.space.ey_index_to_space(high_idx)
-                cut = self.space.space_to_ey_index((0, cut, 0))[1]
-                
-            elif component is constants.Hy:
-                field = self.hy[:, cut, :]
-                low = self.space.hy_index_to_space((0,0,0))
-                high_idx = [i - 1 for i in self.hy.shape]
-                high = self.space.hy_index_to_space(high_idx)
-                cut = self.space.space_to_hy_index((0, cut, 0))[1]
-                
+            cut_idx = idx_to_spc_func((0, cut, 0))[1]
+            field_cut = field[:, cut_idx, :]
+            low = idx_to_spc_func((0,0,0))
+            high_idx = [i - 1 for i in field.shape]
+            high = idx_to_spc_func(high_idx)
             extent = (low[2], high[2], low[0], high[0])
-            xlabel = 'z'
-            ylabel = 'x'
+            xlabel, ylabel= 'z', 'x'
             
         elif axis is constants.Z:
-            if component is constants.Ez:
-                field = self.ez[:, :, cut]
-                low = self.space.ez_index_to_space((0,0,0))
-                high_idx = [i - 1 for i in self.ez.shape]
-                high = self.space.ez_index_to_space(high_idx)
-                cut = self.space.space_to_ez_index((0, 0, cut))[2]
-                
-            elif component is constants.Hz:
-                field = self.hz[:, :, cut]
-                low = self.space.ez_index_to_space((0,0,0))
-                high_idx = [i - 1 for i in self.hz.shape]
-                high = self.space.hz_index_to_space(high_idx)
-                cut = self.space.space_to_hz_index((0, 0, cut))[2]
-                
-            extent = (low[1], high[1], low[0], high[0])
-            xlabel = 'y'
-            ylabel = 'x'
+            cut_idx = idx_to_spc_func((0, 0, cut))[2]
+            field_cut = field[:, :, cut_idx]
+            low = idx_to_spc_func((0,0,0))
+            high_idx = [i - 1 for i in field.shape]
+            high = idx_to_spc_func(high_idx)
+            extent = (low[2], high[2], low[0], high[0])
+            xlabel, ylabel = 'z', 'x'
             
         else:
-            msg = "axis must be an instance of gmes.constants.Directional."
+            msg = "axis must be one of the gmes.constants.Directional."
             raise ValueError(msg)
 
-        showcase = ShowPlane(field, extent, amp_range, self.time_step, xlabel, ylabel, title, msecs, self.fig_id)
+        showcase = ShowPlane(field_cut, extent, amp_range, self.time_step, xlabel, ylabel, title, msecs, self.fig_id)
         self.fig_id += 1
         showcase.start()
 
