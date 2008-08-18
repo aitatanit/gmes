@@ -12,13 +12,21 @@ from constants import c0
 
 class Cartesian:
     """Define the whole calculation space.
+    
     size: a sequence with length three consists of
     non-negative numbers.
     a: physical length of a unit in the coordinate. (scalar)
+        In dimensionless scale a = 1.
     resolution: number of sections of one unit (scalar or length 3 sequence)
+        default: 15
+    courant_ratio: the ratio of dt to Courant stability bound.
+        default: 0.99
+    dt: the time differential. If None is given, dt is calculated using
+        space differentials and courant_ratio.
+        default: None
     """
     
-    def __init__(self, size, a=1, resolution=15, courant=.5, dt=None):
+    def __init__(self, size, a=1, resolution=15, courant_ratio=.99, dt=None):
         self.a = float(a)
         self.half_size = 0.5 * array(size, float)
         try:
@@ -27,7 +35,7 @@ class Cartesian:
         except TypeError:
             self.res = array((resolution,)*3, float)
             
-        self.courant = float(courant)
+        self.courant_ratio = float(courant_ratio)
         
         self.dx, self.dy, self.dz = self.a / self.res
 
@@ -46,11 +54,14 @@ class Cartesian:
             self.half_size[2] = .5 * self.dz
             dz = inf
             
+        # Courant stability bound
+        self.courant_limit = 1 / (c0 * sqrt(dx**-2 + dy**-2 + dz**-2))
+        
         if dt is None:
-            self.dt = self.courant / c0 / sqrt(dx**-2 + dy**-2 + dz**-2)
+            self.dt = self.courant_ratio * self.courant_limit
         else:
             self.dt = float(dt)
-            self.courant = self.dt * c0 * sqrt(dx**-2 + dy**-2 + dz**-2)
+            self.courant_ratio = self.dt / self.courant_limit
 
         self.field_size = []
         for i in (int(x + .5) for x in 2 * self.half_size * self.res):
