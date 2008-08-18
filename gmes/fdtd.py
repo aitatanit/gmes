@@ -395,31 +395,31 @@ class FDTD(object):
             idx_to_spc_func = self.space.hz_index_to_space
                 
         if axis is constants.X:                
-            cut_idx = idx_to_spc_func((cut, 0, 0))[0]
-            field_cut = field[cut_idx, :, :]
-            low = idx_to_spc_func((0,0,0))
+            cut_idx = idx_to_spc_func((cut, 0, 0))
+            field_cut = field[cut_idx[0], :, :]
+            low = idx_to_spc_func((0, 0, 0))
             high_idx = [i - 1 for i in field.shape]
             high = idx_to_spc_func(high_idx)
             extent = (low[2], high[2], low[1], high[1])
             xlabel, ylabel = 'z', 'y'
             
         elif axis is constants.Y:
-            cut_idx = idx_to_spc_func((0, cut, 0))[1]
-            field_cut = field[:, cut_idx, :]
-            low = idx_to_spc_func((0,0,0))
+            cut_idx = idx_to_spc_func((0, cut, 0))
+            field_cut = field[:, cut_idx[1], :]
+            low = idx_to_spc_func((0, 0, 0))
             high_idx = [i - 1 for i in field.shape]
             high = idx_to_spc_func(high_idx)
             extent = (low[2], high[2], low[0], high[0])
             xlabel, ylabel= 'z', 'x'
             
         elif axis is constants.Z:
-            cut_idx = idx_to_spc_func((0, 0, cut))[2]
-            field_cut = field[:, :, cut_idx]
-            low = idx_to_spc_func((0,0,0))
+            cut_idx = idx_to_spc_func((0, 0, cut))
+            field_cut = field[:, :, cut_idx[2]]
+            low = idx_to_spc_func((0, 0, 0))
             high_idx = [i - 1 for i in field.shape]
             high = idx_to_spc_func(high_idx)
-            extent = (low[2], high[2], low[0], high[0])
-            xlabel, ylabel = 'z', 'x'
+            extent = (low[1], high[1], low[0], high[0])
+            xlabel, ylabel = 'y', 'x'
             
         else:
             msg = "axis must be one of the gmes.constants.Directional."
