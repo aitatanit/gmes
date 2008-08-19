@@ -366,7 +366,7 @@ class FDTD(object):
         self.fig_id += 1
         showcase.start()
         
-    def show_line_ey(self, start, end, x_range=(-1,1), msecs=2500):
+    def show_line_ey(self, start, end, y_range=(-1,1), msecs=2500):
         title = 'Ey field'
         ylabel = 'displacement'
         
@@ -403,11 +403,11 @@ class FDTD(object):
         if len(y_data) > len(z_data):
             y_data = y_data[:-1]
             
-        showcase = ShowLine(y_data, z_data, x_range, self.time_step, xlabel, ylabel, title, msecs, self.fig_id)
+        showcase = ShowLine(y_data, z_data, y_range, self.time_step, xlabel, ylabel, title, msecs, self.fig_id)
         self.fig_id += 1
         showcase.start()
         
-    def show_line_ez(self, start, end, x_range=(-1,1), msecs=2500):
+    def show_line_ez(self, start, end, y_range=(-1,1), msecs=2500):
         title = 'Ez field'
         ylabel = 'displacement'
         
@@ -444,7 +444,7 @@ class FDTD(object):
         if len(z_data) > len(x_data):
             z_data = z_data[:-1]
             
-        showcase = ShowLine(z_data, x_data, x_range, self.time_step, xlabel, ylabel, title, msecs, self.fig_id)
+        showcase = ShowLine(z_data, x_data, y_range, self.time_step, xlabel, ylabel, title, msecs, self.fig_id)
         self.fig_id += 1
         showcase.start()
         
@@ -489,7 +489,7 @@ class FDTD(object):
         self.fig_id += 1
         showcase.start()
         
-    def show_line_hy(self, start, end, x_range=(-1,1), msecs=2500):
+    def show_line_hy(self, start, end, y_range=(-1,1), msecs=2500):
         title = 'Hy field'
         ylabel = 'displacement'
         
@@ -526,11 +526,11 @@ class FDTD(object):
         if len(y_data) > len(z_data):
             y_data = y_data[:-1]
             
-        showcase = ShowLine(y_data, z_data, x_range, self.time_step, xlabel, ylabel, title, msecs, self.fig_id)
+        showcase = ShowLine(y_data, z_data, y_range, self.time_step, xlabel, ylabel, title, msecs, self.fig_id)
         self.fig_id += 1
         showcase.start()
         
-    def show_line_hz(self, start, end, x_range=(-1,1), msecs=2500):
+    def show_line_hz(self, start, end, y_range=(-1,1), msecs=2500):
         title = 'Hz field'
         ylabel = 'displacement'
         
@@ -567,7 +567,7 @@ class FDTD(object):
         if len(z_data) > len(x_data):
             z_data = z_data[:-1]
             
-        showcase = ShowLine(z_data, x_data, x_range, self.time_step, xlabel, ylabel, title, msecs, self.fig_id)
+        showcase = ShowLine(z_data, x_data, y_range, self.time_step, xlabel, ylabel, title, msecs, self.fig_id)
         self.fig_id += 1
         showcase.start()            
         
