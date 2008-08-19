@@ -318,6 +318,14 @@ class FDTD(object):
         self.time_step.t = self.time_step.n * self.dt
 
     def show_line_ex(self, start, end, y_range=(-1,1), msecs=2500):
+        """Show the field value on a probing line.
+        
+        start: The start point of the probing line.
+        end: The end point of the probing line.
+        y_range: Plot range of the y axis.
+        msecs: Refresh rate of the plot in milliseconds.
+        """
+        
         title = 'Ex field'
         ylabel = 'displacement'
         
