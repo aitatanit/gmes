@@ -358,6 +358,211 @@ class FDTD(object):
         self.fig_id += 1
         showcase.start()
         
+    def show_line_ey(self, start, end, x_range=(-1,1), msecs=2500):
+        title = 'Ey field'
+        ylabel = 'displacement'
+        
+        start_idy = self.space.space_to_ey_index(start)
+        end_idy = [i + 1 for i in self.space.space_to_ey_index(end)]
+        
+        if end_idy[0] - start_idy[0] > 1:
+            z_data = self.ey[start_idy[0]:end_idy[0], start_idy[1], start_idy[2]]
+        elif end_idy[1] - start_idy[1] > 1:
+            z_data = self.ey[start_idy[0], start_idy[1]:end_idy[1], start_idy[2]]
+        elif end_idy[2] - start_idy[2] > 1:
+            z_data = self.ey[start_idy[0], start_idy[1], start_idy[2]:end_idy[2]]
+
+        start2 = self.space.ey_index_to_space(start_idy)
+        end2 = self.space.ey_index_to_space(end_idy)
+        domain_idy = map(lambda x, y: x - y, end_idy, start_idy)
+        for i in xrange(3):
+            if domain_idy[i] != 1:
+                if i == 0:
+                    step = self.space.dx
+                    xlabel = 'x'
+                elif i == 1:
+                    step = self.space.dy
+                    xlabel = 'y'
+                elif i == 2:
+                    step = self.space.dz
+                    xlabel = 'z'
+                else:
+                    pass
+                break
+        
+        y_data = arange(start2[i], end2[i], step)
+        
+        if len(y_data) > len(z_data):
+            y_data = y_data[:-1]
+            
+        showcase = ShowLine(y_data, z_data, x_range, self.time_step, xlabel, ylabel, title, msecs, self.fig_id)
+        self.fig_id += 1
+        showcase.start()
+        
+    def show_line_ez(self, start, end, x_range=(-1,1), msecs=2500):
+        title = 'Ez field'
+        ylabel = 'displacement'
+        
+        start_idz = self.space.space_to_ez_index(start)
+        end_idz = [i + 1 for i in self.space.space_to_ez_index(end)]
+        
+        if end_idz[0] - start_idz[0] > 1:
+            x_data = self.ez[start_idz[0]:end_idz[0], start_idz[1], start_idz[2]]
+        elif end_idz[1] - start_idz[1] > 1:
+            x_data = self.ez[start_idz[0], start_idz[1]:end_idz[1], start_idz[2]]
+        elif end_idz[2] - start_idz[2] > 1:
+            x_data = self.ez[start_idz[0], start_idz[1], start_idz[2]:end_idz[2]]
+
+        start2 = self.space.ez_index_to_space(start_idz)
+        end2 = self.space.ez_index_to_space(end_idz)
+        domain_idz = map(lambda x, y: x - y, end_idz, start_idz)
+        for i in xrange(3):
+            if domain_idz[i] != 1:
+                if i == 0:
+                    step = self.space.dx
+                    xlabel = 'x'
+                elif i == 1:
+                    step = self.space.dy
+                    xlabel = 'y'
+                elif i == 2:
+                    step = self.space.dz
+                    xlabel = 'z'
+                else:
+                    pass
+                break
+        
+        z_data = arange(start2[i], end2[i], step)
+        
+        if len(z_data) > len(x_data):
+            z_data = z_data[:-1]
+            
+        showcase = ShowLine(z_data, x_data, x_range, self.time_step, xlabel, ylabel, title, msecs, self.fig_id)
+        self.fig_id += 1
+        showcase.start()
+        
+    def show_line_hx(self, start, end, y_range=(-1,1), msecs=2500):
+        title = 'Hx field'
+        ylabel = 'displacement'
+        
+        start_idx = self.space.space_to_hx_index(start)
+        end_idx = [i + 1 for i in self.space.space_to_hx_index(end)]
+        
+        if end_idx[0] - start_idx[0] > 1:
+            y_data = self.hx[start_idx[0]:end_idx[0], start_idx[1], start_idx[2]]
+        elif end_idx[1] - start_idx[1] > 1:
+            y_data = self.hx[start_idx[0], start_idx[1]:end_idx[1], start_idx[2]]
+        elif end_idx[2] - start_idx[2] > 1:
+            y_data = self.hx[start_idx[0], start_idx[1], start_idx[2]:end_idx[2]]
+
+        start2 = self.space.hx_index_to_space(start_idx)
+        end2 = self.space.hx_index_to_space(end_idx)
+        domain_idx = map(lambda x, y: x - y, end_idx, start_idx)
+        for i in xrange(3):
+            if domain_idx[i] != 1:
+                if i == 0:
+                    step = self.space.dx
+                    xlabel = 'x'
+                elif i == 1:
+                    step = self.space.dy
+                    xlabel = 'y'
+                elif i == 2:
+                    step = self.space.dz
+                    xlabel = 'z'
+                else:
+                    pass
+                break
+        
+        x_data = arange(start2[i], end2[i], step)
+        
+        if len(x_data) > len(y_data):
+            x_data = x_data[:-1]
+            
+        showcase = ShowLine(x_data, y_data, y_range, self.time_step, xlabel, ylabel, title, msecs, self.fig_id)
+        self.fig_id += 1
+        showcase.start()
+        
+    def show_line_hy(self, start, end, x_range=(-1,1), msecs=2500):
+        title = 'Hy field'
+        ylabel = 'displacement'
+        
+        start_idy = self.space.space_to_hy_index(start)
+        end_idy = [i + 1 for i in self.space.space_to_hy_index(end)]
+        
+        if end_idy[0] - start_idy[0] > 1:
+            z_data = self.hy[start_idy[0]:end_idy[0], start_idy[1], start_idy[2]]
+        elif end_idy[1] - start_idy[1] > 1:
+            z_data = self.hy[start_idy[0], start_idy[1]:end_idy[1], start_idy[2]]
+        elif end_idy[2] - start_idy[2] > 1:
+            z_data = self.hy[start_idy[0], start_idy[1], start_idy[2]:end_idy[2]]
+
+        start2 = self.space.hy_index_to_space(start_idy)
+        end2 = self.space.hy_index_to_space(end_idy)
+        domain_idy = map(lambda x, y: x - y, end_idy, start_idy)
+        for i in xrange(3):
+            if domain_idy[i] != 1:
+                if i == 0:
+                    step = self.space.dx
+                    xlabel = 'x'
+                elif i == 1:
+                    step = self.space.dy
+                    xlabel = 'y'
+                elif i == 2:
+                    step = self.space.dz
+                    xlabel = 'z'
+                else:
+                    pass
+                break
+        
+        y_data = arange(start2[i], end2[i], step)
+        
+        if len(y_data) > len(z_data):
+            y_data = y_data[:-1]
+            
+        showcase = ShowLine(y_data, z_data, x_range, self.time_step, xlabel, ylabel, title, msecs, self.fig_id)
+        self.fig_id += 1
+        showcase.start()
+        
+    def show_line_hz(self, start, end, x_range=(-1,1), msecs=2500):
+        title = 'Hz field'
+        ylabel = 'displacement'
+        
+        start_idz = self.space.space_to_hz_index(start)
+        end_idz = [i + 1 for i in self.space.space_to_hz_index(end)]
+        
+        if end_idz[0] - start_idz[0] > 1:
+            x_data = self.hz[start_idz[0]:end_idz[0], start_idz[1], start_idz[2]]
+        elif end_idz[1] - start_idz[1] > 1:
+            x_data = self.hz[start_idz[0], start_idz[1]:end_idz[1], start_idz[2]]
+        elif end_idz[2] - start_idz[2] > 1:
+            x_data = self.hz[start_idz[0], start_idz[1], start_idz[2]:end_idz[2]]
+
+        start2 = self.space.hz_index_to_space(start_idz)
+        end2 = self.space.hz_index_to_space(end_idz)
+        domain_idz = map(lambda x, y: x - y, end_idz, start_idz)
+        for i in xrange(3):
+            if domain_idz[i] != 1:
+                if i == 0:
+                    step = self.space.dx
+                    xlabel = 'x'
+                elif i == 1:
+                    step = self.space.dy
+                    xlabel = 'y'
+                elif i == 2:
+                    step = self.space.dz
+                    xlabel = 'z'
+                else:
+                    pass
+                break
+        
+        z_data = arange(start2[i], end2[i], step)
+        
+        if len(z_data) > len(x_data):
+            z_data = z_data[:-1]
+            
+        showcase = ShowLine(z_data, x_data, x_range, self.time_step, xlabel, ylabel, title, msecs, self.fig_id)
+        self.fig_id += 1
+        showcase.start()            
+        
     def _show(self, component, axis, cut, amp_range, msecs, title):
         """A Wrapper method of show.ShowPlane.
         
