@@ -372,30 +372,36 @@ class FDTD(object):
         """
         if component is constants.Ex:
             field = self.ex
+            spc_to_idx_func = self.space.space_to_ex_index
             idx_to_spc_func = self.space.ex_index_to_space
                 
         elif component is constants.Ey:
             field = self.ey
+            spc_to_idx_func = self.space.space_to_ey_index
             idx_to_spc_func = self.space.ey_index_to_space
                 
         elif component is constants.Ez:
             field = self.ez
+            spc_to_idx_func = self.space.space_to_ez_index
             idx_to_spc_func = self.space.ez_index_to_space
                 
         elif component is constants.Hx:
             field = self.hx
+            spc_to_idx_func = self.space.space_to_hx_index
             idx_to_spc_func = self.space.hx_index_to_space
 
         elif component is constants.Hy:
             field = self.hy
+            spc_to_idx_func = self.space.space_to_hy_index
             idx_to_spc_func = self.space.hy_index_to_space
                 
         elif component is constants.Hz:
             field = self.hz
+            spc_to_idx_func = self.space.space_to_hz_index
             idx_to_spc_func = self.space.hz_index_to_space
                 
         if axis is constants.X:                
-            cut_idx = idx_to_spc_func((cut, 0, 0))
+            cut_idx = spc_to_idx_func((cut, 0, 0))
             field_cut = field[cut_idx[0], :, :]
             low = idx_to_spc_func((0, 0, 0))
             high_idx = [i - 1 for i in field.shape]
@@ -404,7 +410,7 @@ class FDTD(object):
             xlabel, ylabel = 'z', 'y'
             
         elif axis is constants.Y:
-            cut_idx = idx_to_spc_func((0, cut, 0))
+            cut_idx = spc_to_idx_func((0, cut, 0))
             field_cut = field[:, cut_idx[1], :]
             low = idx_to_spc_func((0, 0, 0))
             high_idx = [i - 1 for i in field.shape]
@@ -413,7 +419,7 @@ class FDTD(object):
             xlabel, ylabel= 'z', 'x'
             
         elif axis is constants.Z:
-            cut_idx = idx_to_spc_func((0, 0, cut))
+            cut_idx = spc_to_idx_func((0, 0, cut))
             field_cut = field[:, :, cut_idx[2]]
             low = idx_to_spc_func((0, 0, 0))
             high_idx = [i - 1 for i in field.shape]
