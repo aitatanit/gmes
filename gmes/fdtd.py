@@ -374,11 +374,11 @@ class FDTD(object):
         end_idy = [i + 1 for i in self.space.space_to_ey_index(end)]
         
         if end_idy[0] - start_idy[0] > 1:
-            z_data = self.ey[start_idy[0]:end_idy[0], start_idy[1], start_idy[2]]
+            y_data = self.ey[start_idy[0]:end_idy[0], start_idy[1], start_idy[2]]
         elif end_idy[1] - start_idy[1] > 1:
-            z_data = self.ey[start_idy[0], start_idy[1]:end_idy[1], start_idy[2]]
+            y_data = self.ey[start_idy[0], start_idy[1]:end_idy[1], start_idy[2]]
         elif end_idy[2] - start_idy[2] > 1:
-            z_data = self.ey[start_idy[0], start_idy[1], start_idy[2]:end_idy[2]]
+            y_data = self.ey[start_idy[0], start_idy[1], start_idy[2]:end_idy[2]]
 
         start2 = self.space.ey_index_to_space(start_idy)
         end2 = self.space.ey_index_to_space(end_idy)
@@ -398,12 +398,12 @@ class FDTD(object):
                     pass
                 break
         
-        y_data = arange(start2[i], end2[i], step)
+        x_data = arange(start2[i], end2[i], step)
         
-        if len(y_data) > len(z_data):
-            y_data = y_data[:-1]
+        if len(x_data) > len(y_data):
+            x_data = x_data[:-1]
             
-        showcase = ShowLine(y_data, z_data, y_range, self.time_step, xlabel, ylabel, title, msecs, self.fig_id)
+        showcase = ShowLine(x_data, y_data, y_range, self.time_step, xlabel, ylabel, title, msecs, self.fig_id)
         self.fig_id += 1
         showcase.start()
         
@@ -415,11 +415,11 @@ class FDTD(object):
         end_idz = [i + 1 for i in self.space.space_to_ez_index(end)]
         
         if end_idz[0] - start_idz[0] > 1:
-            x_data = self.ez[start_idz[0]:end_idz[0], start_idz[1], start_idz[2]]
+            y_data = self.ez[start_idz[0]:end_idz[0], start_idz[1], start_idz[2]]
         elif end_idz[1] - start_idz[1] > 1:
-            x_data = self.ez[start_idz[0], start_idz[1]:end_idz[1], start_idz[2]]
+            y_data = self.ez[start_idz[0], start_idz[1]:end_idz[1], start_idz[2]]
         elif end_idz[2] - start_idz[2] > 1:
-            x_data = self.ez[start_idz[0], start_idz[1], start_idz[2]:end_idz[2]]
+            y_data = self.ez[start_idz[0], start_idz[1], start_idz[2]:end_idz[2]]
 
         start2 = self.space.ez_index_to_space(start_idz)
         end2 = self.space.ez_index_to_space(end_idz)
@@ -439,12 +439,12 @@ class FDTD(object):
                     pass
                 break
         
-        z_data = arange(start2[i], end2[i], step)
+        x_data = arange(start2[i], end2[i], step)
         
-        if len(z_data) > len(x_data):
-            z_data = z_data[:-1]
+        if len(x_data) > len(y_data):
+            x_data = x_data[:-1]
             
-        showcase = ShowLine(z_data, x_data, y_range, self.time_step, xlabel, ylabel, title, msecs, self.fig_id)
+        showcase = ShowLine(x_data, y_data, y_range, self.time_step, xlabel, ylabel, title, msecs, self.fig_id)
         self.fig_id += 1
         showcase.start()
         
@@ -497,11 +497,11 @@ class FDTD(object):
         end_idy = [i + 1 for i in self.space.space_to_hy_index(end)]
         
         if end_idy[0] - start_idy[0] > 1:
-            z_data = self.hy[start_idy[0]:end_idy[0], start_idy[1], start_idy[2]]
+            y_data = self.hy[start_idy[0]:end_idy[0], start_idy[1], start_idy[2]]
         elif end_idy[1] - start_idy[1] > 1:
-            z_data = self.hy[start_idy[0], start_idy[1]:end_idy[1], start_idy[2]]
+            y_data = self.hy[start_idy[0], start_idy[1]:end_idy[1], start_idy[2]]
         elif end_idy[2] - start_idy[2] > 1:
-            z_data = self.hy[start_idy[0], start_idy[1], start_idy[2]:end_idy[2]]
+            y_data = self.hy[start_idy[0], start_idy[1], start_idy[2]:end_idy[2]]
 
         start2 = self.space.hy_index_to_space(start_idy)
         end2 = self.space.hy_index_to_space(end_idy)
@@ -520,15 +520,15 @@ class FDTD(object):
                 else:
                     pass
                 break
+
+        x_data = arange(start2[i], end2[i], step)
         
-        y_data = arange(start2[i], end2[i], step)
-        
-        if len(y_data) > len(z_data):
-            y_data = y_data[:-1]
+        if len(x_data) > len(y_data):
+            x_data = x_data[:-1]
             
-        showcase = ShowLine(y_data, z_data, y_range, self.time_step, xlabel, ylabel, title, msecs, self.fig_id)
+        showcase = ShowLine(x_data, y_data, y_range, self.time_step, xlabel, ylabel, title, msecs, self.fig_id)
         self.fig_id += 1
-        showcase.start()
+        showcase.start()        
         
     def show_line_hz(self, start, end, y_range=(-1,1), msecs=2500):
         title = 'Hz field'
@@ -538,11 +538,11 @@ class FDTD(object):
         end_idz = [i + 1 for i in self.space.space_to_hz_index(end)]
         
         if end_idz[0] - start_idz[0] > 1:
-            x_data = self.hz[start_idz[0]:end_idz[0], start_idz[1], start_idz[2]]
+            y_data = self.hz[start_idz[0]:end_idz[0], start_idz[1], start_idz[2]]
         elif end_idz[1] - start_idz[1] > 1:
-            x_data = self.hz[start_idz[0], start_idz[1]:end_idz[1], start_idz[2]]
+            y_data = self.hz[start_idz[0], start_idz[1]:end_idz[1], start_idz[2]]
         elif end_idz[2] - start_idz[2] > 1:
-            x_data = self.hz[start_idz[0], start_idz[1], start_idz[2]:end_idz[2]]
+            y_data = self.hz[start_idz[0], start_idz[1], start_idz[2]:end_idz[2]]
 
         start2 = self.space.hz_index_to_space(start_idz)
         end2 = self.space.hz_index_to_space(end_idz)
@@ -562,14 +562,14 @@ class FDTD(object):
                     pass
                 break
         
-        z_data = arange(start2[i], end2[i], step)
+        x_data = arange(start2[i], end2[i], step)
         
-        if len(z_data) > len(x_data):
-            z_data = z_data[:-1]
+        if len(x_data) > len(y_data):
+            x_data = x_data[:-1]
             
-        showcase = ShowLine(z_data, x_data, y_range, self.time_step, xlabel, ylabel, title, msecs, self.fig_id)
+        showcase = ShowLine(x_data, y_data, y_range, self.time_step, xlabel, ylabel, title, msecs, self.fig_id)
         self.fig_id += 1
-        showcase.start()            
+        showcase.start()          
         
     def _show(self, component, axis, cut, amp_range, msecs, title):
         """A Wrapper method of show.ShowPlane.
