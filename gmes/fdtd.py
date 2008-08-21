@@ -287,9 +287,6 @@ class FDTD(object):
         threads.append(Thread(target=self.update_ex))
         threads.append(Thread(target=self.update_ey))
         threads.append(Thread(target=self.update_ez))
-        threads.append(Thread(target=self.write_hx))
-        threads.append(Thread(target=self.write_hy))
-        threads.append(Thread(target=self.write_hz))
                     
         for thread in threads:
             thread.start()
@@ -304,9 +301,6 @@ class FDTD(object):
         threads.append(Thread(target=self.update_hx))
         threads.append(Thread(target=self.update_hy))
         threads.append(Thread(target=self.update_hz))
-        threads.append(Thread(target=self.write_ex))
-        threads.append(Thread(target=self.write_ey))
-        threads.append(Thread(target=self.write_ez))
                 
         for thread in threads:
             thread.start()
