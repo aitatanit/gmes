@@ -38,8 +38,11 @@ def acquire_ez_vals(fdtd, prob_ez_idxs, mode, stepnum_for_tst = None):
 
     #fdtd.show_ez(constants.Z(), 0)
 
-    print "-- The Ez index of the position of source:", tuple(fdtd.space.space_to_ez_index(fdtd.src_list[0].pos))
-    print
+    try:
+	print "-- The Ez index of the position of source:", tuple(fdtd.space.space_to_ez_index(fdtd.src_list[0].pos))
+	print
+    except IndexError:
+	pass
 
     print "-- The space size:", tuple([int(item) for item in fdtd.space.half_size * 2])
     print
