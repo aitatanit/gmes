@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 # file: pmltest2d01.py
 # author: Huioon Kim
-# last modified: 2008.08.25
 
 """Perform a CPML and UPML test.
 
