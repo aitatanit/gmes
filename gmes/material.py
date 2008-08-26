@@ -1,16 +1,9 @@
 #!/usr/bin/env python
 
 from math import sqrt, exp
-from numpy.core import array, inf
+from numpy import array, inf
 
-from pointwise_material import DummyEx, DummyEy, DummyEz
-from pointwise_material import DummyHx, DummyHy, DummyHz
-from pointwise_material import DielectricEx, DielectricEy, DielectricEz
-from pointwise_material import DielectricHx, DielectricHy, DielectricHz
-from pointwise_material import UPMLEx, UPMLEy, UPMLEz
-from pointwise_material import UPMLHx, UPMLHy, UPMLHz
-from pointwise_material import CPMLEx, CPMLEy, CPMLEz
-from pointwise_material import CPMLHx, CPMLHy, CPMLHz
+from pointwise_material import *
 
 from constants import Z0, epsilon0
 
