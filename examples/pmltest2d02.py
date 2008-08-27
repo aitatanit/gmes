@@ -35,14 +35,14 @@ probe_ez_idx3_x = -probe_ez_idx1_x # X component value of Ez index to probe at l
 probe_ez_idx3_y = -probe_ez_idx1_y # Y component value of Ez index to probe at lower corner of test space
 
 tst_probe_ez_idx1 = tst_space.space_to_ez_index( \
-	(probe_ez_idx1_x, probe_ez_idx1_y, 0) \
-	) # Ez index to probe in test space (upper corner of test space)
+        (probe_ez_idx1_x, probe_ez_idx1_y, 0) \
+        ) # Ez index to probe in test space (upper corner of test space)
 tst_probe_ez_idx2 = tst_space.space_to_ez_index( \
-	(probe_ez_idx2_x, probe_ez_idx2_y, 0) \
-	) # Ez index to probe in test space (right edge of test space)
+        (probe_ez_idx2_x, probe_ez_idx2_y, 0) \
+        ) # Ez index to probe in test space (right edge of test space)
 tst_probe_ez_idx3 = tst_space.space_to_ez_index(( \
-	probe_ez_idx3_x, probe_ez_idx3_y, 0) \
-	) # Ez index to probe in test space (lower corner of test space)
+        probe_ez_idx3_x, probe_ez_idx3_y, 0) \
+        ) # Ez index to probe in test space (lower corner of test space)
 
 tst_prob_ez_idxs = [tst_probe_ez_idx1, tst_probe_ez_idx2, tst_probe_ez_idx3]
 

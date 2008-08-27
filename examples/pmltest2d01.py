@@ -38,27 +38,27 @@ def acquire_ez_vals(fdtd, prob_ez_idxs, mode, stepnum_for_tst = None):
     #fdtd.show_ez(constants.Z(), 0)
 
     try:
-	print "-- The Ez index of the position of source:", tuple(fdtd.space.space_to_ez_index(fdtd.src_list[0].pos))
-	print
+        print "-- The Ez index of the position of source:", tuple(fdtd.space.space_to_ez_index(fdtd.src_list[0].pos))
+        print
     except IndexError:
-	pass
+        pass
 
     print "-- The space size:", tuple([int(item) for item in fdtd.space.half_size * 2])
     print
 
     if mode == AcqMode.REFERENCE:
         cent_rmost_ez_idx = fdtd.space.space_to_ez_index( \
-				(0, ((fdtd.space.half_size * 2)[1] / 2) - 0.1, 0) \
-				) # The Ez index 0.1 space unit away from center-rightmost of the space
-	
-	print "-- The Ez index 0.1 space unit away from center-rightmost of the space:", cent_rmost_ez_idx
-	print
+                (0, ((fdtd.space.half_size * 2)[1] / 2) - 0.1, 0) \
+                ) # The Ez index 0.1 space unit away from center-rightmost of the space
+
+        print "-- The Ez index 0.1 space unit away from center-rightmost of the space:", cent_rmost_ez_idx
+        print
 
     prob_ez_vals = []
 
     for idx in prob_ez_idxs:
         print "-- The Ez index to probe:", idx
-	prob_ez_vals.append([])
+        prob_ez_vals.append([])
     print
 
     print "-- FDTD update start..."
@@ -68,27 +68,27 @@ def acquire_ez_vals(fdtd, prob_ez_idxs, mode, stepnum_for_tst = None):
 
     if mode == AcqMode.REFERENCE:
         while 1:
-	    fdtd.step()
+            fdtd.step()
 
-	    for i, idx in zip(range(len(prob_ez_idxs)), prob_ez_idxs):
-	        prob_ez_vals[i].append(fdtd.ez[idx])
-	
-	    print "\r[%s]" % int(fdtd.time_step.n),
-	    stdout.flush()
+            for i, idx in zip(range(len(prob_ez_idxs)), prob_ez_idxs):
+                prob_ez_vals[i].append(fdtd.ez[idx])
 
-	    if fdtd.ez[cent_rmost_ez_idx] != 0.0:
-	        break
+            print "\r[%s]" % int(fdtd.time_step.n),
+            stdout.flush()
+
+            if fdtd.ez[cent_rmost_ez_idx] != 0.0:
+                break
 
         print "\n"
     elif mode == AcqMode.TEST:
         for x in range(stepnum_for_tst):
-	    fdtd.step()
+            fdtd.step()
 
-	    for i, idx in zip(range(len(prob_ez_idxs)), prob_ez_idxs):
-	        prob_ez_vals[i].append(fdtd.ez[idx])
-	
-	    print "\r[%s]" % int(fdtd.time_step.n),
-	    stdout.flush()
+            for i, idx in zip(range(len(prob_ez_idxs)), prob_ez_idxs):
+                prob_ez_vals[i].append(fdtd.ez[idx])
+
+            print "\r[%s]" % int(fdtd.time_step.n),
+            stdout.flush()
 
         print "\n"
 
@@ -169,14 +169,14 @@ if __name__ == "__main__":
         print
 
         ref_probe_ez_idx1 = ref_space.space_to_ez_index( \
-    				    (probe_ez_idx1_x, probe_ez_idx1_y, 0) \
-				    ) # Ez index to probe in reference space (upper corner of test space)
+                (probe_ez_idx1_x, probe_ez_idx1_y, 0) \
+                ) # Ez index to probe in reference space (upper corner of test space)
         ref_probe_ez_idx2 = ref_space.space_to_ez_index( \
-    				    (probe_ez_idx2_x, probe_ez_idx2_y, 0) \
-				    ) # Ez index to probe in reference space (right edge of test space)
+                (probe_ez_idx2_x, probe_ez_idx2_y, 0) \
+                ) # Ez index to probe in reference space (right edge of test space)
         ref_probe_ez_idx3 = ref_space.space_to_ez_index(( \
-    				    probe_ez_idx3_x, probe_ez_idx3_y, 0) \
-				    ) # Ez index to probe in reference space (lower corner of test space)
+                probe_ez_idx3_x, probe_ez_idx3_y, 0) \
+                ) # Ez index to probe in reference space (lower corner of test space)
 
         ref_prob_ez_idxs = [ref_probe_ez_idx1, ref_probe_ez_idx2, ref_probe_ez_idx3]
 
@@ -199,14 +199,14 @@ if __name__ == "__main__":
     print
 
     tst_probe_ez_idx1 = tst_space.space_to_ez_index( \
-    				(probe_ez_idx1_x, probe_ez_idx1_y, 0) \
-				) # Ez index to probe in test space (upper corner of test space)
+            (probe_ez_idx1_x, probe_ez_idx1_y, 0) \
+            ) # Ez index to probe in test space (upper corner of test space)
     tst_probe_ez_idx2 = tst_space.space_to_ez_index( \
-    				(probe_ez_idx2_x, probe_ez_idx2_y, 0) \
-				) # Ez index to probe in test space (right edge of test space)
+            (probe_ez_idx2_x, probe_ez_idx2_y, 0) \
+            ) # Ez index to probe in test space (right edge of test space)
     tst_probe_ez_idx3 = tst_space.space_to_ez_index(( \
-    				probe_ez_idx3_x, probe_ez_idx3_y, 0) \
-				) # Ez index to probe in test space (lower corner of test space)
+            probe_ez_idx3_x, probe_ez_idx3_y, 0) \
+            ) # Ez index to probe in test space (lower corner of test space)
 
     tst_prob_ez_idxs = [tst_probe_ez_idx1, tst_probe_ez_idx2, tst_probe_ez_idx3]
 
@@ -256,7 +256,7 @@ if __name__ == "__main__":
         print
         print "tst_prob_ez_vals:", array(tst_prob_ez_vals)
         print "!!!!!!!!!!!END OF DEBUG MESSAGES!!!!!!!!!!!"
-	print
+        print
     #######DEBUG MODE MESSAGE BLOCK#######
 
     print "Now, the result graph is drawn..."

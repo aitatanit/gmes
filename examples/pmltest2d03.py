@@ -21,27 +21,27 @@ from pmltest2d01 import *
 
 class LowFreqSrc:
     """Generate low frequency source.
-    
+
     __init__: constructor
     update: update Ez value according to time sequence.
     """
 
     def __init__(self, idx):
-	"""Assign initial values."""
+        """Assign initial values."""
 
-	self.idx = idx
-	self.tw = 0.00795349
-	self.t0 = 4 * self.tw
-	self.t = 0.0
-	self.epsilon = 1
-	
+        self.idx = idx
+        self.tw = 0.00795349
+        self.t0 = 4 * self.tw
+        self.t = 0.0
+        self.epsilon = 1
+
     def update(self, ez, hy, hx, dt, dx, dy):
-	"""Update Ez values according to time sequence."""
+        """Update Ez values according to time sequence."""
 
-	i, j, k = self.idx
-	j_src = -2 * (self.t - self.t0) / self.tw * exp(-((self.t - self.t0) / self.tw) ** 2)
-	ez[self.idx] += dt / self.epsilon * ((hy[i+1,j,k+1] - hy[i,j,k+1]) / dx - (hx[i,j+1,k+1] - hx[i,j,k+1]) / dy - j_src)
-	self.t += dt
+        i, j, k = self.idx
+        j_src = -2 * (self.t - self.t0) / self.tw * exp(-((self.t - self.t0) / self.tw) ** 2)
+        ez[self.idx] += dt / self.epsilon * ((hy[i+1,j,k+1] - hy[i,j,k+1]) / dx - (hx[i,j+1,k+1] - hx[i,j,k+1]) / dy - j_src)
+        self.t += dt
 
 def create_fdtd(space, geoms):
     """Create and return a new FDTD object which have low frequency source using passing parameters."""
@@ -97,14 +97,14 @@ if __name__ == "__main__":
         print
 
         ref_probe_ez_idx1 = ref_space.space_to_ez_index( \
-    				    (probe_ez_idx1_x, probe_ez_idx1_y, 0) \
-				    ) # Ez index to probe in reference space (upper corner of test space)
+                (probe_ez_idx1_x, probe_ez_idx1_y, 0) \
+                ) # Ez index to probe in reference space (upper corner of test space)
         ref_probe_ez_idx2 = ref_space.space_to_ez_index( \
-    				    (probe_ez_idx2_x, probe_ez_idx2_y, 0) \
-				    ) # Ez index to probe in reference space (right edge of test space)
+                (probe_ez_idx2_x, probe_ez_idx2_y, 0) \
+                ) # Ez index to probe in reference space (right edge of test space)
         ref_probe_ez_idx3 = ref_space.space_to_ez_index(( \
-    				    probe_ez_idx3_x, probe_ez_idx3_y, 0) \
-				    ) # Ez index to probe in reference space (lower corner of test space)
+                probe_ez_idx3_x, probe_ez_idx3_y, 0) \
+                ) # Ez index to probe in reference space (lower corner of test space)
 
         ref_prob_ez_idxs = [ref_probe_ez_idx1, ref_probe_ez_idx2, ref_probe_ez_idx3]
 
@@ -127,14 +127,14 @@ if __name__ == "__main__":
     print
 
     tst_probe_ez_idx1 = tst_space.space_to_ez_index( \
-    				(probe_ez_idx1_x, probe_ez_idx1_y, 0) \
-				) # Ez index to probe in test space (upper corner of test space)
+            (probe_ez_idx1_x, probe_ez_idx1_y, 0) \
+            ) # Ez index to probe in test space (upper corner of test space)
     tst_probe_ez_idx2 = tst_space.space_to_ez_index( \
-    				(probe_ez_idx2_x, probe_ez_idx2_y, 0) \
-				) # Ez index to probe in test space (right edge of test space)
+            (probe_ez_idx2_x, probe_ez_idx2_y, 0) \
+            ) # Ez index to probe in test space (right edge of test space)
     tst_probe_ez_idx3 = tst_space.space_to_ez_index(( \
-    				probe_ez_idx3_x, probe_ez_idx3_y, 0) \
-				) # Ez index to probe in test space (lower corner of test space)
+            probe_ez_idx3_x, probe_ez_idx3_y, 0) \
+            ) # Ez index to probe in test space (lower corner of test space)
 
     tst_prob_ez_idxs = [tst_probe_ez_idx1, tst_probe_ez_idx2, tst_probe_ez_idx3]
 
@@ -184,7 +184,7 @@ if __name__ == "__main__":
         print
         print "tst_prob_ez_vals:", array(tst_prob_ez_vals)
         print "!!!!!!!!!!!END OF DEBUG MESSAGES!!!!!!!!!!!"
-	print
+        print
     #######DEBUG MODE MESSAGE BLOCK#######
 
     print "Now, the result graph is drawn..."
