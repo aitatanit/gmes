@@ -729,10 +729,10 @@ class FDTD(object):
         
 
 class TExFDTD(FDTD):
-    """Two dimensional fdtd with transverse-electric mode with respect to x.
+    """Two dimensional fdtd which has transverse-electric mode with respect to x.
     
-    Assume that the structure and incident wave is uniform in the x-direction.
-    Just use Ey, Ez, and Hx field components the transverse-electric mode with respect to z.
+    Assume that the structure and incident wave are uniform in the x direction.
+    TExFDTD updates only Ey, Ez, and Hx field components.
     """
     
     def init_material(self):
@@ -795,12 +795,18 @@ class TExFDTD(FDTD):
         
         
 class TEyFDTD(FDTD):
-    """Two dimensional fdtd which transverse-electric with respect to y.
+    """Two dimensional fdtd which has transverse-electric mode with respect to y.
     
-    TEyFDTD updates only Ez, Ex, and Hy field.
+    Assume that the structure and incident wave are uniform in the y direction.
+    TEyFDTD updates only Ez, Ex, and Hy field components.
     """
     
     def init_material(self):
+	"""Override FDTD.init_material().
+        
+        Initialize pointwise_material arrays only for Ez, Ex, and Hy field components.
+        """
+
         threads = []
         threads.append(Thread(target=self.init_material_ez))
         threads.append(Thread(target=self.init_material_ex))
@@ -813,6 +819,11 @@ class TEyFDTD(FDTD):
             thread.join()
     
     def init_source(self):
+	"""Override FDTD.init_source().
+        
+        Initialize pointwise_source in pointwise_material arrays only for Ez, Ex, and Hy field components.
+        """
+
         threads = []
         threads.append(Thread(target=self.init_source_ez))
         threads.append(Thread(target=self.init_source_ex))
@@ -825,6 +836,11 @@ class TEyFDTD(FDTD):
             thread.join()
             
     def step(self):        
+	"""Override FDTD.step().
+        
+        Updates only Ez, Ex, and Hy field components.
+        """
+
         threads = []
         threads.append(Thread(target=self.update_ez))
         threads.append(Thread(target=self.update_ex))
@@ -845,11 +861,18 @@ class TEyFDTD(FDTD):
                 
         
 class TEzFDTD(FDTD):
-    """
-    two dimensional fdtd which transverse-electric with respect to z
+    """Two dimensional fdtd which has transverse-electric mode with respect to z
+
+    Assume that the structure and incident wave are uniform in the z direction.
+    TEzFDTD updates only Ex, Ey, and Hz field components.
     """
     
     def init_material(self):
+	"""Override FDTD.init_material().
+        
+        Initialize pointwise_material arrays only for Ex, Ey, and Hz field components.
+        """
+
         threads = []
         threads.append(Thread(target=self.init_material_ex))
         threads.append(Thread(target=self.init_material_ey))
@@ -862,6 +885,11 @@ class TEzFDTD(FDTD):
             thread.join()
     
     def init_source(self):
+	"""Override FDTD.init_source().
+        
+        Initialize pointwise_source in pointwise_material arrays only for Ex, Ey, and Hz field components.
+        """
+
         threads = []
         threads.append(Thread(target=self.init_source_ex))
         threads.append(Thread(target=self.init_source_ey))
@@ -874,6 +902,11 @@ class TEzFDTD(FDTD):
             thread.join()
             
     def step(self):
+	"""Override FDTD.step().
+        
+        Updates only Ex, Ey, and Hz field components.
+        """
+
         threads = []
         threads.append(Thread(target=self.update_ex))
         threads.append(Thread(target=self.update_ey))
@@ -894,11 +927,18 @@ class TEzFDTD(FDTD):
         
         
 class TMxFDTD(FDTD):
-    """
-    two dimensional fdtd which transverse-magnetic with respect to x
+    """Two dimensional fdtd which has transverse-magnetic mode with respect to x.
+
+    Assume that the structure and incident wave are uniform in the x direction.
+    TMxFDTD updates only Hy, Hz, and Ex field components.
     """
     
     def init_material(self):
+	"""Override FDTD.init_material().
+        
+        Initialize pointwise_material arrays only for Hy, Hz, and Ex field components.
+        """
+
         threads = []
         threads.append(Thread(target=self.init_material_hy))
         threads.append(Thread(target=self.init_material_hz))
@@ -911,6 +951,11 @@ class TMxFDTD(FDTD):
             thread.join()
     
     def init_source(self):
+	"""Override FDTD.init_source().
+        
+        Initialize pointwise_source in pointwise_material arrays only for Hy, Hz, and Ex field components.
+        """
+
         threads = []
         threads.append(Thread(target=self.init_source_hy))
         threads.append(Thread(target=self.init_source_hz))
@@ -923,6 +968,11 @@ class TMxFDTD(FDTD):
             thread.join()
             
     def step(self):
+	"""Override FDTD.step().
+        
+        Updates only Hy, Hz, and Ex field components.
+        """
+
         self.update_ex()
 
         self.time_step.n += .5
@@ -943,11 +993,18 @@ class TMxFDTD(FDTD):
 
 
 class TMyFDTD(FDTD):
-    """
-    two dimensional fdtd which transverse-magnetic with respect to y
+    """Two dimensional fdtd which has transverse-magnetic mode with respect to y
+
+    Assume that the structure and incident wave are uniform in the y direction.
+    TMyFDTD updates only Hz, Hx, and Ey field components.
     """
     
     def init_material(self):
+	"""Override FDTD.init_material().
+        
+        Initialize pointwise_material arrays only for Hz, Hx, and Ey field components.
+        """
+
         threads = []
         threads.append(Thread(target=self.init_material_hz))
         threads.append(Thread(target=self.init_material_hx))
@@ -960,6 +1017,11 @@ class TMyFDTD(FDTD):
             thread.join()
     
     def init_source(self):
+	"""Override FDTD.init_source().
+        
+        Initialize pointwise_source in pointwise_material arrays only for Hz, Hx, and Ey field components.
+        """
+
         threads = []
         threads.append(Thread(target=self.init_source_hz))
         threads.append(Thread(target=self.init_source_hx))
@@ -972,6 +1034,11 @@ class TMyFDTD(FDTD):
             thread.join()
             
     def step(self):
+	"""Override FDTD.step().
+        
+        Updates only Hz, Hx, and Ey field components.
+        """
+
         self.update_ey()
         
         self.time_step.n += .5
@@ -992,11 +1059,18 @@ class TMyFDTD(FDTD):
         
                 
 class TMzFDTD(FDTD):
-    """
-    two dimensional fdtd which transverse-magnetic with respect to z
+    """Two dimensional fdtd which has transverse-magnetic mode with respect to z
+    
+    Assume that the structure and incident wave are uniform in the z direction.
+    TMzFDTD updates only Hx, Hy, and Ez field components.
     """
     
     def init_material(self):
+	"""Override FDTD.init_material().
+        
+        Initialize pointwise_material arrays only for Hx, Hy, and Ez field components.
+        """
+
         threads = []
         threads.append(Thread(target=self.init_material_hx))
         threads.append(Thread(target=self.init_material_hy))
@@ -1009,6 +1083,11 @@ class TMzFDTD(FDTD):
             thread.join()
     
     def init_source(self):
+	"""Override FDTD.init_source().
+        
+        Initialize pointwise_source in pointwise_material arrays only for Hx, Hy, and Ez field components.
+        """
+
         threads = []
         threads.append(Thread(target=self.init_source_hx))
         threads.append(Thread(target=self.init_source_hy))
@@ -1021,6 +1100,11 @@ class TMzFDTD(FDTD):
             thread.join()
             
     def step(self):
+	"""Override FDTD.step().
+        
+        Updates only Hx, Hy, and Ez field components.
+        """
+
         self.update_ez()
 
         self.time_step.n += .5
@@ -1041,11 +1125,18 @@ class TMzFDTD(FDTD):
 
 
 class TEMxFDTD(FDTD):
-    """
-    y-polarized and x-directed one dimensional fdtd class
+    """y-polarized and x-directed one dimensional fdtd class
+
+    Assume that the structure and incident wave are uniform in transverse direction.
+    TEMxFDTD updates only Ey and Hz field components.
     """
     
     def init_material(self):
+	"""Override FDTD.init_material().
+        
+        Initialize pointwise_material arrays only for Ey and Hz field components.
+        """
+
         threads = []
         threads.append(Thread(target=self.init_material_ey))
         threads.append(Thread(target=self.init_material_hz))
@@ -1057,6 +1148,11 @@ class TEMxFDTD(FDTD):
             thread.join()
 
     def init_source(self):
+	"""Override FDTD.init_source().
+        
+        Initialize pointwise_source in pointwise_material arrays only for Ey and Hz field components.
+        """
+
         threads = []
         threads.append(Thread(target=self.init_source_ey))
         threads.append(Thread(target=self.init_source_hz))
@@ -1068,6 +1164,11 @@ class TEMxFDTD(FDTD):
             thread.join()
 
     def step(self):
+	"""Override FDTD.step().
+        
+        Update only Ey and Hz field components.
+        """
+
         self.update_ey()
 
         self.time_step.n += 5
@@ -1080,11 +1181,18 @@ class TEMxFDTD(FDTD):
                 
         
 class TEMyFDTD(FDTD):
-    """
-    z-polarized and y-directed one dimensional fdtd class
+    """z-polarized and y-directed one dimensional fdtd class
+
+    Assume that the structure and incident wave are uniform in transverse direction.
+    TEMyFDTD updates only Ez and Hx field components.
     """
     
     def init_material(self):
+	"""Override FDTD.init_material().
+        
+        Initialize pointwise_material arrays only for Ez and Hx field components.
+        """
+
         threads = []
         threads.append(Thread(target=self.init_material_ez))
         threads.append(Thread(target=self.init_material_hx))
@@ -1096,6 +1204,11 @@ class TEMyFDTD(FDTD):
             thread.join()
 
     def init_source(self):
+	"""Override FDTD.init_source().
+        
+        Initialize pointwise_source in pointwise_material arrays only for Ez and Hx field components.
+        """
+
         threads = []
         threads.append(Thread(target=self.init_source_ez))
         threads.append(Thread(target=self.init_source_hx))
@@ -1107,6 +1220,11 @@ class TEMyFDTD(FDTD):
             thread.join()
 
     def step(self):
+	"""Override FDTD.step().
+        
+        Update only Ez and Hx field components.
+        """
+
         self.update_ez()
 
         self.time_step.n += 5
@@ -1119,11 +1237,18 @@ class TEMyFDTD(FDTD):
 
         
 class TEMzFDTD(FDTD):
-    """
-    x-polarized and z-directed one dimensional fdtd class
+    """x-polarized and z-directed one dimensional fdtd class
+    
+    Assume that the structure and incident wave are uniform in transverse direction.
+    TEMzFDTD updates only Ex and Hy field components.
     """
     
     def init_material(self):
+	"""Override FDTD.init_material().
+        
+        Initialize pointwise_material arrays only for Ex and Hy field components.
+        """
+
         threads = []
         threads.append(Thread(target=self.init_material_ex))
         threads.append(Thread(target=self.init_material_hy))
@@ -1135,6 +1260,11 @@ class TEMzFDTD(FDTD):
             thread.join()
 
     def init_source(self):
+	"""Override FDTD.init_source().
+        
+        Initialize pointwise_source in pointwise_material arrays only for Ex and Hy field components.
+        """
+
         threads = []
         threads.append(Thread(target=self.init_source_ex))
         threads.append(Thread(target=self.init_source_hy))
@@ -1146,6 +1276,11 @@ class TEMzFDTD(FDTD):
             thread.join()
 
     def step(self):
+	"""Override FDTD.step().
+        
+        Update only Ex and Hy field components.
+        """
+
         self.update_ex()
 
         self.time_step.n += 5
