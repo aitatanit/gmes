@@ -15,7 +15,7 @@ from pmltest2d01 import *
 from pmltest2d03 import *
 
 # general settings
-acquisition = True
+acquisition = False
 ref_save_fname = 'ref_20080826.dat'
 tst_save_fname = 'tst_20080827.dat'
 
