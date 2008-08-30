@@ -15,7 +15,7 @@ import sys
 sys.path.append('../')
 
 from gmes import *
-from numpy import array, exp
+from numpy import array, exp, arange
 from sys import stdout
 from pmltest2d01 import *
 
@@ -30,7 +30,7 @@ class LowFreqSrc:
         """Assign initial values."""
 
         self.idx = idx
-        self.tw = 0.00795349
+        self.tw = 0.3976745
         self.t0 = 4 * self.tw
         self.t = 0.0
         self.epsilon = 1
@@ -39,7 +39,7 @@ class LowFreqSrc:
         """Update Ez values according to time sequence."""
 
         i, j, k = self.idx
-        j_src = -2 * (self.t - self.t0) / self.tw * exp(-((self.t - self.t0) / self.tw) ** 2)
+        j_src = -2 * ((self.t - self.t0) / self.tw) * exp(-((self.t - self.t0) / self.tw) ** 2)
         ez[self.idx] += dt / self.epsilon * ((hy[i+1,j,k+1] - hy[i,j,k+1]) / dx - (hx[i,j+1,k+1] - hx[i,j,k+1]) / dy - j_src)
         self.t += dt
 
@@ -55,30 +55,34 @@ def create_fdtd(space, geoms):
 if __name__ == "__main__":
     # general settings
     debug_mode = False
-    ref_acq = True
-    save_fname = 'ref_20080826.dat'
+    ref_acq = False
+    save_fname = 'ref_20080830.dat'
 
     # common values #1
     res = 20
     def_mat = geometric.DefaultMaterial(material = material.Dielectric())
 
     # reference settings
-    if ref_acq == True:
-        ref_size = (50, 50, 0)
-        ref_space = geometric.Cartesian(size = ref_size, resolution = res, courant_ratio = 0.99)
-        ref_geoms = [def_mat]
+    ref_size = (50, 50, 0)
+    ref_space = geometric.Cartesian(size = ref_size, resolution = res, courant_ratio = 0.99)
+    ref_geoms = [def_mat]
 
     # test settings
     tst_size = (2, 2, 0)
     tst_space = geometric.Cartesian(size = tst_size, resolution = res, courant_ratio = 0.99)
 
     pml_thickness = 0.5
-    cpml_boundary = geometric.Boundary(material = material.CPML(), thickness = pml_thickness, size = tst_size)
-    upml_boundary = geometric.Boundary(material = material.UPML(), thickness = pml_thickness, size = tst_size)
 
-    cpml_tst_geoms = [def_mat, cpml_boundary]
-    upml_tst_geoms = [def_mat, upml_boundary]
+    pml_boundaries = [ \
+            geometric.Boundary(material = material.CPML(), thickness = pml_thickness, size = tst_size), \
+            geometric.Boundary(material = material.UPML(), thickness = pml_thickness, size = tst_size) \
+            ]
 
+    tst_geoms_list = []
+
+    for i in range(2):
+        tst_geoms_list.append([def_mat, pml_boundaries[i]])
+    
     # common values #2
     probe_ez_idx1_x = (tst_size[0] / 2) - (pml_thickness + 0.1) # X component value of Ez index to probe at upper corner of test space
     probe_ez_idx1_y = (tst_size[1] / 2) - (pml_thickness + 0.1) # Y component value of Ez index to probe at upper corner of test sapce
@@ -137,33 +141,19 @@ if __name__ == "__main__":
             ) # Ez index to probe in test space (lower corner of test space)
 
     tst_prob_ez_idxs = [tst_probe_ez_idx1, tst_probe_ez_idx2, tst_probe_ez_idx3]
-
-    tst_fdtd = create_fdtd(tst_space, cpml_tst_geoms)
-    print
-
-    #########################TEMPORARY BLOCK#########################
-#    import cPickle
-#
-#    ref_ez_vals1_file = open('ref_ez_vals1.dat')
-#    ref_ez_vals2_file = open('ref_ez_vals2.dat')
-#    ref_ez_vals3_file = open('ref_ez_vals3.dat')
-#
-#    ref_prob_ez_vals1 = cPickle.load(ref_ez_vals1_file)
-#    ref_prob_ez_vals2 = cPickle.load(ref_ez_vals2_file)
-#    ref_prob_ez_vals3 = cPickle.load(ref_ez_vals3_file)
-#
-#    ref_ez_vals1_file.close()
-#    ref_ez_vals2_file.close()
-#    ref_ez_vals3_file.close()
-#
-#    tst_prob_ez_vals = acquire_ez_vals(tst_fdtd, tst_prob_ez_idxs, AcqMode.TEST, len(ref_prob_ez_vals1))
-    #########################TEMPORARY BLOCK#########################
-
+    
     if ref_acq != True:
         ref_prob_ez_vals = load_vals(save_fname)
 
-    tst_prob_ez_vals = acquire_ez_vals(tst_fdtd, tst_prob_ez_idxs, AcqMode.TEST, len(ref_prob_ez_vals[0]))
+    tst_fdtd_list = []
+    tst_prob_ez_vals_list = []
+    
+    for i in range(2):
+        tst_fdtd_list.append(create_fdtd(tst_space, tst_geoms_list[i]))
+        print
 
+        tst_prob_ez_vals_list.append(acquire_ez_vals(tst_fdtd_list[i], tst_prob_ez_idxs, AcqMode.TEST, len(ref_prob_ez_vals[0])))
+    
     print "------------------------------------"
     print "CPML test values acqusition complete"
     print "------------------------------------"
@@ -182,19 +172,30 @@ if __name__ == "__main__":
         print
         print "ref_prob_ez_vals:", array(ref_prob_ez_vals)
         print
-        print "tst_prob_ez_vals:", array(tst_prob_ez_vals)
+        print "tst_prob_ez_vals:", array(tst_prob_ez_vals_list)
         print "!!!!!!!!!!!END OF DEBUG MESSAGES!!!!!!!!!!!"
         print
     #######DEBUG MODE MESSAGE BLOCK#######
 
     print "Now, the result graph is drawn..."
+    
+    plot_vals_list = []
 
-    plot_vals = abs((array(ref_prob_ez_vals[1]) - array(tst_prob_ez_vals[1])) / max(ref_prob_ez_vals[1]))
+    for i in range(3):
+        plot_vals_list.append(abs((array(ref_prob_ez_vals[i]) - array(tst_prob_ez_vals_list[0][i])) / max(ref_prob_ez_vals[i])))
+
+    a = 20 * 10**-3
+    light_speed = 299792458
+    stop = a * ref_space.dt * len(ref_prob_ez_vals[0]) / light_speed
+    step = a * ref_space.dt / light_speed
+    x_axis = 1e9 * arange(0, stop, step)
 
     import pylab
-
-    pylab.plot(plot_vals)
     pylab.title("right edge point")
-    pylab.semilogy(plot_vals)
+    pylab.semilogy(x_axis, plot_vals_list[1])
+    pylab.xlabel('t (ns)')
+    pylab.ylabel('Relative error')
+    pylab.axis([0, 1.21, 1e-7, 1e-2])
+
     pylab.show()
 
