@@ -114,7 +114,6 @@ import pylab
 
 pylab.contour(max_error_list)
 pylab.title('Maximum relative error')
-pylab.xlabel('kappa max')
-pylab.ylabel('alpha max')
+pylab.xlabel(r'$\kappa_\mathrm{max}$')
+pylab.ylabel(r'$\alpha_\mathrm{max}$')
 pylab.show()
-
