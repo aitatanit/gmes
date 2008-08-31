@@ -15,8 +15,8 @@ from pmltest2d01 import *
 from pmltest2d03 import *
 
 # general settings
-acquisition = False
-ref_save_fname = 'ref_20080826.dat'
+acquisition = True
+ref_save_fname = 'ref_20080830.dat'
 tst_save_fname = 'tst_20080827.dat'
 
 # common settings #1
@@ -112,8 +112,9 @@ for item in tst_prob_ez_vals_list:
 
 import pylab
 
-#pylab.plot(max_error_list)
 pylab.contour(max_error_list)
-#pylab.imshow(max_error_list)
+pylab.title('Maximum relative error')
+pylab.xlabel('kappa max')
+pylab.ylabel('alpha max')
 pylab.show()
 
