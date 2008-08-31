@@ -2,22 +2,23 @@
 # file: pmltest2d04.py
 # author: Huioon Kim
 
-"""Perform a CPML and UPML test relating the kappa max value
-with the alpha max value using a low frequency source."""
+"""Perform a CPML and UPML test relating the alpha maximum value
+with the sigma ratio, i.e, sigma maximum divided by sigma optimum value
+using a low frequency source."""
 
 import sys
 sys.path.append('../')
 
 from gmes import *
-from numpy import array, arange
+from numpy import array, arange, log10
 from sys import stdout
 from pmltest2d01 import *
 from pmltest2d03 import *
 
 # general settings
-acquisition = False
+acquisition = True
 ref_save_fname = 'ref_20080830.dat'
-tst_save_fname = 'tst_20080827.dat'
+tst_save_fname = 'tst_20080831_lfs_sm_am.dat' # 'lfs', 'sm', 'am'  mean 'low frequency source', 'sigma max', and 'alpha max', respectively.
 
 # common settings #1
 res = 20
@@ -51,28 +52,30 @@ tst_prob_ez_idxs = [tst_probe_ez_idx1, tst_probe_ez_idx2, tst_probe_ez_idx3]
 
 ref_prob_ez_vals = load_vals(ref_save_fname)
 
+a_max_range = arange(0, 0.21, 0.01)
+s_ratio_range = arange(2.0, 4.1, 0.1)
+
 if acquisition == True:
     tst_prob_ez_vals_list = []
 
     count = 1
-    a_max_list = range(0, 30)
-    k_max_list = range(0, 30)
-
-    for a_max in a_max_list:
+    for a_max in a_max_range:
         temp_list = []
 
-        for k_max in k_max_list:
-            counter_str = "[%s / %s]" % (count, len(a_max_list) * len(k_max_list))
+        for s_ratio in s_ratio_range:
+            counter_str = "[%s / %s]" % (count, len(a_max_range) * len(s_ratio_range))
 
             print "-" * len(counter_str)
             print counter_str
             print "-" * len(counter_str)
             print
 
-            print "-- Generate FDTD with CPML whose alpha max value is %s and kappa max value is %s." % (a_max, k_max)
+            print "-- Generate FDTD with CPML whose alpha max value is %s and sigma max ratio is %s." % (a_max, s_ratio)
             print
 
-            cpml_boundary = geometric.Boundary(material = material.CPML(kappa_max = k_max, alpha_max = a_max), thickness = pml_thickness, size = tst_size)
+            cpml_boundary = geometric.Boundary(material = material.CPML( \
+                    alpha_max = a_max, sigma_max_ratio = s_ratio \
+                    ), thickness = pml_thickness, size = tst_size)
             cpml_tst_geoms = [def_mat, cpml_boundary]
             tst_fdtd = create_fdtd(tst_space, cpml_tst_geoms)
             print
@@ -112,8 +115,11 @@ for item in tst_prob_ez_vals_list:
 
 import pylab
 
-pylab.contour(max_error_list)
+#pylab.contour(max_error_list)
+pylab.imshow(10*log10(array(max_error_list)), origin='lower')
 pylab.title('Maximum relative error')
-pylab.xlabel(r'$\kappa_\mathrm{max}$')
+pylab.xlabel(r'$\sigma_\mathrm{max}$' + '/' + r'$\sigma_\mathrm{opt}$')
 pylab.ylabel(r'$\alpha_\mathrm{max}$')
+pylab.colorbar()
 pylab.show()
+
