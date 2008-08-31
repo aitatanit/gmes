@@ -8,16 +8,35 @@ with the alpha max value using a low frequency source."""
 import sys
 sys.path.append('../')
 
-from gmes import *
-from numpy import array, arange
+from numpy import *
 from sys import stdout
+
+try:
+    import mpi
+    myid = mpi.rank
+    numprocs = mpi.size
+except ImportError:
+    myid = 0
+    numprocs = 1
+
+from gmes import *
+
 from pmltest2d01 import *
 from pmltest2d03 import *
 
 # general settings
-acquisition = False
+acquisition = True
 ref_save_fname = 'ref_20080830.dat'
-tst_save_fname = 'tst_20080827.dat'
+tst_save_fname = 'tst_20080901.dat'
+
+# simulation parameters
+START_ALPHA = 0.
+END_ALPHA = 11.
+DELTA_ALPHA = 1.
+
+START_KAPPA = 1.
+END_KAPPA = 11.
+DELTA_KAPPA = 1.
 
 # common settings #1
 res = 20
@@ -51,69 +70,87 @@ tst_prob_ez_idxs = [tst_probe_ez_idx1, tst_probe_ez_idx2, tst_probe_ez_idx3]
 
 ref_prob_ez_vals = load_vals(ref_save_fname)
 
+def relocate(size_list, collection):
+    accum_size = add.accumulate(size_list)
+    relocated = []
+    
+    for i in range(size_list[0]):
+        for j in range(len(size_list)):
+            if i == size_list[j]:
+                break
+
+            if j == 0:
+                relocated.append(collection[i])
+            else:
+                relocated.append(collection[i + accum_size[j-1]])
+                    
+    return relocated
+
 if acquisition == True:
     tst_prob_ez_vals_list = []
 
     count = 1
-    a_max_list = range(0, 30)
-    k_max_list = range(0, 30)
+    a_max_list = arange(START_ALPHA + DELTA_ALPHA * myid, END_ALPHA, DELTA_ALPHA * numprocs)
+    k_max_list = arange(START_KAPPA, END_KAPPA, DELTA_KAPPA)
 
     for a_max in a_max_list:
         temp_list = []
 
         for k_max in k_max_list:
-            counter_str = "[%s / %s]" % (count, len(a_max_list) * len(k_max_list))
-
-            print "-" * len(counter_str)
-            print counter_str
-            print "-" * len(counter_str)
-            print
-
-            print "-- Generate FDTD with CPML whose alpha max value is %s and kappa max value is %s." % (a_max, k_max)
-            print
+            print 'node %d: [%d / %d]' % (myid, count, len(a_max_list) * len(k_max_list))
 
             cpml_boundary = geometric.Boundary(material = material.CPML(kappa_max = k_max, alpha_max = a_max), thickness = pml_thickness, size = tst_size)
             cpml_tst_geoms = [def_mat, cpml_boundary]
             tst_fdtd = create_fdtd(tst_space, cpml_tst_geoms)
-            print
-
-            print "-- Generation complete."
-            print
-            
-            print "-- Acquire test values."
-            print
-            
             temp_list.append(acquire_ez_vals(tst_fdtd, tst_prob_ez_idxs, AcqMode.TEST, len(ref_prob_ez_vals[0])))
-
-            print "-- Acquisition complete."
-            print
 
             count += 1
 
         tst_prob_ez_vals_list.append(temp_list)
 
-    save_vals(tst_prob_ez_vals_list, tst_save_fname)
+    if numprocs > 0:
+        if myid == 0:
+            print "Collecting data from nodes."
+        size_list = mpi.gather([len(tst_prob_ez_vals_list)])
+        collection = mpi.gather(tst_prob_ez_vals_list)
+    
+        if myid == 0:
+            relocated_collection = relocate(size_list, collection)
+            save_vals(relocated_collection, tst_save_fname)
+    else:
+        save_vals(tst_prob_ez_vals_list, tst_save_fname)
+            
+if myid == 0:
+    print "Drawing graph."
+    print
 
-print "Now, the result graph is drawn..."
-print
+    tst_prob_ez_vals_list = load_vals(tst_save_fname)
+#     print 'DEBUG:', len(tst_prob_ez_vals_list)
+#     print 'DEBUG:', len(tst_prob_ez_vals_list[0])
+#     print 'DEBUG:', len(tst_prob_ez_vals_list[0][0])
+#     print 'DEBUG:', len(tst_prob_ez_vals_list[0][0][0])
+    max_error_list = []
+    
+    for item in tst_prob_ez_vals_list:
+        temp_list = []
+        
+        for tst_prob_ez_vals in item:
+            errors = abs((array(ref_prob_ez_vals[0]) - array(tst_prob_ez_vals[0])) / max(ref_prob_ez_vals[0]))
+#            print 'DEBUG:', len(errors)
+            temp_list.append(max(errors))
 
-tst_prob_ez_vals_list = load_vals(tst_save_fname)
+        max_error_list.append(temp_list)
 
-max_error_list = []
+    max_error_list = 10 * log10(array(max_error_list).T)
 
-for item in tst_prob_ez_vals_list:
-    temp_list = []
+    import pylab
 
-    for tst_prob_ez_vals in item:
-        errors = abs((array(ref_prob_ez_vals[0]) - array(tst_prob_ez_vals[0])) / max(ref_prob_ez_vals[0]))
-        temp_list.append(max(errors))
-
-    max_error_list.append(temp_list)
-
-import pylab
-
-pylab.contour(max_error_list)
-pylab.title('Maximum relative error')
-pylab.xlabel(r'$\kappa_\mathrm{max}$')
-pylab.ylabel(r'$\alpha_\mathrm{max}$')
-pylab.show()
+    #pylab.contour(max_error_list)
+    pylab.title('Maximum relative error')
+#     pylab.xlabel(r'$\alpha_\mathrm{max}$')
+#     pylab.ylabel(r'$\kappa_\mathrm{max}$')
+    pylab.xlabel(r'$\alpha_{max}$')
+    pylab.ylabel(r'$\kappa_{max}$')
+    pylab.imshow(max_error_list, origin='lower', extent=(START_ALPHA, END_ALPHA - DELTA_ALPHA, START_KAPPA, END_KAPPA - DELTA_KAPPA))
+    pylab.colorbar()
+    pylab.show()
