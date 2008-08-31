@@ -121,7 +121,6 @@ if myid == 0:
 
         max_error_list.append(temp_list)
 
-    print max_error_list
     max_error_list = 10 * log10(array(max_error_list).T)
 
     import pylab
