@@ -40,28 +40,28 @@ class Dummy(Material):
         print " " * indentby, "dummy object"
         
     def get_pointwise_material_ex(self, idx, co):
-        ob = DummyEx(idx, self.epsilon_r)
-        return ob
+        pw_obj = DummyEx(idx, self.epsilon_r)
+        return pw_obj
     
     def get_pointwise_mateiral_ey(self, idx, co):
-        ob = DummyEy(idx, self.epsilon_r)
-        return ob
+        pw_obj = DummyEy(idx, self.epsilon_r)
+        return pw_obj
     
     def get_pointwise_material_ez(self, idx, co):
-        ob = DummyEz(idx, self.epsilon_r)
-        return ob
+        pw_obj = DummyEz(idx, self.epsilon_r)
+        return pw_obj
     
     def get_pointwise_material_hx(self, idx, co):
-        ob = DummyHx(idx, self.mu_r)
-        return ob
+        pw_obj = DummyHx(idx, self.mu_r)
+        return pw_obj
     
     def get_pointwise_material_hy(self, idx, co):
-        ob = DummyHy(idx, self.mu_r)
-        return ob
+        pw_obj = DummyHy(idx, self.mu_r)
+        return pw_obj
     
     def get_pointwise_material_hz(self, idx, co):
-        ob = DummyHz(idx, self.mu_r)
-        return ob
+        pw_obj = DummyHz(idx, self.mu_r)
+        return pw_obj
     
     
 class Dielectric(Material):
@@ -83,28 +83,28 @@ class Dielectric(Material):
         print "relative permeability:", self.mu_r
 
     def get_pointwise_material_ex(self, idx, co):
-        ob = DielectricEx(idx, self.epsilon_r)
-        return ob
+        pw_obj = DielectricEx(idx, self.epsilon_r)
+        return pw_obj
 
     def get_pointwise_material_ey(self, idx, co):
-        ob = DielectricEy(idx, self.epsilon_r)
-        return ob
+        pw_obj = DielectricEy(idx, self.epsilon_r)
+        return pw_obj
     
     def get_pointwise_material_ez(self, idx, co):
-        ob = DielectricEz(idx, self.epsilon_r)
-        return ob
+        pw_obj = DielectricEz(idx, self.epsilon_r)
+        return pw_obj
     
     def get_pointwise_material_hx(self, idx, co):
-        ob = DielectricHx(idx, self.mu_r)
-        return ob
+        pw_obj = DielectricHx(idx, self.mu_r)
+        return pw_obj
     
     def get_pointwise_material_hy(self, idx, co):
-        ob = DielectricHy(idx, self.mu_r)
-        return ob
+        pw_obj = DielectricHy(idx, self.mu_r)
+        return pw_obj
     
     def get_pointwise_material_hz(self, idx, co):
-        ob = DielectricHz(idx, self.mu_r)
-        return ob
+        pw_obj = DielectricHz(idx, self.mu_r)
+        return pw_obj
 
 
 class PML(Material):
@@ -124,7 +124,7 @@ class PML(Material):
         
         self.dt = space.dt
         self.dw = array((space.dx, space.dy, space.dz), float)
-        self.sigma_opt = self.get_sigma_opt()
+        self.sigma_max = self.sigma_max_ratio * self.get_sigma_opt()
         
         self.initialized = True
         
@@ -142,28 +142,29 @@ class UPML(PML):
     Computational Electrodynamics: The Finite-Difference Time-Domain Method, 
     3rd ed., Artech House, Inc., 2005.
     """
-    def __init__(self, epsilon_r=1, mu_r=1, m=3, kappa_max=15):
+    def __init__(self, epsilon_r=1, mu_r=1, m=3, kappa_max=15, sigma_max_ratio=1):
         self.initialized = False
         
         self.m = float(m)
         self.kappa_max = float(kappa_max)
         self.epsilon_r = float(epsilon_r)
         self.mu_r = float(mu_r)
+        self.sigma_max_ratio = float(sigma_max_ratio)
         
     def display_info(self, indent=0):
         print " " * indent, "UPML"
         print " " * indent, 
         print "relative permittivity:", self.epsilon_r,
         print "relative permeability:", self.mu_r,
-        print "sigma_opt:", self.sigma_opt,
+        print "sigma_max:", self.sigma_max,
         print "m:", self.m,
         print "kappa_max:", self.kappa_max,
         
     def sigma(self, w, component):
         if w <= self.d - self.half_size[component]:
-            return self.sigma_opt[component] * (1 - (w + self.half_size[component]) / self.d)**self.m
+            return self.sigma_max[component] * (1 - (w + self.half_size[component]) / self.d)**self.m
         elif self.half_size[component] - self.d <= w:
-            return self.sigma_opt[component] * (1 + (w - self.half_size[component]) / self.d)**self.m
+            return self.sigma_max[component] * (1 + (w - self.half_size[component]) / self.d)**self.m
         else:
             return 0.0
         
@@ -209,8 +210,8 @@ class UPML(PML):
         c4 = self.c4(co[2], 2)
         c5 = self.c5(co[0], 0)
         c6 = self.c6(co[0], 0)
-        ob = UPMLEx(idx, self.epsilon_r, c1, c2, c3, c4, c5, c6)
-        return ob
+        pw_obj = UPMLEx(idx, self.epsilon_r, c1, c2, c3, c4, c5, c6)
+        return pw_obj
     
     def get_pointwise_material_ey(self, idx, co):
         c1 = self.c1(co[2], 2)
@@ -219,8 +220,8 @@ class UPML(PML):
         c4 = self.c4(co[0], 0)
         c5 = self.c5(co[1], 1)
         c6 = self.c6(co[1], 1)
-        ob = UPMLEy(idx, self.epsilon_r, c1, c2, c3, c4, c5, c6)
-        return ob
+        pw_obj = UPMLEy(idx, self.epsilon_r, c1, c2, c3, c4, c5, c6)
+        return pw_obj
     
     def get_pointwise_material_ez(self, idx, co):
         c1 = self.c1(co[0], 0)
@@ -229,8 +230,8 @@ class UPML(PML):
         c4 = self.c4(co[1], 1)
         c5 = self.c5(co[2], 2)
         c6 = self.c6(co[2], 2)
-        ob = UPMLEz(idx, self.epsilon_r, c1, c2, c3, c4, c5, c6)
-        return ob
+        pw_obj = UPMLEz(idx, self.epsilon_r, c1, c2, c3, c4, c5, c6)
+        return pw_obj
     
     def get_pointwise_material_hx(self, idx, co):
         c1 = self.c1(co[1], 1)
@@ -239,8 +240,8 @@ class UPML(PML):
         c4 = self.c4(co[2], 2)
         c5 = self.c5(co[0], 0)
         c6 = self.c6(co[0], 0)
-        ob = UPMLHx(idx, self.mu_r, c1, c2, c3, c4, c5, c6)
-        return ob
+        pw_obj = UPMLHx(idx, self.mu_r, c1, c2, c3, c4, c5, c6)
+        return pw_obj
     
     def get_pointwise_material_hy(self, idx, co):
         c1 = self.c1(co[2], 2)
@@ -249,8 +250,8 @@ class UPML(PML):
         c4 = self.c4(co[0], 0)
         c5 = self.c5(co[1], 1)
         c6 = self.c6(co[1], 1)
-        ob = UPMLHy(idx, self.mu_r, c1, c2, c3, c4, c5, c6)
-        return ob
+        pw_obj = UPMLHy(idx, self.mu_r, c1, c2, c3, c4, c5, c6)
+        return pw_obj
     
     def get_pointwise_material_hz(self, idx, co):
         c1 = self.c1(co[0], 0)
@@ -259,8 +260,8 @@ class UPML(PML):
         c4 = self.c4(co[1], 1)
         c5 = self.c5(co[2], 2)
         c6 = self.c6(co[2], 2)
-        ob = UPMLHz(idx, self.mu_r, c1, c2, c3, c4, c5, c6)
-        return ob
+        pw_obj = UPMLHz(idx, self.mu_r, c1, c2, c3, c4, c5, c6)
+        return pw_obj
     
     
 class CPML(PML):
@@ -270,7 +271,7 @@ class CPML(PML):
     Computational Electrodynamics: The Finite-Difference Time-Domain Method, 
     3rd ed., Artech House, Inc., 2005.
     """
-    def __init__(self, epsilon_r=1, mu_r=1, m=3, kappa_max=15, m_alpha=1, alpha_max=0.2):
+    def __init__(self, epsilon_r=1, mu_r=1, m=3, kappa_max=15, m_alpha=1, alpha_max=0.2, sigma_max_ratio=1):
         """
         epsilon_r: relative permittivity
         mu_r: relative permeability
@@ -280,6 +281,7 @@ class CPML(PML):
         alpha_max:
         grid:
         """
+        
         self.initialized = False
         
         self.m = float(m)
@@ -288,6 +290,7 @@ class CPML(PML):
         self.alpha_max = float(alpha_max)
         self.epsilon_r = float(epsilon_r)
         self.mu_r = float(mu_r)
+        self.sigma_max_ratio = float(sigma_max_ratio)
         
     def display_info(self, indent=0):
         """Display the parameter values
@@ -296,7 +299,7 @@ class CPML(PML):
         print " " * indent, 
         print "relative permittivity:", self.epsilon_r,
         print "relative permeability:", self.mu_r,
-        print "sigma_opt:", self.sigma_opt,
+        print "sigma_max:", self.sigma_max,
         print "m:", self.m,
         print "kappa_max:", self.kappa_max,
         print "m_alpha:", self.m_alpha,
@@ -304,9 +307,9 @@ class CPML(PML):
 
     def sigma(self, w, component):
         if w <= self.d - self.half_size[component]:
-            return self.sigma_opt[component] * (1 - (w + self.half_size[component]) / self.d)**self.m
+            return self.sigma_max[component] * (1 - (w + self.half_size[component]) / self.d)**self.m
         elif self.half_size[component] - self.d <= w:
-            return self.sigma_opt[component] * (1 + (w - self.half_size[component]) / self.d)**self.m
+            return self.sigma_max[component] * (1 + (w - self.half_size[component]) / self.d)**self.m
         else:
             return 0.0
         
@@ -346,8 +349,8 @@ class CPML(PML):
         cz = self.c(co[2], 2)
         kappay = self.kappa(co[1], 1)
         kappaz = self.kappa(co[2], 2)
-        ob = CPMLEx(idx, self.epsilon_r, by, bz, cy, cz, kappay, kappaz)
-        return ob
+        pw_obj = CPMLEx(idx, self.epsilon_r, by, bz, cy, cz, kappay, kappaz)
+        return pw_obj
     
     def get_pointwise_material_ey(self, idx, co):
         bz = self.b(co[2], 2)
@@ -356,8 +359,8 @@ class CPML(PML):
         cx = self.c(co[0], 0)
         kappaz = self.kappa(co[2], 2)
         kappax = self.kappa(co[0], 0)
-        ob = CPMLEy(idx, self.epsilon_r, bz, bx, cz, cx, kappaz, kappax)
-        return ob
+        pw_obj = CPMLEy(idx, self.epsilon_r, bz, bx, cz, cx, kappaz, kappax)
+        return pw_obj
     
     def get_pointwise_material_ez(self, idx, co):
         bx = self.b(co[0], 0)
@@ -366,8 +369,8 @@ class CPML(PML):
         cy = self.c(co[1], 1)
         kappax = self.kappa(co[0], 0)
         kappay = self.kappa(co[1], 1)
-        ob = CPMLEz(idx, self.epsilon_r, bx, by, cx, cy, kappax, kappay)
-        return ob
+        pw_obj = CPMLEz(idx, self.epsilon_r, bx, by, cx, cy, kappax, kappay)
+        return pw_obj
     
     def get_pointwise_material_hx(self, idx, co):
         by = self.b(co[1], 1)
@@ -376,8 +379,8 @@ class CPML(PML):
         cz = self.c(co[2], 2)
         kappay = self.kappa(co[1], 1)
         kappaz = self.kappa(co[2], 2)
-        ob = CPMLHx(idx, self.mu_r, by, bz, cy, cz, kappay, kappaz)
-        return ob
+        pw_obj = CPMLHx(idx, self.mu_r, by, bz, cy, cz, kappay, kappaz)
+        return pw_obj
     
     def get_pointwise_material_hy(self, idx, co):
         bz = self.b(co[2], 2)
@@ -386,8 +389,8 @@ class CPML(PML):
         cx = self.c(co[0], 0)
         kappaz = self.kappa(co[2], 2)
         kappax = self.kappa(co[0], 0)
-        ob = CPMLHy(idx, self.mu_r, bz, bx, cz, cx, kappaz, kappax)
-        return ob
+        pw_obj = CPMLHy(idx, self.mu_r, bz, bx, cz, cx, kappaz, kappax)
+        return pw_obj
     
     def get_pointwise_material_hz(self, idx, co):
         bx = self.b(co[0], 0)
@@ -396,7 +399,7 @@ class CPML(PML):
         cy = self.c(co[1], 1)
         kappax = self.kappa(co[0], 0)
         kappay = self.kappa(co[1], 1)
-        ob = CPMLHz(idx, self.mu_r, bx, by, cx, cy, kappax, kappay)
-        return ob
+        pw_obj = CPMLHz(idx, self.mu_r, bx, by, cx, cy, kappax, kappay)
+        return pw_obj
     
     
