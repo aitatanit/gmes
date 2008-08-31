@@ -47,26 +47,34 @@ tst_space = geometric.Cartesian(size = tst_size, resolution = res)
 
 pml_thickness = 0.5
 
-probe_ez_idx1_x = (tst_size[0] / 2) - (pml_thickness + 0.1) # X component value of Ez index to probe at upper corner of test space
-probe_ez_idx1_y = (tst_size[1] / 2) - (pml_thickness + 0.1) # Y component value of Ez index to probe at upper corner of test sapce
+# X and Y component value of Ez index to probe at upper corner of test space
+probe_ez_idx1_x = (tst_size[0] / 2) - (pml_thickness + 0.1)
+probe_ez_idx1_y = (tst_size[1] / 2) - (pml_thickness + 0.1)
 
-probe_ez_idx2_x = 0 # X component value of Ez index to probe at right edge of test space
-probe_ez_idx2_y = (tst_size[1] / 2) - (pml_thickness + 0.1) # Y component value of Ez index to probe at right edge of test space
+# X and Y component value of Ez index to probe at right edge of test space
+probe_ez_idx2_x = 0
+probe_ez_idx2_y = (tst_size[1] / 2) - (pml_thickness + 0.1)
 
-probe_ez_idx3_x = -probe_ez_idx1_x # X component value of Ez index to probe at lower corner of test space
-probe_ez_idx3_y = -probe_ez_idx1_y # Y component value of Ez index to probe at lower corner of test space
+ # X and Y component value of Ez index to probe at lower corner of test space
+probe_ez_idx3_x = -probe_ez_idx1_x
+probe_ez_idx3_y = -probe_ez_idx1_y
 
+# Ez index to probe in test space (upper corner of test space)
 tst_probe_ez_idx1 = tst_space.space_to_ez_index( \
         (probe_ez_idx1_x, probe_ez_idx1_y, 0) \
-        ) # Ez index to probe in test space (upper corner of test space)
+        )
+
+# Ez index to probe in test space (right edge of test space)
 tst_probe_ez_idx2 = tst_space.space_to_ez_index( \
         (probe_ez_idx2_x, probe_ez_idx2_y, 0) \
-        ) # Ez index to probe in test space (right edge of test space)
+        ) 
+
+# Ez index to probe in test space (lower corner of test space)
 tst_probe_ez_idx3 = tst_space.space_to_ez_index(( \
         probe_ez_idx3_x, probe_ez_idx3_y, 0) \
-        ) # Ez index to probe in test space (lower corner of test space)
+        ) 
 
-tst_prob_ez_idxs = [tst_probe_ez_idx1, tst_probe_ez_idx2, tst_probe_ez_idx3]
+tst_prob_ez_idxs = (tst_probe_ez_idx1, tst_probe_ez_idx2, tst_probe_ez_idx3)
 
 ref_prob_ez_vals = load_vals(ref_save_fname)
 
@@ -125,10 +133,7 @@ if myid == 0:
     print
 
     tst_prob_ez_vals_list = load_vals(tst_save_fname)
-#     print 'DEBUG:', len(tst_prob_ez_vals_list)
-#     print 'DEBUG:', len(tst_prob_ez_vals_list[0])
-#     print 'DEBUG:', len(tst_prob_ez_vals_list[0][0])
-#     print 'DEBUG:', len(tst_prob_ez_vals_list[0][0][0])
+    #print array(tst_prob_ez_vals_list).shape
     max_error_list = []
     
     for item in tst_prob_ez_vals_list:
