@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# file: pmltest2d04.py
+# file: pmltest2d05.py
 # author: Huioon Kim
 
 """Perform a CPML and UPML test relating the alpha maximum value
@@ -52,11 +52,19 @@ tst_prob_ez_idxs = [tst_probe_ez_idx1, tst_probe_ez_idx2, tst_probe_ez_idx3]
 
 ref_prob_ez_vals = load_vals(ref_save_fname)
 
-a_max_range = arange(0, 0.21, 0.01)
-s_ratio_range = arange(2.0, 4.1, 0.1)
+a_max_start = 0.0
+a_max_stop = 0.11
+a_max_step = 0.005
+
+s_ratio_start = 3.0
+s_ratio_stop = 4.1
+s_ratio_step = 0.05
 
 if acquisition == True:
     tst_prob_ez_vals_list = []
+
+    a_max_range = arange(a_max_start, a_max_stop, a_max_step)
+    s_ratio_range = arange(s_ratio_start, s_ratio_stop, s_ratio_step)
 
     count = 1
     for a_max in a_max_range:
@@ -116,7 +124,10 @@ for item in tst_prob_ez_vals_list:
 import pylab
 
 #pylab.contour(max_error_list)
-pylab.imshow(10*log10(array(max_error_list)), origin='lower')
+pylab.imshow( \
+        10 * log10(array(max_error_list)), \
+        origin='lower', aspect='auto', \
+        extent=(s_ratio_start, s_ratio_stop - s_ratio_step, a_max_start, a_max_stop - a_max_step))
 pylab.title('Maximum relative error')
 pylab.xlabel(r'$\sigma_\mathrm{max}$' + '/' + r'$\sigma_\mathrm{opt}$')
 pylab.ylabel(r'$\alpha_\mathrm{max}$')
