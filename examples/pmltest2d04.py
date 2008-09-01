@@ -3,13 +3,14 @@
 # author: Huioon Kim
 
 """Perform a CPML and UPML test relating the kappa max value
-with the alpha max value using a low frequency source."""
+with the alpha max value using a low frequency source,
+and parallelize using MPI."""
 
+# import statements
 import sys
 sys.path.append('../')
 
 from numpy import *
-from sys import stdout
 
 try:
     import mpi
@@ -27,7 +28,7 @@ from pmltest2d03 import *
 # general settings
 acquisition = True
 ref_save_fname = 'ref_20080830.dat'
-tst_save_fname = 'tst_20080901.dat'
+tst_save_fname = 'tst_20080901_lfs_km_am.dat' # 'lfs', 'km', 'am'  mean 'low frequency source', 'kappa max', and 'alpha max', respectively.
 
 # simulation parameters
 START_ALPHA = 0.

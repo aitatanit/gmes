@@ -4,21 +4,41 @@
 
 """Perform a CPML and UPML test relating the alpha maximum value
 with the sigma ratio, i.e, sigma maximum divided by sigma optimum value
-using a low frequency source."""
+using a low frequency source, and parallelize using MPI."""
 
+# import statements
 import sys
 sys.path.append('../')
 
+from time import localtime
+from numpy import add, arange, array, log10
+
+try:
+    import mpi
+    myid = mpi.rank
+    numprocs = mpi.size
+except ImportError:
+    myid = 0
+    numprocs = 1
+
 from gmes import *
-from numpy import array, arange, log10
-from sys import stdout
+
 from pmltest2d01 import *
 from pmltest2d03 import *
 
 # general settings
 acquisition = True
 ref_save_fname = 'ref_20080830.dat'
-tst_save_fname = 'tst_20080831_lfs_sm_am.dat' # 'lfs', 'sm', 'am'  mean 'low frequency source', 'sigma max', and 'alpha max', respectively.
+tst_save_fname = 'tst_20080901_lfs_sm_am.dat' # 'lfs', 'sm', 'am'  mean 'low frequency source', 'sigma max ratio', and 'alpha max', respectively.
+
+# simulation parameters
+A_MAX_START = 0.01
+A_MAX_STOP = 0.11
+A_MAX_STEP = 0.01
+
+S_RATIO_START = 3.0
+S_RATIO_STOP = 4.1
+S_RATIO_STEP = 0.1
 
 # common settings #1
 res = 20
@@ -52,33 +72,35 @@ tst_prob_ez_idxs = [tst_probe_ez_idx1, tst_probe_ez_idx2, tst_probe_ez_idx3]
 
 ref_prob_ez_vals = load_vals(ref_save_fname)
 
-a_max_start = 0.0
-a_max_stop = 0.11
-a_max_step = 0.005
+def relocate(size_list, collection):
+    accum_size = add.accumulate(size_list)
+    relocated = []
+    
+    for i in range(size_list[0]):
+        for j in range(len(size_list)):
+            if i == size_list[j]:
+                break
 
-s_ratio_start = 3.0
-s_ratio_stop = 4.1
-s_ratio_step = 0.05
+            if j == 0:
+                relocated.append(collection[i])
+            else:
+                relocated.append(collection[i + accum_size[j-1]])
+                    
+    return relocated
+
 
 if acquisition == True:
     tst_prob_ez_vals_list = []
 
-    a_max_range = arange(a_max_start, a_max_stop, a_max_step)
-    s_ratio_range = arange(s_ratio_start, s_ratio_stop, s_ratio_step)
+    a_max_range = arange(A_MAX_START + A_MAX_STEP * myid, A_MAX_STOP, A_MAX_STEP * numprocs)
+    s_ratio_range = arange(S_RATIO_START, S_RATIO_STOP, S_RATIO_STEP)
 
     count = 1
     for a_max in a_max_range:
         temp_list = []
 
         for s_ratio in s_ratio_range:
-            counter_str = "[%s / %s]" % (count, len(a_max_range) * len(s_ratio_range))
-
-            print "-" * len(counter_str)
-            print counter_str
-            print "-" * len(counter_str)
-            print
-
-            print "-- Generate FDTD with CPML whose alpha max value is %s and sigma max ratio is %s." % (a_max, s_ratio)
+            print 'node %d: [%d / %d]' % (myid, count, len(a_max_range) * len(s_ratio_range))
             print
 
             cpml_boundary = geometric.Boundary(material = material.CPML( \
@@ -86,18 +108,7 @@ if acquisition == True:
                     ), thickness = pml_thickness, size = tst_size)
             cpml_tst_geoms = [def_mat, cpml_boundary]
             tst_fdtd = create_fdtd(tst_space, cpml_tst_geoms)
-            print
-
-            print "-- Generation complete."
-            print
-            
-            print "-- Acquire test values."
-            print
-            
             temp_list.append(acquire_ez_vals(tst_fdtd, tst_prob_ez_idxs, AcqMode.TEST, len(ref_prob_ez_vals[0])))
-
-            print "-- Acquisition complete."
-            print
 
             count += 1
 
@@ -105,32 +116,46 @@ if acquisition == True:
 
     save_vals(tst_prob_ez_vals_list, tst_save_fname)
 
-print "Now, the result graph is drawn..."
-print
+    if numprocs > 0:
+        if myid == 0:
+            print "Collecting data from nodes."
+        size_list = mpi.gather([len(tst_prob_ez_vals_list)])
+        collection = mpi.gather(tst_prob_ez_vals_list)
+    
+        if myid == 0:
+            relocated_collection = relocate(size_list, collection)
+            save_vals(relocated_collection, tst_save_fname)
+    else:
+        save_vals(tst_prob_ez_vals_list, tst_save_fname)
 
-tst_prob_ez_vals_list = load_vals(tst_save_fname)
+if myid == 0:
+    print "Now, the result graph is drawn..."
+    print
 
-max_error_list = []
+    tst_prob_ez_vals_list = load_vals(tst_save_fname)
 
-for item in tst_prob_ez_vals_list:
-    temp_list = []
+    max_error_list = []
 
-    for tst_prob_ez_vals in item:
-        errors = abs((array(ref_prob_ez_vals[0]) - array(tst_prob_ez_vals[0])) / max(ref_prob_ez_vals[0]))
-        temp_list.append(max(errors))
+    for item in tst_prob_ez_vals_list:
+        temp_list = []
 
-    max_error_list.append(temp_list)
+        for tst_prob_ez_vals in item:
+            errors = abs((array(ref_prob_ez_vals[0]) - array(tst_prob_ez_vals[0])) / max(ref_prob_ez_vals[0]))
+            temp_list.append(max(errors))
 
-import pylab
+        max_error_list.append(temp_list)
 
-#pylab.contour(max_error_list)
-pylab.imshow( \
-        10 * log10(array(max_error_list)), \
-        origin='lower', aspect='auto', \
-        extent=(s_ratio_start, s_ratio_stop - s_ratio_step, a_max_start, a_max_stop - a_max_step))
-pylab.title('Maximum relative error')
-pylab.xlabel(r'$\sigma_\mathrm{max}$' + '/' + r'$\sigma_\mathrm{opt}$')
-pylab.ylabel(r'$\alpha_\mathrm{max}$')
-pylab.colorbar()
-pylab.show()
+    import pylab
+
+    pylab.imshow( \
+            10 * log10(array(max_error_list)), \
+            origin='lower', aspect='auto', \
+            extent=(S_RATIO_START, S_RATIO_STOP - S_RATIO_STEP, A_MAX_START, A_MAX_STOP - A_MAX_STEP))
+    pylab.title('Maximum relative error')
+#    pylab.xlabel(r'$\sigma_\mathrm{max}$' + '/' + r'$\sigma_\mathrm{opt}$')
+#    pylab.ylabel(r'$\alpha_\mathrm{max}$')
+    pylab.xlabel(r'$\sigma_{max}$' + '/' + r'$\sigma_{opt}$')
+    pylab.ylabel(r'$\alpha_{max}$')
+    pylab.colorbar()
+    pylab.show()
 
