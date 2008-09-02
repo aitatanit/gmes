@@ -43,11 +43,11 @@ class LowFreqSrc:
         ez[self.idx] += dt / self.epsilon * ((hy[i+1,j,k+1] - hy[i,j,k+1]) / dx - (hx[i,j+1,k+1] - hx[i,j,k+1]) / dy - j_src)
         self.t += dt
 
-def create_fdtd(space, geoms):
+def create_fdtd(space, geoms, verbose = True):
     """Create and return a new FDTD object which have low frequency source using passing parameters."""
 
     src_idx = space.space_to_ez_index((0, 0, 0))
-    my_fdtd = fdtd.TMzFDTD(space, geoms, [])
+    my_fdtd = fdtd.TMzFDTD(space, geoms, [], verbose)
     my_fdtd.material_ez[src_idx] = LowFreqSrc(src_idx)
 
     return my_fdtd
@@ -56,7 +56,7 @@ if __name__ == "__main__":
     # general settings
     debug_mode = False
     ref_acq = False
-    save_fname = 'ref_20080830.dat'
+    save_fname = 'ref_20080902.dat'
 
     # common values #1
     res = 20
@@ -191,6 +191,7 @@ if __name__ == "__main__":
     x_axis = 1e9 * arange(0, stop, step)
 
     import pylab
+
     pylab.title("right edge point")
     pylab.semilogy(x_axis, plot_vals_list[1])
     pylab.xlabel('t (ns)')
