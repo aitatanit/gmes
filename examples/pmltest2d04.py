@@ -151,12 +151,13 @@ if myid == 0:
 
     import pylab
 
-    #pylab.contour(max_error_list)
     pylab.title('Maximum relative error')
-#     pylab.xlabel(r'$\alpha_\mathrm{max}$')
-#     pylab.ylabel(r'$\kappa_\mathrm{max}$')
+#    pylab.xlabel(r'$\alpha_\mathrm{max}$')
+#    pylab.ylabel(r'$\kappa_\mathrm{max}$')
     pylab.xlabel(r'$\alpha_{max}$')
     pylab.ylabel(r'$\kappa_{max}$')
-    pylab.imshow(max_error_list, origin='lower', extent=(START_ALPHA, END_ALPHA - DELTA_ALPHA, START_KAPPA, END_KAPPA - DELTA_KAPPA))
+    pylab.imshow(max_error_list, origin='lower', aspect='auto', \
+            extent=(START_ALPHA, END_ALPHA - DELTA_ALPHA, START_KAPPA, END_KAPPA - DELTA_KAPPA))
     pylab.colorbar()
     pylab.show()
+
