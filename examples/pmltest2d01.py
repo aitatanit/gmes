@@ -27,44 +27,50 @@ class AcqMode:
     REFERENCE = 0
     TEST = 1
 
-def create_fdtd(space, geoms, src):
+def create_fdtd(space, geoms, src, verbose = True):
     """Create and return a new FDTD object using passing parameters."""
 
-    return fdtd.TMzFDTD(space, geoms, src)
+    return fdtd.TMzFDTD(space, geoms, src, verbose)
 
-def acquire_ez_vals(fdtd, prob_ez_idxs, mode, stepnum_for_tst = None):
+def acquire_ez_vals(fdtd, prob_ez_idxs, mode, stepnum_for_tst = None, verbose = True):
     """Acquire Ez values from updating passing FDTD object. Do differently according to the mode."""
 
     #fdtd.show_ez(constants.Z(), 0)
 
     try:
-        print "-- The Ez index of the position of source: %s" % tuple(fdtd.space.space_to_ez_index(fdtd.src_list[0].pos))
-        print
+        if verbose == True:
+            print "-- The Ez index of the position of source: %s" % str(fdtd.space.space_to_ez_index(fdtd.src_list[0].pos))
+            print
     except IndexError:
         pass
 
-    print "-- The space size:", tuple([int(item) for item in fdtd.space.half_size * 2])
-    print
+    if verbose == True:
+        print "-- The space size:", tuple([int(item) for item in fdtd.space.half_size * 2])
+        print
 
     if mode == AcqMode.REFERENCE:
         cent_rmost_ez_idx = fdtd.space.space_to_ez_index( \
                 (0, ((fdtd.space.half_size * 2)[1] / 2) - 0.1, 0) \
                 ) # The Ez index 0.1 space unit away from center-rightmost of the space
 
-        print "-- The Ez index 0.1 space unit away from center-rightmost of the space:", cent_rmost_ez_idx
-        print
+        if verbose == True:
+            print "-- The Ez index 0.1 space unit away from center-rightmost of the space:", cent_rmost_ez_idx
+            print
 
     prob_ez_vals = []
 
     for idx in prob_ez_idxs:
-        print "-- The Ez index to probe:", idx
+        if verbose == True:
+            print "-- The Ez index to probe:", idx
         prob_ez_vals.append([])
-    print
+    if verbose == True:
+        print
 
-    print "-- FDTD update start..."
-    print
+    if verbose == True:
+        print "-- FDTD update start..."
+        print
 
-    print "Time step:"
+        print "Time step:"
 
     if mode == AcqMode.REFERENCE:
         while 1:
@@ -73,13 +79,15 @@ def acquire_ez_vals(fdtd, prob_ez_idxs, mode, stepnum_for_tst = None):
             for i, idx in zip(range(len(prob_ez_idxs)), prob_ez_idxs):
                 prob_ez_vals[i].append(fdtd.ez[idx])
 
-            print "\r[%s]" % int(fdtd.time_step.n),
-            stdout.flush()
+            if verbose == True:
+                print "\r[%s]" % int(fdtd.time_step.n),
+                stdout.flush()
 
             if fdtd.ez[cent_rmost_ez_idx] != 0.0:
                 break
 
-        print "\n"
+        if verbose == True:
+            print "\n"
     elif mode == AcqMode.TEST:
         for x in range(stepnum_for_tst):
             fdtd.step()
@@ -87,13 +95,16 @@ def acquire_ez_vals(fdtd, prob_ez_idxs, mode, stepnum_for_tst = None):
             for i, idx in zip(range(len(prob_ez_idxs)), prob_ez_idxs):
                 prob_ez_vals[i].append(fdtd.ez[idx])
 
-            print "\r[%s]" % int(fdtd.time_step.n),
-            stdout.flush()
+            if verbose == True:
+                print "\r[%s]" % int(fdtd.time_step.n),
+                stdout.flush()
 
-        print "\n"
+        if verbose == True:
+            print "\n"
 
-    print "-- FDTD update end..."
-    print
+    if verbose == True:
+        print "-- FDTD update end..."
+        print
 
     return prob_ez_vals
 
@@ -127,7 +138,7 @@ if __name__ == "__main__":
     # general settings
     debug_mode = False
     ref_acq = False
-    save_fname = 'ref_20080825.dat'
+    save_fname = 'ref_20080902.dat'
 
     # common values #1
     res = 20
@@ -179,12 +190,11 @@ if __name__ == "__main__":
                 ) # Ez index to probe in reference space (lower corner of test space)
 
         ref_prob_ez_idxs = [ref_probe_ez_idx1, ref_probe_ez_idx2, ref_probe_ez_idx3]
-
+        
         ref_fdtd = create_fdtd(ref_space, ref_geoms, src)
         print
 
         ref_prob_ez_vals = acquire_ez_vals(ref_fdtd, ref_prob_ez_idxs, AcqMode.REFERENCE)
-
         save_vals(ref_prob_ez_vals, save_fname)
 
         print "------------------------------------"
