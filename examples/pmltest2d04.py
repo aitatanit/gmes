@@ -28,7 +28,7 @@ from pmltest2d03 import *
 # general settings
 acquisition = True
 ref_save_fname = 'ref_20080830.dat'
-tst_save_fname = 'tst_20080901_lfs_km_am.dat' # 'lfs', 'km', 'am'  mean 'low frequency source', 'kappa max', and 'alpha max', respectively.
+tst_save_fname = 'tst_20080903_lfs_km_am.dat' # 'lfs', 'km', 'am'  mean 'low frequency source', 'kappa max', and 'alpha max', respectively.
 
 # simulation parameters
 START_ALPHA = 0.
@@ -110,8 +110,8 @@ if acquisition == True:
 
             cpml_boundary = geometric.Boundary(material = material.CPML(kappa_max = k_max, alpha_max = a_max), thickness = pml_thickness, size = tst_size)
             cpml_tst_geoms = [def_mat, cpml_boundary]
-            tst_fdtd = create_fdtd(tst_space, cpml_tst_geoms)
-            temp_list.append(acquire_ez_vals(tst_fdtd, tst_prob_ez_idxs, AcqMode.TEST, len(ref_prob_ez_vals[0])))
+            tst_fdtd = create_fdtd(tst_space, cpml_tst_geoms, verbose=False)
+            temp_list.append(acquire_ez_vals(tst_fdtd, tst_prob_ez_idxs, AcqMode.TEST, len(ref_prob_ez_vals[0]), verbose=False))
 
             count += 1
 

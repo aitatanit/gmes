@@ -29,7 +29,7 @@ from pmltest2d03 import *
 # general settings
 acquisition = True
 ref_save_fname = 'ref_20080830.dat'
-tst_save_fname = 'tst_20080901_lfs_sm_am.dat' # 'lfs', 'sm', 'am'  mean 'low frequency source', 'sigma max ratio', and 'alpha max', respectively.
+tst_save_fname = 'tst_20080903_lfs_sm_am.dat' # 'lfs', 'sm', 'am'  mean 'low frequency source', 'sigma max ratio', and 'alpha max', respectively.
 
 # simulation parameters
 A_MAX_START = 0.01
@@ -107,8 +107,8 @@ if acquisition == True:
                     alpha_max = a_max, sigma_max_ratio = s_ratio \
                     ), thickness = pml_thickness, size = tst_size)
             cpml_tst_geoms = [def_mat, cpml_boundary]
-            tst_fdtd = create_fdtd(tst_space, cpml_tst_geoms)
-            temp_list.append(acquire_ez_vals(tst_fdtd, tst_prob_ez_idxs, AcqMode.TEST, len(ref_prob_ez_vals[0])))
+            tst_fdtd = create_fdtd(tst_space, cpml_tst_geoms, verbose=False)
+            temp_list.append(acquire_ez_vals(tst_fdtd, tst_prob_ez_idxs, AcqMode.TEST, len(ref_prob_ez_vals[0]), verbose=False))
 
             count += 1
 
