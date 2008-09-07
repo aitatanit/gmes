@@ -29,7 +29,7 @@ from pmltest2d03 import *
 acquisition = True
 ref_save_fname = 'ref_20080830.dat'
 tst_save_fname = 'tst_20080905_lfs_m_sm_km.dat' 
-# 'lfs', 'sm', 'km'  mean 'low frequency source', 'sigma max ratio', and 'kappa max', respectively, and 'm' is m.
+# 'lfs', 'sm', 'km'  mean 'low frequency source', 'sigma max ratio', and 'kappa max', respectively, and 'm' is m as in textbook.
 
 # simulation parameters
 M_START = 1
@@ -72,9 +72,10 @@ tst_probe_ez_idx3 = tst_space.space_to_ez_index(( \
         probe_ez_idx3_x, probe_ez_idx3_y, 0) \
         ) # Ez index to probe in test space (lower corner of test space)
 
-tst_prob_ez_idxs = [tst_probe_ez_idx1, tst_probe_ez_idx2, tst_probe_ez_idx3]
+#tst_prob_ez_idxs = [tst_probe_ez_idx1, tst_probe_ez_idx2, tst_probe_ez_idx3]
+tst_prob_ez_idxs = [tst_probe_ez_idx2]
 
-ref_prob_ez_vals = load_vals(ref_save_fname)
+ref_prob_ez_vals = (load_vals(ref_save_fname))[1]
 
 def relocate(size_list, collection):
     accum_size = add.accumulate(size_list)
@@ -115,7 +116,7 @@ if acquisition == True:
                         ), thickness = pml_thickness, size = tst_size)
                 cpml_tst_geoms = [def_mat, cpml_boundary]
                 tst_fdtd = create_fdtd(tst_space, cpml_tst_geoms, verbose=False)
-                temp_list2.append(acquire_ez_vals(tst_fdtd, tst_prob_ez_idxs, AcqMode.TEST, len(ref_prob_ez_vals[0]), verbose=False))
+                temp_list2.append((acquire_ez_vals(tst_fdtd, tst_prob_ez_idxs, AcqMode.TEST, len(ref_prob_ez_vals), verbose=False))[0])
 
                 count += 1
 
@@ -152,7 +153,7 @@ if myid == 0:
             temp_list2 = []
 
             for tst_prob_ez_vals in item2:
-                errors = abs((array(ref_prob_ez_vals[0]) - array(tst_prob_ez_vals[0])) / max(ref_prob_ez_vals[0]))
+                errors = abs((array(ref_prob_ez_vals) - array(tst_prob_ez_vals)) / max(ref_prob_ez_vals))
                 temp_list2.append(max(errors))
 
             temp_list1.append(temp_list2)

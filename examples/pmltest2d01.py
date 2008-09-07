@@ -37,32 +37,31 @@ def acquire_ez_vals(fdtd, prob_ez_idxs, mode, stepnum_for_tst = None, verbose = 
 
     #fdtd.show_ez(constants.Z(), 0)
 
-    try:
-        if verbose == True:
+    if verbose == True:
+        try:
             print "-- The Ez index of the position of source: %s" % str(fdtd.space.space_to_ez_index(fdtd.src_list[0].pos))
             print
-    except IndexError:
-        pass
+        except IndexError:
+            pass
 
-    if verbose == True:
         print "-- The space size:", tuple([int(item) for item in fdtd.space.half_size * 2])
         print
 
     if mode == AcqMode.REFERENCE:
         cent_rmost_ez_idx = fdtd.space.space_to_ez_index( \
-                (0, ((fdtd.space.half_size * 2)[1] / 2) - 0.1, 0) \
+                (0, fdtd.space.half_size[1] - 0.1, 0) \
                 ) # The Ez index 0.1 space unit away from center-rightmost of the space
 
         if verbose == True:
             print "-- The Ez index 0.1 space unit away from center-rightmost of the space:", cent_rmost_ez_idx
             print
 
-    prob_ez_vals = []
+    result_ez_vals = []
 
     for idx in prob_ez_idxs:
         if verbose == True:
             print "-- The Ez index to probe:", idx
-        prob_ez_vals.append([])
+        result_ez_vals.append([])
     if verbose == True:
         print
 
@@ -77,7 +76,7 @@ def acquire_ez_vals(fdtd, prob_ez_idxs, mode, stepnum_for_tst = None, verbose = 
             fdtd.step()
 
             for i, idx in zip(range(len(prob_ez_idxs)), prob_ez_idxs):
-                prob_ez_vals[i].append(fdtd.ez[idx])
+                result_ez_vals[i].append(fdtd.ez[idx])
 
             if verbose == True:
                 print "\r[%s]" % int(fdtd.time_step.n),
@@ -93,7 +92,7 @@ def acquire_ez_vals(fdtd, prob_ez_idxs, mode, stepnum_for_tst = None, verbose = 
             fdtd.step()
 
             for i, idx in zip(range(len(prob_ez_idxs)), prob_ez_idxs):
-                prob_ez_vals[i].append(fdtd.ez[idx])
+                result_ez_vals[i].append(fdtd.ez[idx])
 
             if verbose == True:
                 print "\r[%s]" % int(fdtd.time_step.n),
@@ -106,9 +105,9 @@ def acquire_ez_vals(fdtd, prob_ez_idxs, mode, stepnum_for_tst = None, verbose = 
         print "-- FDTD update end..."
         print
 
-    return prob_ez_vals
+    return result_ez_vals
 
-def save_vals(vals, fname):
+def save_vals(vals, fname, verbose = True):
     """Write passing values into a file whose name is passing through the second parameter using pickling."""
 
     import cPickle
@@ -117,10 +116,11 @@ def save_vals(vals, fname):
     cPickle.dump(vals, vals_file)
     vals_file.close()
 
-    print "The values are successfully saved in %s file." % fname
-    print
+    if verbose == True:
+        print "The values are successfully saved in %s file." % fname
+        print
 
-def load_vals(fname):
+def load_vals(fname, verbose = True):
     """Read values from a file whose name is passing through the parameter using unpickling."""
 
     import cPickle
@@ -128,9 +128,10 @@ def load_vals(fname):
     vals_file = open(fname)
     vals = cPickle.load(vals_file)
     vals_file.close()
-
-    print "Values are successfully loaded from %s file." % fname
-    print
+    
+    if verbose == True:
+        print "Values are successfully loaded from %s file." % fname
+        print
 
     return vals
 
@@ -138,7 +139,7 @@ if __name__ == "__main__":
     # general settings
     debug_mode = False
     ref_acq = False
-    save_fname = 'ref_20080902.dat'
+    save_fname = 'ref_20080905.dat'
 
     # common values #1
     res = 20
@@ -157,10 +158,10 @@ if __name__ == "__main__":
 
     pml_thickness = 0.5
     cpml_boundary = geometric.Boundary(material = material.CPML(), thickness = pml_thickness, size = tst_size)
-    upml_boundary = geometric.Boundary(material = material.UPML(), thickness = pml_thickness, size = tst_size)
+    #upml_boundary = geometric.Boundary(material = material.UPML(), thickness = pml_thickness, size = tst_size)
 
     cpml_tst_geoms = [def_mat, cpml_boundary]
-    upml_tst_geoms = [def_mat, upml_boundary]
+    #upml_tst_geoms = [def_mat, upml_boundary]
 
     # common values #2
     probe_ez_idx1_x = (tst_size[0] / 2) - (pml_thickness + 0.1) # X component value of Ez index to probe at upper corner of test space
@@ -194,8 +195,9 @@ if __name__ == "__main__":
         ref_fdtd = create_fdtd(ref_space, ref_geoms, src)
         print
 
-        ref_prob_ez_vals = acquire_ez_vals(ref_fdtd, ref_prob_ez_idxs, AcqMode.REFERENCE)
-        save_vals(ref_prob_ez_vals, save_fname)
+        ref_ez_vals = acquire_ez_vals(ref_fdtd, ref_prob_ez_idxs, AcqMode.REFERENCE)
+
+        save_vals(ref_ez_vals, save_fname)
 
         print "------------------------------------"
         print "Reference values acqusition complete"
@@ -222,56 +224,38 @@ if __name__ == "__main__":
 
     tst_fdtd = create_fdtd(tst_space, cpml_tst_geoms, src)
     print
-
-    #########################TEMPORARY BLOCK#########################
-#    import cPickle
-#
-#    ref_ez_vals1_file = open('ref_ez_vals1.dat')
-#    ref_ez_vals2_file = open('ref_ez_vals2.dat')
-#    ref_ez_vals3_file = open('ref_ez_vals3.dat')
-#
-#    ref_prob_ez_vals1 = cPickle.load(ref_ez_vals1_file)
-#    ref_prob_ez_vals2 = cPickle.load(ref_ez_vals2_file)
-#    ref_prob_ez_vals3 = cPickle.load(ref_ez_vals3_file)
-#
-#    ref_ez_vals1_file.close()
-#    ref_ez_vals2_file.close()
-#    ref_ez_vals3_file.close()
-#
-#    tst_prob_ez_vals = acquire_ez_vals(tst_fdtd, tst_prob_ez_idxs, AcqMode.TEST, len(ref_prob_ez_vals1))
-    #########################TEMPORARY BLOCK#########################
-
-    if ref_acq != True:
-        ref_prob_ez_vals = load_vals(save_fname)
-
-    tst_prob_ez_vals = acquire_ez_vals(tst_fdtd, tst_prob_ez_idxs, AcqMode.TEST, len(ref_prob_ez_vals[0]))
-
+    
+    tst_ez_vals = acquire_ez_vals(tst_fdtd, tst_prob_ez_idxs, AcqMode.TEST, len(ref_ez_vals[0]))
+    
     print "------------------------------------"
     print "CPML test values acqusition complete"
     print "------------------------------------"
     print
 
+    if ref_acq != True:
+        ref_ez_vals = load_vals(save_fname)
+
     #######DEBUG MODE MESSAGE BLOCK#######
     if debug_mode == True:
         print "!!!!!!!!!!!START OF DEBUG MESSAGES!!!!!!!!!!!"
-        print "Length of ref_prob_ez_vals:", len(ref_prob_ez_vals)
+        print "Length of ref_prob_ez_vals:", len(ref_ez_vals)
         print
-        print "Length of tst_prob_ez_vals:", len(tst_prob_ez_vals)
+        print "Length of tst_prob_ez_vals:", len(tst_ez_vals)
         print
-        print "Length of ref_prob_ez_vals[0]:", len(ref_prob_ez_vals[0])
+        print "Length of ref_prob_ez_vals[0]:", len(ref_ez_vals[0])
         print
-        print "Length of tst_prob_ez_vals[0]:", len(tst_prob_ez_vals[0])
+        print "Length of tst_prob_ez_vals[0]:", len(tst_ez_vals[0])
         print
-        print "ref_prob_ez_vals:", array(ref_prob_ez_vals)
+        print "ref_prob_ez_vals:", array(ref_ez_vals)
         print
-        print "tst_prob_ez_vals:", array(tst_prob_ez_vals)
+        print "tst_prob_ez_vals:", array(tst_ez_vals)
         print "!!!!!!!!!!!END OF DEBUG MESSAGES!!!!!!!!!!!"
         print
     #######DEBUG MODE MESSAGE BLOCK#######
 
     print "Now, the result graph is drawn..."
 
-    plot_vals = abs((array(ref_prob_ez_vals[1]) - array(tst_prob_ez_vals[1])) / max(ref_prob_ez_vals[1]))
+    plot_vals = abs((array(ref_ez_vals[1]) - array(tst_ez_vals[1])) / max(ref_ez_vals[1]))
 
     import pylab
 
