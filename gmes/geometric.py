@@ -4,291 +4,620 @@
 
 from copy import deepcopy
 from math import ceil
-from numpy import array, zeros, empty, dot, inf, sqrt, fabs
+from numpy import *
 from scipy.linalg import norm
 
-from constants import c0
+import constants as const
 
 
 class Cartesian:
-    """Define the whole calculation space.
+    """Define the calculation space with Cartesian coordinates.
     
-    size: a sequence with length three consists of
-    non-negative numbers.
-    a: physical length of a unit in the coordinate. (scalar)
-        In dimensionless scale a = 1.
-    resolution: number of sections of one unit (scalar or length 3 sequence)
-        default: 15
-    courant_ratio: the ratio of dt to Courant stability bound.
-        default: 0.99
-    dt: the time differential. If None is given, dt is calculated using
-        space differentials and courant_ratio.
-        default: None
+    Attributes:
+        half_size -- the half size of whole calculation volume
+        res -- number of sections of one unit length
+        dx, dy, dz -- the space differentials
+        dt -- the time differential
+        courant_limit -- the Courant stability bound of an explicit FDTD method
+        courant_ratio -- the ratio of dt to Courant stability bound
+        whole_field_size -- the total array size for the each component of 
+            the electromagnetic field except the communication buffers
+        my_id -- mpi rank of this node
+        numprocs -- the number of mpi nodes
+        cart_comm -- mpi Cartesian communicator
+        my_cart_idx -- the coordinates of this node in mpi Cartesian communicator
+        general_field_size -- the general array size for the each component of 
+            the electromagnetic field except the communication buffers
+        field_size -- the specific array size for the each component of
+            the electromagnetic field of this node except the communication buffers
+            
     """
-    
-    def __init__(self, size, a=1, resolution=15, courant_ratio=.99, dt=None):
-        self.a = float(a)
-        
+    def __init__(self, size, resolution=15, courant_ratio=.99, dt=None):
+        """
+        Arguments:
+            size -- a length three sequence consists of non-negative numbers
+            resolution -- number of sections of one unit (scalar or length 3 sequence)
+                default: 15
+            courant_ratio -- the ratio of dt to Courant stability bound
+                default: 0.99
+            dt -- the time differential
+                If None is given, dt is calculated using space differentials and courant_ratio.
+                default: None
+		    
+        """
         try:
             if len(resolution) == 3:
                 self.res = array(resolution, float)
         except TypeError:
             self.res = array((resolution,)*3, float)
             
-        self.courant_ratio = float(courant_ratio)
-        
-        self.dx, self.dy, self.dz = self.a / self.res
+        self.dx, self.dy, self.dz = 1 / self.res
 
         # local spatial differentials to calculate dt
-        dx, dy, dz = self.a / self.res
+        dx, dy, dz = 1 / self.res
         
         self.half_size = 0.5 * array(size, float)
         
-        if self.half_size[0] == 0 or self.half_size[0] == inf:
+        if self.half_size[0] == 0:
             self.half_size[0] = .5 * self.dx
             dx = inf
             
-        if self.half_size[1] == 0 or self.half_size[1] == inf:
+        if self.half_size[1] == 0:
             self.half_size[1] = .5 * self.dy
             dy = inf
             
-        if self.half_size[2] == 0 or self.half_size[2] == inf:
+        if self.half_size[2] == 0:
             self.half_size[2] = .5 * self.dz
             dz = inf
             
         # Courant stability bound
-        self.courant_limit = 1 / (c0 * sqrt(dx**-2 + dy**-2 + dz**-2))
+        self.courant_limit = 1 / (const.c0 * sqrt(dx**-2 + dy**-2 + dz**-2))
         
         if dt is None:
+            self.courant_ratio = float(courant_ratio)
             self.dt = self.courant_ratio * self.courant_limit
         else:
             self.dt = float(dt)
             self.courant_ratio = self.dt / self.courant_limit
 
         self.field_size = []
-        for i in (int(x + .5) for x in 2 * self.half_size * self.res):
-            if i == 0:
+        for size in (round(x) for x in 2 * self.half_size * self.res):
+            if size == 1:
                 self.field_size.append(1)
             else:
-                self.field_size.append(i)
-
-        self.ex_shape = self.field_size[0], self.field_size[1] + 1, self.field_size[2] + 1
-        self.ey_shape = self.field_size[0] + 1, self.field_size[1], self.field_size[2] + 1
-        self.ez_shape = self.field_size[0] + 1, self.field_size[1] + 1, self.field_size[2]
-        self.hx_shape = self.ex_shape
-        self.hy_shape = self.ey_shape
-        self.hz_shape = self.ez_shape
+                self.field_size.append(size + 1)
         
     def get_ex_storage(self):
         """Return an initialized array for Ex field component.
+        
         """
-        return zeros(self.ex_shape, float)
+        ex_shape = self.field_size[0], self.field_size[1] + 1, self.field_size[2] + 1
+        return zeros(ex_shape, float)
     
     def get_ey_storage(self):
-        return zeros(self.ey_shape, float)
+        """Return an initialized array for Ey field component.
+        
+        """
+        ey_shape = self.field_size[0] + 1, self.field_size[1], self.field_size[2] + 1
+        return zeros(ey_shape, float)
     
     def get_ez_storage(self):
-        return zeros(self.ez_shape, float)
+    	"""Return an initialized array for Ez field component.
+        
+        """
+        ez_shape = self.field_size[0] + 1, self.field_size[1] + 1, self.field_size[2]
+        return zeros(ez_shape, float)
     
     def get_hx_storage(self):
-        return zeros(self.hx_shape, float)
+        """Return an initialized array for Hx field component.
+        
+        """
+        hx_shape = self.field_size[0], self.field_size[1] + 1, self.field_size[2] + 1
+        return zeros(hx_shape, float)
     
-    def get_hy_storage(self):    
-        return zeros(self.hy_shape, float)
+    def get_hy_storage(self):
+    	"""Return an initialized array for Hy field component.
+        
+        """
+        hy_shape = self.field_size[0] + 1, self.field_size[1], self.field_size[2] + 1
+        return zeros(hy_shape, float)
     
     def get_hz_storage(self):
-        return zeros(self.hz_shape, float)
+        """Return an initialized array for Hz field component.
+        
+        """
+        hz_shape = self.field_size[0] + 1, self.field_size[1] + 1, self.field_size[2]
+        return zeros(hz_shape, float)
 
     def get_material_ex_storage(self):
-        return empty(self.ex_shape, object)
+        """Return an array for Ex pointwise materials.
+        
+        """
+        ex_shape = self.field_size[0], self.field_size[1] + 1, self.field_size[2] + 1
+        return empty(ex_shape, object)
     
     def get_material_ey_storage(self):
-        return empty(self.ey_shape, object)
+        """Return an array for Ey pointwise materials.
+        
+        """
+        ey_shape = self.field_size[0] + 1, self.field_size[1], self.field_size[2] + 1
+        return empty(ey_shape, object)
     
     def get_material_ez_storage(self):
-        return empty(self.ez_shape, object)
+        """Return an array for Ez pointwise materials.
+        
+        """
+        ez_shape = self.field_size[0] + 1, self.field_size[1] + 1, self.field_size[2]
+        return empty(ez_shape, object)
     
     def get_material_hx_storage(self):
-        return empty(self.hx_shape, object)
+        """Return an array for Hx pointwise materials.
+        
+        """
+        hx_shape = self.field_size[0], self.field_size[1] + 1, self.field_size[2] + 1
+        return empty(hx_shape, object)
     
-    def get_material_hy_storage(self):    
-        return empty(self.hy_shape, object)
+    def get_material_hy_storage(self):
+        """Return an array for Hy pointwise materials.
+        
+        """
+        hy_shape = self.field_size[0] + 1, self.field_size[1], self.field_size[2] + 1
+        return empty(hy_shape, object)
     
     def get_material_hz_storage(self):
-        return empty(self.hz_shape, object)
-
-    def ex_index_to_space(self, idx):
-        """Return space coordinates corresponding to the given index of Ex mesh point. 
+        """Return an array for Hz pointwise materials.
+        
         """
+        hz_shape = self.field_size[0] + 1, self.field_size[1] + 1, self.field_size[2]
+        return empty(hz_shape, object)
+
+    def ex_index_to_space(self, *index):
+        """Return space coordinate of the given index.
         
-        x0 = (idx[0] + .5) * self.dx - self.half_size[0]
-        x1 = idx[1] * self.dy - self.half_size[1]
-        x2 = idx[2] * self.dz - self.half_size[2]
-        return x0, x1, x2
+        This method returns the space coordinates corresponding to 
+        the given index of Ex mesh point.
         
-    def space_to_ex_index(self, x):
-        """Return the index of the nearest Ex mesh point.
+        Arguments:
+            index -- array index
         
-        x: space coordinates (length 3)
         """
+        try:
+            if len(index) == 1:
+                idx = array(index[0], int)
+            elif len(index) == 3:
+                idx = array(index, int)
+            else:
+                raise TypeError, 'argument length is not 1 or 3.'
+        except ValueError:
+            raise ValueError, 'non-numerical type in argument.'
         
-        idx0 = int((x[0] + self.half_size[0]) / self.dx)
-        if idx0 < 0: idx0 = 0
-        elif idx0 > self.ex_shape[0] - 1: idx0 = self.ex_shape[0] - 1
+        coords_0 = (idx[0] + .5) * self.dx - self.half_size[0]
+        coords_1 = idx[1] * self.dy - self.half_size[1]
+        coords_2 = idx[2] * self.dz - self.half_size[2]
+        return coords_0, coords_1, coords_2
         
-        idx1 = int((x[1] + self.half_size[1]) / self.dy + .5)
-        if idx1 < 0: idx1 = 0
-        elif idx1 > self.ex_shape[1] - 2: idx1 = self.ex_shape[1] - 2
+    def space_to_ex_index(self, *coords):
+        """Return the nearest mesh point of the given space coordinate.
+        
+        This method returns the index of the nearest Ex mesh point of the
+        given space coordinate.
+        
+        Arguments:
+            coords -- space coordinate
+        
+        """
+        try:
+            if len(coords) == 1:
+                spc_coords = array(coords[0], float)
+            elif len(coords) == 3:
+                spc_coords = array(coords, float)
+            else:
+                raise TypeError, 'argument length is not 1 or 3.'
+        except ValueError:
+            raise ValueError, 'non-numerical type in argument.'
+        
+        ex_shape = self.field_size[0], self.field_size[1] + 1, self.field_size[2] + 1
+        
+        idx = empty(3, int)
+        idx[0] = int((spc_coords[0] + self.half_size[0]) / self.dx)
+        if idx[0] < 0: idx[0] = 0
+        elif idx[0] > ex_shape[0] - 1: idx[0] = ex_shape[0] - 1
+        
+        idx[1] = int((spc_coords[1] + self.half_size[1]) / self.dy + .5)
+        if idx[1] < 0: idx[1] = 0
+        elif idx[1] > ex_shape[1] - 2: idx[1] = ex_shape[1] - 2
 
-        idx2 = int((x[2] + self.half_size[2]) / self.dz + .5)
-        if idx2 < 0: idx2 = 0
-        elif idx2 > self.ex_shape[2] - 2: idx2 = self.ex_shape[2] - 2
+        idx[2] = int((spc_coords[2] + self.half_size[2]) / self.dz + .5)
+        if idx[2] < 0: idx[2] = 0
+        elif idx[2] > ex_shape[2] - 2: idx[2] = ex_shape[2] - 2
 
-        return idx0, idx1, idx2
+        return tuple(idx)
 
-    def ey_index_to_space(self, idx):
-        x0 = idx[0] * self.dx - self.half_size[0]
-        x1 = (idx[1] + .5) * self.dy - self.half_size[1]
-        x2 = idx[2] * self.dz - self.half_size[2]
-        return x0, x1, x2
+    def ey_index_to_space(self, *index):
+        """Return space coordinate of the given index.
+        
+        This method returns the space coordinates corresponding to the
+        given index of Ey mesh point.
+        
+        Arguments:
+            index -- array index
+            
+        """
+        try:
+            if len(index) == 1:
+                idx = array(index[0], int)
+            elif len(index) == 3:
+                idx = array(index, int)
+            else:
+                raise TypeError, 'argument length is not 1 or 3.'
+        except ValueError:
+            raise ValueError, 'non-numerical type in argument.'
+        
+        coords_0 = idx[0] * self.dx - self.half_size[0]
+        coords_1 = (idx[1] + .5) * self.dy - self.half_size[1]
+        coords_2 = idx[2] * self.dz - self.half_size[2]
+        return coords_0, coords_1, coords_2
     
-    def space_to_ey_index(self, x):
-        idx0 = int((x[0] + self.half_size[0]) / self.dx + .5)
-        if idx0 < 0: idx0 = 0
-        elif idx0 > self.ey_shape[0] - 2: idx0 = self.ey_shape[0] - 2
+    def space_to_ey_index(self, *coords):
+        """Return the nearest mesh point of the given space coordinate.
+        
+        This method returns the index of the nearest Ey mesh point of
+        the given space coordinate.
+        
+        Arguments:
+            coords -- space coordinate
+            
+        """
+        try:
+            if len(coords) == 1:
+                spc_coords = array(coords[0], float)
+            elif len(coords) == 3:
+                spc_coords = array(coords, float)
+            else:
+                raise TypeError, 'argument length is not 1 or 3.'
+        except ValueError:
+            raise ValueError, 'non-numerical type in argument.'
+        
+        ey_shape = self.field_size[0] + 1, self.field_size[1], self.field_size[2] + 1
+        
+        idx = empty(3, int)
+        idx[0] = int((spc_coords[0] + self.half_size[0]) / self.dx + .5)
+        if idx[0] < 0: idx[0] = 0
+        elif idx[0] > ey_shape[0] - 2: idx[0] = ey_shape[0] - 2
 
-        idx1 = int((x[1] + self.half_size[1]) / self.dy)
-        if idx1 < 0: idx1 = 0
-        elif idx1 > self.ey_shape[1] - 1: idx1 = self.ey_shape[1] - 1
+        idx[1] = int((spc_coords[1] + self.half_size[1]) / self.dy)
+        if idx[1] < 0: idx[1] = 0
+        elif idx[1] > ey_shape[1] - 1: idx[1] = ey_shape[1] - 1
 
-        idx2 = int((x[2] + self.half_size[2]) / self.dz + .5)
-        if idx2 < 0: idx2 = 0
-        elif idx2 > self.ey_shape[2] - 2: idx2 = self.ey_shape[2] - 2
+        idx[2] = int((spc_coords[2] + self.half_size[2]) / self.dz + .5)
+        if idx[2] < 0: idx[2] = 0
+        elif idx[2] > ey_shape[2] - 2: idx[2] = ey_shape[2] - 2
 
-        return idx0, idx1, idx2
+        return tuple(idx)
     
-    def ez_index_to_space(self, idx):
-        x0 = idx[0] * self.dx - self.half_size[0]
-        x1 = idx[1] * self.dy - self.half_size[1]
-        x2 = (idx[2] + .5) * self.dz - self.half_size[2]
-        return x0, x1, x2
+    def ez_index_to_space(self, *index):
+        """Return space coordinate of the given index.
+        
+        This method returns the space coordinates corresponding to the
+        given index of Ez mesh point.
+        
+        Arguments
+            index -- array index
+        """
+        try:
+            if len(index) == 1:
+                idx = array(index[0], int)
+            elif len(index) == 3:
+                idx = array(index, int)
+            else:
+                raise TypeError, 'argument length is not 1 or 3.'
+        except ValueError:
+            raise ValueError, 'non-numerical type in argument.'
+        
+        coords_0 = idx[0] * self.dx - self.half_size[0]
+        coords_1 = idx[1] * self.dy - self.half_size[1]
+        coords_2 = (idx[2] + .5) * self.dz - self.half_size[2]
+        return coords_0, coords_1, coords_2
     
-    def space_to_ez_index(self, x):
-        idx0 = int((x[0] + self.half_size[0]) / self.dx + .5)
-        if idx0 < 0: idx0 = 0
-        elif idx0 > self.ez_shape[0] - 2: idx0 = self.ez_shape[0] - 2
-
-        idx1 = int((x[1] + self.half_size[1]) / self.dy + .5)
-        if idx1 < 0: idx1 = 0
-        elif idx1 > self.ez_shape[1] - 2: idx1 = self.ez_shape[1] - 2
-
-        idx2 = int((x[2] + self.half_size[2]) / self.dz)
-        if idx2 < 0: idx2 = 0
-        elif idx2 > self.ez_shape[2] - 1: idx2 = self.ez_shape[2] - 1
-
-        return idx0, idx1, idx2
-
-    def hx_index_to_space(self, idx):
-        x0 = idx[0] * self.dx - self.half_size[0]
-        x1 = (idx[1] - .5) * self.dy - self.half_size[1]
-        x2 = (idx[2] - .5) * self.dz - self.half_size[2]
-        return x0, x1, x2
-
-    def space_to_hx_index(self, x):
-        idx0 = int((x[0] + self.half_size[0]) / self.dx + .5)
-        if idx0 < 0: idx0 = 0
-        elif idx0 > self.hx_shape[0] - 1: idx0 = self.hx_shape[0] - 1
+    def space_to_ez_index(self, *coords):
+        """Return the nearest mesh point of the given space coordinate.
         
-        idx1 = int((x[1] + self.half_size[1]) / self.dy + 1)
-        if idx1 < 1: idx1 = 1
-        elif idx1 > self.hx_shape[1] - 1: idx1 = self.hx_shape[1] - 1
-
-        idx2 = int((x[2] + self.half_size[2]) / self.dz + 1)
-        if idx2 < 1: idx2 = 1
-        elif idx2 > self.hx_shape[2] - 1: idx2 = self.hx_shape[2] - 1
-
-        return idx0, idx1, idx2
-
-    def hy_index_to_space(self, idx):
-        x0 = (idx[0] - .5) * self.dx - self.half_size[0]
-        x1 = idx[1] * self.dy - self.half_size[1]
-        x2 = (idx[2] - .5) * self.dz - self.half_size[2]
-        return x0, x1, x2
+        This method returns the index of the nearest Ez mesh point of
+        the given space coordinate.
         
-    def space_to_hy_index(self, x):
-        idx0 = int((x[0] + self.half_size[0]) / self.dx + 1)
-        if idx0 < 1: idx0 = 1
-        elif idx0 > self.hy_shape[0] - 1: idx0 = self.hy_shape[0] - 1
+        Arguments:
+            coords -- space coordinate
+            
+        """
+        try:
+            if len(coords) == 1:
+                spc_coords = array(coords[0], float)
+            elif len(coords) == 3:
+                spc_coords = array(coords, float)
+            else:
+                raise TypeError, 'argument length is not 1 or 3.'
+        except ValueError:
+            raise ValueError, 'non-numerical type in argument.'
         
-        idx1 = int((x[1] + self.half_size[1]) / self.dy + .5)
-        if idx1 < 0: idx1 = 0
-        elif idx1 > self.hy_shape[1] - 1: idx1 = self.hy_shape[1] - 1
-
-        idx2 = int((x[2] + self.half_size[2]) / self.dz + 1)
-        if idx2 < 1: idx2 = 1
-        elif idx2 > self.hy_shape[2] - 1: idx2 = self.hy_shape[2] - 1
-
-        return idx0, idx1, idx2
-
-    def hz_index_to_space(self, idx):
-        x0 = (idx[0] - .5) * self.dx - self.half_size[0]
-        x1 = (idx[1] - .5) * self.dy - self.half_size[1]
-        x2 = idx[2] * self.dz - self.half_size[2]
-        return x0, x1, x2
+        ez_shape = self.field_size[0] + 1, self.field_size[1] + 1, self.field_size[2]
         
-    def space_to_hz_index(self, x):
-        idx0 = int((x[0] + self.half_size[0]) / self.dx + 1)
-        if idx0 < 1: idx0 = 1
-        elif idx0 > self.hz_shape[0] - 1: idx0 = self.hz_shape[0] - 1
+        idx = empty(3, int)
+        idx[0] = int((spc_coords[0] + self.half_size[0]) / self.dx + .5)
+        if idx[0] < 0: idx[0] = 0
+        elif idx[0] > ez_shape[0] - 2: idx[0] = ez_shape[0] - 2
 
-        idx1 = int((x[1] + self.half_size[1]) / self.dy + 1)
-        if idx1 < 1: idx1 = 1
-        elif idx1 > self.hz_shape[1] - 1: idx1 = self.hz_shape[1] - 1
+        idx[1] = int((spc_coords[1] + self.half_size[1]) / self.dy + .5)
+        if idx[1] < 0: idx[1] = 0
+        elif idx[1] > ez_shape[1] - 2: idx[1] = ez_shape[1] - 2
 
-        idx2 = int((x[2] + self.half_size[2]) / self.dz + .5)
-        if idx2 < 0: idx2 = 0
-        elif idx2 > self.hz_shape[2] - 1: idx2 = self.hz_shape[2] - 1
+        idx[2] = int((spc_coords[2] + self.half_size[2]) / self.dz)
+        if idx[2] < 0: idx[2] = 0
+        elif idx[2] > ez_shape[2] - 1: idx[2] = ez_shape[2] - 1
+
+        return tuple(idx)
+
+    def hx_index_to_space(self, *index):
+        """Return space coordinate of the given index.
         
-        return idx0, idx1, idx2
+        This method returns the space coordinates corresponding to the
+        given index of Hx mesh point.
+        
+        Arguments:
+            index -- array index
+            
+        """
+        try:
+            if len(index) == 1:
+                idx = array(index[0], int)
+            elif len(index) == 3:
+                idx = array(index, int)
+            else:
+                raise TypeError, 'argument length is not 1 or 3.'
+        except ValueError:
+            raise ValueError, 'non-numerical type in argument.'
+        
+        coords_0 = idx[0] * self.dx - self.half_size[0]
+        coords_1 = (idx[1] - .5) * self.dy - self.half_size[1]
+        coords_2 = (idx[2] - .5) * self.dz - self.half_size[2]
+        return coords_0, coords_1, coords_2
+
+    def space_to_hx_index(self, *coords):
+        """Return the nearest mesh point of the given space coordinate.
+        
+        This method returns the index of the nearest Hx mesh point of the
+        given space coordinate.
+        
+        Arguments:
+            coords -- space coordinate
+            
+        """
+        try:
+            if len(coords) == 1:
+                spc_coords = array(coords[0], float)
+            elif len(coords) == 3:
+                spc_coords = array(coords, float)
+            else:
+                raise TypeError, 'argument length is not 1 or 3.'
+        except ValueError:
+            raise ValueError, 'non-numerical type in argument.'
+        
+        hx_shape = self.field_size[0], self.field_size[1] + 1, self.field_size[2] + 1
+        
+        idx = empty(3, int)
+        idx[0] = int((spc_coords[0] + self.half_size[0]) / self.dx + .5)
+        if idx[0] < 0: idx[0] = 0
+        elif idx[0] > hx_shape[0] - 1: idx[0] = hx_shape[0] - 1
+        
+        idx[1] = int((spc_coords[1] + self.half_size[1]) / self.dy + 1)
+        if idx[1] < 1: idx[1] = 1
+        elif idx[1] > hx_shape[1] - 1: idx[1] = hx_shape[1] - 1
+
+        idx[2] = int((spc_coords[2] + self.half_size[2]) / self.dz + 1)
+        if idx[2] < 1: idx[2] = 1
+        elif idx[2] > hx_shape[2] - 1: idx[2] = hx_shape[2] - 1
+
+        return tuple(idx)
+
+    def hy_index_to_space(self, *index):
+        """Return space coordinate of the given index.
+        
+        This method returns the space coordinates corresponding to the
+        given index of Hy mesh point.
+        
+        Arguments
+            index -- array index
+        
+        """
+        try:
+            if len(index) == 1:
+                idx = array(index[0], int)
+            elif len(index) == 3:
+                idx = array(index, int)
+            else:
+                raise TypeError, 'argument length is not 1 or 3.'
+        except ValueError:
+            raise ValueError, 'non-numerical type in argument.'
+        
+        coords_0 = (idx[0] - .5) * self.dx - self.half_size[0]
+        coords_1 = idx[1] * self.dy - self.half_size[1]
+        coords_2 = (idx[2] - .5) * self.dz - self.half_size[2]
+        return coords_0, coords_1, coords_2
+        
+    def space_to_hy_index(self, *coords):
+        """Return the nearest mesh point of the given space coordinate.
+        
+        This method returns the index of the nearest Hy mesh point of
+        the given space coordinate.
+        
+        Arguments:
+            coords -- space coordinate
+            
+        """
+        try:
+            if len(coords) == 1:
+                spc_coords = array(coords[0], float)
+            elif len(coords) == 3:
+                spc_coords = array(coords, float)
+            else:
+                raise TypeError, 'argument length is not 1 or 3.'
+        except ValueError:
+            raise ValueError, 'non-numerical type in argument.'
+        
+        hy_shape = self.field_size[0] + 1, self.field_size[1], self.field_size[2] + 1
+        
+        idx = empty(3, int)
+        idx[0] = int((spc_coords[0] + self.half_size[0]) / self.dx + 1)
+        if idx[0] < 1: idx[0] = 1
+        elif idx[0] > hy_shape[0] - 1: idx[0] = hy_shape[0] - 1
+        
+        idx[1] = int((spc_coords[1] + self.half_size[1]) / self.dy + .5)
+        if idx[1] < 0: idx[1] = 0
+        elif idx[1] > hy_shape[1] - 1: idx[1] = hy_shape[1] - 1
+
+        idx[2] = int((spc_coords[2] + self.half_size[2]) / self.dz + 1)
+        if idx[2] < 1: idx[2] = 1
+        elif idx[2] > hy_shape[2] - 1: idx[2] = hy_shape[2] - 1
+
+        return tuple(idx)
+
+    def hz_index_to_space(self, *index):
+        """Return space coordinate of the given index.
+        
+        This method returns the space coordinates corresponding to the
+        given index of Hz mesh point.
+        
+        Arguments:
+            index -- array index
+            
+        """
+        try:
+            if len(index) == 1:
+                idx = array(index[0], int)
+            elif len(index) == 3:
+                idx = array(index, int)
+            else:
+                raise TypeError, 'argument length is not 1 or 3.'
+        except ValueError:
+            raise ValueError, 'non-numerical type in argument.'
+        
+        coords_0 = (idx[0] - .5) * self.dx - self.half_size[0]
+        coords_1 = (idx[1] - .5) * self.dy - self.half_size[1]
+        coords_2 = idx[2] * self.dz - self.half_size[2]
+        return coords_0, coords_1, coords_2
+        
+    def space_to_hz_index(self, *coords):
+        """Return the nearest mesh point of the given space coordinate.
+        
+        This method returns the index of the nearest Hz mesh point of
+        the given space coordinate.
+        
+        Arguments:
+            coords -- space coordinate
+            
+        """
+        try:
+            if len(coords) == 1:
+                spc_coords = array(coords[0], float)
+            elif len(coords) == 3:
+                spc_coords = array(coords, float)
+            else:
+                raise TypeError, 'argument length is not 1 or 3.'
+        except ValueError:
+            raise ValueError, 'non-numerical type in argument.'
+        
+        hz_shape = self.field_size[0] + 1, self.field_size[1] + 1, self.field_size[2]
+        
+        idx = empty(3, int)
+        idx[0] = int((x[0] + self.half_size[0]) / self.dx + 1)
+        if idx[0] < 1: idx[0] = 1
+        elif idx[0] > hz_shape[0] - 1: idx[0] = hz_shape[0] - 1
+
+        idx[1] = int((x[1] + self.half_size[1]) / self.dy + 1)
+        if idx[1] < 1: idx[1] = 1
+        elif idx[1] > hz_shape[1] - 1: idx[1] = hz_shape[1] - 1
+
+        idx[2] = int((x[2] + self.half_size[2]) / self.dz + .5)
+        if idx[2] < 0: idx[2] = 0
+        elif idx[2] > hz_shape[2] - 1: idx[2] = hz_shape[2] - 1
+        
+        return tuple(idx)
     
     def display_info(self, indent=0):
         print " " * indent, "Cartesian space"
         print " " * indent,
         print "size:", 2 * self.half_size,
-        print "a:", self.a,
         print "resolution:", self.res
-        print "dx:", self.dx, "dy:", self.dy, "dz:", self.dz
+        
+        print " " * indent,
+        print "dx:", self.dx, "dy:", self.dy, "dz:", self.dz,
         print "dt:", self.dt
         
+
+####################################################################
+#                                                                  #
+#                      Fast geometry routines                      #
+#                                                                  #
+# Using the geometric list is way too slow, especially when there  #
+# are lots of objects to test.                                     #
+#                                                                  #
+# The basic idea here is twofold.  (1) Compute bounding boxes for  #
+# each geometric object, for which inclusion tests can be computed #
+# quickly.  (2) Build a tree that recursively breaks down the unit #
+# cell in half, allowing us to perform searches in logarithmic     #
+# time.                                                            #
+#                                                                  #
+####################################################################
     
 class GeomBox:
+    """A bounding box of a geometric object.
+    
+    Attributes:
+        low -- the coordinates of the lowest vertex
+        high -- the coordinates of the highest vertex
+    
+    """
     def __init__(self, low=None, high=None):
         self.low = array(low, float)
         self.high = array(high, float)
         
     def union(self, box):
+        """Enlarge the box to include the given box.
+        
+        """
         self.low = map(min, self.low, box.low)
         self.high = map(max, self.high, box.high)
         
     def intersection(self, box):
+        """Reduce the box to intersect volume with the given box.
+        
+        """
         self.low = map(max, self.low, box.low)
         self.high = map(min, self.high, box.high)        
         
-    def add_point(self, x):
-        self.low = map(min, self.low, x)
-        self.high = map(max, self.high, x)
+    def add_point(self, point):
+    	"""Enlarge the box to include the given point.
+        
+        """
+        self.low = map(min, self.low, point)
+        self.high = map(max, self.high, point)
            
     @staticmethod
     def __between__(x, low, high):
+    	"""Return truth of low <= x <= high.
+        
+        """
         return low <= x <= high
     
-    def in_box(self, x):
-        componential = map(self.__between__, x, self.low, self.high)
+    def in_box(self, point):
+    	"""Check whether the given point is in the box.
+        
+        """
+        componential = map(self.__between__, point, self.low, self.high)
         return reduce(lambda x, y: x and y, componential)
     
     def intersect(self, box):
-        """
-        Return whether or not the given box intersect with this.
+        """Check whether the given box intersect with the box.
+        
         """
         componential = (self.__between__(box.low[0], self.low[0], self.high[0]) or
                         self.__between__(box.high[0], self.low[0], self.high[0]) or
@@ -319,6 +648,16 @@ class GeomBox:
     
     
 class GeomBoxNode:
+    """Node class which makes up a binary search tree.
+    
+    Attributes:
+        box -- a bounding box enclosing the volume of this node
+        t1 -- left branch from this node
+        t2 -- right branch from this node
+        geom_list -- a geometric object list overlapping the volume of this node.
+        depth -- depth from the root of this binary search tree
+        
+    """
     def __init__(self, box, geom_list, depth):
         self.box = box
         self.t1, self.t2 = None, None
@@ -327,6 +666,15 @@ class GeomBoxNode:
         
         
 class GeomBoxTree:
+    """A tree for the fast inclusion test of geometric objects within them.
+    
+    The tree recursively partitions the unit cell, allowing us to perform 
+    binary searches for the object containing a give point.
+    
+    Attributes:
+        root -- root node of the binary search tree
+        
+    """
     def __init__(self, geom_list=None):
         box = GeomBox((-inf, -inf, -inf), (inf, inf, inf))
         self.root = GeomBoxNode(box, geom_list, 0)
@@ -334,10 +682,12 @@ class GeomBoxTree:
     
     @staticmethod    
     def find_best_partition(node, divideAxis):
-        """ Find the best place to "cut" along the axis divideAxis in 
+        """ 
+        Find the best place to "cut" along the axis divideAxis in 
         order to maximally divide the objects between the partitions.
         Upon return, n1 and n2 are the number of objects below and 
         above the partition, respectively.
+        
         """
         small = 1e-6 # only 1e-6 works
         bestPartition = None
@@ -378,10 +728,9 @@ class GeomBoxTree:
     
     @staticmethod
     def divide_geom_box_tree(node):
-        """divide_geom_box_tree divide box in two, along the axis
-        that maximally partitions the boxes. 
+        """Divide box in two, along the axis that maximally partitions the boxes.
+        
         """
-
         # Try partitioning along each dimension, counting the
         # number of objects in the partitioned boxes and finding
         # the best partition.
@@ -421,27 +770,27 @@ class GeomBoxTree:
         GeomBoxTree.branch_out(node.t2)
     
     @staticmethod
-    def tree_search(node, x):
-        if node.box.in_box(x) == False: 
+    def tree_search(node, point):
+        if node.box.in_box(point) == False: 
             return None
         else:
             if not (node.t1 and node.t2):
                 return node
             else:
-                if node.t1.box.in_box(x):
-                    return GeomBoxTree.tree_search(node.t1,x)
+                if node.t1.box.in_box(point):
+                    return GeomBoxTree.tree_search(node.t1, point)
         
-                if node.t2.box.in_box(x):
-                    return GeomBoxTree.tree_search(node.t2,x)
+                if node.t2.box.in_box(point):
+                    return GeomBoxTree.tree_search(node.t2, point)
     
-    def object_of_point(self, x):
-        leaf = self.tree_search(self.root,x)
+    def object_of_point(self, point):
+        leaf = self.tree_search(self.root, point)
         for go in reversed(leaf.geom_list):
-            if go.in_object(x):
+            if go.in_object(point):
                 return go
         
-#    def materialOfPoint(self, x):
-#        go = self.object_of_point(x)
+#    def materialOfPoint(self, point):
+#        go = self.object_of_point(point)
 #        if (go is not None): return go.material
         
     def display_info(self, node=None, indent=0):
@@ -454,28 +803,53 @@ class GeomBoxTree:
             
         print " "
 
-        if node.t1: self.display_info(node.t1,indent + 5)
-        if node.t2: self.display_info(node.t2,indent + 5)
+        if node.t1: self.display_info(node.t1, indent + 5)
+        if node.t2: self.display_info(node.t2, indent + 5)
         
-        
+
+####################################################################
+#                                                                  #
+#                       Geometric primitives                       #
+#                                                                  #
+####################################################################
+
 class GeometricObject:
-    def __init__(self, material=None, center=(0,0,0)):
+    """Base class for geometric objects.
+    
+    Attributes:
+        material -- filling up material 
+        box -- bounding box enclosing this geometric object
+        
+    """
+    def __init__(self, material=None):
         self.material = material
-        self.center = array(center, float)
+        self.box = self.geom_box()
     
     def init(self, space):
         pass
+
+    def geom_box(self):
+        """Return a bounding box enclosing this geometric object.
         
-    def in_object(self, x):
-        """Return whether or not the x (in the lattice basis) is inside
-        this geometric object. This method additionally requires that 
-        fixObject has been called on this object (if the lattice basis is
-        non-orthogonal).
+        The derived classes should override this method.
         """
-        return False
+        
+        raise NotImplementedError
+                
+    def in_object(self, point):
+        """Return whether or not the point is inside.
+        
+        Return whether or not the point (in the lattice basis) is 
+        inside this geometric object. This method additionally requires
+        that fixObject has been called on this object (if the lattice 
+        basis is non-orthogonal).
+        
+        """        
+        raise NotImplementedError
     
     def display_info(self, indent=0):
         """Display some information about this geometric object.
+        
         """
         print " " * indent, "geometric object"
         print " " * indent, "center", self.center
@@ -484,23 +858,46 @@ class GeometricObject:
        
             
 class DefaultMaterial(GeometricObject):
+    """A geometric object expanding the whole space.
+    
+    """
     def __init__(self, material=None):
-        self.material = material
-        self.box = self.geom_box()
+        GeometricObject.__init__(self, material)
         
-    def in_object(self, x):
-        return self.geom_box().in_box(x)
+    def in_object(self, point):
+    	"""
+        Override GeometricObject.in_object.
+        
+        """
+        return self.geom_box().in_box(point)
 
     def geom_box(self):
+    	"""
+        Override GeometriObject.geom_box.
+        
+        """
         return GeomBox((-inf,-inf,-inf), (inf,inf,inf))
 
     def display_info(self, indent=0):
+    	"""
+        Override GeometricObject.display_info.
+        
+        """
         print " " * indent, "default material"
         if self.material:
             self.material.display_info(indent + 5)
     
     
 class Cone(GeometricObject):
+    """Form a cone.
+    
+    Attributes:
+        center -- coordinates of the center of this geometric object
+    	axis -- unit vector of axis
+    	height -- length of axis
+    	box -- bounding box
+        
+    """
     def __init__(self, radius2=0, axis=(1,0,0), radius=1, height=1, material=None, center=(0,0,0)):
         if radius < 0:
             msg = "radius must be non-negative."
@@ -514,14 +911,17 @@ class Cone(GeometricObject):
         else:
             self.radius2 = float(radius2) # high side radius
 
-        GeometricObject.__init__(self, material, center)
-
+        self.center = array(center, float)
         self.axis = array(axis, float) / norm(axis)
         self.height = float(height)
         
-        self.box = self.geom_box()
+        GeometricObject.__init__(self, material)
         
     def in_object(self, x):
+    	"""
+        Override GeometricObject.in_object.
+        
+        """
         x = array(x, float)
         r = x - self.center
         proj = dot(self.axis, r)
@@ -530,13 +930,16 @@ class Cone(GeometricObject):
                 return True
             radius = self.radius
             radius += (proj / self.height + .5) * (self.radius2 - radius)
-            truth = radius != 0 and \
-                    norm(r - proj * self.axis) <= fabs(radius)
+            truth = radius != 0 and norm(r - proj * self.axis) <= fabs(radius)
             return truth
         else:
             return False
            
     def display_info(self, indent=0):
+    	"""
+        Override GeometricObject.display_info.
+        
+        """
         print " " * indent, "cone"
         print " " * indent,
         print "center", self.center,
@@ -548,6 +951,10 @@ class Cone(GeometricObject):
             self.material.display_info(indent + 5)
         
     def geom_box(self):
+        """
+        Override GeometricObject.geom_box.
+        
+        """
         tmpBox1 = GeomBox(low=self.center, high=self.center)
 
         h = .5 * self.height
@@ -570,10 +977,17 @@ class Cone(GeometricObject):
        
         
 class Cylinder(Cone):
+    """Form a cylinder.
+    
+    """
     def __init__(self, axis=(1,0,0), radius=1, height=1, material=None, center=(0,0,0)):
         Cone.__init__(self, radius, axis, radius, height, material, center)
         
     def display_info(self, indent=0):
+    	"""
+        Override Cone.display_info.
+        
+        """
         print " " * indent, "cylinder"
         print " " * indent, 
         print "center", self.center,
@@ -585,8 +999,12 @@ class Cylinder(Cone):
 
 
 class _Block(GeometricObject):
+    """Base class for Block and Ellipsoid class.
+    
+    """
     def __init__(self, e1=(1,0,0), e2=(0,1,0), e3=(0,0,1), size=(0,0,0), material=None, center=(0,0,0)):
-        GeometricObject.__init__(self, material, center)
+        self.center = array(center, float)
+        
         self.e1 = array(e1, float) / norm(e1)
         self.e2 = array(e2, float) / norm(e2)
         self.e3 = array(e3, float) / norm(e3)
@@ -594,9 +1012,13 @@ class _Block(GeometricObject):
         
         self.projection_matrix = array([self.e1, self.e2, self.e3])
         
-        self.box = self.geom_box()
+        GeometricObject.__init__(self, material)
         
     def in_object(self, x):
+    	"""
+        Override GeometricObject.in_object.
+        
+        """
         x = array(x, float)
         r = x - self.center
         proj = dot(self.projection_matrix, r)
@@ -604,6 +1026,10 @@ class _Block(GeometricObject):
         return (fabs(proj) <= .5 * self.size).all()
         
     def geom_box(self):
+    	"""
+        Override GeometricObject.geom_box.
+        
+        """
         tmpBox = GeomBox(low=self.center, high=self.center)
         # enlarge the box to be big enough to contain all 8 corners of the block.
         s1 = self.size[0] * self.e1
@@ -625,6 +1051,9 @@ class _Block(GeometricObject):
      
         
 class Block(_Block):
+    """Form a parallelpiped.
+    
+    """
     def __init__(self, e1=(1,0,0), e2=(0,1,0), e3=(0,0,1), size=(0,0,0), material=None, center=(0,0,0)):
         _Block.__init__(self, e1, e2, e3, size, material, center)
         
@@ -639,6 +1068,9 @@ class Block(_Block):
 
 
 class Ellipsoid(_Block):
+    """Form an ellipsoid.
+    
+    """
     def __init__(self, e1=(1,0,0), e2=(0,1,0), e3=(0,0,1), size=(1,1,1), material=None, center=(0,0,0)):
         _Block.__init__(self, e1, e2, e3, size, material, center)
 
@@ -662,6 +1094,9 @@ class Ellipsoid(_Block):
 
 
 class Sphere(Ellipsoid):
+    """Form a sphere.
+    
+    """
     def __init__(self, radius=1, material=None, center=(0,0,0)):
         if radius < 0:
             msg = "radius must be non-negative."
@@ -680,7 +1115,10 @@ class Sphere(Ellipsoid):
             self.material.display_info(indent + 5)
 
 
-class Boundary:
+class Boundary(GeometricObject):
+    """Form a boundary.
+    
+    """
     def __init__(self, material=None, thickness=None, size=None, plus_x=True, minus_x=True, plus_y=True, minus_y=True, plus_z=True, minus_z=True):
         self.d = float(thickness)
         
@@ -697,31 +1135,31 @@ class Boundary:
         self.box_list = []
         
         if size[0] > 0:
-            if plus_x is True:
+            if plus_x:
                 low = (self.half_size[0] - self.d, -self.half_size[1], -self.half_size[2])
                 high = self.half_size[:]
                 self.box_list.append(GeomBox(low, high))
-            if minus_x is True:
+            if minus_x:
                 low = -self.half_size[:]
                 high = (-self.half_size[0] + self.d, self.half_size[1], self.half_size[2])
                 self.box_list.append(GeomBox(low, high))
                 
         if size[1] > 0:
-            if plus_y is True:
+            if plus_y:
                 low = (-self.half_size[0], self.half_size[1] - self.d, -self.half_size[2])
                 high = self.half_size[:]
                 self.box_list.append(GeomBox(low, high))
-            if minus_y is True:
+            if minus_y:
                 low = -self.half_size[:]
                 high = (self.half_size[0], -self.half_size[1] + self.d, self.half_size[2])
                 self.box_list.append(GeomBox(low, high))
                 
         if size[2] > 0:   
-            if plus_z is True:
+            if plus_z:
                 low = (-self.half_size[0], -self.half_size[1], self.half_size[2] - self.d)
                 high = self.half_size[:]
                 self.box_list.append(GeomBox(low, high))
-            if minus_z is True:
+            if minus_z:
                 low = -self.half_size[:]
                 high = (self.half_size[0], self.half_size[1], -self.half_size[2] + self.d)
                 self.box_list.append(GeomBox(low, high))
@@ -739,16 +1177,14 @@ class Boundary:
         elif material.__class__.__name__ == 'UPML':
             pass
         
-        self.material = material
-        
-        self.box = self.geom_box()
+        GeometricObject.__init__(self, material)
         
     def init(self, space):
         self.material.init(self.d, space)
         
-    def in_object(self, x):
+    def in_object(self, point):
         for box in self.box_list:
-            if box.in_box(x):
+            if box.in_box(point):
                 return True
         return False
         
@@ -765,14 +1201,19 @@ class Boundary:
             self.material.display_info(indent + 5)
     
     
-def find_object(x, geom_list):
-    for go in reversed(geom_list):
-        if go.in_object(x):
-            return go
+def find_object(point, geom_list):
+    """Find the last object including point in geom_list.
+    
+    find_object returns (object, array index).
+    
+    """
+    for geom_obj in reversed(geom_list):
+        if geom_obj.in_object(point):
+            return geom_obj
 
 
 if __name__ == '__main__':
-    from material import Dielectric   
+    from material import *
     
     geom_list = [DefaultMaterial(material=Dielectric()), Cone(0, (1,0,0), 1, 1, Dielectric(), (0,0,2)), Cone(0, (1,0,0), 1, 1, Dielectric(), (0,0,-2))]
     t = GeomBoxTree(geom_list)
@@ -780,13 +1221,12 @@ if __name__ == '__main__':
     space = Cartesian(size=(5,5,5))
     ex = space.get_ex_storage()
     print "ex shape:", ex.shape
-    print "ex:", space.ex_index_to_space((0,0,0))
-    print "ex:", space.ex_index_to_space((74,75,75))
-    print "ex:", space.space_to_ex_index((0,0,0))
-    print "ey:", space.space_to_ey_index((0,0,0))
-    print "ez:", space.space_to_ez_index((0,0,0))
-    print "hx:", space.space_to_hx_index((0,0,0))
-    print "hy:", space.space_to_hy_index((0,0,0))
-    print "hz:", space.space_to_hz_index((0,0,0))
-
+    print "ex:", space.ex_index_to_space(0,0,0)
+    print "ex:", space.ex_index_to_space(74,75,75)
+    print "ex:", space.space_to_ex_index(0,0,0)
+    print "ey:", space.space_to_ey_index(0,0,0)
+    print "ez:", space.space_to_ez_index(0,0,0)
+    print "hx:", space.space_to_hx_index(0,0,0)
+    print "hy:", space.space_to_hy_index(0,0,0)
+    print "hz:", space.space_to_hz_index(0,0,0)
     

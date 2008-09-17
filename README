@@ -1,19 +1,78 @@
-1. For Windows
-1.1. compile for the inplace test
-$ python setup.py build_ext --inplace --swig-opts="-c++ -outdir gmes" -c mingw32
+This README file describes how to compile and set up GMES.
 
-1.2. compile
-$ python setup.py build_ext -c mingw32
+1. Download Latest Version
 
-1.3 compile & install
-# python setup.py install build_ext -c mingw32
+The most current development version is always available from a 
+subversion repostiory:
 
-2. For Linux
-2.1. compile for the inplace test
+http://gmes.svn.sf.net/svnroot/gmes/trunk
+
+1. Compatibility
+
+1.1. GNU/Linux
+
+GMES has been tested on Etch (stable) and Sid (unstable) version of Debian
+GNU/Linux. Also, GMES works on Hardy Heron version of Ubuntu. On Linux,
+you can use all features of GMES.
+
+1.1. Windows
+
+GMES has been tested on Windows XP Professional Service Pack 3 and
+Vista Enterprise K Service Pack 1.
+
+1. Preliminaries
+
+1.1. GNU/Linux
+
+GMES uses various Python and non-Python programs. You will need
+following programs to install and execute GMES.
+
+* python >= 2.4 (tested with 2.4, 2.5)
+* numpy (Debian package: python-numpy)
+* scipy (Debian package: python-scipy)
+* pytables (optional) (Debian package: python-tables)
+* matplotlib: version 0.91.2-2 of Debian Sid sometimes causes 
+segmentation fault. 0.87.7-0.3 of Debian Etch and 0.92.2.0001 of 
+Enthought Python for Windows are fine. (Debian package: 
+python-matplotlib)
+* swig >= 1.3 (for compile) (Debian package: swig)
+* gcc (for compile)
+
+1.1. Windows
+
+Enthought Python distribution provides all programs on which GMES 
+depends.
+
+* Enthought Python Distribution (EPD) >= 2.5.2001
+
+1. Compile and Install
+
+1.1. For GNU/Linux
+
+1.1.1. compile for the inplace test
+
 $ python setup.py build_ext --inplace --swig-opts="-c++ -outdir gmes"
 
-2.2. compile
+1.1.1. compile
+
 $ python setup.py build_ext --swig-opts="-c++"
 
-2.3 install
+1.1.1. install
+
 # python setup.py install build_ext --swig-opts="-c++"
+
+1.1. For Windows
+
+1.1.1. compile for the inplace test
+
+$ python setup.py build_ext --inplace --swig-opts="-c++ -outdir gmes" -c mingw32
+
+1.1.1. compile
+
+$ python setup.py build_ext -c mingw32
+
+1.1.1. compile & install
+
+# python setup.py install build_ext -c mingw32
+
+Kyungwon Chun (kwchun@gist.ac.kr)

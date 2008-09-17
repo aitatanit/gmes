@@ -4,22 +4,24 @@
 
 """Perform a CPML and UPML test.
 
-- Class
-AcqMode: Contain data acquisition modes
+Class
+    AcqMode -- Contain data acquisition modes
 
-- Functions
-create_fdtd: Create and return a new FDTD object.
-acquire_ez_vals: Acquire Ez values from updating a FDTD object.
-save_vals: Write data into a file
-load_vals: Read data from a file
+Functions
+    create_fdtd -- Create and return a new FDTD object.
+    acquire_ez_vals -- Acquire Ez values from updating a FDTD object.
+    save_vals -- Write data into a file
+    load_vals -- Read data from a file
+
 """
 
-import sys
-sys.path.append('../')
+import os, sys
+new_path = os.path.abspath('../')
+sys.path.append(new_path)
 
-from gmes import *
 from numpy import array
 from sys import stdout
+from gmes import *
 
 class AcqMode:
     """Contain data acquisition modes, reference or test."""

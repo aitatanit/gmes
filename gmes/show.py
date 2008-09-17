@@ -1,26 +1,26 @@
 #!/usr/bin/env python
 
+from sys import modules
 from threading import Thread
 
 from numpy import array
 
-from sys import modules
+from pylab import get_current_fig_manager, figure, show, new_figure_manager
+
 if not 'matplotlib.backends' in modules:
     import matplotlib 
     matplotlib.use('TkAgg')
-from pylab import get_current_fig_manager, figure, show, new_figure_manager
 
 
 class ShowLine(Thread):
-    def __init__(self, xdata, ydata, yrange, time_step, xlabel="", ylabel="", title="", msecs=2500, fig_id=None):
+    def __init__(self, xdata, ydata, yrange, time_step, xlabel='', ylabel='', title='', window_title='GMES', msecs=2500, fig_id=None):
         Thread.__init__(self)
-        self.xdata = xdata
-        self.ydata = ydata
+        self.xdata, self.ydata = xdata, ydata
         self.yrange = array(yrange, float)
         self.msecs= msecs
-        self.xlabel = xlabel
-        self.ylabel = ylabel
+        self.xlabel, self.ylabel = xlabel, ylabel
         self.title = title
+        self.window_title = window_title
         self.time_step = time_step
         self.note_form = 'time: %f'
         if fig_id == None:
@@ -54,7 +54,7 @@ class ShowLine(Thread):
         self.ax.set_title(self.title)
         #self.manager.canvas.figure.colorbar(self.plt)
         self.time_note = self.manager.canvas.figure.text(.6, .92, self.note_form % self.time_step.t, animated=True)
-        self.manager.window.title('GMES')
+        self.manager.window.title(self.window_title)
         
         #self.manager.canvas.draw()
         #self.background = self.manager.canvas.copy_from_bbox(self.ax.bbox)
@@ -65,15 +65,15 @@ class ShowLine(Thread):
         
         
 class ShowPlane(Thread):
-    def __init__(self, data, extent, range, time_step, xlabel="", ylabel="", title="", msecs=2500, fig_id=None):
+    def __init__(self, data, extent, range, time_step, xlabel='', ylabel='', title='', window_title='GMES', msecs=2500, fig_id=None):
         Thread.__init__(self)
         self.data = data
-        self.range = array(range, 'f')
+        self.range = array(range, float)
         self.msecs = msecs
         self.extent = extent
-        self.xlabel = xlabel
-        self.ylabel = ylabel
+        self.xlabel, self.ylabel = xlabel, ylabel
         self.title = title
+        self.window_title = window_title
         self.time_step = time_step
         self.note_form = 'time: %f'
         if fig_id == None:
@@ -91,16 +91,14 @@ class ShowPlane(Thread):
     def run(self):
         self.manager = new_figure_manager(self.id)
         ax = self.manager.canvas.figure.add_subplot(111)
-        self.im = ax.imshow(self.data, origin="lower", extent=self.extent, vmin=self.range[0], vmax=self.range[1])
+        self.im = ax.imshow(self.data, extent=self.extent, aspect='auto', vmin=self.range[0], vmax=self.range[1])
         ax.set_xlabel(self.xlabel)
         ax.set_ylabel(self.ylabel)
         ax.set_title(self.title)
         self.manager.canvas.figure.colorbar(self.im)
-        self.time_note =  self.manager.canvas.figure.text(.6, .92, self.note_form % self.time_step.t, animated=True)
-        self.manager.window.title('GMES')
+        self.time_note = self.manager.canvas.figure.text(.6, .92, self.note_form % self.time_step.t, animated=True)
+        self.manager.window.title(self.window_title)
         
         self.animate()
         self.manager.show()
         self.manager.window.mainloop()
-
-        

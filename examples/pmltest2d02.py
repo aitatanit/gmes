@@ -2,14 +2,15 @@
 # file: pmltest2d02.py
 # author: Huioon Kim
 
-"""Perform a CPML and UPML test with altering PML parameters."""
+"""Perform a {C,U}PML test with altering PML parameters."""
 
-import sys
-sys.path.append('../')
+import os, sys
+new_path = os.path.abspath('../')
+sys.path.append(new_path)
 
-from gmes import *
 from numpy import array, arange
 from sys import stdout
+from gmes import *
 from pmltest2d01 import *
 
 # general settings
@@ -116,4 +117,3 @@ import pylab
 pylab.plot(max_error_list)
 #pylab.semilogy(plot_vals)
 pylab.show()
-

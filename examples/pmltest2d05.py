@@ -2,16 +2,21 @@
 # file: pmltest2d05.py
 # author: Huioon Kim
 
-"""Perform a CPML and UPML test relating the alpha maximum value
-with the sigma ratio, i.e, sigma maximum divided by sigma optimum value
-using a low frequency source, and parallelize using MPI."""
+"""A CPML and UPML test script - parallel version.
 
-# import statements
-import sys
-sys.path.append('../')
+Perform a CPML and UPML test relating the alpha maximum value with the 
+sigma ratio, i.e, sigma maximum divided by sigma optimum value using a
+low frequency source. MPI was used as a parallel interface.
 
+"""
+
+import os, sys
+new_path = os.path.abspath('../')
+sys.path.append(new_path)
+
+from sys import stdout
 from time import localtime
-from numpy import add, arange, array, log10
+from numpy import *
 
 try:
     import mpi

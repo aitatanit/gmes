@@ -2,13 +2,15 @@
 # file: pmltest2d04.py
 # author: Huioon Kim
 
-"""Perform a CPML and UPML test relating the kappa max value
+"""CPML and UPML test script.
+
+Perform a CPML and UPML test relating the kappa max value
 with the alpha max value using a low frequency source,
 and parallelize using MPI."""
 
-# import statements
-import sys
-sys.path.append('../')
+import os, sys
+new_path = os.path.abspath('../')
+sys.path.append(new_path)
 
 from numpy import *
 

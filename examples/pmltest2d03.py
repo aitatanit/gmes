@@ -2,21 +2,23 @@
 # file: pmltest2d03.py
 # author: Huioon Kim
 
-"""Perfrom a CPML and UPML test with a low frequency source.
+"""Perform a CPML and UPML test with a low frequency source.
 
-- Class
-LowFreqSrc: Contain the update mathod which implement a low frequency source properties.
+Class
+    LowFreqSrc -- Contain the update method which implement a low frequency source properties.
 
-- Functions
-create_fdtd: Create and return a new FDTD object which have low frequency source.
+Functions
+    create_fdtd -- Create and return a new FDTD object which have low frequency source.
+
 """
 
-import sys
-sys.path.append('../')
+import os, sys
+new_path = os.path.abspath('../')
+sys.path.append(new_path)
 
-from gmes import *
 from numpy import array, exp, arange
 from sys import stdout
+from gmes import *
 from pmltest2d01 import *
 
 class LowFreqSrc:
