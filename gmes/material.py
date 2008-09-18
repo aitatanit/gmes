@@ -161,7 +161,7 @@ class Compound:
     
     """
     pass
-    
+
 class PML(Material, Compound):
     """Base class of PML materials.
     
@@ -196,7 +196,7 @@ class PML(Material, Compound):
         self.initialized = True
         
     def get_sigma_opt(self):
-        """ Calculate the optimal value of sigma.
+        """Calculate the optimal value of sigma.
         
         """
         eta = sqrt(self.effective_mu_r / self.effective_epsilon_r) * const.Z0
@@ -212,7 +212,7 @@ class PML(Material, Compound):
             return self.sigma_max[component] * (1 - (self.half_size[component] - w) / self.d)**self.m
         else:
             return 0.0
-            
+        
     def kappa(self, w, component):
         """Polynomial grading of kappa.
         
@@ -223,8 +223,8 @@ class PML(Material, Compound):
             return 1 + (self.kappa_max - 1) * (1 - (self.half_size[component] - w) / self.d)**self.m
         else:
             return 1.0
-            
-            
+        
+        
 class UPML(PML):
     """Form Uniaxial Perfectly Matched Layer (UPML).
     
@@ -232,7 +232,7 @@ class UPML(PML):
     Computational Electrodynamics: The Finite-Difference Time-Domain Method, 
     3rd ed., Artech House, Inc., 2005.
     
-	Attributes:
+    Attributes:
         m --
         kappa_max --
         effective_epsilon_r -- the effective relative permittivity of incident mode impinging on the PML boundary
@@ -250,7 +250,7 @@ class UPML(PML):
         self.sigma_max_ratio = float(sigma_max_ratio)
         
     def display_info(self, indent=0):
-    	"""Display the parameter values.
+        """Display the parameter values.
 
         Override PML.display_info.
         
@@ -358,7 +358,7 @@ class CPML(PML):
     Computational Electrodynamics: The Finite-Difference Time-Domain Method, 
     3rd ed., Artech House, Inc., 2005.
     
-	Attributes:
+    Attributes:
         m --
         kappa_max --
         a_max --
@@ -416,7 +416,7 @@ class CPML(PML):
         denominator = (self.sigma(w, component) + 
                        self.kappa(w, component) * self.a(w, component)) * self.kappa(w, component)
         return numerator / denominator
-           
+    
     def get_pointwise_material_ex(self, idx, coords, underneath=None):
         by = self.b(coords[1], 1)
         bz = self.b(coords[2], 2)
@@ -476,5 +476,4 @@ class CPML(PML):
         kappay = self.kappa(coords[1], 1)
         pw_obj = CPMLHz(idx, underneath.mu_r, bx, by, cx, cy, kappax, kappay)
         return pw_obj
-    
-    
+        

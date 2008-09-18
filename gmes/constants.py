@@ -39,14 +39,35 @@ class Component:
         raise SyntaxError, 'component classes should be used as a class'
     
     
-class Electric(Component): pass
-class Ex(Electric): pass
-class Ey(Electric): pass
-class Ez(Electric): pass
-class Magnetic(Component): pass
-class Hx(Magnetic): pass
-class Hy(Magnetic): pass
-class Hz(Magnetic): pass
+class Electric(Component):
+    pass
+
+
+class Ex(Electric):
+    tag = 0
+
+    
+class Ey(Electric):
+    tag = 1
+    
+    
+class Ez(Electric):
+    tag = 2
+    
+class Magnetic(Component):
+    pass
+
+
+class Hx(Magnetic):
+    tag = 3
+    
+    
+class Hy(Magnetic):
+    tag = 4
+    
+    
+class Hz(Magnetic):
+    tag = 5
 
 
 class Directional:

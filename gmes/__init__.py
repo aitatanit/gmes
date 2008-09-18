@@ -38,6 +38,11 @@ Modules:
 
 """
 
+try:
+    import mpi
+except ImportError:
+    pass
+
 # List here only the objects we want to be publicly available
 __all__ = ['fdtd', 'geometric', 'show', 'constants', 'source', \
            'pointwise_source', 'material', 'pointwise_material']
