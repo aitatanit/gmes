@@ -2,15 +2,19 @@
 # file: pmltest2d06.py
 # author: Huioon Kim
 
-"""Perform a CPML and UPML test relating the alpha maximum value
-with the sigma ratio, i.e, sigma maximum divided by sigma optimum value
-using a low frequency source, and parallelize using MPI."""
+"""A CPML and UPML test script - parallel version.
 
-# import statements
-import sys
-sys.path.append('../')
+Perform a CPML and UPML test relating the alpha maximum value with the
+sigma ratio, i.e, sigma maximum divided by sigma optimum value using a
+low frequency source. MPI was used as a parallel interface.
 
-from numpy import add, arange, array, log10
+"""
+
+import os, sys
+new_path = os.path.abspath('../')
+sys.path.append(new_path)
+
+from numpy import *
 
 try:
     import mpi
@@ -77,6 +81,7 @@ tst_prob_ez_idxs = [tst_probe_ez_idx2]
 
 ref_prob_ez_vals = (load_vals(ref_save_fname))[1]
 
+
 def relocate(size_list, collection):
     accum_size = add.accumulate(size_list)
     relocated = []
@@ -138,6 +143,7 @@ if acquisition == True:
     else:
         save_vals(tst_prob_ez_vals_list, tst_save_fname)
 
+
 if myid == 0:
     print "Now, the result graph is drawn..."
     print
@@ -177,4 +183,3 @@ if myid == 0:
 #    pylab.ylabel(r'$\alpha_{max}$')
 #    pylab.colorbar()
 #    pylab.show()
-
