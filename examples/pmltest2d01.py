@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # file: pmltest2d01.py
 # author: Huioon Kim
 
