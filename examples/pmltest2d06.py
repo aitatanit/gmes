@@ -49,10 +49,10 @@ K_MAX_STEP = 0.5
 
 # common settings #1
 res = 20
-def_mat = geometric.DefaultMaterial(material = material.Dielectric())
+def_mat = geometry.DefaultMaterial(material = material.Dielectric())
 
 tst_size = (2, 2, 0)
-tst_space = geometric.Cartesian(size = tst_size, resolution = res)
+tst_space = geometry.Cartesian(size = tst_size, resolution = res)
 
 pml_thickness = 0.5
 
@@ -115,7 +115,7 @@ if acquisition == True:
                 print 'node %d: [%d / %d]' % (myid, count, len(m_range) * len(s_ratio_range) * len(k_max_range))
                 print
 
-                cpml_boundary = geometric.Boundary(material = material.CPML( \
+                cpml_boundary = geometry.Boundary(material = material.CPML( \
                         m = m_val, kappa_max = k_max, sigma_max_ratio = s_ratio \
                         ), thickness = pml_thickness, size = tst_size)
                 cpml_tst_geoms = [def_mat, cpml_boundary]

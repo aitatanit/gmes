@@ -144,22 +144,22 @@ if __name__ == "__main__":
 
     # common values #1
     res = 20
-    def_mat = geometric.DefaultMaterial(material = material.Dielectric())
+    def_mat = geometry.DefaultMaterial(material = material.Dielectric())
     src = [source.Dipole(src_time = source.Continuous(freq = 1), component = constants.Ez, pos = (0, 0, 0))]
 
     # reference settings
     if ref_acq == True:
         ref_size = (50, 50, 0)
-        ref_space = geometric.Cartesian(size = ref_size, resolution = res)
+        ref_space = geometry.Cartesian(size = ref_size, resolution = res)
         ref_geoms = [def_mat]
 
     # test settings
     tst_size = (2, 2, 0)
-    tst_space = geometric.Cartesian(size = tst_size, resolution = res)
+    tst_space = geometry.Cartesian(size = tst_size, resolution = res)
 
     pml_thickness = 0.5
-    cpml_boundary = geometric.Boundary(material = material.CPML(), thickness = pml_thickness, size = tst_size)
-    #upml_boundary = geometric.Boundary(material = material.UPML(), thickness = pml_thickness, size = tst_size)
+    cpml_boundary = geometry.Boundary(material = material.CPML(), thickness = pml_thickness, size = tst_size)
+    #upml_boundary = geometry.Boundary(material = material.UPML(), thickness = pml_thickness, size = tst_size)
 
     cpml_tst_geoms = [def_mat, cpml_boundary]
     #upml_tst_geoms = [def_mat, upml_boundary]

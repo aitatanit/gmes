@@ -1,20 +1,36 @@
 #!/usr/bin/env python
 
+"""Simulate a photonic crystal slab waveguide.
+
+The photonic crystal slab consists of a silicon-on-insulator substrate
+with a triangular array of holes. The whole waveguide is in the air. 
+This structure is presented at 
+
+'N. Moll and G.-L. Bona, "Comparison of three-dimensional photonic 
+crystal slab waveguides with two-dimensional photonic crystal 
+waveguides: Efficient butt coupling into these photonic crystal 
+waveguides," J. Appl. Phys., vol. 93, no. 9, pp. 4986-4991, 2003.'
+
+A transparent source is located at the one end of the waveguide. You 
+should be careful to execute this script, because it consumes lots of 
+memory.
+
+"""
+
 import os, sys
 new_path = os.path.abspath('../')
 sys.path.append(new_path)
 
 from numpy import *
-from time import *
 
 from gmes import *
 
+
+# Define simulation parameters.
+
 FREQ = 0.3
-#FREQ = 0.42
 RADIUS = 0.35
-#RADIUS = 0.48
 SLAB_CORE = .5 / sqrt(11.8336)
-#SLAB_CORE = .5 / sqrt(13)
 SLAB_THICK = 3 * SLAB_CORE
 PML_THICK = .5
 ZLENGTH = 3 * SLAB_THICK + 2 * PML_THICK
@@ -23,13 +39,16 @@ SIZE = (15, 15, 0)
 AIR = material.Dielectric(1)
 SiO2 = material.Dielectric(2.1316)
 Si = material.Dielectric(11.8336)
-#Si = material.Dielectric(13)
+
 
 def make_hole(center):
-    return geometric.Cylinder(material=AIR, axis=(0,0,1), radius=RADIUS,
+    """Punch a air hole on the slab."""
+    return geometry.Cylinder(material=AIR, axis=(0,0,1), radius=RADIUS,
                               height=SLAB_THICK, center=center)
 
+
 def make_crystals(x_size, y_size):
+    """Punch holes on the lattice positions."""
     a1 = array((cos(pi/3), sin(pi/3)))
     a2 = array((cos(pi/3), -sin(pi/3)))
     crystals = []
@@ -41,28 +60,33 @@ def make_crystals(x_size, y_size):
                 crystals.append(make_hole(center))
     return tuple(crystals)
 
+
 def fill_hole(center):
-    filler = (geometric.Cylinder(material=SiO2, axis=(0,0,1), radius=RADIUS,
+    """Remove a air hole."""
+    filler = (geometry.Cylinder(material=SiO2, axis=(0,0,1), radius=RADIUS,
                                  height=SLAB_THICK, center=center),
-              geometric.Cylinder(material=Si, axis=(0,0,1), radius=RADIUS,
+              geometry.Cylinder(material=Si, axis=(0,0,1), radius=RADIUS,
                                  height=SLAB_CORE, center=center))
 
     return filler
 
+
 def make_line_defect(length):
+    """Remove air holes to form a line defect."""
     line_defect = ()
     for i in arange(-.5 * length - 1, .5 * length + 2):
         line_defect += fill_hole((i, 0, 0))
 
     return tuple(line_defect)
     
-geom_list = (geometric.DefaultMaterial(material=AIR),
-             geometric.Block(material=SiO2, size=(SIZE[0], SIZE[1], SLAB_THICK)),
-             geometric.Block(material=Si, size=(SIZE[0], SIZE[1], SLAB_CORE))) + \
+    
+geom_list = (geometry.DefaultMaterial(material=AIR),
+             geometry.Block(material=SiO2, size=(SIZE[0], SIZE[1], SLAB_THICK)),
+             geometry.Block(material=Si, size=(SIZE[0], SIZE[1], SLAB_CORE))) + \
              make_crystals(*SIZE[:2]) + make_line_defect(SIZE[0]) + \
-             (geometric.Boundary(material=material.UPML(), thickness=PML_THICK, size=SIZE),)
+             (geometry.Boundary(material=material.UPML(), thickness=PML_THICK, size=SIZE),)
 
-space = geometric.Cartesian(size=SIZE, resolution=(25, 25, 10), parallel=True)
+space = geometry.Cartesian(size=SIZE, resolution=(25, 25, 10), parallel=True)
 
 # src_list = (source.Dipole(src_time=source.Continuous(freq=FREQ),
 #                          component=constants.Hz, pos=(-.5 * SIZE[0] + 1, 0, 0)),)
@@ -73,12 +97,7 @@ src_list = (source.Transparent(direction=constants.PlusX,
                                freq=FREQ,
                                polarization=constants.Y),)
 
-print 'communicator shape:', space.cart_comm.dims
-
-start_time = time()
 my_fdtd = fdtd.FDTD(space, geom_list, src_list)
-if space.my_id == 0:
-    print 'initialization:', time() - start_time
 
 try:
     import psyco
@@ -101,10 +120,7 @@ except ImportError:
 
 my_fdtd.show_hz(constants.Z, 0)
 
-start_time = time()
 while True:
     my_fdtd.step()
     if space.my_id == 0:
         print int(my_fdtd.time_step.n)
-if space.my_id == 0:
-    print '100 loop:', time() - start_time

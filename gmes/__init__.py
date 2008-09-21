@@ -28,7 +28,7 @@ device in 1-d, 2-d, and 3-d Cartesian coordinates.
 
 Modules:
     fdtd --- Provide various simulation classes suitable for 1, 2, and 3-d cases.
-    geometric --- Provide coordinate and geometric primitives
+    geometry --- Provide coordinate and geometric primitives
     show --- Real-time display classes
     constants --- Physical and simulation constants
     source --- Define the input sources
@@ -44,8 +44,8 @@ except ImportError:
     pass
 
 # List here only the objects we want to be publicly available
-__all__ = ['fdtd', 'geometric', 'show', 'constants', 'source', \
+__all__ = ['fdtd', 'geometry', 'show', 'constants', 'source', \
            'pointwise_source', 'material', 'pointwise_material']
 
-import fdtd, geometric, show, constants, source, material
+import fdtd, geometry, show, constants, source, material
 import pointwise_material, pointwise_source

@@ -61,22 +61,22 @@ if __name__ == "__main__":
 
     # common values #1
     res = 20
-    def_mat = geometric.DefaultMaterial(material = material.Dielectric())
+    def_mat = geometry.DefaultMaterial(material = material.Dielectric())
 
     # reference settings
     ref_size = (50, 50, 0)
-    ref_space = geometric.Cartesian(size = ref_size, resolution = res, courant_ratio = 0.99)
+    ref_space = geometry.Cartesian(size = ref_size, resolution = res, courant_ratio = 0.99)
     ref_geoms = [def_mat]
 
     # test settings
     tst_size = (2, 2, 0)
-    tst_space = geometric.Cartesian(size = tst_size, resolution = res, courant_ratio = 0.99)
+    tst_space = geometry.Cartesian(size = tst_size, resolution = res, courant_ratio = 0.99)
 
     pml_thickness = 0.5
 
     pml_boundaries = [ \
-            geometric.Boundary(material = material.CPML(), thickness = pml_thickness, size = tst_size), \
-            geometric.Boundary(material = material.UPML(), thickness = pml_thickness, size = tst_size) \
+            geometry.Boundary(material = material.CPML(), thickness = pml_thickness, size = tst_size), \
+            geometry.Boundary(material = material.UPML(), thickness = pml_thickness, size = tst_size) \
             ]
 
     tst_geoms_list = []

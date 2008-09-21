@@ -17,11 +17,11 @@ save_fname = 'ref_20080825.dat'
 
 # common settings #1
 res = 20
-def_mat = geometric.DefaultMaterial(material = material.Dielectric())
+def_mat = geometry.DefaultMaterial(material = material.Dielectric())
 src = [source.Dipole(src_time = source.Continuous(freq = 1), component = constants.Ez, pos = (0, 0, 0))]
 
 tst_size = (2, 2, 0)
-tst_space = geometric.Cartesian(size = tst_size, resolution = res)
+tst_space = geometry.Cartesian(size = tst_size, resolution = res)
 
 pml_thickness = 0.5
 
@@ -58,7 +58,7 @@ for a_max in arange(0, 0.26, 0.01):
     print "-- Generate FDTD with CPML whose alpha_max value is %s." % a_max
     print
 
-    cpml_boundary = geometric.Boundary(material = material.CPML(alpha_max = a_max), thickness = pml_thickness, size = tst_size)
+    cpml_boundary = geometry.Boundary(material = material.CPML(alpha_max = a_max), thickness = pml_thickness, size = tst_size)
     cpml_tst_geoms = [def_mat, cpml_boundary]
     tst_fdtd_list.append(create_fdtd(tst_space, cpml_tst_geoms, src))
     print
@@ -67,7 +67,7 @@ for a_max in arange(0, 0.26, 0.01):
 #    print "-- Generate FDTD with CPML whose kappa max value is %s." % k_max
 #    print
 #
-#    cpml_boundary = geometric.Boundary(material = material.CPML(kappa_max = k_max), thickness = pml_thickness, size = tst_size)
+#    cpml_boundary = geometry.Boundary(material = material.CPML(kappa_max = k_max), thickness = pml_thickness, size = tst_size)
 #    cpml_tst_geoms = [def_mat, cpml_boundary]
 #    tst_fdtd_list.append(create_fdtd(tst_space, cpml_tst_geoms, src))
 #    print

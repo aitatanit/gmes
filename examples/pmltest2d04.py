@@ -42,10 +42,10 @@ DELTA_KAPPA = 1.
 
 # common settings #1
 res = 20
-def_mat = geometric.DefaultMaterial(material = material.Dielectric())
+def_mat = geometry.DefaultMaterial(material = material.Dielectric())
 
 tst_size = (2, 2, 0)
-tst_space = geometric.Cartesian(size = tst_size, resolution = res)
+tst_space = geometry.Cartesian(size = tst_size, resolution = res)
 
 pml_thickness = 0.5
 
@@ -109,7 +109,7 @@ if acquisition == True:
         for k_max in k_max_list:
             print 'node %d: [%d / %d]' % (myid, count, len(a_max_list) * len(k_max_list))
 
-            cpml_boundary = geometric.Boundary(material = material.CPML(kappa_max = k_max, alpha_max = a_max), thickness = pml_thickness, size = tst_size)
+            cpml_boundary = geometry.Boundary(material = material.CPML(kappa_max = k_max, alpha_max = a_max), thickness = pml_thickness, size = tst_size)
             cpml_tst_geoms = [def_mat, cpml_boundary]
             tst_fdtd = create_fdtd(tst_space, cpml_tst_geoms, verbose=False)
             temp_list.append(acquire_ez_vals(tst_fdtd, tst_prob_ez_idxs, AcqMode.TEST, len(ref_prob_ez_vals[0]), verbose=False))

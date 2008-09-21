@@ -7,7 +7,7 @@ from numpy import inf, array
 from pointwise_source import *
 import constants as const
 
-from geometric import Cartesian, DefaultMaterial, Boundary, in_range
+from geometry import Cartesian, DefaultMaterial, Boundary, in_range
 from fdtd import TEMzFDTD
 from material import Dielectric, UPML
 

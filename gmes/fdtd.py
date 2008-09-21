@@ -1,15 +1,10 @@
 #!/usr/bin/env python
 
-from copy import copy, deepcopy
+from copy import deepcopy
 from threading import Thread, Lock
 from numpy import *
 
-try:
-    import mpi
-except ImportError:
-    pass
-
-from geometric import GeomBoxTree, in_range
+from geometry import GeomBoxTree, in_range
 from file_io import write_hdf5, snapshot
 from show import ShowLine, ShowPlane
 from pointwise_material import DummyEx, DummyEy, DummyEz
@@ -34,7 +29,7 @@ class FDTD(object):
     """three dimensional finite-difference time-domain class
     
     Attributes:
-        space -- geometric.Cartesian instance
+        space -- geometry.Cartesian instance
         ...
         
     """
@@ -317,119 +312,95 @@ class FDTD(object):
         """
         # send ex field data to -y direction and receive from +y direction.
         src, dest = self.space.cart_comm.shift(1, -1)
-        if src == dest == self.space.my_id:
-            self.ex[:,-1,:] = self.ex[:,0,:]
-        else:
-            self.ex[:,-1,:], status = mpi.sendrecv(self.ex[:,0,:], dest, src,
-                                                   const.Ex.tag, const.Ex.tag)
+        self.ex[:,-1,:], status = \
+        self.space.cart_comm.sendrecv(self.ex[:,0,:], dest, src,
+                                      const.Ex.tag, const.Ex.tag)
         
         # send ex field data to -z direction and receive from +z direction.    
         src, dest = self.space.cart_comm.shift(2, -1)
-        if src == dest == self.space.my_id:
-            self.ex[:,:,-1] = self.ex[:,:,0]
-        else:
-            self.ex[:,:,-1], status = mpi.sendrecv(self.ex[:,:,0], dest, src,
-                                                   const.Ex.tag, const.Ex.tag)
-    
+        self.ex[:,:,-1], status = \
+        self.space.cart_comm.sendrecv(self.ex[:,:,0], dest, src,
+                                      const.Ex.tag, const.Ex.tag)
+        
     def talk_with_ey_neighbors(self):
         """Synchronize ey data.
         
         """
         # send ey field data to -z direction and receive from +z direction.
         src, dest = self.space.cart_comm.shift(2, -1)
-        if src == dest == self.space.my_id:
-            self.ey[:,:,-1] = self.ey[:,:,0]
-        else:
-            self.ey[:,:,-1], status = mpi.sendrecv(self.ey[:,:,0], dest, src,
-                                                   const.Ey.tag, const.Ey.tag)
+        self.ey[:,:,-1], status = \
+        self.space.cart_comm.sendrecv(self.ey[:,:,0], dest, src,
+                                      const.Ey.tag, const.Ey.tag)
                    
         # send ey field data to -x direction and receive from +x direction.
-        src, dest = self.space.cart_comm.shift(0, -1)
-        if src == dest == self.space.my_id:
-            self.ey[-1,:,:] = self.ey[0,:,:]
-        else:
-            self.ey[-1,:,:], status = mpi.sendrecv(self.ey[0,:,:], dest, src,
-                                                   const.Ey.tag, const.Ey.tag)
-
+        src, dest = self.space.cart_comm.shift(0, -1)            
+        self.ey[-1,:,:], status = \
+        self.space.cart_comm.sendrecv(self.ey[0,:,:], dest, src,
+                                      const.Ey.tag, const.Ey.tag)
+        
     def talk_with_ez_neighbors(self):
         """Synchronize ez data.
         
         """
         # send ez field data to -x direction and receive from +x direction.
         src, dest = self.space.cart_comm.shift(0, -1)
-        if src == dest == self.space.my_id:
-            self.ez[-1,:,:] = self.ez[0,:,:]
-        else:
-            self.ez[-1,:,:], status = mpi.sendrecv(self.ez[0,:,:], dest, src,
-                                                   const.Ez.tag, const.Ez.tag)
+        self.ez[-1,:,:], status = \
+        self.space.cart_comm.sendrecv(self.ez[0,:,:], dest, src,
+                                      const.Ez.tag, const.Ez.tag)
                    
         # send ez field data to -y direction and receive from +y direction.
         src, dest = self.space.cart_comm.shift(1, -1)
-        if src == dest == self.space.my_id:
-            self.ez[:,-1,:] = self.ez[:,0,:]
-        else:
-            self.ez[:,-1,:], status = mpi.sendrecv(self.ez[:,0,:], dest, src,
-                                                   const.Ez.tag, const.Ez.tag)
-                    
+        self.ez[:,-1,:], status = \
+        self.space.cart_comm.sendrecv(self.ez[:,0,:], dest, src,
+                                      const.Ez.tag, const.Ez.tag)   
+                 
     def talk_with_hx_neighbors(self):
         """Synchronize hx data.
         
         """
         # send hx field data to +y direction and receive from -y direction.
         src, dest = self.space.cart_comm.shift(1, 1)
-        if src == dest == self.space.my_id:
-            self.hx[:,0,:] = self.hx[:,-1,:]
-        else:
-            self.hx[:,0,:], status = mpi.sendrecv(self.hx[:,-1,:], dest, src, 
-                                                  const.Hx.tag, const.Hx.tag)
+        self.hx[:,0,:], status = \
+        self.space.cart_comm.sendrecv(self.hx[:,-1,:], dest, src,
+                                      const.Hx.tag, const.Hx.tag)
         
         # send hx field data to +z direction and receive from -z direction.    
         src, dest = self.space.cart_comm.shift(2, 1)
-        if src == dest == self.space.my_id:
-            self.hx[:,:,0] = self.hx[:,:,-1]
-        else:
-            self.hx[:,:,0], status = mpi.sendrecv(self.hx[:,:,-1], dest, src,
-                                                  const.Hx.tag, const.Hx.tag)
-    
+        self.hx[:,:,0], status = \
+        self.space.cart_comm.sendrecv(self.hx[:,:,-1], dest, src,
+                                      const.Hx.tag, const.Hx.tag)
+        
     def talk_with_hy_neighbors(self):
         """Synchronize hy data.
         
         """
         # send hy field data to +z direction and receive from -z direction.
         src, dest = self.space.cart_comm.shift(2, 1)
-        if src == dest == self.space.my_id:
-            self.hy[:,:,0] = self.hy[:,:,-1]
-        else:
-            self.hy[:,:,0], status = mpi.sendrecv(self.hy[:,:,-1], dest, src,
-                                                  const.Hy.tag, const.Hy.tag)
+        self.hy[:,:,0], status = \
+        self.space.cart_comm.sendrecv(self.hy[:,:,-1], dest, src,
+                                      const.Hy.tag, const.Hy.tag)
                    
         # send hy field data to +x direction and receive from -x direction.
         src, dest = self.space.cart_comm.shift(0, 1)
-        if src == dest == self.space.my_id:
-            self.hy[0,:,:] = self.hy[-1,:,:]
-        else:
-            self.hy[0,:,:], status = mpi.sendrecv(self.hy[-1,:,:], dest, src,
-                                                  const.Hy.tag, const.Hy.tag)
-
+        self.hy[0,:,:], status = \
+        self.space.cart_comm.sendrecv(self.hy[-1,:,:], dest, src,
+                                      const.Hy.tag, const.Hy.tag)
+        
     def talk_with_hz_neighbors(self):
         """Synchronize hz data.
         
         """
         # send hz field data to +x direction and receive from -x direction.
         src, dest = self.space.cart_comm.shift(0, 1)
-        if src == dest == self.space.my_id:
-            self.hz[0,:,:] = self.hz[-1,:,:]
-        else:
-            self.hz[0,:,:], status = mpi.sendrecv(self.hz[-1,:,:], dest, src,
-                                                  const.Hz.tag, const.Hz.tag)
+        self.hz[0,:,:], status = \
+        self.space.cart_comm.sendrecv(self.hz[-1,:,:], dest, src,
+                                      const.Hz.tag, const.Hz.tag)
         
         # send hz field data to +y direction and receive from -y direction.
         src, dest = self.space.cart_comm.shift(1, 1)
-        if src == dest == self.space.my_id:
-            self.hz[:,0,:] = self.hz[:,-1,:]
-        else:
-            self.hz[:,0,:], status = mpi.sendrecv(self.hz[:,-1,:], dest, src, 
-                                                  const.Hz.tag, const.Hz.tag)
+        self.hz[:,0,:], status = \
+        self.space.cart_comm.sendrecv(self.hz[:,-1,:], dest, src,
+                                      const.Hz.tag, const.Hz.tag)
         
     def step(self):
         # FIXME: talk methods do not work with threads
@@ -831,29 +802,39 @@ class FDTD(object):
 
         window_title = 'GMES' + ' ' + str(self.space.cart_comm.coords())
 
-        self.lock_fig.acquire()
         showcase = ShowPlane(field_cut, extent, amp_range, self.time_step, xlabel, ylabel, title, window_title, msecs, self.fig_id)
         self.fig_id += self.space.numprocs
-        self.lock_fig.release()
         showcase.start()
 
     def show_ex(self, axis, cut, amp_range=(-1,1), msecs=2500):
+        self.lock_fig.acquire()
         self._show(const.Ex, axis, cut, amp_range, msecs, 'Ex field')
+        self.lock_fig.release()
         
     def show_ey(self, axis, cut, amp_range=(-1,1), msecs=2500):
+        self.lock_fig.acquire()
         self._show(const.Ey, axis, cut, amp_range, msecs, 'Ey field')
+        self.lock_fig.release()
         
     def show_ez(self, axis, cut, amp_range=(-1,1), msecs=2500):
+        self.lock_fig.acquire()
         self._show(const.Ez, axis, cut, amp_range, msecs, 'Ez field')
-		
+        self.lock_fig.release()
+        
     def show_hx(self, axis, cut, amp_range=(-1,1), msecs=2500):
+        self.lock_fig.acquire()
         self._show(const.Hx, axis, cut, amp_range, msecs, 'Hx field')
+        self.lock_fig.release()
         
     def show_hy(self, axis, cut, amp_range=(-1,1), msecs=2500):
+        self.lock_fig.acquire()
         self._show(const.Hy, axis, cut, amp_range, msecs, 'Hy field')
+        self.lock_fig.release()
         
     def show_hz(self, axis, cut, amp_range=(-1,1), msecs=2500):
+        self.lock_fig.acquire()
         self._show(const.Hz, axis, cut, amp_range, msecs, 'Hz field')
+        self.lock_fig.release()
         
     def write_ex(self, low=None, high=None, prefix=None, postfix=None):
         if low is None:
@@ -1550,7 +1531,7 @@ if __name__ == '__main__':
     
     from numpy.core import inf
     
-    from geometric import DefaultMaterial, Cylinder, Cartesian
+    from geometry import DefaultMaterial, Cylinder, Cartesian
     from material import Dielectric
     
     low = Dielectric(index=1)

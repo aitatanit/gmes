@@ -2,6 +2,11 @@ This README file describes how to compile and set up GMES.
 
 1. Download Latest Version
 
+You can download the latest release at the GMES project page of 
+sourceforge:
+
+http://www.sf.net/projects/gmes
+
 The most current development version is always available from a 
 subversion repostiory:
 
@@ -11,24 +16,24 @@ http://gmes.svn.sf.net/svnroot/gmes/trunk
 
 1.1. GNU/Linux
 
-GMES has been tested on Etch (stable) and Sid (unstable) version of Debian
-GNU/Linux. Also, GMES works on Hardy Heron version of Ubuntu. On Linux,
-you can use all features of GMES.
+GMES has been tested on Etch (stable) and Sid (unstable) version of
+Debian GNU/Linux. Also, GMES works on Hardy Heron version of Ubuntu. On
+Linux, you can use all features of GMES.
 
 1.1. Windows
 
 GMES has been tested on Windows XP Professional Service Pack 3 and
-Vista Enterprise K Service Pack 1. On Windows, you can not use parallel
-calculation feature using MPI.
+Vista Enterprise K Service Pack 1. On Windows, you can not use a 
+parallel calculation feature using MPI.
 
 1. Preliminaries
 
 1.1. GNU/Linux
 
-GMES uses various Python and non-Python programs. You will need
+GMES uses various Python and non-Python programs. You will need 
 following programs to install and execute GMES.
 
-* python >= 2.4 (tested with 2.4, 2.5)
+* python >= 2.4 (tested with 2.4 and 2.5)
 * numpy (Debian package: python-numpy)
 * scipy (Debian package: python-scipy)
 * pytables (optional) (Debian package: python-tables)
