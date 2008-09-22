@@ -1,13 +1,14 @@
 #!/usr/bin/env python
 
 try:
+    import psyco
+    psyco.profile()
     from psyco.classes import *
 except:
     pass
 
 from copy import deepcopy
-from math import cos, sin, exp, pi
-from numpy import inf, array
+from numpy import *
 
 from pointwise_source import *
 import constants as const

@@ -39,6 +39,13 @@ Modules:
 """
 
 try:
+    import psyco
+    psyco.profile()
+    from psyco.classes import *
+except:
+    pass
+    
+try:
     import mpi
 except ImportError:
     pass

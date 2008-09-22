@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 
 try:
+    import psyco
+    psyco.profile()
     from psyco.classes import *
 except:
     pass

@@ -34,21 +34,15 @@ my_fdtd = fdtd.TMzFDTD(space, geom_list, src_list)
 
 print time() - start
 
-try:
-    import psyco
-    psyco.full()
-except ImportError:
-    pass
+my_fdtd.show_ez(constants.Z, 0)
+my_fdtd.show_hx(constants.Z, 0)
+my_fdtd.show_hy(constants.Z, 0)
 
-#my_fdtd.show_ez(constants.Z, 0)
-##my_fdtd.show_hx(constants.Z, 0)
-##my_fdtd.show_hy(constants.Z, 0)
-#
-#start = time()
-#
-#while my_fdtd.time_step.n != 100:
-#    my_fdtd.step()
-#    if space.my_id == 0:
-#        print int(my_fdtd.time_step.n)
-#
-#print time() - start
+start = time()
+
+while my_fdtd.time_step.n != 100:
+    my_fdtd.step()
+    if space.my_id == 0:
+        print int(my_fdtd.time_step.n)
+
+print time() - start

@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 
 try:
+    import psyco
+    psyco.profile()
     from psyco.classes import *
 except:
     pass
@@ -1383,25 +1385,26 @@ class Boundary(GeometricObject):
 def find_object(point, geom_list):
     """Find the last object including point in geom_list.
     
-    find_object returns (object, array index).
-    
+    find_object returns (object, array index). If no object includes 
+    the given point it returns (geom_list[0], 0).
     """
-    
     for i in range(len(geom_list) - 1, -1, -1):
         if geom_list[i].in_object(point):
             break
         
     return geom_list[i], i
 
+
 def in_range(idx, numpy_array, component):
-    """Check whether the given index in in the range of the given numpy array size.
+    """Perform bounds checking.
+    
     
     Keyword arguments:
         idx -- index of an array
         numpy_array -- the array to be checked
         component -- specify field component
+        
     """
-
     if component is const.Ex:
         if idx[0] < 0 or idx[0] >= numpy_array.shape[0]:
             return False
@@ -1453,8 +1456,8 @@ def in_range(idx, numpy_array, component):
     else:
         raise ValueError
        
-    return True 
-    
+    return True
+
 
 if __name__ == '__main__':
     from material import *

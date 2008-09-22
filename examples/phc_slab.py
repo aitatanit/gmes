@@ -99,12 +99,6 @@ src_list = (source.Transparent(direction=constants.PlusX,
 
 my_fdtd = fdtd.FDTD(space, geom_list, src_list)
 
-try:
-    import psyco
-    psyco.full()
-except ImportError:
-    pass
-
 # shape = my_fdtd.material_ex.shape[:2]
 # eps = empty(shape, float)
 # for idx in ndindex(*shape):
