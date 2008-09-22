@@ -1,11 +1,15 @@
 #!/usr/bin/env python
 
-from math import sqrt, pi, sin, cos, asin
-from numpy.core import inf
-from constants import c0, epsilon0, mu0
+try:
+    from psyco.classes import *
+except:
+    pass
+
+from numpy import *
+import constants as const
 
 
-class DipoleElectric:
+class DipoleElectric(object):
     def __init__(self, pw_material, src_time=None, dt=None, amp=1):
         self.idx = pw_material.i, pw_material.j, pw_material.k
         self.epsilon = pw_material.epsilon
@@ -27,7 +31,7 @@ class DipoleEy(DipoleElectric): pass
 class DipoleEz(DipoleElectric): pass
     
     
-class DipoleMagnetic:
+class DipoleMagnetic(object):
     def __init__(self, pw_material, src_time=None, dt=None, amp=1):
         self.idx = pw_material.i, pw_material.j, pw_material.k
         self.mu = pw_material.mu
@@ -49,7 +53,7 @@ class DipoleHy(DipoleMagnetic): pass
 class DipoleHz(DipoleMagnetic): pass
 
 
-class _SrcTime:
+class _SrcTime(object):
     """Time-dependent part of a source.
     """
 
@@ -94,11 +98,11 @@ class _Continuous(_SrcTime):
         print "raising duration:", self.width
         
         
-class TransparentElectric:
+class TransparentElectric(object):
     def __init__(self, pw_material, epsilon_r, amp, aux_fdtd):
         self.idx = pw_material.i, pw_material.j, pw_material.k
         self.pw_material = pw_material
-        self.epsilon = epsilon_r * epsilon0
+        self.epsilon = epsilon_r * const.epsilon0
         self.amp = amp
         self.aux_fdtd = aux_fdtd
         
@@ -223,11 +227,11 @@ class TransparentMinusXEz(TransparentElectric):
         self.aux_fdtd.step()
         
         
-class TransparentMagnetic:
+class TransparentMagnetic(object):
     def __init__(self, pw_material, mu_r, amp, aux_fdtd):
         self.idx = pw_material.i, pw_material.j, pw_material.k
         self.pw_material = pw_material
-        self.mu = mu_r * mu0
+        self.mu = mu_r * const.mu0
         self.amp = amp
         self.aux_fdtd = aux_fdtd
 

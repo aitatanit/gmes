@@ -12,14 +12,17 @@ applied.
 
 """
 
+from time import time
+
 import os, sys
 new_path = os.path.abspath('../')
 sys.path.append(new_path)
 
 from gmes import *
 
+start = time()
 
-SIZE = (5,5,0)
+SIZE = (10,10,0)
 
 space = geometry.Cartesian(size=SIZE, resolution=20, parallel=True)
 geom_list = (geometry.DefaultMaterial(material=material.Dielectric()), 
@@ -29,17 +32,23 @@ src_list = (source.Dipole(src_time=source.Continuous(freq=0.8),
 
 my_fdtd = fdtd.TMzFDTD(space, geom_list, src_list)
 
+print time() - start
+
 try:
     import psyco
     psyco.full()
 except ImportError:
     pass
 
-my_fdtd.show_ez(constants.Z, 0)
-my_fdtd.show_hx(constants.Z, 0)
-my_fdtd.show_hy(constants.Z, 0)
-
-while True:
-    my_fdtd.step()
-    if space.my_id == 0:
-        print int(my_fdtd.time_step.n)
+#my_fdtd.show_ez(constants.Z, 0)
+##my_fdtd.show_hx(constants.Z, 0)
+##my_fdtd.show_hy(constants.Z, 0)
+#
+#start = time()
+#
+#while my_fdtd.time_step.n != 100:
+#    my_fdtd.step()
+#    if space.my_id == 0:
+#        print int(my_fdtd.time_step.n)
+#
+#print time() - start

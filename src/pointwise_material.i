@@ -9,7 +9,7 @@
 #include "pointwise_cpml.hh"
 %}
 
-%feature("kwargs");
+// %feature("kwargs");
 
 // Get the NumPy typemaps
 %include "numpy.i"
@@ -61,7 +61,7 @@
 %apply_numpy_typemaps(int)
 %apply_numpy_typemaps(double)
 
-%define Property(py,cpp,prop,get,set)
+%define Property(py, cpp, prop, get, set)
 %feature("shadow") cpp::set %{ %}
 %feature("shadow") cpp::get %{
 __swig_setmethods__["prop"] = eval("_"+__name__.split('.')[-1]).##py##_##set

@@ -1,14 +1,17 @@
 #!/usr/bin/env python
 
-from math import sqrt, exp
-from numpy import array, inf, nan
+try:
+    from psyco.classes import *
+except:
+    pass
+
+from numpy import *
 
 from pointwise_material import *
-
 import constants as const
 
 
-class Material:
+class Material(object):
     def display_info(self, indentby=0):
         """Display the parameter values.
         
@@ -153,7 +156,7 @@ class Dielectric(Material):
         pw_obj = DielectricHz(idx, self.mu_r)
         return pw_obj
 
-class Compound:
+class Compound(object):
     """Represent the compound material.
     
     Compound material means that its electric permittivity and 

@@ -1,5 +1,10 @@
 #!/usr/bin/env python
 
+try:
+    from psyco.classes import *
+except:
+    pass
+
 from copy import deepcopy
 from threading import Thread, Lock
 from numpy import *

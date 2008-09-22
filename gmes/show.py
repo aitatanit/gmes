@@ -1,11 +1,16 @@
 #!/usr/bin/env python
 
+try:
+    from psyco.classes import *
+except:
+    pass
+
 from sys import modules
 from threading import Thread
 
 from numpy import array
-
-from pylab import get_current_fig_manager, figure, show, new_figure_manager
+from pylab import get_current_fig_manager, new_figure_manager
+from pylab import figure, show
 
 if not 'matplotlib.backends' in modules:
     import matplotlib 

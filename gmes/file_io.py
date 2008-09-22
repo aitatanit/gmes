@@ -1,12 +1,17 @@
 #!/usr/bin/env python
 
+try:
+    from psyco.classes import *
+except:
+    pass
+
 from sys import modules
 if not 'matplotlib.backends' in modules:
     import matplotlib 
     matplotlib.use('TkAgg')
 
 from tables import openFile
-import pylab as p
+import pylab
 
 
 def write_hdf5(data, name, low_index, high_index):
@@ -16,6 +21,6 @@ def write_hdf5(data, name, low_index, high_index):
     h5file.close()
 
 def snapshot(data, filename, title):
-    p.title(title)
-    p.imshow(data, origin="lower")
-    p.savefig(filename)
+    pylab.title(title)
+    pylab.imshow(data, origin="lower")
+    pylab.savefig(filename)

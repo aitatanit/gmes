@@ -1,5 +1,10 @@
 #!/usr/bin/env python
 
+try:
+    from psyco.classes import *
+except:
+    pass
+
 from math import sqrt
 
 # physical constants
@@ -34,7 +39,7 @@ ATTO = 1e-18
 
 # The following classes should be used as singletons.
 
-class Component:
+class Component(object):
     def __init__(self):
         raise SyntaxError, 'component classes should be used as a class'
     
@@ -70,7 +75,7 @@ class Hz(Magnetic):
     tag = 5
 
 
-class Directional:
+class Directional(object):
     def __init__(self):
         raise SyntaxError, 'directional classes should be used as a class'
     

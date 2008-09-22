@@ -1,5 +1,10 @@
 #!/usr/bin/env python
 
+try:
+    from psyco.classes import *
+except:
+    pass
+
 from copy import deepcopy
 from math import cos, sin, exp, pi
 from numpy import inf, array
@@ -12,7 +17,7 @@ from fdtd import TEMzFDTD
 from material import Dielectric, UPML
 
 
-class SrcTime:
+class SrcTime(object):
     """Time-dependent part of a source.
     
     """
@@ -93,7 +98,7 @@ class Bandpass(SrcTime):
         print "cutoff:", self.cutoff
         
         
-class Dipole:
+class Dipole(object):
     def __init__(self, pos, component, src_time, amp=1):
         self.pos = array(pos, float)
         self.comp = component
@@ -140,7 +145,7 @@ class Dipole:
                 material_hz[idx] = DipoleHz(material_hz[idx], self.src_time, space.dt, self.amp)
 
 
-class TotalFieldScatteredField:
+class TotalFieldScatteredField(object):
     def __init__(self, theta, phi, psi, low, high):
         self.theta = float(theta)
         self.phi = float(theta)
@@ -152,7 +157,7 @@ class TotalFieldScatteredField:
         pass
     
     
-class Transparent:
+class Transparent(object):
     def __init__(self, direction, center, size, freq, polarization, amp=1,
                  ex_mode_file=None, ey_mode_file=None, ez_mode_file=None,
                  hx_mode_file=None, hy_mode_file=None, hz_mode_file=None):

@@ -1,9 +1,13 @@
 #!/usr/bin/env python
 
+try:
+    from psyco.classes import *
+except:
+    pass
+
 # this code is based on the libctl 3.0.2.
 
 from copy import deepcopy
-from math import ceil
 
 from numpy import *
 from scipy.linalg import norm
@@ -17,7 +21,7 @@ import constants as const
 from material import Compound
 
 
-class AuxiCartComm:
+class AuxiCartComm(object):
     """Auxiliary MPI Catesian communicator for the absence of MPI implementation.
     
     Attributes:
@@ -56,7 +60,7 @@ class AuxiCartComm:
         """
         return message, None
         
-class Cartesian:
+class Cartesian(object):
     """Define the calculation space with Cartesian coordinates.
     
     Attributes:
@@ -712,7 +716,7 @@ class Cartesian:
 #                                                                  #
 ####################################################################
 
-class GeomBox:
+class GeomBox(object):
     """A bounding box of a geometric object.
     
     Attributes:
@@ -791,7 +795,7 @@ class GeomBox:
         return "low: " + self.low.__str__() + " high: " + self.high.__str__()
     
     
-class GeomBoxNode:
+class GeomBoxNode(object):
     """Node class which makes up a binary search tree.
     
     Attributes:
@@ -809,7 +813,7 @@ class GeomBoxNode:
         self.depth = depth
         
         
-class GeomBoxTree:
+class GeomBoxTree(object):
     """A tree for the fast inclusion test of geometric objects within them.
     
     The tree recursively partitions the unit cell, allowing us to perform 
@@ -974,7 +978,7 @@ class GeomBoxTree:
 #                                                                  #
 ####################################################################
 
-class GeometricObject:
+class GeometricObject(object):
     """Base class for geometric objects.
     
     Attributes:
