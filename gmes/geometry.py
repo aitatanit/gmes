@@ -194,18 +194,17 @@ class Cartesian(object):
         best_partition = ()
         min_load = inf
 
-        for l in xrange(1, self.numprocs + 1):
-            for m in xrange(1, self.numprocs + 1):
+        factors = [i for i in xrange(1, self.numprocs + 1) if self.numprocs % i == 0]
+        for l in factors: 
+            for m in factors:
                 if l * m > self.numprocs:
                     break
-                for n in xrange(1, self.numprocs + 1):
-                    if l * m * n > self.numprocs:
-                        break
-                    elif l * m * n == self.numprocs:
-                        tmp_load = self.load_metric(l, m, n)
-                        if tmp_load < min_load:
-                            best_partition = l, m, n
-                            min_load = tmp_load
+                n = self.numprocs / (l * m)
+                if self.numprocs % n == 0:
+                    tmp_load = self.load_metric(l, m, n)
+                    if tmp_load < min_load:
+                        best_partition = l, m, n
+                        min_load = tmp_load
 
         return best_partition
 
@@ -219,6 +218,8 @@ class Cartesian(object):
             self.whole_field_size
         
         """
+        l, m, n = float(l), float(m), float(n)
+        
         # network load ratio compared to CPU
         R = 1000
         

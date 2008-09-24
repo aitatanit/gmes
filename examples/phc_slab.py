@@ -34,7 +34,7 @@ SLAB_CORE = .5 / sqrt(11.8336)
 SLAB_THICK = 3 * SLAB_CORE
 PML_THICK = .5
 ZLENGTH = 3 * SLAB_THICK + 2 * PML_THICK
-SIZE = (15, 15, 0)
+SIZE = (15, 15, ZLENGTH)
 
 AIR = material.Dielectric(1)
 SiO2 = material.Dielectric(2.1316)
@@ -87,6 +87,7 @@ geom_list = (geometry.DefaultMaterial(material=AIR),
              (geometry.Boundary(material=material.UPML(), thickness=PML_THICK, size=SIZE),)
 
 space = geometry.Cartesian(size=SIZE, resolution=(25, 25, 10), parallel=True)
+print space.whole_field_size
 
 # src_list = (source.Dipole(src_time=source.Continuous(freq=FREQ),
 #                          component=constants.Hz, pos=(-.5 * SIZE[0] + 1, 0, 0)),)
