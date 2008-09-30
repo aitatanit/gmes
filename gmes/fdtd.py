@@ -319,14 +319,14 @@ class FDTD(object):
         """
         # send ex field data to -y direction and receive from +y direction.
         src, dest = self.space.cart_comm.shift(1, -1)
-        self.ex[:,-1,:], status = \
-        self.space.cart_comm.sendrecv(self.ex[:,0,:], dest, src,
+        self.ex[:, -1, :-1], status = \
+        self.space.cart_comm.sendrecv(self.ex[:, 0 ,:-1], dest, src,
                                       const.Ex.tag, const.Ex.tag)
         
         # send ex field data to -z direction and receive from +z direction.    
         src, dest = self.space.cart_comm.shift(2, -1)
-        self.ex[:,:,-1], status = \
-        self.space.cart_comm.sendrecv(self.ex[:,:,0], dest, src,
+        self.ex[:, :-1, -1], status = \
+        self.space.cart_comm.sendrecv(self.ex[:, :-1, 0], dest, src,
                                       const.Ex.tag, const.Ex.tag)
         
     def talk_with_ey_neighbors(self):
@@ -335,14 +335,14 @@ class FDTD(object):
         """
         # send ey field data to -z direction and receive from +z direction.
         src, dest = self.space.cart_comm.shift(2, -1)
-        self.ey[:,:,-1], status = \
-        self.space.cart_comm.sendrecv(self.ey[:,:,0], dest, src,
+        self.ey[:-1, :, -1], status = \
+        self.space.cart_comm.sendrecv(self.ey[:-1, :, 0], dest, src,
                                       const.Ey.tag, const.Ey.tag)
                    
         # send ey field data to -x direction and receive from +x direction.
         src, dest = self.space.cart_comm.shift(0, -1)            
-        self.ey[-1,:,:], status = \
-        self.space.cart_comm.sendrecv(self.ey[0,:,:], dest, src,
+        self.ey[-1, :, :-1], status = \
+        self.space.cart_comm.sendrecv(self.ey[0, :, :-1], dest, src,
                                       const.Ey.tag, const.Ey.tag)
         
     def talk_with_ez_neighbors(self):
@@ -351,14 +351,14 @@ class FDTD(object):
         """
         # send ez field data to -x direction and receive from +x direction.
         src, dest = self.space.cart_comm.shift(0, -1)
-        self.ez[-1,:,:], status = \
-        self.space.cart_comm.sendrecv(self.ez[0,:,:], dest, src,
+        self.ez[-1, :-1, :], status = \
+        self.space.cart_comm.sendrecv(self.ez[0, :-1, :], dest, src,
                                       const.Ez.tag, const.Ez.tag)
                    
         # send ez field data to -y direction and receive from +y direction.
         src, dest = self.space.cart_comm.shift(1, -1)
-        self.ez[:,-1,:], status = \
-        self.space.cart_comm.sendrecv(self.ez[:,0,:], dest, src,
+        self.ez[:-1, -1, :], status = \
+        self.space.cart_comm.sendrecv(self.ez[:-1, 0, :], dest, src,
                                       const.Ez.tag, const.Ez.tag)   
                  
     def talk_with_hx_neighbors(self):
@@ -367,14 +367,14 @@ class FDTD(object):
         """
         # send hx field data to +y direction and receive from -y direction.
         src, dest = self.space.cart_comm.shift(1, 1)
-        self.hx[:,0,:], status = \
-        self.space.cart_comm.sendrecv(self.hx[:,-1,:], dest, src,
+        self.hx[:, 0, 0:], status = \
+        self.space.cart_comm.sendrecv(self.hx[:, -1, 0:], dest, src,
                                       const.Hx.tag, const.Hx.tag)
         
         # send hx field data to +z direction and receive from -z direction.    
         src, dest = self.space.cart_comm.shift(2, 1)
-        self.hx[:,:,0], status = \
-        self.space.cart_comm.sendrecv(self.hx[:,:,-1], dest, src,
+        self.hx[:, 0:, 0], status = \
+        self.space.cart_comm.sendrecv(self.hx[:, 0:, -1], dest, src,
                                       const.Hx.tag, const.Hx.tag)
         
     def talk_with_hy_neighbors(self):
@@ -383,14 +383,14 @@ class FDTD(object):
         """
         # send hy field data to +z direction and receive from -z direction.
         src, dest = self.space.cart_comm.shift(2, 1)
-        self.hy[:,:,0], status = \
-        self.space.cart_comm.sendrecv(self.hy[:,:,-1], dest, src,
+        self.hy[0:, :, 0], status = \
+        self.space.cart_comm.sendrecv(self.hy[0:, :, -1], dest, src,
                                       const.Hy.tag, const.Hy.tag)
                    
         # send hy field data to +x direction and receive from -x direction.
         src, dest = self.space.cart_comm.shift(0, 1)
-        self.hy[0,:,:], status = \
-        self.space.cart_comm.sendrecv(self.hy[-1,:,:], dest, src,
+        self.hy[0, :, 0:], status = \
+        self.space.cart_comm.sendrecv(self.hy[-1, :, 0:], dest, src,
                                       const.Hy.tag, const.Hy.tag)
         
     def talk_with_hz_neighbors(self):
@@ -399,31 +399,31 @@ class FDTD(object):
         """
         # send hz field data to +x direction and receive from -x direction.
         src, dest = self.space.cart_comm.shift(0, 1)
-        self.hz[0,:,:], status = \
-        self.space.cart_comm.sendrecv(self.hz[-1,:,:], dest, src,
+        self.hz[0, 0:, :], status = \
+        self.space.cart_comm.sendrecv(self.hz[-1, 0:, :], dest, src,
                                       const.Hz.tag, const.Hz.tag)
         
         # send hz field data to +y direction and receive from -y direction.
         src, dest = self.space.cart_comm.shift(1, 1)
-        self.hz[:,0,:], status = \
-        self.space.cart_comm.sendrecv(self.hz[:,-1,:], dest, src,
+        self.hz[0:, 0, :], status = \
+        self.space.cart_comm.sendrecv(self.hz[0:, -1, :], dest, src,
                                       const.Hz.tag, const.Hz.tag)
         
     def step(self):
-        # FIXME: talk methods do not work with threads
+        #FIXME
         self.talk_with_hx_neighbors()
-        self.talk_with_hy_neighbors()
+        self.talk_with_hy_neighbors() 
         self.talk_with_hz_neighbors()
-        
-#         h_chatter_threads = (Thread(target=self.talk_with_hx_neighbors),
-#                              Thread(target=self.talk_with_hy_neighbors), 
-#                              Thread(target=self.talk_with_hz_neighbors))
-                    
-#         for chatter in h_chatter_threads:
-#             chatter.start()
-            
-#         for chatter in h_chatter_threads:
-#             chatter.join()
+
+#        h_chatter_threads = (Thread(target=self.talk_with_hx_neighbors),
+#                             Thread(target=self.talk_with_hy_neighbors), 
+#                             Thread(target=self.talk_with_hz_neighbors))
+#                    
+#        for chatter in h_chatter_threads:
+#            chatter.start()
+#            
+#        for chatter in h_chatter_threads:
+#            chatter.join()
         
         e_worker_threads = (Thread(target=self.update_ex),
                             Thread(target=self.update_ey),
@@ -438,20 +438,19 @@ class FDTD(object):
         self.time_step.n += .5
         self.time_step.t = self.time_step.n * self.dt
 
-        # FIXME: talk methods do not work with threads
         self.talk_with_ex_neighbors()
-        self.talk_with_ey_neighbors()
+        self.talk_with_ey_neighbors() 
         self.talk_with_ez_neighbors()
-        
-#         e_chatter_threads = (Thread(target=self.talk_with_ex_neighbors),
-#                              Thread(target=self.talk_with_ey_neighbors), 
-#                              Thread(target=self.talk_with_ez_neighbors))
-                    
-#         for chatter in e_chatter_threads:
-#             chatter.start()
-            
-#         for chatter in e_chatter_threads:
-#             chatter.join()
+
+#        e_chatter_threads = (Thread(target=self.talk_with_ex_neighbors),
+#                             Thread(target=self.talk_with_ey_neighbors), 
+#                             Thread(target=self.talk_with_ez_neighbors))
+#                    
+#        for chatter in e_chatter_threads:
+#            chatter.start()
+#            
+#        for chatter in e_chatter_threads:
+#            chatter.join()
 
         h_worker_threads = (Thread(target=self.update_hx),
                             Thread(target=self.update_hy),

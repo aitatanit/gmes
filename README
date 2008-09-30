@@ -86,6 +86,6 @@ $ python setup.py build_ext -c mingw32
 
 1.1. GNU/Linux with MPI
 
-$ mpiexec -boot -machinefile <HOST FILE> -n <N> pyMPI <GMES SCRIPT>
+$ mpiexec -machinefile <HOST FILE> -n <N> pyMPI <GMES SCRIPT>
 
 Kyungwon Chun (kwchun@gist.ac.kr)
