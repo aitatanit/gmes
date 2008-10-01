@@ -13,7 +13,7 @@ from numpy import *
 
 from geometry import GeomBoxTree, in_range
 from file_io import write_hdf5, snapshot
-from show import ShowLine, ShowPlane
+from show import ShowLine, ShowPlane, Snapshot
 from pointwise_material import DummyEx, DummyEy, DummyEz
 from pointwise_material import DummyHx, DummyHy, DummyHz
 import constants as const
@@ -796,7 +796,6 @@ class FDTD(object):
             
             cut_idx = spc_to_idx_func(tmp_cut_coords[0], tmp_cut_coords[1], cut)
             if in_range(cut_idx, field, component) is False:
-                print 'DEBUG cut_idx:', cut_idx
                 return None
             field_cut = field[:, :, cut_idx[2]]
             
@@ -841,7 +840,135 @@ class FDTD(object):
         self.lock_fig.acquire()
         self._show(const.Hz, axis, cut, amp_range, msecs, 'Hz field')
         self.lock_fig.release()
+    
+    def _show_eps_mu(self, component, axis, cut, range, title):
+        """
+                
+        """
+        if component is const.Ex:
+            material = self.material_ex
+            spc_to_idx_func = self.space.space_to_ex_index
+            idx_to_spc_func = self.space.ex_index_to_space
+            tmp_cut_coords = idx_to_spc_func(0, 0, 0)
+        elif component is const.Ey:
+            material = self.material_ey
+            spc_to_idx_func = self.space.space_to_ey_index
+            idx_to_spc_func = self.space.ey_index_to_space
+            tmp_cut_coords = (idx_to_spc_func0, 0, 0)
+        elif component is const.Ez:
+            material = self.material_ez
+            spc_to_idx_func = self.space.space_to_ez_index
+            idx_to_spc_func = self.space.ez_index_to_space
+            tmp_cut_coords = idx_to_spc_func(0, 0, 0)
+            
+        if axis is const.X:
+            high_idx = [i - 1 for i in material.shape]
+            high = idx_to_spc_func(high_idx)
+            extent = (low[2], high[2], high[1], low[1])
+            
+            cut_idx = spc_to_idx_func(cut, tmp_cut_coords[1], tmp_cut_coords[2])
+            if in_range(cut_idx, material, component) is False:
+                return None
+            
+            eps_mu = empty((material.shape[1], material.shape[2]), float) 
+            if issubclass(component, const.Electric):          
+                for idx in ndindex(*eps_mu.shape):
+                    material_idx = cut_idx[0], idx[0], idx[1]
+                    eps_mu[idx] = material[material_idx].epsilon
+            elif issubclass(component, const.Magnetic): 
+                for idx in ndindex(*eps_mu.shape):
+                    material_idx = cut_idx[0], idx[0], idx[1]
+                    eps_mu[idx] = material[material_idx].mu
+                    
+            xlabel, ylabel = 'z', 'y'
+            
+        elif axis is const.Y:
+            low = idx_to_spc_func(0, 0, 0)
+            high_idx = [i - 1 for i in material.shape]
+            high = idx_to_spc_func(high_idx)
+            extent = (low[2], high[2], high[0], low[0])
+            
+            cut_idx = spc_to_idx_func(tmp_cut_coords[0], cut, tmp_cut_coords[2])
+            if in_range(cut_idx, material, component) is False:
+                return None
+            
+            eps_mu = empty((material.shape[0], material.shape[2]), float)
+            if issubclass(component, const.Electric): 
+                for idx in ndindex(*eps_mu.shape):
+                    material_idx = idx[0], cut_idx[1], idx[1]
+                    eps_mu[idx] = material[material_idx].epsilon
+            elif issubclass(component, const.Magnetic): 
+                for idx in ndindex(*eps_mu.shape):
+                    material_idx = idx[0], cut_idx[1], idx[1]
+                    eps_mu[idx] = material[material_idx].mu
+                    
+            xlabel, ylabel= 'z', 'x'
+            
+        elif axis is const.Z:
+            low = idx_to_spc_func(0, 0, 0)
+            high_idx = [i - 1 for i in material.shape]
+            high = idx_to_spc_func(high_idx)
+            extent = (low[1], high[1], high[0], low[0])
+            
+            cut_idx = spc_to_idx_func(tmp_cut_coords[0], tmp_cut_coords[1], cut)
+            if in_range(cut_idx, material, component) is False:
+                return None
+            
+            eps_mu = empty((material.shape[0], material.shape[1]), float)
+            if issubclass(component, const.Electric): 
+                for idx in ndindex(*eps_mu.shape):
+                    material_idx = idx[0], idx[1], cut_idx[2]
+                    eps_mu[idx] = material[material_idx].epsilon
+            elif issubclass(component, const.Magnetic): 
+                for idx in ndindex(*eps_mu.shape):
+                    material_idx = idx[0], idx[1], cut_idx[2]
+                    eps_mu[idx] = material[material_idx].mu
+                    
+            xlabel, ylabel = 'y', 'x'
+            
+        else:
+            msg = "axis must be gmes.constants.Directional."
+            raise ValueError(msg)
+
+        window_title = 'GMES' + ' ' + str(self.space.cart_comm.coords())
+
+        if range is None:
+            range = eps_mu.min(), eps_mu.max()
+             
+        showcase = Snapshot(eps_mu, extent, range, self.time_step, xlabel, ylabel, title, window_title, self.fig_id)
+        self.fig_id += self.space.numprocs
+        showcase.start()
+
+    def show_permittivity_ex(self, axis, cut, range=None):
+        self.lock_fig.acquire()
+        self._show_eps_mu(const.Ex, axis, cut, range, 'Permittivity for Ex')
+        self.lock_fig.release()
         
+    def show_permittivity_ey(self, axis, cut, range=None):
+        self.lock_fig.acquire()
+        self._show_eps_mu(const.Ey, axis, cut, range, 'Permittivity for Ey')
+        self.lock_fig.release()
+            
+    def show_permittivity_ez(self, axis, cut, range=None):
+        self.lock_fig.acquire()
+        self._show_eps_mu(const.Ez, axis, cut, range, 'Permittivity for Ez')
+        self.lock_fig.release()
+
+    def show_permeability_hx(self, axis, cut, range=None):
+        self.lock_fig.acquire()
+        self._show_eps_mu(const.Hx, axis, cut, range, 'Permeability for Hx')
+        self.lock_fig.release()
+        
+    def show_permeability_hy(self, axis, cut, range=None):
+        self.lock_fig.acquire()
+        self._show_eps_mu(const.Hy, axis, cut, range, 'Permeability for Hy')
+        self.lock_fig.release()
+            
+    def show_permeability_hz(self, axis, cut, range=None):
+        self.lock_fig.acquire()
+        self._show_eps_mu(const.Hz, axis, cut, range, 'Permeability for Hz')
+        self.lock_fig.release()
+                
     def write_ex(self, low=None, high=None, prefix=None, postfix=None):
         if low is None:
             low_idx = (0, 0, 0)

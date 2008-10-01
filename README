@@ -88,4 +88,22 @@ $ python setup.py build_ext -c mingw32
 
 $ mpiexec -machinefile <HOST FILE> -n <N> pyMPI <GMES SCRIPT>
 
+1. Known Issues
+
+1.1. Matplotlib in Windows
+
+fdtd.show_* methods use Matplotlib packages. The Matplotlib package for
+Windows seems to that it does not handle multiple plots in multiple
+windows.
+
+1.2. numpy.inf
+
+GMES does not treat well the value of numpy.inf. Please use large
+enough value instead of numpy.inf.
+
+1. FAQ
+
+1.1. Plot window forwarding in MPI execution
+
+
 Kyungwon Chun (kwchun@gist.ac.kr)

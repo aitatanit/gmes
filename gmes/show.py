@@ -20,6 +20,9 @@ if not 'matplotlib.backends' in modules:
 
 
 class ShowLine(Thread):
+    """Animated 1-D on-time display. 
+    
+    """
     def __init__(self, xdata, ydata, yrange, time_step, xlabel='', ylabel='', title='', window_title='GMES', msecs=2500, fig_id=None):
         Thread.__init__(self)
         self.xdata, self.ydata = xdata, ydata
@@ -70,8 +73,46 @@ class ShowLine(Thread):
         self.manager.show()
         self.manager.window.mainloop()
         
+class Snapshot(Thread):
+    """A snapshot of 2-D display. 
+    
+    """
+    def __init__(self, data, extent, range, time_step, xlabel='', ylabel='', title='', window_title='GMES', fig_id=None):
+        Thread.__init__(self)
+        self.data = data
+        self.range = array(range, float)
+        self.extent = extent
+        self.xlabel, self.ylabel = xlabel, ylabel
+        self.title = title
+        self.window_title = window_title
+        self.time_step = time_step
+        self.note_form = 'time: %f'
+        if fig_id == None:
+            self.id = 0
+        else:
+            self.id = fig_id
+    
+    def run(self):
+        self.manager = new_figure_manager(self.id)
+        ax = self.manager.canvas.figure.add_subplot(111)
+        self.im = ax.imshow(self.data, extent=self.extent, aspect='auto', vmin=self.range[0], vmax=self.range[1])
+        ax.set_xlabel(self.xlabel)
+        ax.set_ylabel(self.ylabel)
+        ax.set_title(self.title)
+        self.manager.canvas.figure.colorbar(self.im)
+        self.time_note = self.manager.canvas.figure.text(.6, .92, self.note_form % self.time_step.t)
+        self.manager.window.title(self.window_title)
+        self.time_note.set_text(self.note_form % self.time_step.t)
+        
+        self.manager.canvas.draw()       
+        self.manager.show()
+        self.manager.window.mainloop()
+        
         
 class ShowPlane(Thread):
+    """Animated 2-D on-time display. 
+    
+    """
     def __init__(self, data, extent, range, time_step, xlabel='', ylabel='', title='', window_title='GMES', msecs=2500, fig_id=None):
         Thread.__init__(self)
         self.data = data
