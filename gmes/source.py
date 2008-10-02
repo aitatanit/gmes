@@ -182,10 +182,10 @@ class Transparent(object):
     def get_aux_fdtd(self, space):
         # two 10 meshes for the ABC,
         # 1 ex point and 2 hy points for the free space
-        aux_size = array((0 , 0, 21), float) / space.res
-        aux_space = Cartesian(size=aux_size, resolution=space.res, parallel=False)
+        aux_size = array((0 , 0, 21), float) / space.res[self.direction.tag]
+        aux_space = Cartesian(size=aux_size, resolution=space.res[self.direction.tag], dt=space.dt, parallel=False)
         aux_geom_list = (DefaultMaterial(material=Dielectric(self.epsilon_r, self.mu_r)),
-                         Boundary(material=UPML(self.epsilon_r, self.mu_r), thickness=10 / space.res[2], size=aux_size))
+                         Boundary(material=UPML(self.epsilon_r, self.mu_r), thickness=10. / aux_space.res[2], size=aux_size))
         aux_src_list = (Dipole(src_time=Continuous(freq=self.freq), component=const.Ex, pos=(0,0,0)),)
         aux_fdtd = TEMzFDTD(aux_space, aux_geom_list, aux_src_list, verbose=False)
         

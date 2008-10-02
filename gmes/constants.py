@@ -41,6 +41,31 @@ ATTO = 1e-18
 
 # The following classes should be used as singletons.
 
+class Directional(object):
+    def __init__(self):
+        raise SyntaxError, 'directional should be used as a class'
+    
+    
+class X(Directional):
+    tag = 0
+
+
+class Y(Directional):
+    tag = 1
+    
+    
+class Z(Directional):
+    tag = 2
+    
+    
+class PlusX(X): pass
+class MinusX(X): pass
+class PlusY(Y): pass
+class MinusY(Y): pass
+class PlusZ(Z): pass
+class MinusZ(Z): pass
+
+
 class Component(object):
     def __init__(self):
         raise SyntaxError, 'component classes should be used as a class'
@@ -51,43 +76,28 @@ class Electric(Component):
 
 
 class Ex(Electric):
-    tag = 0
+    tag = 3
 
     
 class Ey(Electric):
-    tag = 1
+    tag = 4
     
     
 class Ez(Electric):
-    tag = 2
+    tag = 5
     
 class Magnetic(Component):
     pass
 
 
 class Hx(Magnetic):
-    tag = 3
+    tag = 6
     
     
 class Hy(Magnetic):
-    tag = 4
+    tag = 7
     
     
 class Hz(Magnetic):
-    tag = 5
+    tag = 8
 
-
-class Directional(object):
-    def __init__(self):
-        raise SyntaxError, 'directional classes should be used as a class'
-    
-    
-class X(Directional): pass
-class Y(Directional): pass
-class Z(Directional): pass
-class PlusX(X): pass
-class MinusX(X): pass
-class PlusY(Y): pass
-class MinusY(Y): pass
-class PlusZ(Z): pass
-class MinusZ(Z): pass
