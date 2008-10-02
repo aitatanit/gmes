@@ -456,259 +456,136 @@ class FDTD(object):
         self.time_step.n += .5
         self.time_step.t = self.time_step.n * self.dt
 
-    def show_line_ex(self, start, end, y_range=(-1,1), msecs=2500):
-        """Show the field value on a probing line.
-		
+    def _show_line(self, component, start, end, y_range, msecs, title):
+        """Wrapper method of show.ShowLine.
+        
+        component: Specify electric or magnetic field component. 
+                   This should be one of the gmes.constants.Component. 
         start: The start point of the probing line.
         end: The end point of the probing line.
         y_range: Plot range of the y axis.
         msecs: Refresh rate of the plot in milliseconds.
+        title: title string of the figure.
         
         """
-        title = 'Ex field'
-        ylabel = 'displacement'
-		
-        start_idx = self.space.space_to_ex_index(start)
-        end_idx = [i + 1 for i in self.space.space_to_ex_index(end)]
-		
-        if end_idx[0] - start_idx[0] > 1:
-            y_data = self.ex[start_idx[0]:end_idx[0], start_idx[1], start_idx[2]]
-        elif end_idx[1] - start_idx[1] > 1:
-            y_data = self.ex[start_idx[0], start_idx[1]:end_idx[1], start_idx[2]]
-        elif end_idx[2] - start_idx[2] > 1:
-            y_data = self.ex[start_idx[0], start_idx[1], start_idx[2]:end_idx[2]]
+        if component is const.Ex:
+            field = self.ex
+            spc_to_idx = self.space.space_to_ex_index
+            idx_to_spc = self.space.ex_index_to_space
+            tmp_start_idx = (0,0,0)
+            tmp_end_idx = field.shape[0] - 1, field.shape[1] - 2, field.shape[2] - 2
+        elif component is const.Ey:
+            field = self.ey
+            spc_to_idx = self.space.space_to_ey_index
+            idx_to_spc = self.space.ey_index_to_space
+            tmp_start_idx = (0,0,0)
+            tmp_end_idx = field.shape[0] - 2, field.shape[1] - 1, field.shape[2] - 2
+        elif component is const.Ez:
+            field = self.ez
+            spc_to_idx = self.space.space_to_ez_index
+            idx_to_spc = self.space.ez_index_to_space
+            tmp_start_idx = (0,0,0)
+            tmp_end_idx = field.shape[0] - 2, field.shape[1] - 2, field.shape[2] - 1
+        elif component is const.Hx:
+            field = self.hx
+            spc_to_idx = self.space.space_to_hx_index
+            idx_to_spc = self.space.hx_index_to_space
+            tmp_start_idx = idx_to_spc(0, 1, 1)
+            tmp_end_idx = field.shape[0] - 1, field.shape[1] - 1, field.shape[2] - 1
+        elif component is const.Hy:
+            field = self.hy
+            spc_to_idx = self.space.space_to_hy_index
+            idx_to_spc = self.space.hy_index_to_space
+            tmp_start_idx = idx_to_spc(1, 0, 1)
+            tmp_end_idx = field.shape[0] - 1, field.shape[1] - 1, field.shape[2] - 1
+        elif component is const.Hz:
+            field = self.hz
+            spc_to_idx = self.space.space_to_hz_index
+            idx_to_spc = self.space.hz_index_to_space
+            tmp_start_idx = idx_to_spc(1, 1, 0)
+            tmp_end_idx = field.shape[0] - 1, field.shape[1] - 1, field.shape[2] - 1
+            
+        global_start_idx = spc_to_idx(start)
+        global_end_idx = [i + 1 for i in spc_to_idx(end)]
 
-        start2 = self.space.ex_index_to_space(start_idx)
-        end2 = self.space.ex_index_to_space(end_idx)
+        if global_end_idx[0] - global_start_idx[0] > 1:
+            start_idx = tmp_start_idx[0], global_start_idx[1], global_start_idx[2] 
+            end_idx = tmp_end_idx[0], global_end_idx[1], global_end_idx[2]
+            if in_range(start_idx, field, component) is False:
+                return None
+            
+            y_data = field[start_idx[0]:end_idx[0], start_idx[1], start_idx[2]]
+        elif global_end_idx[1] - global_start_idx[1] > 1:
+            start_idx = global_start_idx[0], tmp_start_idx[1], global_start_idx[2] 
+            end_idx = global_end_idx[0], tmp_end_idx[1], global_end_idx[2]
+            if in_range(start_idx, field, component) is False:
+                return None
+            
+            y_data = field[start_idx[0], start_idx[1]:end_idx[1], start_idx[2]]
+        elif global_end_idx[2] - global_start_idx[2] > 1:
+            start_idx = global_start_idx[0], global_start_idx[1], tmp_start_idx[2] 
+            end_idx = global_end_idx[0], global_end_idx[1], tmp_end_idx[2]
+            if in_range(start_idx, field, component) is False:
+                return None
+
+            y_data = field[start_idx[0], start_idx[1], start_idx[2]:end_idx[2]]
+            
+        start2 = idx_to_spc(start_idx)
+        end2 = idx_to_spc(end_idx)
         domain_idx = map(lambda x, y: x - y, end_idx, start_idx)
         for i in xrange(3):
-            if domain_idx[i] != 1:
-                if i == 0:
-                    step = self.space.dx
-                    xlabel = 'x'
-                elif i == 1:
-                    step = self.space.dy
-                    xlabel = 'y'
-                elif i == 2:
-                    step = self.space.dz
-                    xlabel = 'z'
-                else:
-                    pass
+            if domain_idx[i] != 1 and i == 0:
+                step = self.space.dx
+                xlabel = 'x'
+            elif domain_idx[i] != 1 and i == 1:
+                step = self.space.dy
+                xlabel = 'y'
+            elif domain_idx[i] != 1 and i == 2:
+                step = self.space.dz
+                xlabel = 'z'
+            else:
                 break
-				
+                
         x_data = arange(start2[i], end2[i], step)
-		
-        if len(x_data) > len(y_data):
-            x_data = x_data[:-1]
-			
-        showcase = ShowLine(x_data, y_data, y_range, self.time_step, xlabel, ylabel, title, msecs, self.fig_id)
-        self.fig_id += self.space.numprocs
-        showcase.start()
-		
-    def show_line_ey(self, start, end, y_range=(-1,1), msecs=2500):
-        title = 'Ey field'
-        ylabel = 'displacement'
-		
-        start_idx = self.space.space_to_ey_index(start)
-        end_idx = [i + 1 for i in self.space.space_to_ey_index(end)]
-		
-        if end_idx[0] - start_idx[0] > 1:
-            y_data = self.ey[start_idx[0]:end_idx[0], start_idx[1], start_idx[2]]
-        elif end_idx[1] - start_idx[1] > 1:
-            y_data = self.ey[start_idx[0], start_idx[1]:end_idx[1], start_idx[2]]
-        elif end_idx[2] - start_idx[2] > 1:
-            y_data = self.ey[start_idx[0], start_idx[1], start_idx[2]:end_idx[2]]
-
-        start2 = self.space.ey_index_to_space(start_idx)
-        end2 = self.space.ey_index_to_space(end_idx)
-        domain_idx = map(lambda x, y: x - y, end_idx, start_idx)
-        for i in xrange(3):
-            if domain_idx[i] != 1:
-                if i == 0:
-                    step = self.space.dx
-                    xlabel = 'x'
-                elif i == 1:
-                    step = self.space.dy
-                    xlabel = 'y'
-                elif i == 2:
-                    step = self.space.dz
-                    xlabel = 'z'
-                else:
-                    pass
-                break
-				
-        x_data = arange(start2[i], end2[i], step)
-		
-        if len(x_data) > len(y_data):
-            x_data = x_data[:-1]
-			
-        showcase = ShowLine(x_data, y_data, y_range, self.time_step, xlabel, ylabel, title, msecs, self.fig_id)
-        self.fig_id += self.space.numprocs
-        showcase.start()
-		
-    def show_line_ez(self, start, end, y_range=(-1,1), msecs=2500):
-        title = 'Ez field'
-        ylabel = 'displacement'
-		
-        start_idx = self.space.space_to_ez_index(start)
-        end_idx = [i + 1 for i in self.space.space_to_ez_index(end)]
-		
-        if end_idx[0] - start_idx[0] > 1:
-            y_data = self.ez[start_idx[0]:end_idx[0], start_idx[1], start_idx[2]]
-        elif end_idx[1] - start_idx[1] > 1:
-            y_data = self.ez[start_idx[0], start_idx[1]:end_idx[1], start_idx[2]]
-        elif end_idx[2] - start_idx[2] > 1:
-            y_data = self.ez[start_idx[0], start_idx[1], start_idx[2]:end_idx[2]]
-
-        start2 = self.space.ez_index_to_space(start_idx)
-        end2 = self.space.ez_index_to_space(end_idx)
-        domain_idx = map(lambda x, y: x - y, end_idx, start_idx)
-        for i in xrange(3):
-            if domain_idx[i] != 1:
-                if i == 0:
-                    step = self.space.dx
-                    xlabel = 'x'
-                elif i == 1:
-                    step = self.space.dy
-                    xlabel = 'y'
-                elif i == 2:
-                    step = self.space.dz
-                    xlabel = 'z'
-                else:
-                    pass
-                break
-				
-        x_data = arange(start2[i], end2[i], step)
-		
-        if len(x_data) > len(y_data):
-            x_data = x_data[:-1]
-			
-        showcase = ShowLine(x_data, y_data, y_range, self.time_step, xlabel, ylabel, title, msecs, self.fig_id)
-        self.fig_id += self.space.numprocs
-        showcase.start()
-		
-    def show_line_hx(self, start, end, y_range=(-1,1), msecs=2500):
-        title = 'Hx field'
-        ylabel = 'displacement'
-		
-        start_idx = self.space.space_to_hx_index(start)
-        end_idx = [i + 1 for i in self.space.space_to_hx_index(end)]
-		
-        if end_idx[0] - start_idx[0] > 1:
-            y_data = self.hx[start_idx[0]:end_idx[0], start_idx[1], start_idx[2]]
-        elif end_idx[1] - start_idx[1] > 1:
-            y_data = self.hx[start_idx[0], start_idx[1]:end_idx[1], start_idx[2]]
-        elif end_idx[2] - start_idx[2] > 1:
-            y_data = self.hx[start_idx[0], start_idx[1], start_idx[2]:end_idx[2]]
-
-        start2 = self.space.hx_index_to_space(start_idx)
-        end2 = self.space.hx_index_to_space(end_idx)
-        domain_idx = map(lambda x, y: x - y, end_idx, start_idx)
-        for i in xrange(3):
-            if domain_idx[i] != 1:
-                if i == 0:
-                    step = self.space.dx
-                    xlabel = 'x'
-                elif i == 1:
-                    step = self.space.dy
-                    xlabel = 'y'
-                elif i == 2:
-                    step = self.space.dz
-                    xlabel = 'z'
-                else:
-                    pass
-                break
-		
-        x_data = arange(start2[i], end2[i], step)
-		
-        if len(x_data) > len(y_data):
-            x_data = x_data[:-1]
-			
-        showcase = ShowLine(x_data, y_data, y_range, self.time_step, xlabel, ylabel, title, msecs, self.fig_id)
-        self.fig_id += self.space.numprocs
-        showcase.start()
-		
-    def show_line_hy(self, start, end, y_range=(-1,1), msecs=2500):
-        title = 'Hy field'
-        ylabel = 'displacement'
-		
-        start_idx = self.space.space_to_hy_index(start)
-        end_idx = [i + 1 for i in self.space.space_to_hy_index(end)]
-		
-        if end_idx[0] - start_idx[0] > 1:
-            y_data = self.hy[start_idx[0]:end_idx[0], start_idx[1], start_idx[2]]
-        elif end_idx[1] - start_idx[1] > 1:
-            y_data = self.hy[start_idx[0], start_idx[1]:end_idx[1], start_idx[2]]
-        elif end_idx[2] - start_idx[2] > 1:
-            y_data = self.hy[start_idx[0], start_idx[1], start_idx[2]:end_idx[2]]
-
-        start2 = self.space.hy_index_to_space(start_idx)
-        end2 = self.space.hy_index_to_space(end_idx)
-        domain_idx = map(lambda x, y: x - y, end_idx, start_idx)
-        for i in xrange(3):
-            if domain_idx[i] != 1:
-                if i == 0:
-                    step = self.space.dx
-                    xlabel = 'x'
-                elif i == 1:
-                    step = self.space.dy
-                    xlabel = 'y'
-                elif i == 2:
-                    step = self.space.dz
-                    xlabel = 'z'
-                else:
-                    pass
-                break
-
-        x_data = arange(start2[i], end2[i], step)
-		
-        if len(x_data) > len(y_data):
-            x_data = x_data[:-1]
-			
-        showcase = ShowLine(x_data, y_data, y_range, self.time_step, xlabel, ylabel, title, msecs, self.fig_id)
-        self.fig_id += self.space.numprocs
-        showcase.start()        
-		
-    def show_line_hz(self, start, end, y_range=(-1,1), msecs=2500):
-        title = 'Hz field'
-        ylabel = 'displacement'
-		
-        start_idx = self.space.space_to_hz_index(start)
-        end_idx = [i + 1 for i in self.space.space_to_hz_index(end)]
         
-        if end_idx[0] - start_idx[0] > 1:
-            y_data = self.hz[start_idx[0]:end_idx[0], start_idx[1], start_idx[2]]
-        elif end_idx[1] - start_idx[1] > 1:
-            y_data = self.hz[start_idx[0], start_idx[1]:end_idx[1], start_idx[2]]
-        elif end_idx[2] - start_idx[2] > 1:
-            y_data = self.hz[start_idx[0], start_idx[1], start_idx[2]:end_idx[2]]
-
-        start2 = self.space.hz_index_to_space(start_idx)
-        end2 = self.space.hz_index_to_space(end_idx)
-        domain_idx = map(lambda x, y: x - y, end_idx, start_idx)
-        for i in xrange(3):
-            if domain_idx[i] != 1:
-                if i == 0:
-                    step = self.space.dx
-                    xlabel = 'x'
-                elif i == 1:
-                    step = self.space.dy
-                    xlabel = 'y'
-                elif i == 2:
-                    step = self.space.dz
-                    xlabel = 'z'
-                else:
-                    pass
-                break
-		
-        x_data = arange(start2[i], end2[i], step)
-		
         if len(x_data) > len(y_data):
-            x_data = x_data[:-1]
-		
-        showcase = ShowLine(x_data, y_data, y_range, self.time_step, xlabel, ylabel, title, 'GMES', msecs, self.fig_id)
+            x_data.pop()
+        
+        ylabel='displacement'        
+        window_title = 'GMES' + ' ' + str(self.space.cart_comm.coords())
+        showcase = ShowLine(x_data, y_data, y_range, self.time_step, xlabel, ylabel, title, window_title, msecs, self.fig_id)
         self.fig_id += self.space.numprocs
-        showcase.start()          
+        showcase.start()
+        
+    def show_line_ex(self, start, end, y_range=(-1,1), msecs=2500):
+        self.lock_fig.acquire()
+        self._show_line(const.Ex, start, end, y_range, msecs, 'Ex field')
+        self.lock_fig.release()
+    
+    def show_line_ey(self, start, end, y_range=(-1,1), msecs=2500):
+        self.lock_fig.acquire()
+        self._show_line(const.Ey, start, end, y_range, msecs, 'Ey field')
+        self.lock_fig.release()
+        
+    def show_line_ez(self, start, end, y_range=(-1,1), msecs=2500):
+        self.lock_fig.acquire()
+        self._show_line(const.Ez, start, end, y_range, msecs, 'Ez field')
+        self.lock_fig.release()
+        
+    def show_line_hx(self, start, end, y_range=(-1,1), msecs=2500):
+        self.lock_fig.acquire()
+        self._show_line(const.Hx, start, end, y_range, msecs, 'Hx field')
+        self.lock_fig.release()
+        
+    def show_line_hy(self, start, end, y_range=(-1,1), msecs=2500):
+        self.lock_fig.acquire()
+        self._show_line(const.Hy, start, end, y_range, msecs, 'Hy field')
+        self.lock_fig.release()
+        
+    def show_line_hz(self, start, end, y_range=(-1,1), msecs=2500):
+        self.lock_fig.acquire()
+        self._show_line(const.Hz, start, end, y_range, msecs, 'Hz field')
+        self.lock_fig.release()
 		
     def _show(self, component, axis, cut, amp_range, msecs, title):
         """A Wrapper method of show.ShowPlane.
@@ -725,41 +602,41 @@ class FDTD(object):
         """
         if component is const.Ex:
             field = self.ex
-            spc_to_idx_func = self.space.space_to_ex_index
-            idx_to_spc_func = self.space.ex_index_to_space
-            tmp_cut_coords = idx_to_spc_func(0, 0, 0)
+            spc_to_idx = self.space.space_to_ex_index
+            idx_to_spc = self.space.ex_index_to_space
+            tmp_cut_coords = idx_to_spc(0, 0, 0)
         elif component is const.Ey:
             field = self.ey
-            spc_to_idx_func = self.space.space_to_ey_index
-            idx_to_spc_func = self.space.ey_index_to_space
-            tmp_cut_coords = (idx_to_spc_func0, 0, 0)
+            spc_to_idx = self.space.space_to_ey_index
+            idx_to_spc = self.space.ey_index_to_space
+            tmp_cut_coords = idx_to_spc(0, 0, 0)
         elif component is const.Ez:
             field = self.ez
-            spc_to_idx_func = self.space.space_to_ez_index
-            idx_to_spc_func = self.space.ez_index_to_space
-            tmp_cut_coords = idx_to_spc_func(0, 0, 0)
+            spc_to_idx = self.space.space_to_ez_index
+            idx_to_spc = self.space.ez_index_to_space
+            tmp_cut_coords = idx_to_spc(0, 0, 0)
         elif component is const.Hx:
             field = self.hx
-            spc_to_idx_func = self.space.space_to_hx_index
-            idx_to_spc_func = self.space.hx_index_to_space
-            tmp_cut_coords = idx_to_spc_func(0, 1, 1)
+            spc_to_idx = self.space.space_to_hx_index
+            idx_to_spc = self.space.hx_index_to_space
+            tmp_cut_coords = idx_to_spc(0, 1, 1)
         elif component is const.Hy:
             field = self.hy
-            spc_to_idx_func = self.space.space_to_hy_index
-            idx_to_spc_func = self.space.hy_index_to_space
-            tmp_cut_coords = idx_to_spc_func(1, 0, 1)
+            spc_to_idx = self.space.space_to_hy_index
+            idx_to_spc = self.space.hy_index_to_space
+            tmp_cut_coords = idx_to_spc(1, 0, 1)
         elif component is const.Hz:
             field = self.hz
-            spc_to_idx_func = self.space.space_to_hz_index
-            idx_to_spc_func = self.space.hz_index_to_space
-            tmp_cut_coords = idx_to_spc_func(1, 1, 0)
+            spc_to_idx = self.space.space_to_hz_index
+            idx_to_spc = self.space.hz_index_to_space
+            tmp_cut_coords = idx_to_spc(1, 1, 0)
             
         if axis is const.X:
             high_idx = [i - 1 for i in field.shape]
-            high = idx_to_spc_func(high_idx)
+            high = idx_to_spc(high_idx)
             extent = (low[2], high[2], high[1], low[1])
             
-            cut_idx = spc_to_idx_func(cut, tmp_cut_coords[1], tmp_cut_coords[2])
+            cut_idx = spc_to_idx(cut, tmp_cut_coords[1], tmp_cut_coords[2])
             if in_range(cut_idx, field, component) is False:
                 return None
             field_cut = field[cut_idx[0], :, :]
@@ -767,12 +644,12 @@ class FDTD(object):
             xlabel, ylabel = 'z', 'y'
             
         elif axis is const.Y:
-            low = idx_to_spc_func(0, 0, 0)
+            low = idx_to_spc(0, 0, 0)
             high_idx = [i - 1 for i in field.shape]
-            high = idx_to_spc_func(high_idx)
+            high = idx_to_spc(high_idx)
             extent = (low[2], high[2], high[0], low[0])
             
-            cut_idx = spc_to_idx_func(tmp_cut_coords[0], cut, tmp_cut_coords[2])
+            cut_idx = spc_to_idx(tmp_cut_coords[0], cut, tmp_cut_coords[2])
             if in_range(cut_idx, field, component) is False:
                 return None
             field_cut = field[:, cut_idx[1], :]
@@ -780,12 +657,12 @@ class FDTD(object):
             xlabel, ylabel= 'z', 'x'
             
         elif axis is const.Z:
-            low = idx_to_spc_func(0, 0, 0)
+            low = idx_to_spc(0, 0, 0)
             high_idx = [i - 1 for i in field.shape]
-            high = idx_to_spc_func(high_idx)
+            high = idx_to_spc(high_idx)
             extent = (low[1], high[1], high[0], low[0])
             
-            cut_idx = spc_to_idx_func(tmp_cut_coords[0], tmp_cut_coords[1], cut)
+            cut_idx = spc_to_idx(tmp_cut_coords[0], tmp_cut_coords[1], cut)
             if in_range(cut_idx, field, component) is False:
                 return None
             field_cut = field[:, :, cut_idx[2]]
@@ -838,26 +715,26 @@ class FDTD(object):
         """
         if component is const.Ex:
             material = self.material_ex
-            spc_to_idx_func = self.space.space_to_ex_index
-            idx_to_spc_func = self.space.ex_index_to_space
-            tmp_cut_coords = idx_to_spc_func(0, 0, 0)
+            spc_to_idx = self.space.space_to_ex_index
+            idx_to_spc = self.space.ex_index_to_space
+            tmp_cut_coords = idx_to_spc(0, 0, 0)
         elif component is const.Ey:
             material = self.material_ey
-            spc_to_idx_func = self.space.space_to_ey_index
-            idx_to_spc_func = self.space.ey_index_to_space
-            tmp_cut_coords = (idx_to_spc_func0, 0, 0)
+            spc_to_idx = self.space.space_to_ey_index
+            idx_to_spc = self.space.ey_index_to_space
+            tmp_cut_coords = (idx_to_spc0, 0, 0)
         elif component is const.Ez:
             material = self.material_ez
-            spc_to_idx_func = self.space.space_to_ez_index
-            idx_to_spc_func = self.space.ez_index_to_space
-            tmp_cut_coords = idx_to_spc_func(0, 0, 0)
+            spc_to_idx = self.space.space_to_ez_index
+            idx_to_spc = self.space.ez_index_to_space
+            tmp_cut_coords = idx_to_spc(0, 0, 0)
             
         if axis is const.X:
             high_idx = [i - 1 for i in material.shape]
-            high = idx_to_spc_func(high_idx)
+            high = idx_to_spc(high_idx)
             extent = (low[2], high[2], high[1], low[1])
             
-            cut_idx = spc_to_idx_func(cut, tmp_cut_coords[1], tmp_cut_coords[2])
+            cut_idx = spc_to_idx(cut, tmp_cut_coords[1], tmp_cut_coords[2])
             if in_range(cut_idx, material, component) is False:
                 return None
             
@@ -874,12 +751,12 @@ class FDTD(object):
             xlabel, ylabel = 'z', 'y'
             
         elif axis is const.Y:
-            low = idx_to_spc_func(0, 0, 0)
+            low = idx_to_spc(0, 0, 0)
             high_idx = [i - 1 for i in material.shape]
-            high = idx_to_spc_func(high_idx)
+            high = idx_to_spc(high_idx)
             extent = (low[2], high[2], high[0], low[0])
             
-            cut_idx = spc_to_idx_func(tmp_cut_coords[0], cut, tmp_cut_coords[2])
+            cut_idx = spc_to_idx(tmp_cut_coords[0], cut, tmp_cut_coords[2])
             if in_range(cut_idx, material, component) is False:
                 return None
             
@@ -896,12 +773,12 @@ class FDTD(object):
             xlabel, ylabel= 'z', 'x'
             
         elif axis is const.Z:
-            low = idx_to_spc_func(0, 0, 0)
+            low = idx_to_spc(0, 0, 0)
             high_idx = [i - 1 for i in material.shape]
-            high = idx_to_spc_func(high_idx)
+            high = idx_to_spc(high_idx)
             extent = (low[1], high[1], high[0], low[0])
             
-            cut_idx = spc_to_idx_func(tmp_cut_coords[0], tmp_cut_coords[1], cut)
+            cut_idx = spc_to_idx(tmp_cut_coords[0], tmp_cut_coords[1], cut)
             if in_range(cut_idx, material, component) is False:
                 return None
             
