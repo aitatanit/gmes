@@ -126,8 +126,8 @@ class FDTD(object):
             else:
                 coords = self.space.ex_index_to_space(idx)
                 mat_obj, underneath = self.geom_tree.material_of_point(coords)
-                self.material_ex[idx] = mat_obj.get_pointwise_material_ex(idx, coords,
-                                                                          underneath)
+                self.material_ex[idx] = \
+                mat_obj.get_pointwise_material_ex(idx, coords, underneath)
         self.lock_ex.release()
         
     def init_material_ey(self):
@@ -145,8 +145,8 @@ class FDTD(object):
             else:
                 coords = self.space.ey_index_to_space(idx)
                 mat_obj, underneath = self.geom_tree.material_of_point(coords)
-                self.material_ey[idx] = mat_obj.get_pointwise_material_ey(idx, coords,
-                                                                          underneath)
+                self.material_ey[idx] = \
+                mat_obj.get_pointwise_material_ey(idx, coords, underneath)
         self.lock_ey.release()
         
     def init_material_ez(self):
@@ -164,8 +164,8 @@ class FDTD(object):
             else:
                 coords = self.space.ez_index_to_space(idx)
                 mat_obj, underneath = self.geom_tree.material_of_point(coords)
-                self.material_ez[idx] = mat_obj.get_pointwise_material_ez(idx, coords,
-                                                                          underneath)
+                self.material_ez[idx] = \
+                mat_obj.get_pointwise_material_ez(idx, coords, underneath)
         self.lock_ez.release()
         
     def init_material_hx(self):
@@ -183,8 +183,8 @@ class FDTD(object):
             else:
                 coords = self.space.hx_index_to_space(idx)
                 mat_obj, underneath = self.geom_tree.material_of_point(coords)
-                self.material_hx[idx] = mat_obj.get_pointwise_material_hx(idx, coords,
-                                                                          underneath)
+                self.material_hx[idx] = \
+                mat_obj.get_pointwise_material_hx(idx, coords, underneath)
         self.lock_hx.release()
         
     def init_material_hy(self):
@@ -202,8 +202,8 @@ class FDTD(object):
             else:
                 coords = self.space.hy_index_to_space(idx)
                 mat_obj, underneath = self.geom_tree.material_of_point(coords)
-                self.material_hy[idx] = mat_obj.get_pointwise_material_hy(idx, coords,
-                                                                          underneath)
+                self.material_hy[idx] = \
+                mat_obj.get_pointwise_material_hy(idx, coords, underneath)
         self.lock_hy.release()
         
     def init_material_hz(self):
@@ -221,8 +221,8 @@ class FDTD(object):
             else:
                 coords = self.space.hz_index_to_space(idx)
                 mat_obj, underneath = self.geom_tree.material_of_point(coords)
-                self.material_hz[idx] = mat_obj.get_pointwise_material_hz(idx, coords,
-                                                                          underneath)
+                self.material_hz[idx] = \
+                mat_obj.get_pointwise_material_hz(idx, coords, underneath)
         self.lock_hz.release()
         
     def init_material(self):
@@ -359,7 +359,7 @@ class FDTD(object):
         src, dest = self.space.cart_comm.shift(1, -1)
         self.ez[:-1, -1, :], status = \
         self.space.cart_comm.sendrecv(self.ez[:-1, 0, :], dest, src,
-                                      const.Ez.tag, const.Ez.tag)   
+                                      const.Ez.tag, const.Ez.tag)
                  
     def talk_with_hx_neighbors(self):
         """Synchronize hx data.
