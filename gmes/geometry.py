@@ -15,7 +15,7 @@ from numpy import *
 from scipy.linalg import norm
 
 try:
-    import mpi
+    from mpi4py import MPI
 except ImportError:
     pass
 
@@ -24,7 +24,7 @@ from material import Compound
 
 
 class AuxiCartComm(object):
-    """Auxiliary MPI Catesian communicator for the absence of MPI implementation.
+    """Auxiliary MPI Cartesian communicator for the absence of MPI implementation.
     
     Attributes:
         dims -- size of mpi Cartesian communicator
@@ -32,10 +32,29 @@ class AuxiCartComm(object):
         
     """
     def __init__(self):
-        self.dims = [1, 1, 1]
-        self.ndims = len(self.dims)
+        self.rank = 0
+        self.dim = 3
+        self.topo = ((1,1,1), (1,1,1), (0,0,0))
         
-    def shift(self, direction=0, displacement=1):
+    def Get_cart_rank(self, coords):
+        return 0
+    
+    def Get_coords(self, rank):
+        """Get local or remote grid coordinate.
+        
+        Keyword arguments:
+            rank -- local rank
+            
+        """
+        return 0, 0, 0
+    
+    def Get_dim(self):
+        return self.dim
+    
+    def Get_topo(self):
+        return self.topo
+    
+    def Shift(self, direction, disp):
         """Get source/destination with specified shift.
         
         Keyword arguments:
@@ -45,22 +64,15 @@ class AuxiCartComm(object):
         """
         return 0, 0
     
-    def coords(self, rank=0):
-        """Get local or remote grid coordinate.
-        
-        Keyword arguments:
-            rank -- local rank
-            
-        """
-        return 0, 0, 0
-    
-    def sendrecv(self, message, destination=0, source=0, sendtag=0, recvtag=0):
-        """Mimic sendrecv function of pyMPI.
+    def Sendrecv(self, sendbuf, dest=0, sendtag=0, 
+                 recvbuf=None, source=0, recvtag=0, status=None):
+        """Mimic Sendrecv function.
         
         All arguments except message are ignored.
         
         """
-        return message, None
+        return sendbuf
+        
         
 class Cartesian(object):
     """Define the calculation space with Cartesian coordinates.
@@ -145,21 +157,24 @@ class Cartesian(object):
         
         try:
             if not parallel:
-                raise NameError
+                raise StandardError
             
-            self.my_id = mpi.rank
-            self.numprocs = mpi.size
-            self.cart_comm = mpi.WORLD.cart_create(self.find_best_deploy())
+            self.my_id = MPI.COMM_WORLD.rank
+            self.numprocs = MPI.COMM_WORLD.size
+            self.cart_comm = \
+            MPI.COMM_WORLD.Create_cart(self.find_best_deploy(),(1,1,1))
         except StandardError:
             self.my_id = 0
             self.numprocs = 1
             self.cart_comm = AuxiCartComm()
             
-        self.my_cart_idx = self.cart_comm.coords()
+        self.my_cart_idx = \
+        self.cart_comm.Get_coords(self.cart_comm.rank)
         
         # usually the my_field_size is general_field_size,
         # except the last node in each dimension.
-        self.general_field_size = self.whole_field_size / self.cart_comm.dims
+        self.general_field_size = \
+        self.whole_field_size / self.cart_comm.topo[0]
         
         # my_field_size may be smaller than general_field_size
         # at the last node in each dimension.
@@ -175,15 +190,16 @@ class Cartesian(object):
             
         """
         field_size = empty(3, int)
+        dims = self.cart_comm.topo[0]
         
         for i in xrange(3):
-            if self.my_cart_idx[i] == self.cart_comm.dims[i] - 1:
+            if self.my_cart_idx[i] == dims[i] - 1:
                 field_size[i] = self.whole_field_size[i] - self.my_cart_idx[i] * self.general_field_size[i]
             else:
                 field_size[i] = self.general_field_size[i]
         
         return field_size
-                
+    
     def find_best_deploy(self):
         """Return the minimum load deploy of the nodes.
         
@@ -201,10 +217,10 @@ class Cartesian(object):
                     break
                 n = self.numprocs / (l * m)
                 if self.numprocs % n == 0:
-                    tmp_load = self.load_metric(l, m, n)
-                    if tmp_load < min_load:
-                        best_partition = l, m, n
-                        min_load = tmp_load
+                        tmp_load = self.load_metric(l, m, n)
+                        if tmp_load < min_load:
+                            best_partition = l, m, n
+                            min_load = tmp_load
 
         return best_partition
 

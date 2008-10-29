@@ -101,8 +101,7 @@ class FDTD(object):
         Thus, the tricky constructor call follows.
         
         """
-        newcopy = self.__class__(self.space, self.geom_list, 
-                                 self.src_list, False)
+        newcopy = self.__class__(self.space, self.geom_list, self.src_list, False)
         newcopy.ex = array(self.ex)
         newcopy.ey = array(self.ey)
         newcopy.ez = array(self.ez)
@@ -240,14 +239,14 @@ class FDTD(object):
 #            
 #        for thread in threads:
 #            thread.join()
-            
+    	
         self.init_material_ex()
         self.init_material_ey()
         self.init_material_ez()
         self.init_material_hx()
         self.init_material_hy()
         self.init_material_hz()
-    		
+        	
     def init_source_ex(self):
         for so in self.src_list:
             so.set_pointwise_source_ex(self.material_ex, self.space)
@@ -286,14 +285,14 @@ class FDTD(object):
 #			
 #        for thread in threads:
 #            thread.join()
-			
+		
         self.init_source_ex()
         self.init_source_ey()
         self.init_source_ez()
         self.init_source_hx()
         self.init_source_hy()
         self.init_source_hz()
-			
+	
     def update_ex(self):
         self.lock_ex.acquire()
         for mo in self.material_ex.flat:
@@ -335,99 +334,99 @@ class FDTD(object):
         
         """
         # send ex field data to -y direction and receive from +y direction.
-        src, dest = self.space.cart_comm.shift(1, -1)
-        self.ex[:, -1, :-1], status = \
-        self.space.cart_comm.sendrecv(self.ex[:, 0 ,:-1], dest, src,
-                                      const.Ex.tag, const.Ex.tag)
+        dest, src = self.space.cart_comm.Shift(1, -1)
+        self.ex[:, -1, :-1] = \
+        self.space.cart_comm.Sendrecv(self.ex[:, 0 ,:-1], dest, const.Ex.tag,
+                                      None, src, const.Ex.tag)
         
         # send ex field data to -z direction and receive from +z direction.    
-        src, dest = self.space.cart_comm.shift(2, -1)
-        self.ex[:, :-1, -1], status = \
-        self.space.cart_comm.sendrecv(self.ex[:, :-1, 0], dest, src,
-                                      const.Ex.tag, const.Ex.tag)
+        dest, src = self.space.cart_comm.Shift(2, -1)
+        self.ex[:, :-1, -1] = \
+        self.space.cart_comm.Sendrecv(self.ex[:, :-1, 0], dest, const.Ex.tag,
+                                      None, src, const.Ex.tag)
         
     def talk_with_ey_neighbors(self):
         """Synchronize ey data.
         
         """
         # send ey field data to -z direction and receive from +z direction.
-        src, dest = self.space.cart_comm.shift(2, -1)
-        self.ey[:-1, :, -1], status = \
-        self.space.cart_comm.sendrecv(self.ey[:-1, :, 0], dest, src,
-                                      const.Ey.tag, const.Ey.tag)
+        dest, src = self.space.cart_comm.Shift(2, -1)
+        self.ey[:-1, :, -1] = \
+        self.space.cart_comm.Sendrecv(self.ey[:-1, :, 0], dest, const.Ey.tag,
+                                      None, src, const.Ey.tag)
                    
         # send ey field data to -x direction and receive from +x direction.
-        src, dest = self.space.cart_comm.shift(0, -1)            
-        self.ey[-1, :, :-1], status = \
-        self.space.cart_comm.sendrecv(self.ey[0, :, :-1], dest, src,
-                                      const.Ey.tag, const.Ey.tag)
+        dest, src = self.space.cart_comm.Shift(0, -1)            
+        self.ey[-1, :, :-1] = \
+        self.space.cart_comm.Sendrecv(self.ey[0, :, :-1], dest, const.Ey.tag,
+                                      None, src, const.Ey.tag)
         
     def talk_with_ez_neighbors(self):
         """Synchronize ez data.
         
         """
         # send ez field data to -x direction and receive from +x direction.
-        src, dest = self.space.cart_comm.shift(0, -1)
-        self.ez[-1, :-1, :], status = \
-        self.space.cart_comm.sendrecv(self.ez[0, :-1, :], dest, src,
-                                      const.Ez.tag, const.Ez.tag)
+        dest, src = self.space.cart_comm.Shift(0, -1)
+        self.ez[-1, :-1, :] = \
+        self.space.cart_comm.Sendrecv(self.ez[0, :-1, :], dest, const.Ez.tag,
+                                      None, src, const.Ez.tag)
                    
         # send ez field data to -y direction and receive from +y direction.
-        src, dest = self.space.cart_comm.shift(1, -1)
-        self.ez[:-1, -1, :], status = \
-        self.space.cart_comm.sendrecv(self.ez[:-1, 0, :], dest, src,
-                                      const.Ez.tag, const.Ez.tag)
+        dest, src = self.space.cart_comm.Shift(1, -1)
+        self.ez[:-1, -1, :] = \
+        self.space.cart_comm.Sendrecv(self.ez[:-1, 0, :], dest, const.Ez.tag,
+                                      None, src, const.Ez.tag) 
                  
     def talk_with_hx_neighbors(self):
         """Synchronize hx data.
         
         """
         # send hx field data to +y direction and receive from -y direction.
-        src, dest = self.space.cart_comm.shift(1, 1)
-        self.hx[:, 0, 1:], status = \
-        self.space.cart_comm.sendrecv(self.hx[:, -1, 1:], dest, src,
-                                      const.Hx.tag, const.Hx.tag)
+        dest, src = self.space.cart_comm.Shift(1, 1)
+        self.hx[:, 0, 1:] = \
+        self.space.cart_comm.Sendrecv(self.hx[:, -1, 1:], dest, const.Hx.tag,
+                                      None, src, const.Hx.tag)
         
         # send hx field data to +z direction and receive from -z direction.    
-        src, dest = self.space.cart_comm.shift(2, 1)
-        self.hx[:, 1:, 0], status = \
-        self.space.cart_comm.sendrecv(self.hx[:, 1:, -1], dest, src,
-                                      const.Hx.tag, const.Hx.tag)
+        dest, src = self.space.cart_comm.Shift(2, 1)
+        self.hx[:, 1:, 0] = \
+        self.space.cart_comm.Sendrecv(self.hx[:, 1:, -1], dest, const.Hx.tag,
+                                      None, src, const.Hx.tag)
         
     def talk_with_hy_neighbors(self):
         """Synchronize hy data.
         
         """
         # send hy field data to +z direction and receive from -z direction.
-        src, dest = self.space.cart_comm.shift(2, 1)
-        self.hy[1:, :, 0], status = \
-        self.space.cart_comm.sendrecv(self.hy[1:, :, -1], dest, src,
-                                      const.Hy.tag, const.Hy.tag)
+        dest, src = self.space.cart_comm.Shift(2, 1)
+        self.hy[1:, :, 0] = \
+        self.space.cart_comm.Sendrecv(self.hy[1:, :, -1], dest, const.Hy.tag,
+                                      None, src, const.Hy.tag)
                    
         # send hy field data to +x direction and receive from -x direction.
-        src, dest = self.space.cart_comm.shift(0, 1)
-        self.hy[0, :, 1:], status = \
-        self.space.cart_comm.sendrecv(self.hy[-1, :, 1:], dest, src,
-                                      const.Hy.tag, const.Hy.tag)
+        dest, src = self.space.cart_comm.Shift(0, 1)
+        self.hy[0, :, 1:] = \
+        self.space.cart_comm.Sendrecv(self.hy[-1, :, 1:], dest, const.Hy.tag,
+                                      None, src, const.Hy.tag)
         
     def talk_with_hz_neighbors(self):
         """Synchronize hz data.
         
         """
         # send hz field data to +x direction and receive from -x direction.
-        src, dest = self.space.cart_comm.shift(0, 1)
-        self.hz[0, 1:, :], status = \
-        self.space.cart_comm.sendrecv(self.hz[-1, 1:, :], dest, src,
-                                      const.Hz.tag, const.Hz.tag)
+        dest, src = self.space.cart_comm.Shift(0, 1)
+        self.hz[0, 1:, :] = \
+        self.space.cart_comm.Sendrecv(self.hz[-1, 1:, :], dest, const.Hz.tag,
+                                      None, src, const.Hz.tag)
         
         # send hz field data to +y direction and receive from -y direction.
-        src, dest = self.space.cart_comm.shift(1, 1)
-        self.hz[1:, 0, :], status = \
-        self.space.cart_comm.sendrecv(self.hz[1:, -1, :], dest, src,
-                                      const.Hz.tag, const.Hz.tag)
+        dest, src = self.space.cart_comm.Shift(1, 1)
+        self.hz[1:, 0, :] = \
+        self.space.cart_comm.Sendrecv(self.hz[1:, -1, :], dest, const.Hz.tag,
+                                      None, src, const.Hz.tag)
         
     def step(self):
-        # FIXME: pyMPI is not thread safe.
+        # FIXME: MPI for Python is not thread safe.
 #        h_chatter_threads = (Thread(target=self.talk_with_hx_neighbors),
 #                             Thread(target=self.talk_with_hy_neighbors), 
 #                             Thread(target=self.talk_with_hz_neighbors))
@@ -441,7 +440,7 @@ class FDTD(object):
         self.talk_with_hx_neighbors()
         self.talk_with_hy_neighbors() 
         self.talk_with_hz_neighbors()
-                    
+
         # FIXME: Thread makes GMES slow.
 #        e_worker_threads = (Thread(target=self.update_ex),
 #                            Thread(target=self.update_ey),
@@ -452,15 +451,15 @@ class FDTD(object):
 #            
 #        for worker in e_worker_threads:
 #            worker.join()
-            
+
         self.update_ex()
         self.update_ey()
         self.update_ez()
-
+        
         self.time_step.n += .5
         self.time_step.t = self.time_step.n * self.dt
 
-        # FIXME: pyMPI is not thread safe.
+        # FIXME: MPI for Python is not thread safe.
 #        e_chatter_threads = (Thread(target=self.talk_with_ex_neighbors),
 #                             Thread(target=self.talk_with_ey_neighbors), 
 #                             Thread(target=self.talk_with_ez_neighbors))
@@ -474,7 +473,7 @@ class FDTD(object):
         self.talk_with_ex_neighbors()
         self.talk_with_ey_neighbors()
         self.talk_with_ez_neighbors()
-                    
+        
         # FIXME: Thread makes GMES slow.
 #        h_worker_threads = (Thread(target=self.update_hx),
 #                            Thread(target=self.update_hy),
@@ -489,13 +488,13 @@ class FDTD(object):
         self.update_hx()
         self.update_hy()
         self.update_hz()
-            
+        
         self.time_step.n += .5
         self.time_step.t = self.time_step.n * self.dt
 
     def _show_line(self, component, start, end, y_range, msecs, title):
         """Wrapper method of show.ShowLine.
-        
+		
         component: Specify electric or magnetic field component. 
                    This should be one of the gmes.constants.Component. 
         start: The start point of the probing line.
@@ -541,53 +540,53 @@ class FDTD(object):
             idx_to_spc = self.space.hz_index_to_space
             tmp_start_idx = idx_to_spc(1, 1, 0)
             tmp_end_idx = field.shape[0] - 1, field.shape[1] - 1, field.shape[2] - 1
-            
+		
         global_start_idx = spc_to_idx(start)
         global_end_idx = [i + 1 for i in spc_to_idx(end)]
-
+		
         if global_end_idx[0] - global_start_idx[0] > 1:
             start_idx = tmp_start_idx[0], global_start_idx[1], global_start_idx[2] 
             end_idx = tmp_end_idx[0], global_end_idx[1], global_end_idx[2]
             if in_range(start_idx, field, component) is False:
                 return None
-            
+
             y_data = field[start_idx[0]:end_idx[0], start_idx[1], start_idx[2]]
         elif global_end_idx[1] - global_start_idx[1] > 1:
             start_idx = global_start_idx[0], tmp_start_idx[1], global_start_idx[2] 
             end_idx = global_end_idx[0], tmp_end_idx[1], global_end_idx[2]
             if in_range(start_idx, field, component) is False:
                 return None
-            
+				
             y_data = field[start_idx[0], start_idx[1]:end_idx[1], start_idx[2]]
         elif global_end_idx[2] - global_start_idx[2] > 1:
             start_idx = global_start_idx[0], global_start_idx[1], tmp_start_idx[2] 
             end_idx = global_end_idx[0], global_end_idx[1], tmp_end_idx[2]
             if in_range(start_idx, field, component) is False:
                 return None
-
+		
             y_data = field[start_idx[0], start_idx[1], start_idx[2]:end_idx[2]]
-            
+			
         start2 = idx_to_spc(start_idx)
         end2 = idx_to_spc(end_idx)
         domain_idx = map(lambda x, y: x - y, end_idx, start_idx)
         for i in xrange(3):
             if domain_idx[i] != 1 and i == 0:
-                step = self.space.dx
-                xlabel = 'x'
+                    step = self.space.dx
+                    xlabel = 'x'
             elif domain_idx[i] != 1 and i == 1:
-                step = self.space.dy
-                xlabel = 'y'
+                    step = self.space.dy
+                    xlabel = 'y'
             elif domain_idx[i] != 1 and i == 2:
-                step = self.space.dz
-                xlabel = 'z'
+                    step = self.space.dz
+                    xlabel = 'z'
             else:
                 break
-                
+				
         x_data = arange(start2[i], end2[i], step)
-        
+		
         if len(x_data) > len(y_data):
             x_data.pop()
-        
+			
         ylabel='displacement'        
         window_title = 'GMES' + ' ' + str(self.space.cart_comm.topo[2])
         showcase = ShowLine(x_data, y_data, y_range, self.time_step, 
@@ -595,37 +594,37 @@ class FDTD(object):
                             self.fig_id)
         self.fig_id += self.space.numprocs
         showcase.start()
-        
+		
     def show_line_ex(self, start, end, y_range=(-1,1), msecs=2500):
         self.lock_fig.acquire()
         self._show_line(const.Ex, start, end, y_range, msecs, 'Ex field')
         self.lock_fig.release()
-    
+		
     def show_line_ey(self, start, end, y_range=(-1,1), msecs=2500):
         self.lock_fig.acquire()
         self._show_line(const.Ey, start, end, y_range, msecs, 'Ey field')
         self.lock_fig.release()
-        
+		
     def show_line_ez(self, start, end, y_range=(-1,1), msecs=2500):
         self.lock_fig.acquire()
         self._show_line(const.Ez, start, end, y_range, msecs, 'Ez field')
         self.lock_fig.release()
-        
+		
     def show_line_hx(self, start, end, y_range=(-1,1), msecs=2500):
         self.lock_fig.acquire()
         self._show_line(const.Hx, start, end, y_range, msecs, 'Hx field')
         self.lock_fig.release()
-        
+		
     def show_line_hy(self, start, end, y_range=(-1,1), msecs=2500):
         self.lock_fig.acquire()
         self._show_line(const.Hy, start, end, y_range, msecs, 'Hy field')
         self.lock_fig.release()
-        
+		
     def show_line_hz(self, start, end, y_range=(-1,1), msecs=2500):
         self.lock_fig.acquire()
         self._show_line(const.Hz, start, end, y_range, msecs, 'Hz field')
         self.lock_fig.release()
-		
+
     def _show(self, component, axis, cut, amp_range, msecs, title):
         """A Wrapper method of show.ShowPlane.
         
@@ -712,9 +711,11 @@ class FDTD(object):
             msg = "axis must be gmes.constants.Directional."
             raise ValueError(msg)
 
-        window_title = 'GMES' + ' ' + str(self.space.cart_comm.coords())
+        window_title = 'GMES' + ' ' + str(self.space.cart_comm.topo[2])
 
-        showcase = ShowPlane(field_cut, extent, amp_range, self.time_step, xlabel, ylabel, title, window_title, msecs, self.fig_id)
+        showcase = ShowPlane(field_cut, extent, amp_range, 
+                             self.time_step, xlabel, ylabel, title, 
+                             window_title, msecs, self.fig_id)
         self.fig_id += self.space.numprocs
         showcase.start()
 
@@ -747,7 +748,7 @@ class FDTD(object):
         self.lock_fig.acquire()
         self._show(const.Hz, axis, cut, amp_range, msecs, 'Hz field')
         self.lock_fig.release()
-    
+        
     def _show_eps_mu(self, component, axis, cut, range, title):
         """
                 
@@ -837,12 +838,14 @@ class FDTD(object):
             msg = "axis must be gmes.constants.Directional."
             raise ValueError(msg)
 
-        window_title = 'GMES' + ' ' + str(self.space.cart_comm.coords())
+        window_title = 'GMES' + ' ' + str(self.space.cart_comm.topo[2])
 
         if range is None:
             range = eps_mu.min(), eps_mu.max()
              
-        showcase = Snapshot(eps_mu, extent, range, self.time_step, xlabel, ylabel, title, window_title, self.fig_id)
+        showcase = Snapshot(eps_mu, extent, range, self.time_step, 
+                            xlabel, ylabel, title, window_title, 
+                            self.fig_id)
         self.fig_id += self.space.numprocs
         showcase.start()
 
@@ -947,8 +950,8 @@ class FDTD(object):
 class TExFDTD(FDTD):
     """Two dimensional fdtd which has transverse-electric mode with respect to x.
     
-    Assume that the structure and incident wave are uniform in the x direction.
-    TExFDTD updates only Ey, Ez, and Hx field components.
+    Assume that the structure and incident wave are uniform in the x 
+    direction. TExFDTD updates only Ey, Ez, and Hx field components.
     
     """
     def init_material(self):
@@ -968,11 +971,11 @@ class TExFDTD(FDTD):
 #            
 #        for thread in threads:
 #            thread.join()
-            
+    
         self.init_material_ey()
         self.init_material_ez()
         self.init_material_hx()
-    
+
     def init_source(self):
         """Override FDTD.init_source().
         
@@ -990,7 +993,7 @@ class TExFDTD(FDTD):
 #            
 #        for thread in threads:
 #            thread.join()
-            
+
         self.init_source_ey()
         self.init_source_ez()
         self.init_source_hx()
@@ -1012,14 +1015,14 @@ class TExFDTD(FDTD):
 #            
 #        for worker in worker_threads:
 #            worker.join()
-            
+
         self.update_ey()
         self.update_ez()
-
+        
         self.time_step.n += .5
         self.time_step.t = self.time_step.n * self.dt
         
-        # FIXME: pyMPI is not thread safe.
+        # FIXME: MPI for Python is not thread safe.
 #        chatter_threads = (Thread(target=self.talk_with_ey_neighbors),
 #                           Thread(target=self.talk_with_ez_neighbors))
 #        
@@ -1031,7 +1034,7 @@ class TExFDTD(FDTD):
             
         self.talk_with_ey_neighbors()
         self.talk_with_ez_neighbors()
-            
+
         self.update_hx()
 
         self.time_step.n += .5
@@ -1062,11 +1065,11 @@ class TEyFDTD(FDTD):
 #            
 #        for thread in threads:
 #            thread.join()
-            
+    	
         self.init_material_ez()
         self.init_material_ex()
         self.init_material_hy()
-    		
+        	
     def init_source(self):
         """Override FDTD.init_source().
         
@@ -1088,7 +1091,7 @@ class TEyFDTD(FDTD):
         self.init_source_ez()
         self.init_source_ex()
         self.init_source_hy()
-            
+
     def step(self):
         """Override FDTD.step().
         
@@ -1109,11 +1112,11 @@ class TEyFDTD(FDTD):
             
         self.update_ez()
         self.update_ex()
-            
+
         self.time_step.n += .5
         self.time_step.t = self.time_step.n * self.dt
         
-        # FIXME: pyMPI is not thread safe.
+        # FIXME: MPI for Python is not thread safe.
 #        chatter_threads = (Thread(target=self.talk_with_ez_neighbors),
 #                           Thread(target=self.talk_with_ex_neighbors))
 #     	
@@ -1122,10 +1125,10 @@ class TEyFDTD(FDTD):
 #            
 #        for chatter in chatter_threads:
 #            chatter.join()
-            
+        
         self.talk_with_ez_neighbors()
         self.talk_with_ex_neighbors()
-        
+
         self.update_hy()
 
         self.time_step.n += .5
@@ -1155,11 +1158,11 @@ class TEzFDTD(FDTD):
 #            
 #        for thread in threads:
 #            thread.join()
-            
+    
         self.init_material_ex()
         self.init_material_ey()
         self.init_material_hz()
-    
+
     def init_source(self):
         """Override FDTD.init_source().
         
@@ -1181,7 +1184,7 @@ class TEzFDTD(FDTD):
         self.init_source_ex()
         self.init_source_ey()
         self.init_source_hz()
-            
+
     def step(self):
         """Override FDTD.step().
         
@@ -1199,14 +1202,14 @@ class TEzFDTD(FDTD):
 #            
 #        for worker in worker_threads:
 #            worker.join()
-            
+
         self.update_ex()
         self.update_ey()
 
         self.time_step.n += .5
         self.time_step.t = self.time_step.n * self.dt
 
-        # FIXME: pyMPI is not thread safe.
+        # FIXME: MPI for Python is not thread safe.
 #        chatter_threads = (Thread(target=self.talk_with_ex_neighbors),
 #                           Thread(target=self.talk_with_ey_neighbors))
 #        
@@ -1218,9 +1221,9 @@ class TEzFDTD(FDTD):
             
         self.talk_with_ex_neighbors()
         self.talk_with_ey_neighbors()
-            
+
         self.update_hz()
-            
+        
         self.time_step.n += .5
         self.time_step.t += self.dt
         
@@ -1248,11 +1251,11 @@ class TMxFDTD(FDTD):
 #            
 #        for thread in threads:
 #            thread.join()
-            
+    
         self.init_material_hy()
         self.init_material_hz()
         self.init_material_ex()
-    
+        
     def init_source(self):
         """Override FDTD.init_source().
         
@@ -1270,18 +1273,18 @@ class TMxFDTD(FDTD):
 #            
 #        for thread in threads:
 #            thread.join()
-            
+        
         self.init_source_hy()
         self.init_source_hz()
         self.init_source_ex()
-            
+    
     def step(self):
         """Override FDTD.step().
         
         Updates only Hy, Hz, and Ex field components.
         
         """
-        # FIXME: pyMPI is not thread safe.
+        # FIXME: MPI for Python is not thread safe.
 #        chatter_threads = (Thread(target=self.talk_with_hy_neighbors),
 #                           Thread(target=self.talk_with_hz_neighbors))
 #        
@@ -1290,10 +1293,10 @@ class TMxFDTD(FDTD):
 #        
 #        for chatter in chatter_threads:
 #            chatter.join()
-        
+            
         self.talk_with_hy_neighbors()
         self.talk_with_hz_neighbors()
-            
+        
         self.update_ex()
 
         self.time_step.n += .5
@@ -1338,11 +1341,11 @@ class TMyFDTD(FDTD):
 #            
 #        for thread in threads:
 #            thread.join()
-            
+    
         self.init_material_hz()
         self.init_material_hx()
         self.init_material_ey()
-    
+
     def init_source(self):
         """Override FDTD.init_source().
         
@@ -1360,18 +1363,18 @@ class TMyFDTD(FDTD):
 #            
 #        for thread in threads:
 #            thread.join()
-            
+        
         self.init_source_hz()
         self.init_source_hx()
         self.init_source_ey()
-            
+
     def step(self):
         """Override FDTD.step().
         
         Updates only Hz, Hx, and Ey field components.
         
         """
-        # FIXME: pyMPI is not thread safe.
+        # FIXME: MPI for Python is not thread safe.
 #        chatter_threads = (Thread(target=self.talk_with_hz_neighbors),
 #                           Thread(target=self.talk_with_hx_neighbors))
 #        
@@ -1380,10 +1383,10 @@ class TMyFDTD(FDTD):
 #        
 #        for chatter in chatter_threads:
 #            chatter.join()
-        
+            
         self.talk_with_hz_neighbors()
         self.talk_with_hx_neighbors()
-            
+
         self.update_ey()
         
         self.time_step.n += .5
@@ -1403,7 +1406,7 @@ class TMyFDTD(FDTD):
             
         self.update_hz()
         self.update_hx()
-            
+
         self.time_step.n += .5
         self.time_step.t = self.time_step.n * self.dt
         
@@ -1431,11 +1434,11 @@ class TMzFDTD(FDTD):
 #            
 #        for thread in threads:
 #            thread.join()
-            
+    
         self.init_material_hx()
         self.init_material_hy()
         self.init_material_ez()
-    
+
     def init_source(self):
         """Override FDTD.init_source().
         
@@ -1453,18 +1456,18 @@ class TMzFDTD(FDTD):
 #            
 #        for thread in threads:
 #            thread.join()
-            
+        
         self.init_source_hx()
         self.init_source_hy()
         self.init_source_ez()
-            
+        
     def step(self):
         """Override FDTD.step().
         
         Updates only Hx, Hy, and Ez field components.
         
         """
-        # FIXME: pyMPI is not thread safe.
+        # FIXME: MPI for Python is not thread safe.
 #        chatter_threads = (Thread(target=self.talk_with_hx_neighbors),
 #                           Thread(target=self.talk_with_hy_neighbors))
 #        
@@ -1473,10 +1476,10 @@ class TMzFDTD(FDTD):
 #        
 #        for chatter in chatter_threads:
 #            chatter.join()
-        
+            
         self.talk_with_hx_neighbors()
         self.talk_with_hy_neighbors()
-            
+
         self.update_ez()
 
         self.time_step.n += .5
@@ -1493,10 +1496,10 @@ class TMzFDTD(FDTD):
 #            
 #        for thread in worker_threads:
 #            thread.join()
-            
+
         self.update_hx()
         self.update_hy()
-
+        
         self.time_step.n += .5
         self.time_step.t = self.time_step.n * self.dt
 

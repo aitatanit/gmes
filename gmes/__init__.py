@@ -46,7 +46,7 @@ except:
     pass
     
 try:
-    import mpi
+    from mpi4py import MPI
 except ImportError:
     pass
 
