@@ -37,7 +37,7 @@ def create_fdtd(space, geoms, src, verbose = True):
 def acquire_ez_vals(fdtd, prob_ez_idxs, mode, stepnum_for_tst = None, verbose = True):
     """Acquire Ez values from updating passing FDTD object. Do differently according to the mode."""
 
-    #fdtd.show_ez(constants.Z(), 0)
+    #fdtd.show_ez(constants.Z, 0)
 
     if verbose == True:
         try:

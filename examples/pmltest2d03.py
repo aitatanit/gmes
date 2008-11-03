@@ -58,7 +58,7 @@ if __name__ == "__main__":
     # general settings
     debug_mode = False
     ref_acq = False
-    save_fname = 'ref_20080902.dat'
+    save_fname = 'ref_20081021.dat'
 
     # common values #1
     res = 20
@@ -72,12 +72,15 @@ if __name__ == "__main__":
     # test settings
     tst_size = (2, 2, 0)
     tst_space = geometry.Cartesian(size = tst_size, resolution = res, courant_ratio = 0.99)
+    pml_type = ["CPML", "UPML"]
 
     pml_thickness = 0.5
 
     pml_boundaries = [ \
-            geometry.Boundary(material = material.CPML(), thickness = pml_thickness, size = tst_size), \
-            geometry.Boundary(material = material.UPML(), thickness = pml_thickness, size = tst_size) \
+            geometry.Boundary(material = material.CPML(m = 3, kappa_max = 1, m_a = 1, a_max = 0.2, sigma_max_ratio = 1), \
+            thickness = pml_thickness, size = tst_size), \
+            geometry.Boundary(material = material.UPML(m = 3, kappa_max = 1, sigma_max_ratio = 1), \
+            thickness = pml_thickness, size = tst_size) \
             ]
 
     tst_geoms_list = []
@@ -127,9 +130,9 @@ if __name__ == "__main__":
         print
 
     # test values acquistion
-    print "---------------------------------"
-    print "CPML test values acqusition start"
-    print "---------------------------------"
+    print "--------------------------------"
+    print "PML test values acqusition start"
+    print "--------------------------------"
     print
 
     tst_probe_ez_idx1 = tst_space.space_to_ez_index( \
@@ -151,14 +154,17 @@ if __name__ == "__main__":
     tst_prob_ez_vals_list = []
     
     for i in range(2):
+        print "-- %s test values are aquired..." % pml_type[i]
+        print
+        
         tst_fdtd_list.append(create_fdtd(tst_space, tst_geoms_list[i]))
         print
 
         tst_prob_ez_vals_list.append(acquire_ez_vals(tst_fdtd_list[i], tst_prob_ez_idxs, AcqMode.TEST, len(ref_prob_ez_vals[0])))
     
-    print "------------------------------------"
-    print "CPML test values acqusition complete"
-    print "------------------------------------"
+    print "-----------------------------------"
+    print "PML test values acqusition complete"
+    print "-----------------------------------"
     print
 
     #######DEBUG MODE MESSAGE BLOCK#######
@@ -179,26 +185,34 @@ if __name__ == "__main__":
         print
     #######DEBUG MODE MESSAGE BLOCK#######
 
-    print "Now, the result graph is drawn..."
+    print "Now, the result graph is saved..."
     
     plot_vals_list = []
 
-    for i in range(3):
-        plot_vals_list.append(abs((array(ref_prob_ez_vals[i]) - array(tst_prob_ez_vals_list[0][i])) / max(ref_prob_ez_vals[i])))
+    for i in range(2):
+        temp_list = []
+        for j in range(3):
+            temp_list.append(abs((array(ref_prob_ez_vals[j]) - array(tst_prob_ez_vals_list[i][j])) / max(ref_prob_ez_vals[j])))
 
-    a = 20 * 10**-3
+        plot_vals_list.append(temp_list)
+
+    a = 20 * (10 ** -3)
     light_speed = 299792458
     stop = a * ref_space.dt * len(ref_prob_ez_vals[0]) / light_speed
     step = a * ref_space.dt / light_speed
     x_axis = 1e9 * arange(0, stop, step)
+    title = ["Upper corner point", "Right edge point", "Lower corner point"]
 
     import pylab
 
-    pylab.title("right edge point")
-    pylab.semilogy(x_axis, plot_vals_list[1])
-    pylab.xlabel('t (ns)')
-    pylab.ylabel('Relative error')
-    pylab.axis([0, 1.21, 1e-7, 1e-2])
+    for i in range(2):
+        for j in range(3):
+            pylab.clf();
+            pylab.title(pml_type[i] + ' / ' + title[j])
+            pylab.semilogy(x_axis, plot_vals_list[i][j])
+            pylab.xlabel('t (ns)')
+            pylab.ylabel('Relative error')
+            pylab.axis([0, 1.21, 1e-7, 1e-2])
 
-    pylab.show()
+            pylab.savefig("20081021_" + pml_type[i] + '_' + title[j])
 

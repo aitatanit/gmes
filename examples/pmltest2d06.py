@@ -4,9 +4,10 @@
 
 """A CPML and UPML test script - parallel version.
 
-Perform a CPML and UPML test relating the alpha maximum value with the
-sigma ratio, i.e, sigma maximum divided by sigma optimum value using a
-low frequency source. MPI was used as a parallel interface.
+Perform a CPML and UPML test relating the kappa maximum value, the
+sigma ratio, i.e, sigma maximum divided by sigma optimum value, and
+m value which described in the Taflove's book using a low frequency
+source. MPI was used as a parallel interface.
 
 """
 
@@ -32,7 +33,7 @@ from pmltest2d03 import *
 # general settings
 acquisition = True
 ref_save_fname = 'ref_20080830.dat'
-tst_save_fname = 'tst_20080905_lfs_m_sm_km.dat' 
+tst_save_fname = 'tst_20081020_lfs_m_sm_km.dat' 
 # 'lfs', 'sm', 'km'  mean 'low frequency source', 'sigma max ratio', and 'kappa max', respectively, and 'm' is m as in textbook.
 
 # simulation parameters
@@ -81,11 +82,10 @@ tst_prob_ez_idxs = [tst_probe_ez_idx2]
 
 ref_prob_ez_vals = (load_vals(ref_save_fname))[1]
 
-
 def relocate(size_list, collection):
     accum_size = add.accumulate(size_list)
     relocated = []
-    
+
     for i in range(size_list[0]):
         for j in range(len(size_list)):
             if i == size_list[j]:
@@ -95,7 +95,7 @@ def relocate(size_list, collection):
                 relocated.append(collection[i])
             else:
                 relocated.append(collection[i + accum_size[j-1]])
-                    
+
     return relocated
 
 if acquisition == True:
@@ -131,12 +131,12 @@ if acquisition == True:
 
     save_vals(tst_prob_ez_vals_list, tst_save_fname)
 
-    if numprocs > 0:
+    if numprocs > 1:
         if myid == 0:
             print "Collecting data from nodes."
         size_list = mpi.gather([len(tst_prob_ez_vals_list)])
         collection = mpi.gather(tst_prob_ez_vals_list)
-    
+
         if myid == 0:
             relocated_collection = relocate(size_list, collection)
             save_vals(relocated_collection, tst_save_fname)
@@ -145,7 +145,7 @@ if acquisition == True:
 
 
 if myid == 0:
-    print "Now, the result graph is drawn..."
+    print "Now, the result is saved..."
     print
 
     tst_prob_ez_vals_list = load_vals(tst_save_fname)
@@ -166,9 +166,9 @@ if myid == 0:
 
         max_error_list.append(temp_list1)
 
-    save_vals(max_error_list, "20080905_max_error.dat")
+    save_vals(max_error_list, "20081020_max_error.dat")
 
-    print max_error_list
+#    print max_error_list
 
 #    import pylab
 #
