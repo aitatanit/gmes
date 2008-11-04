@@ -843,9 +843,8 @@ class FDTD(object):
         if range is None:
             range = eps_mu.min(), eps_mu.max()
              
-        showcase = Snapshot(eps_mu, extent, range, self.time_step, 
-                            xlabel, ylabel, title, window_title, 
-                            self.fig_id)
+        showcase = Snapshot(eps_mu, extent, range, xlabel, ylabel, 
+                            title, window_title, self.fig_id)
         self.fig_id += self.space.numprocs
         showcase.start()
 
