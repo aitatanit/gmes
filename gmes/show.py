@@ -12,7 +12,7 @@ from threading import Thread
 
 from numpy import array
 from pylab import get_current_fig_manager, new_figure_manager
-from pylab import figure, show
+from pylab import figure, show, cm
 
 if not 'matplotlib.backends' in modules:
     import matplotlib 
@@ -95,7 +95,7 @@ class Snapshot(Thread):
     def run(self):
         self.manager = new_figure_manager(self.id)
         ax = self.manager.canvas.figure.add_subplot(111)
-        self.im = ax.imshow(self.data, extent=self.extent, aspect='auto', vmin=self.range[0], vmax=self.range[1])
+        self.im = ax.imshow(self.data, extent=self.extent, aspect='auto', vmin=self.range[0], vmax=self.range[1], cmap=cm.gray)
         ax.set_xlabel(self.xlabel)
         ax.set_ylabel(self.ylabel)
         ax.set_title(self.title)
@@ -104,13 +104,13 @@ class Snapshot(Thread):
         self.manager.window.title(self.window_title)
         self.time_note.set_text(self.note_form % self.time_step.t)
         
-        self.manager.canvas.draw()       
+        self.manager.canvas.draw()
         self.manager.show()
         self.manager.window.mainloop()
         
         
 class ShowPlane(Thread):
-    """Animated 2-D on-time display. 
+    """Animated 2-D on-time display.
     
     """
     def __init__(self, data, extent, range, time_step, xlabel='', ylabel='', title='', window_title='GMES', msecs=2500, fig_id=None):
