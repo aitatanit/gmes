@@ -76,8 +76,10 @@ class ShowLine(Thread):
 class Snapshot(Thread):
     """A snapshot of 2-D display. 
     
+    In this moment, Snapshot is only used to show the structures. 
     """
-    def __init__(self, data, extent, range, time_step, xlabel='', ylabel='', title='', window_title='GMES', fig_id=None):
+    def __init__(self, data, extent, range, xlabel='', ylabel='', title='', window_title='GMES', fig_id=None):
+#    def __init__(self, data, extent, range, time_step, xlabel='', ylabel='', title='', window_title='GMES', fig_id=None):
         Thread.__init__(self)
         self.data = data
         self.range = array(range, float)
@@ -85,8 +87,8 @@ class Snapshot(Thread):
         self.xlabel, self.ylabel = xlabel, ylabel
         self.title = title
         self.window_title = window_title
-        self.time_step = time_step
-        self.note_form = 'time: %f'
+#        self.time_step = time_step
+#        self.note_form = 'time: %f'
         if fig_id == None:
             self.id = 0
         else:
@@ -100,9 +102,9 @@ class Snapshot(Thread):
         ax.set_ylabel(self.ylabel)
         ax.set_title(self.title)
         self.manager.canvas.figure.colorbar(self.im)
-        self.time_note = self.manager.canvas.figure.text(.6, .92, self.note_form % self.time_step.t)
+#        self.time_note = self.manager.canvas.figure.text(.6, .92, self.note_form % self.time_step.t)
         self.manager.window.title(self.window_title)
-        self.time_note.set_text(self.note_form % self.time_step.t)
+#        self.time_note.set_text(self.note_form % self.time_step.t)
         
         self.manager.canvas.draw()
         self.manager.show()
