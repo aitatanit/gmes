@@ -997,15 +997,33 @@ class GeomBoxTree(object):
 #                                                                  #
 ####################################################################
 
+# TODO: Redefine the hierarchy of GeometricObject as like the one of Meep. 
+
 class GeometricObject(object):
-    """Base class for geometric objects.
+    """Base class for geometric object types.
+    
+    This class and its descendants are used to specify the solid 
+    geometric objects that form the structure being simulated. One 
+    normally does not create objects of type geometric-object directly,
+    however; instead, you use one of the subclasses. Recall that 
+    subclasses inherit the properties of their superclass, so these 
+    subclasses automatically have the material property (which must be 
+    specified, since they have no default values). In a two- or one-
+    dimensional calculation, only the intersections of the objects with
+    the simulation plane or line are considered. 
     
     Attributes:
-        material -- filling up material 
+        material -- Filling up material.
         box -- bounding box enclosing this geometric object
     
     """
-    def __init__(self, material=None):
+    def __init__(self, material):
+        """
+        
+        Arguments:
+            material -- The material that the object is made of. No default.
+            
+            """ 
         self.material = material
         self.box = self.geom_box()
         
@@ -1046,7 +1064,7 @@ class DefaultMaterial(GeometricObject):
     """A geometric object expanding the whole space.
     
     """
-    def __init__(self, material=None):
+    def __init__(self, material):
         GeometricObject.__init__(self, material)
         
     def in_object(self, point):
@@ -1074,7 +1092,7 @@ class DefaultMaterial(GeometricObject):
     
     
 class Cone(GeometricObject):
-    """Form a cone.
+    """Form a cone or possibly a truncated cone. 
     
     Attributes:
     	center -- coordinates of the center of this geometric object
@@ -1083,7 +1101,15 @@ class Cone(GeometricObject):
     	box -- bounding box
     	
     """
-    def __init__(self, radius2=0, axis=(1,0,0), radius=1, height=1, material=None, center=(0,0,0)):
+    def __init__(self, material, radius2=0, axis=(1,0,0), radius=1, height=1, center=(0,0,0)):
+        """
+        
+        Arguments:
+        radius2 -- Radius of the tip of the cone (i.e. the end of the 
+            cone pointed to by the axis vector). Defaults to zero 
+            (a "sharp" cone).
+            
+        """
         if radius < 0:
             msg = "radius must be non-negative."
             raise ValueError(msg)
@@ -1172,7 +1198,19 @@ class Cylinder(Cone):
     """Form a cylinder.
     
     """
-    def __init__(self, axis=(1,0,0), radius=1, height=1, material=None, center=(0,0,0)):
+    def __init__(self, material, axis=(0,0,1), radius=1, height=1, center=(0,0,0)):
+        """
+        Arguments:
+            axis -- Direction of the cylinder's axis; the length of 
+                this vector is ignored. Defaults to point parallel to 
+                the z axis i.e., (0,0,1).
+            radius -- Radius of the cylinder's cross-section. Default is 1.
+            height -- Length of the cylinder along its axis. Default is 1. 
+            material -- The material that the object is made of. 
+                No default.
+            center -- Center point of the object. Default is (0,0,0). 
+        
+        """
         Cone.__init__(self, radius, axis, radius, height, material, center)
         
     def display_info(self, indent=0):
@@ -1194,7 +1232,7 @@ class _Block(GeometricObject):
     """Base class for Block and Ellipsoid class.
     
     """
-    def __init__(self, e1=(1,0,0), e2=(0,1,0), e3=(0,0,1), size=(0,0,0), material=None, center=(0,0,0)):
+    def __init__(self, material, e1=(1,0,0), e2=(0,1,0), e3=(0,0,1), size=(0,0,0), center=(0,0,0)):
         self.center = array(center, float)
         
         self.e1 = array(e1, float) / norm(e1)
@@ -1243,10 +1281,20 @@ class _Block(GeometricObject):
         
         
 class Block(_Block):
-    """Form a parallelpiped.
+    """Form a parallelpiped (i.e., a brick, possibly with non-orthogonal axes).
     
     """
-    def __init__(self, e1=(1,0,0), e2=(0,1,0), e3=(0,0,1), size=(0,0,0), material=None, center=(0,0,0)):
+    def __init__(self, material, e1=(1,0,0), e2=(0,1,0), e3=(0,0,1), size=(1,1,1), center=(0,0,0)):
+        """
+        
+        Arguments:
+            size -- The lengths of the block edges along each of its 
+                three axes. Default is (1, 1, 1).
+            e1, e2, e3 -- The directions of the axes of the block; the 
+                lengths of these vectors are ignored. Must be linearly 
+                independent. They default to the three Cartesian axis.
+                
+        """
         _Block.__init__(self, e1, e2, e3, size, material, center)
         
     def display_info(self, indent=0):
@@ -1263,7 +1311,7 @@ class Ellipsoid(_Block):
     """Form an ellipsoid.
     
     """
-    def __init__(self, e1=(1,0,0), e2=(0,1,0), e3=(0,0,1), size=(1,1,1), material=None, center=(0,0,0)):
+    def __init__(self, material, e1=(1,0,0), e2=(0,1,0), e3=(0,0,1), size=(1,1,1), center=(0,0,0)):
         _Block.__init__(self, e1, e2, e3, size, material, center)
 
         self.inverse_semi_axes = 2 / array(size, float)
@@ -1288,8 +1336,19 @@ class Ellipsoid(_Block):
 class Sphere(Ellipsoid):
     """Form a sphere.
     
+    Attributes:
+        radius -- Radius of the sphere.
+    
     """
-    def __init__(self, radius=1, material=None, center=(0,0,0)):
+    def __init__(self, material, radius=1, center=(0,0,0)):
+        """
+        
+        Arguments:
+            radius -- Radius of the sphere. Default is 1. 
+            material -- The material that the object is made of. 
+                No default.
+            center -- Center point of the object. Default is (0,0,0).
+        """
         if radius < 0:
             msg = "radius must be non-negative."
             raise ValueError(msg)
@@ -1309,9 +1368,31 @@ class Sphere(Ellipsoid):
 
 class Boundary(GeometricObject):
     """Form a boundary.
-    
+     
     """
-    def __init__(self, material=None, thickness=None, size=None, plus_x=True, minus_x=True, plus_y=True, minus_y=True, plus_z=True, minus_z=True):
+    def __init__(self, material, thickness=None, size=None, plus_x=True, minus_x=True, plus_y=True, minus_y=True, plus_z=True, minus_z=True):
+        """
+        
+         Arguments:
+             material --
+             thickness -- The spatial thickness of the Boundary layer 
+                 (which extends from the boundary towards the inside of
+                 the computational cell). Default value.
+             size --
+             plus_x -- Specify whether the high of the boundary in 
+                 direction x is set. Default is True.
+             minus_x -- Specify whether the low of the boundary in 
+                 direction x is set. Default is True.
+             plus_y -- Specify whether the high of the boundary in 
+                 direction y is set. Default is True.
+             minus_y -- Specify whether the low of the boundary in 
+                 direction y is set. Default is True.
+             plus_z -- Specify whether the high of the boundary in 
+                 direction z is set. Default is True.
+             minus_z -- Specify whether the low of the boundary in 
+                 direction z is set. Default is True.
+         
+         """
         self.d = float(thickness)
         
         half_size = []

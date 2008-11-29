@@ -13,17 +13,26 @@ import constants as const
 
 class DipoleElectric(object):
     def __init__(self, pw_material, src_time=None, dt=None, amp=1):
+        self.pw_material = pw_material
         self.idx = pw_material.i, pw_material.j, pw_material.k
         self.epsilon = pw_material.epsilon
         self.src_time = src_time
         self.amp = float(amp)
         self.t = 0.0
+        self.n = 0
         
     def update(self, efield, hfield1, hfield2, dt, space_diff1, space_diff2):
-        efield[self.idx] = self.amp * self.src_time.dipole(self.t)
-        self.t += dt
+        src_t = self.src_time.dipole(self.t)
         
-        
+        if src_t is None:
+            self.pw_material.update(efield, hfield1, hfield2, dt, space_diff1, space_diff2)
+        else:
+            efield[self.idx] = self.amp * src_t
+
+        self.n += 1
+        self.t = self.n * dt
+
+
 class DipoleEx(DipoleElectric): pass
     
     
@@ -35,15 +44,24 @@ class DipoleEz(DipoleElectric): pass
     
 class DipoleMagnetic(object):
     def __init__(self, pw_material, src_time=None, dt=None, amp=1):
+        self.pw_material = pw_material
         self.idx = pw_material.i, pw_material.j, pw_material.k
         self.mu = pw_material.mu
         self.src_time = src_time
         self.amp = float(amp)
         self.t = .5 * dt
-        
+        self.n = 0.5
+
     def update(self, hfield, efield1, efield2, dt, space_diff1, space_diff2):
-        hfield[self.idx] = self.amp * self.src_time.dipole(self.t)
-        self.t += dt
+        src_t = self.src_time.dipole(self.t)
+        
+        if src_t is None:
+            self.pw_material.update(hfield, efield1, efield2, dt, space_diff1, space_diff2)
+        else:
+            hfield[self.idx] = self.amp * self.src_t
+
+        self.n += 1
+        self.t = self.n * dt
         
         
 class DipoleHx(DipoleMagnetic): pass

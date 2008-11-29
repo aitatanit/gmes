@@ -14,6 +14,9 @@ import constants as const
 
 
 class Material(object):
+    """A super class for material types.
+    
+    """
     def display_info(self, indentby=0):
         """Display the parameter values.
         
@@ -82,6 +85,9 @@ class Material(object):
     
     
 class Dummy(Material):
+    """A dummy material type which dosen't update the field component.
+    
+    """
     def display_info(self, indentby=0):
         """Display the parameter values.
         
@@ -172,10 +178,10 @@ class PML(Material, Compound):
     
     Attributes:
         d -- thickness of PML medium
-        half_size --
+        half_size -- a tuple that represents the half of the outer volume
         dt -- time differential
         dw -- tuple of space differentials
-        sigma_opt --
+        sigma_opt -- optimal conductivity
         initialized -- initialization semaphore 
         
     """
@@ -201,14 +207,14 @@ class PML(Material, Compound):
         self.initialized = True
         
     def get_sigma_opt(self):
-        """Calculate the optimal value of sigma.
+        """Calculate the optimal value of conductivity.
         
         """
         eta = sqrt(self.effective_mu_r / self.effective_epsilon_r) * const.Z0
         return .8 * (self.m + 1) / (eta * self.dw)
     
     def sigma(self, w, component):
-        """Polynomial grading of sigma.
+        """Polynomial grading of conductivity.
         
         """
         if w <= self.d - self.half_size[component]:
@@ -238,11 +244,11 @@ class UPML(PML):
     3rd ed., Artech House, Inc., 2005.
     
     Attributes:
-        m --
-        kappa_max --
+        m -- 
+        kappa_max -- maximum of kappa
         effective_epsilon_r -- the effective relative permittivity of incident mode impinging on the PML boundary
         effective_mu_r -- the effective relative permeability of incident mode impinging on the PML boundary
-        sigma_max_ratio --
+        sigma_max_ratio -- the ratio between sigma_max and sigma_opt
 
     """    
     def __init__(self, effective_epsilon_r=1, effective_mu_r=1, m=3.5, kappa_max=1, sigma_max_ratio=.75):
@@ -364,15 +370,15 @@ class CPML(PML):
     3rd ed., Artech House, Inc., 2005.
     
     Attributes:
-        m --
-        kappa_max --
-        a_max --
+        m -- default 3
+        kappa_max -- default 15
+        a_max -- default 0. CPML works like UPML when a_max = 0.
         effective_epsilon_r -- the effective relative permittivity of incident mode impinging on the PML boundary
         effective_mu_r -- the effective relative permeability of incident mode impinging on the PML boundary
-        sigma_max_ratio --
+        sigma_max_ratio -- default 1
     
     """
-    def __init__(self, effective_epsilon_r=1, effective_mu_r=1, m=3, kappa_max=15, m_a=1, a_max=0.2, sigma_max_ratio=1):
+    def __init__(self, effective_epsilon_r=1, effective_mu_r=1, m=3, kappa_max=15, m_a=1, a_max=0, sigma_max_ratio=1):
         self.initialized = False
         
         self.m = float(m)
