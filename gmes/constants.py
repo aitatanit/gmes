@@ -17,7 +17,7 @@ epsilon0 = 1.0 # normalized
 
 # Vacuum permeability
 # const double mu0 = 1.2566370614359173e-6 # in SI unit (Second Volt / Ampere / Meter)
-mu0 = 1.0 #  Normalized
+mu0 = 1.0 #  normalized
 
 # speed of light in vacuum
 c0 = 1 / sqrt(epsilon0 * mu0)

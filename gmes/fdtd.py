@@ -573,14 +573,15 @@ class FDTD(object):
             if domain_idx[i] != 1 and i == 0:
                     step = self.space.dx
                     xlabel = 'x'
-            elif domain_idx[i] != 1 and i == 1:
+                    break
+            if domain_idx[i] != 1 and i == 1:
                     step = self.space.dy
                     xlabel = 'y'
-            elif domain_idx[i] != 1 and i == 2:
+                    break
+            if domain_idx[i] != 1 and i == 2:
                     step = self.space.dz
                     xlabel = 'z'
-            else:
-                break
+                    break
 				
         x_data = arange(start2[i], end2[i], step)
 		

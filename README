@@ -41,7 +41,7 @@ following programs to install and execute GMES.
 segmentation fault. 0.87.7-0.3 of Debian Etch and 0.92.2.0001 of 
 Enthought Python for Windows are fine. (Debian package: 
 python-matplotlib)
-* pyMPI >= 2.5 beta0 (optional)
+* MPI4Python >= 0.6.0 (optional)
 * swig >= 1.3 (for compile) (Debian package: swig)
 * gcc (for compile)
 

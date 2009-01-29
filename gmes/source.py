@@ -9,6 +9,7 @@ except:
 
 from copy import deepcopy
 from numpy import *
+from numpy.linalg import norm
 
 from pointwise_source import *
 import constants as const
@@ -23,35 +24,14 @@ class SrcTime(object):
     
     """
     pass
-	
+    
     
 class Continuous(SrcTime):
     """Continuous (CW) source with (optional) slow turn-on and/or turn-off.
     
-    Attributes:
-        freq
-        phase -- The initial phase advance of the source.
-        start -- The starting time for the source.
-        end -- The end time for the source.
-        width -- The temporal width of the smoothing.
-    
     """
-    def __init__(self, frequency, phase=0, start=0, end=inf, width=None):
-        """
-        
-        Arguments:
-            frequency
-            phase -- Specify the initial phase advance of the source.
-                Default is 0.
-            start -- The start time for the source. Default is 0 
-                (turn on at t = 0). 
-            end -- The end time for the source; default is inf 
-                (never turn off). 
-            width -- The temporal width of the smoothing. 
-                Default is None (automatically determines).
-        
-        """
-        self.freq = float(frequency)
+    def __init__(self, freq, phase=0, start=0, end=inf, width=None):
+        self.freq = float(freq)
         self.phase = float(phase)
         self.start = float(start)
         self.end = float(end)
@@ -66,7 +46,7 @@ class Continuous(SrcTime):
         te = self.end - time
         
         if ts < 0 or te < 0:
-            return None
+            return 0.0
         
         if ts < self.width:
             env = sin(.5 * pi * ts / self.width)**2
@@ -90,25 +70,9 @@ class Continuous(SrcTime):
 class Bandpass(SrcTime):
     """Gaussian-envelope source.
     
-    Attributes:
-        freq -- -- The center frequency in units of c.
-        fwidth -- The frequency width.
-        peak
-        cutoff -- How many widths the source decays for before we turn it
-            off and returns None - this applies for both turn-on and 
-            turn-off of the pulse. 
-    
     """
-    def __init__(self, frequency, fwidth):
-        """
-        
-        Arguments:
-            frequency -- The center frequency in units of c.
-                No default. 
-            fwidth -- The frequency width. No default.
-            
-            """
-        self.freq = float(frequency)
+    def __init__(self, freq, fwidth):
+        self.freq = float(freq)
         self.fwidth = float(fwidth)
         width = 1 / self.fwidth
         s = 5
@@ -119,11 +83,11 @@ class Bandpass(SrcTime):
             self.cutoff *= .9
         
         if self.peak - self.cutoff < 0:
-            self.peak = self.cutoff
+            self.peak += self.cutoff - self.peak
     
     def dipole(self, time):
         tt = time - self.peak
-        if (abs(tt) > self.cutoff): return None
+        if (abs(tt) > self.cutoff): return 0.0
 
         return exp(-.5 * (tt * self.fwidth)**2) * cos(2 * pi * self.freq * time)
     
@@ -137,41 +101,11 @@ class Bandpass(SrcTime):
         
         
 class Dipole(object):
-    """A hard source acting on a single point.
-    
-    This source acts as a hard source just when the src_time does not 
-    return None.
-    
-    Attributes:
-        pos -- The location of the center of the source in the space.
-        comp -- The direction and type of the field component.
-        src_time -- Specify the time-dependence of the source. 
-        amp -- An overall amplitude multiplying the the source.
-    
-    """
-    def __init__(self, position, component, src_time, amplitude=1):
-        """ 
-        
-        Arguments:
-            position -- The location of the source in the space. 
-                No default.
-            component -- Specify the direction and type of the 
-                component: e.g. constants.{Ex, Ey, Ez} for an electric 
-                field, and constants.{Hx, Hy, Hz} for a magnetic field. 
-                Note that field pointing in an arbitrary direction are 
-                specified simply as multiple sources with the 
-                appropriate amplitudes for each component. No default.
-            src_time -- Specify the time-dependence of the source. 
-                No default.
-            amplitude -- An overall amplitude multiplying the the 
-                source. Default is 1.
-        
-        """
-        
-        self.pos = array(position, float)
+    def __init__(self, pos, component, src_time, amp=1):
+        self.pos = array(pos, float)
         self.comp = component
         self.src_time = src_time
-        self.amp = float(amplitude)
+        self.amp = float(amp)
     
     def init(self, geom_tree, space):
         pass
@@ -225,71 +159,50 @@ class TotalFieldScatteredField(object):
         pass
     
     
-class Transparent(object):
-    """
-    
-    Attributes:
-        direction -- The propagation direction.
-        center -- The location of the center of the source in the 
-            space.
-        size -- The size (in the form of length 3 tuple) of the source.
-        half_size
-        freq
-        polarization -- The electric field direction.
+class GaussianBeam(object):
+    """Launch a transparent Gaussian beam.
     
     """
-    def __init__(self, direction, center, size, frequency, polarization, amplitude=1):#,
-#                 ex_mode_file=None, ey_mode_file=None, ez_mode_file=None,
-#                 hx_mode_file=None, hy_mode_file=None, hz_mode_file=None):
+    
+    def __init__(self, direction, center, size, freq, polarization, width=inf, amp=1):
         """
         
         Arguments:
-            direction -- Specify the propagation direction: e.g. 
-                constants.{PlusX, MinusX, PlusY, MinusY, PlusZ, 
-                MinusZ}. No default.
-            center -- The location of the center of the source in the 
-                space. No default.
-            size -- The size (in the form of length 3 tuple) of the 
-                source. Note that the component in the propagation 
-                direction is ignored. No default value.
-            frequency -- No default value.
-            polarization -- Specify the electric field direction: e.g.
-                constants.{X, Y, Z}. No default value.
-            amplitude -- An overall amplitude multiplying the the 
-                source. Default is 1.
-#            ex_mode_file -- Default is None.
-#            ey_mode_file -- Default is None.
-#            ez_mode_file -- Default is None.
-#            hx_mode_file -- Default is None.
-#            hy_mode_file -- Default is None.
-#            hz_mode_file -- Default is None.
+            direction -- propagation direction of the beam.
+            center --
+            size --
+            freq --
+            polarization --
+            width -- the beam radius. The default is inf.
+            amp -- amplitude of the plane wave. The default is 1.
             
         """
+        
         # launching plane parameters
         self.direction = direction
         self.center = array(center, float)
         self.size = array(size, float)
         self.half_size = .5 * self.size
-        self.freq = float(frequency)
+        self.freq = float(freq)
         self.polarization = polarization
         
+        # spot size of Gaussian beam
+        self.width = float(width)
+        
         # maximum amplitude of stimulus
-        self.amp = float(amplitude)
+        self.amp = float(amp)
         
     def init(self, geom_tree, space):
-        mat_objs = geom_tree.material_of_point(self.center)
-        self.epsilon_r = mat_objs[0].epsilon_r
-        self.mu_r = mat_objs[0].mu_r
-        self.aux_fdtd = self.get_aux_fdtd(space)
+        self.geom_tree = geom_tree
         
-    def get_aux_fdtd(self, space):
+    def _get_aux_fdtd(self, epsilon_r, mu_r, space):
         # two 10 meshes for the ABC,
-        # 1 Ex point and 2 Hy points for the free space
-        aux_size = array((0 , 0, 21), float) / space.res[self.direction.tag]
+        # 3 ex point (1 for the source) and 4 hy points for the free space
+        aux_size = array((0 , 0, 24), float) / space.res[self.direction.tag]
         aux_space = Cartesian(size=aux_size, resolution=space.res[self.direction.tag], dt=space.dt, parallel=False)
-        aux_geom_list = (DefaultMaterial(material=Dielectric(self.epsilon_r, self.mu_r)),
-                         Boundary(material=CPML(self.epsilon_r, self.mu_r), thickness=10. / aux_space.res[2], size=aux_size))
-        aux_src_list = (Dipole(src_time=Continuous(frequency=self.freq), component=const.Ex, position=(0,0,0)),)
+        aux_geom_list = (DefaultMaterial(material=Dielectric(epsilon_r, mu_r)),
+                         Boundary(material=CPML(epsilon_r, mu_r), thickness=10. / aux_space.res[2], size=aux_size))
+        aux_src_list = (Dipole(src_time=Continuous(freq=self.freq), component=const.Ex, pos=(0,0,0)),)
         aux_fdtd = TEMzFDTD(aux_space, aux_geom_list, aux_src_list, verbose=False)
         
         return aux_fdtd
@@ -303,16 +216,20 @@ class Transparent(object):
         
         if self.direction is const.PlusY and self.polarization is const.X:
             TransparentEx = TransparentPlusYEx
-        
+            distance_metric = self._distance_from_axis_in_y
+            
         elif self.direction is const.MinusY and self.polarization is const.X:
             TransparentEx = TransparentMinusYEx
+            distance_metric = self._distance_from_axis_in_y
             
         elif self.direction is const.PlusZ and self.polarization is const.X:
             TransparentEx = TransparentPlusZEx
+            distance_metric = self._distance_from_axis_in_z
             
         elif self.direction is const.MinusZ and self.polarization is const.X:
             TransparentEx = TransparentMinusZEx
-
+            distance_metric = self._distance_from_axis_in_z
+            
         else:
             return None
         
@@ -320,7 +237,17 @@ class Transparent(object):
             for j in xrange(low_idx[1], high_idx[1]):
                 for k in xrange(low_idx[2], high_idx[2]):
                     if in_range((i,j,k), material_ex, const.Ex):
-                        material_ex[i,j,k] = TransparentEx(material_ex[i,j,k], self.epsilon_r, self.amp, deepcopy(self.aux_fdtd))
+                        point = space.ex_index_to_space(i, j, k)
+                        
+                        r = distance_metric(point)
+                        amp = self.amp * exp(-(r / self.width)**2)
+                        
+                        mat_objs = self.geom_tree.material_of_point(point)
+                        epsilon_r = mat_objs[0].epsilon_r
+                        mu_r = mat_objs[0].mu_r
+                        aux_fdtd = self._get_aux_fdtd(epsilon_r, mu_r, space)
+                        
+                        material_ex[i,j,k] = TransparentEx(material_ex[i,j,k], epsilon_r, amp, aux_fdtd)
         
     def set_pointwise_source_ey(self, material_ey, space):
         high = self.center + self.half_size
@@ -331,16 +258,20 @@ class Transparent(object):
         
         if self.direction is const.PlusZ and self.polarization is const.Y:
             TransparentEy = TransparentPlusZEy
-
+            distance_metric = self._distance_from_axis_in_z
+            
         elif self.direction is const.MinusZ and self.polarization is const.Y:
             TransparentEy = TransparentMinusZEy
+            distance_metric = self._distance_from_axis_in_z
             
         elif self.direction is const.PlusX and self.polarization is const.Y:
             TransparentEy = TransparentPlusXEy
+            distance_metric = self._distance_from_axis_in_x
             
         elif self.direction is const.MinusX and self.polarization is const.Y:
             TransparentEy = TransparentMinusXEy
-
+            distance_metric = self._distance_from_axis_in_x
+            
         else:
             return None
         
@@ -348,7 +279,17 @@ class Transparent(object):
             for j in xrange(low_idx[1], high_idx[1]):
                 for k in xrange(low_idx[2], high_idx[2]):
                     if in_range((i,j,k), material_ey, const.Ey):
-                        material_ey[i,j,k] = TransparentEy(material_ey[i,j,k], self.epsilon_r, self.amp, deepcopy(self.aux_fdtd))
+                        point = space.ey_index_to_space(i, j, k)
+                        
+                        r = distance_metric(point)
+                        amp = self.amp * exp(-(r / self.width)**2)
+                        
+                        mat_objs = self.geom_tree.material_of_point(point)
+                        epsilon_r = mat_objs[0].epsilon_r
+                        mu_r = mat_objs[0].mu_r
+                        aux_fdtd = self._get_aux_fdtd(epsilon_r, mu_r, space)
+                        
+                        material_ey[i,j,k] = TransparentEy(material_ey[i,j,k], epsilon_r, amp, aux_fdtd)
 
     def set_pointwise_source_ez(self, material_ez, space):
         high = self.center + self.half_size
@@ -359,16 +300,20 @@ class Transparent(object):
         
         if self.direction is const.PlusY and self.polarization is const.Z:
             TransparentEz = TransparentPlusYEz
+            distance_metric = self._distance_from_axis_in_y
             
         elif self.direction is const.MinusY and self.polarization is const.Z:
             TransparentEz = TransparentMinusYEz
+            distance_metric = self._distance_from_axis_in_y
             
         elif self.direction is const.PlusX and self.polarization is const.Z:
             TransparentEz = TransparentPlusXEz
+            distance_metric = self._distance_from_axis_in_x
             
         elif self.direction is const.MinusX and self.polarization is const.Z:
             TransparentEz = TransparentMinusXEz
-
+            distance_metric = self._distance_from_axis_in_x
+            
         else:
             return None
         
@@ -376,7 +321,17 @@ class Transparent(object):
             for j in xrange(low_idx[1], high_idx[1]):
                 for k in xrange(low_idx[2], high_idx[2]):
                     if in_range((i,j,k), material_ez, const.Ez):
-                        material_ez[i,j,k] = TransparentEz(material_ez[i,j,k], self.epsilon_r, self.amp, deepcopy(self.aux_fdtd))
+                        point = space.ez_index_to_space(i, j, k)
+                        
+                        r = distance_metric(point)
+                        amp = self.amp * exp(-(r / self.width)**2)
+                        
+                        mat_objs = self.geom_tree.material_of_point(point)
+                        epsilon_r = mat_objs[0].epsilon_r
+                        mu_r = mat_objs[0].mu_r
+                        aux_fdtd = self._get_aux_fdtd(epsilon_r, mu_r, space)
+                        
+                        material_ez[i,j,k] = TransparentEz(material_ez[i,j,k], epsilon_r, amp, aux_fdtd)
 
     def set_pointwise_source_hx(self, material_hx, space):
         high = self.center + self.half_size
@@ -389,9 +344,10 @@ class Transparent(object):
             high_idx = (high_idx[0], high_idx[1], high_idx[2] + 1)
             low_idx = (low_idx[0], low_idx[1], low_idx[2] + 1)
             
-            amp = self.amp
-            TransparentHx = TransparentPlusYHx
-
+            amp_tmp = self.amp
+            TansparentHx = TransparentPlusYHx
+            distance_metric = self._distance_from_axis_in_y
+            
         elif self.direction is const.MinusY and self.polarization is const.Z:
             high_idx = map(lambda x: x + 1, space.space_to_ez_index(high))
             low_idx = space.space_to_ez_index(low)
@@ -399,9 +355,10 @@ class Transparent(object):
             high_idx = (high_idx[0], high_idx[1] + 1, high_idx[2] + 1)
             low_idx = (low_idx[0], low_idx[1] + 1, low_idx[2] + 1)
             
-            amp = -self.amp
+            amp_tmp = -self.amp
             TransparentHx = TransparentMinusYHx
-			
+            distance_metric = self._distance_from_axis_in_y
+            
         elif self.direction is const.PlusZ and self.polarization is const.Y:
             high_idx = map(lambda x: x + 1, space.space_to_ey_index(high))
             low_idx = space.space_to_ey_index(low)
@@ -409,9 +366,10 @@ class Transparent(object):
             high_idx = (high_idx[0], high_idx[1] + 1, high_idx[2])
             low_idx = (low_idx[0], low_idx[1] + 1, low_idx[2])
             
-            amp = -self.amp
+            amp_tmp = -self.amp
             TransparentHx = TransparentPlusZHx
-
+            distance_metric = self._distance_from_axis_in_z
+            
         elif self.direction is const.MinusZ and self.polarization is const.Y:
             high_idx = map(lambda x: x + 1, space.space_to_ey_index(high))
             low_idx = space.space_to_ey_index(low)
@@ -419,9 +377,10 @@ class Transparent(object):
             high_idx = (high_idx[0], high_idx[1] + 1, high_idx[2] + 1)
             low_idx = (low_idx[0], low_idx[1] + 1, low_idx[2] + 1)
             
-            amp = self.amp
+            amp_tmp = self.amp
             TransparentHx = TransparentMinusZHx
-
+            distance_metric = self._distance_from_axis_in_z
+            
         else:
             return None
         
@@ -429,7 +388,17 @@ class Transparent(object):
             for j in xrange(low_idx[1], high_idx[1]):
                 for k in xrange(low_idx[2], high_idx[2]):
                     if in_range((i,j,k), material_hx, const.Hx):
-                        material_hx[i,j,k] = TransparentHx(material_hx[i,j,k], self.mu_r, amp, deepcopy(self.aux_fdtd))
+                        point = space.hx_index_to_space(i, j, k)
+                        
+                        mat_objs = self.geom_tree.material_of_point(point)
+                        epsilon_r = mat_objs[0].epsilon_r
+                        mu_r = mat_objs[0].mu_r
+                        aux_fdtd = self._get_aux_fdtd(epsilon_r, mu_r, space)
+                        
+                        r = distance_metric(point)
+                        amp = amp_tmp * exp(-(r / self.width)**2) 
+
+                        material_hx[i,j,k] = TransparentHx(material_hx[i,j,k], mu_r, amp, aux_fdtd)
 
     def set_pointwise_source_hy(self, material_hy, space):
         high = self.center + self.half_size
@@ -442,9 +411,10 @@ class Transparent(object):
             high_idx = (high_idx[0] + 1, high_idx[1], high_idx[2])
             low_idx = (low_idx[0] + 1, low_idx[1], low_idx[2])
             
-            amp = self.amp
+            amp_tmp = self.amp
             TransparentHy = TransparentPlusZHy
-
+            distance_metric = self._distance_from_axis_in_z
+            
         elif self.direction is const.MinusZ and self.polarization is const.X:
             high_idx = map(lambda x: x + 1, space.space_to_ex_index(high))
             low_idx = space.space_to_ex_index(low)
@@ -452,9 +422,10 @@ class Transparent(object):
             high_idx = (high_idx[0] + 1, high_idx[1], high_idx[2] + 1)
             low_idx = (low_idx[0] + 1, low_idx[1], low_idx[2] + 1)
             
-            amp = -self.amp
+            amp_tmp = -self.amp
             TransparentHy = TransparentMinusZHy
-
+            distance_metric = self._distance_from_axis_in_z
+            
         elif self.direction is const.PlusX and self.polarization is const.Z:
             high_idx = map(lambda x: x + 1, space.space_to_ez_index(high))
             low_idx = space.space_to_ez_index(low)
@@ -462,9 +433,10 @@ class Transparent(object):
             high_idx = (high_idx[0], high_idx[1], high_idx[2] + 1)
             low_idx = (low_idx[0], low_idx[1], low_idx[2] + 1)
             
-            amp = -self.amp
+            amp_tmp = -self.amp
             TransparentHy = TransparentPlusXHy
-
+            distance_metric = self._distance_from_axis_in_x
+            
         elif self.direction is const.MinusX and self.polarization is const.Z:
             high_idx = map(lambda x: x + 1, space.space_to_ex_index(high))
             low_idx = space.space_to_ex_index(low)
@@ -472,9 +444,10 @@ class Transparent(object):
             high_idx = (high_idx[0] + 1, high_idx[1], high_idx[2] + 1)
             low_idx = (low_idx[0] + 1, low_idx[1], low_idx[2] + 1)
             
-            amp = self.amp
+            amp_tmp = -self.amp
             TransparentHy = TransparentMinusXHy
-
+            distance_metric = self._distance_from_axis_in_x
+            
         else:
             return None
         
@@ -482,7 +455,17 @@ class Transparent(object):
             for j in xrange(low_idx[1], high_idx[1]):
                 for k in xrange(low_idx[2], high_idx[2]):
                     if in_range((i,j,k), material_hy, const.Hy):
-                        material_hy[i,j,k] = TransparentHy(material_hy[i,j,k], self.mu_r, amp, deepcopy(self.aux_fdtd))
+                        point = space.hy_index_to_space(i,j,k)
+                        
+                        mat_objs = self.geom_tree.material_of_point(point)
+                        epsilon_r = mat_objs[0].epsilon_r
+                        mu_r = mat_objs[0].mu_r
+                        aux_fdtd = self._get_aux_fdtd(epsilon_r, mu_r, space)
+                        
+                        r = distance_metric(point)
+                        amp = amp_tmp * exp(-(r / self.width)**2)
+
+                        material_hy[i,j,k] = TransparentHy(material_hy[i,j,k], mu_r, amp, aux_fdtd)
                         
     def set_pointwise_source_hz(self, material_hz, space):
         high = self.center + self.half_size
@@ -495,9 +478,10 @@ class Transparent(object):
             high_idx = (high_idx[0] + 1, high_idx[1], high_idx[2])
             low_idx = (low_idx[0] + 1, low_idx[1], low_idx[2])
     
-            amp = -self.amp
+            amp_tmp = -self.amp
             TransparentHz = TransparentPlusYHz
-
+            distance_metric = self._distance_from_axis_in_y
+            
         elif self.direction is const.MinusY and self.polarization is const.X:
             high_idx = map(lambda x: x + 1, space.space_to_ex_index(high))
             low_idx = space.space_to_ex_index(low)
@@ -505,8 +489,9 @@ class Transparent(object):
             high_idx = (high_idx[0] + 1, high_idx[1] + 1, high_idx[2])
             low_idx = (low_idx[0] + 1, low_idx[1] + 1, low_idx[2])
             
-            amp = self.amp
+            amp_tmp = self.amp
             TransparentHz = TransparentMinusYHz
+            distance_metric = self._distance_from_axis_in_y
                                    
         elif self.direction is const.PlusX and self.polarization is const.Y:
             high_idx = map(lambda x: x + 1, space.space_to_ey_index(high))
@@ -515,9 +500,10 @@ class Transparent(object):
             high_idx = (high_idx[0], high_idx[1] + 1, high_idx[2])
             low_idx = (low_idx[0], low_idx[1] + 1, low_idx[2])
             
-            amp = self.amp
+            amp_tmp = self.amp
             TransparentHz = TransparentPlusXHz
-
+            distance_metric = self._distance_from_axis_in_x
+            
         elif self.direction is const.MinusX and self.polarization is const.Y:
             high_idx = map(lambda x: x + 1, space.space_to_ey_index(high))
             low_idx = space.space_to_ey_index(low)
@@ -525,9 +511,10 @@ class Transparent(object):
             high_idx = (high_idx[0] + 1, high_idx[1] + 1, high_idx[2])
             low_idx = (low_idx[0] + 1, low_idx[1] + 1, low_idx[2])
             
-            amp = -self.amp
+            amp_tmp = -self.amp
             TransparentHz = TransparentMinusXHz
-
+            distance_metric = self._distance_from_axis_in_x
+            
         else:
             return None
         
@@ -535,5 +522,40 @@ class Transparent(object):
             for j in xrange(low_idx[1], high_idx[1]):
                 for k in xrange(low_idx[2], high_idx[2]):
                     if in_range((i,j,k), material_hz, const.Hz):
-                        material_hz[i,j,k] = TransparentHz(material_hz[i,j,k], self.mu_r, amp, deepcopy(self.aux_fdtd))
+                        point = space.hz_index_to_space(i, j, k)
+                         
+                        mat_objs = self.geom_tree.material_of_point(point)
+                        epsilon_r = mat_objs[0].epsilon_r
+                        mu_r = mat_objs[0].mu_r
+                        aux_fdtd = self._get_aux_fdtd(epsilon_r, mu_r, space)
                         
+                        r = distance_metric(point)
+                        amp = amp_tmp * exp(-(r / self.width)**2)
+
+                        material_hz[i,j,k] = TransparentHz(material_hz[i,j,k], mu_r, amp, self.aux_fdtd)
+             
+    def _distance_from_axis(self, point, axis_component):
+        """Calculate distance from beam axis.
+        
+        Arguments:
+            point -- point location in space coordinate
+            axis_component -- constants.{X, Y, Z} 
+        """
+        
+        if axis_component is const.X:
+            return norm(point[1:] - self.center[1:])
+        elif axis_component is const.Y:
+            return norm(point[0:3:2] - self.center[0:3:2])
+        elif axis_component is const.Z:
+            return norm(point[:2] - self.center[:2])
+        else:
+            return None
+        
+    def _distance_from_axis_in_x(self, point):
+        return self._distance_from_axis(point, const.X)
+    
+    def _distance_from_axis_in_y(self, point):
+        return self._distance_from_axis(point, const.Y)
+    
+    def _distance_from_axis_in_z(self, point):
+        return self._distance_from_axis(point, const.Z)

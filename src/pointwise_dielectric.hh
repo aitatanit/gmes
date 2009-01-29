@@ -3,7 +3,7 @@
 
 #include "pointwise_material.hh"
 
-namespace gmes 
+namespace gmes
 {
 class DielectricElectric: public PointwiseMaterial
 {
@@ -76,7 +76,7 @@ public:
 
 	void update(double * const hx, int hx_x_size, int hx_y_size, int hx_z_size,
 			const double * const ez, int ez_x_size, int ez_y_size, int ez_z_size,
-			const double * const ey, int ey_x_size, int ey_y_size, int ey_z_size,	    
+			const double * const ey, int ey_x_size, int ey_y_size, int ey_z_size,
 			double dt, double dy, double dz);
 };
 

@@ -73,7 +73,10 @@ class AuxiCartComm(object):
         """
         return sendbuf
         
-        
+    def Reduce(self, value, root=0, op=None):
+        return value
+    
+    
 class Cartesian(object):
     """Define the calculation space with Cartesian coordinates.
     
