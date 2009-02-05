@@ -216,19 +216,15 @@ class GaussianBeam(object):
         
         if self.direction is const.PlusY and self.polarization is const.X:
             TransparentEx = TransparentPlusYEx
-            distance_metric = self._distance_from_axis_in_y
             
         elif self.direction is const.MinusY and self.polarization is const.X:
             TransparentEx = TransparentMinusYEx
-            distance_metric = self._distance_from_axis_in_y
             
         elif self.direction is const.PlusZ and self.polarization is const.X:
             TransparentEx = TransparentPlusZEx
-            distance_metric = self._distance_from_axis_in_z
             
         elif self.direction is const.MinusZ and self.polarization is const.X:
             TransparentEx = TransparentMinusZEx
-            distance_metric = self._distance_from_axis_in_z
             
         else:
             return None
@@ -236,10 +232,10 @@ class GaussianBeam(object):
         for i in xrange(low_idx[0], high_idx[0]):
             for j in xrange(low_idx[1], high_idx[1]):
                 for k in xrange(low_idx[2], high_idx[2]):
-                    if in_range((i,j,k), material_ex, const.Ex):
+                    if in_range((i, j, k), material_ex, const.Ex):
                         point = space.ex_index_to_space(i, j, k)
                         
-                        r = distance_metric(point)
+                        r = self._dist_from_beam_axis(point)
                         amp = self.amp * exp(-(r / self.width)**2)
                         
                         mat_objs = self.geom_tree.material_of_point(point)
@@ -258,19 +254,15 @@ class GaussianBeam(object):
         
         if self.direction is const.PlusZ and self.polarization is const.Y:
             TransparentEy = TransparentPlusZEy
-            distance_metric = self._distance_from_axis_in_z
             
         elif self.direction is const.MinusZ and self.polarization is const.Y:
             TransparentEy = TransparentMinusZEy
-            distance_metric = self._distance_from_axis_in_z
             
         elif self.direction is const.PlusX and self.polarization is const.Y:
             TransparentEy = TransparentPlusXEy
-            distance_metric = self._distance_from_axis_in_x
             
         elif self.direction is const.MinusX and self.polarization is const.Y:
             TransparentEy = TransparentMinusXEy
-            distance_metric = self._distance_from_axis_in_x
             
         else:
             return None
@@ -278,10 +270,10 @@ class GaussianBeam(object):
         for i in xrange(low_idx[0], high_idx[0]):
             for j in xrange(low_idx[1], high_idx[1]):
                 for k in xrange(low_idx[2], high_idx[2]):
-                    if in_range((i,j,k), material_ey, const.Ey):
+                    if in_range((i, j, k), material_ey, const.Ey):
                         point = space.ey_index_to_space(i, j, k)
                         
-                        r = distance_metric(point)
+                        r = self._dist_from_beam_axis(point)
                         amp = self.amp * exp(-(r / self.width)**2)
                         
                         mat_objs = self.geom_tree.material_of_point(point)
@@ -300,19 +292,15 @@ class GaussianBeam(object):
         
         if self.direction is const.PlusY and self.polarization is const.Z:
             TransparentEz = TransparentPlusYEz
-            distance_metric = self._distance_from_axis_in_y
             
         elif self.direction is const.MinusY and self.polarization is const.Z:
             TransparentEz = TransparentMinusYEz
-            distance_metric = self._distance_from_axis_in_y
             
         elif self.direction is const.PlusX and self.polarization is const.Z:
             TransparentEz = TransparentPlusXEz
-            distance_metric = self._distance_from_axis_in_x
             
         elif self.direction is const.MinusX and self.polarization is const.Z:
             TransparentEz = TransparentMinusXEz
-            distance_metric = self._distance_from_axis_in_x
             
         else:
             return None
@@ -320,10 +308,10 @@ class GaussianBeam(object):
         for i in xrange(low_idx[0], high_idx[0]):
             for j in xrange(low_idx[1], high_idx[1]):
                 for k in xrange(low_idx[2], high_idx[2]):
-                    if in_range((i,j,k), material_ez, const.Ez):
+                    if in_range((i, j, k), material_ez, const.Ez):
                         point = space.ez_index_to_space(i, j, k)
                         
-                        r = distance_metric(point)
+                        r = self._dist_from_beam_axis(point)
                         amp = self.amp * exp(-(r / self.width)**2)
                         
                         mat_objs = self.geom_tree.material_of_point(point)
@@ -346,7 +334,6 @@ class GaussianBeam(object):
             
             amp_tmp = self.amp
             TansparentHx = TransparentPlusYHx
-            distance_metric = self._distance_from_axis_in_y
             
         elif self.direction is const.MinusY and self.polarization is const.Z:
             high_idx = map(lambda x: x + 1, space.space_to_ez_index(high))
@@ -357,7 +344,6 @@ class GaussianBeam(object):
             
             amp_tmp = -self.amp
             TransparentHx = TransparentMinusYHx
-            distance_metric = self._distance_from_axis_in_y
             
         elif self.direction is const.PlusZ and self.polarization is const.Y:
             high_idx = map(lambda x: x + 1, space.space_to_ey_index(high))
@@ -368,7 +354,6 @@ class GaussianBeam(object):
             
             amp_tmp = -self.amp
             TransparentHx = TransparentPlusZHx
-            distance_metric = self._distance_from_axis_in_z
             
         elif self.direction is const.MinusZ and self.polarization is const.Y:
             high_idx = map(lambda x: x + 1, space.space_to_ey_index(high))
@@ -379,7 +364,6 @@ class GaussianBeam(object):
             
             amp_tmp = self.amp
             TransparentHx = TransparentMinusZHx
-            distance_metric = self._distance_from_axis_in_z
             
         else:
             return None
@@ -387,7 +371,7 @@ class GaussianBeam(object):
         for i in xrange(low_idx[0], high_idx[0]):
             for j in xrange(low_idx[1], high_idx[1]):
                 for k in xrange(low_idx[2], high_idx[2]):
-                    if in_range((i,j,k), material_hx, const.Hx):
+                    if in_range((i, j, k), material_hx, const.Hx):
                         point = space.hx_index_to_space(i, j, k)
                         
                         mat_objs = self.geom_tree.material_of_point(point)
@@ -395,7 +379,7 @@ class GaussianBeam(object):
                         mu_r = mat_objs[0].mu_r
                         aux_fdtd = self._get_aux_fdtd(epsilon_r, mu_r, space)
                         
-                        r = distance_metric(point)
+                        r = self._dist_from_beam_axis(point)
                         amp = amp_tmp * exp(-(r / self.width)**2) 
 
                         material_hx[i,j,k] = TransparentHx(material_hx[i,j,k], mu_r, amp, aux_fdtd)
@@ -413,7 +397,6 @@ class GaussianBeam(object):
             
             amp_tmp = self.amp
             TransparentHy = TransparentPlusZHy
-            distance_metric = self._distance_from_axis_in_z
             
         elif self.direction is const.MinusZ and self.polarization is const.X:
             high_idx = map(lambda x: x + 1, space.space_to_ex_index(high))
@@ -424,7 +407,6 @@ class GaussianBeam(object):
             
             amp_tmp = -self.amp
             TransparentHy = TransparentMinusZHy
-            distance_metric = self._distance_from_axis_in_z
             
         elif self.direction is const.PlusX and self.polarization is const.Z:
             high_idx = map(lambda x: x + 1, space.space_to_ez_index(high))
@@ -435,7 +417,6 @@ class GaussianBeam(object):
             
             amp_tmp = -self.amp
             TransparentHy = TransparentPlusXHy
-            distance_metric = self._distance_from_axis_in_x
             
         elif self.direction is const.MinusX and self.polarization is const.Z:
             high_idx = map(lambda x: x + 1, space.space_to_ex_index(high))
@@ -446,7 +427,6 @@ class GaussianBeam(object):
             
             amp_tmp = -self.amp
             TransparentHy = TransparentMinusXHy
-            distance_metric = self._distance_from_axis_in_x
             
         else:
             return None
@@ -454,15 +434,15 @@ class GaussianBeam(object):
         for i in xrange(low_idx[0], high_idx[0]):
             for j in xrange(low_idx[1], high_idx[1]):
                 for k in xrange(low_idx[2], high_idx[2]):
-                    if in_range((i,j,k), material_hy, const.Hy):
-                        point = space.hy_index_to_space(i,j,k)
+                    if in_range((i, j, k), material_hy, const.Hy):
+                        point = space.hy_index_to_space(i, j, k)
                         
                         mat_objs = self.geom_tree.material_of_point(point)
                         epsilon_r = mat_objs[0].epsilon_r
                         mu_r = mat_objs[0].mu_r
                         aux_fdtd = self._get_aux_fdtd(epsilon_r, mu_r, space)
                         
-                        r = distance_metric(point)
+                        r = self._dist_from_beam_axis(point)
                         amp = amp_tmp * exp(-(r / self.width)**2)
 
                         material_hy[i,j,k] = TransparentHy(material_hy[i,j,k], mu_r, amp, aux_fdtd)
@@ -480,7 +460,6 @@ class GaussianBeam(object):
     
             amp_tmp = -self.amp
             TransparentHz = TransparentPlusYHz
-            distance_metric = self._distance_from_axis_in_y
             
         elif self.direction is const.MinusY and self.polarization is const.X:
             high_idx = map(lambda x: x + 1, space.space_to_ex_index(high))
@@ -491,7 +470,6 @@ class GaussianBeam(object):
             
             amp_tmp = self.amp
             TransparentHz = TransparentMinusYHz
-            distance_metric = self._distance_from_axis_in_y
                                    
         elif self.direction is const.PlusX and self.polarization is const.Y:
             high_idx = map(lambda x: x + 1, space.space_to_ey_index(high))
@@ -502,7 +480,6 @@ class GaussianBeam(object):
             
             amp_tmp = self.amp
             TransparentHz = TransparentPlusXHz
-            distance_metric = self._distance_from_axis_in_x
             
         elif self.direction is const.MinusX and self.polarization is const.Y:
             high_idx = map(lambda x: x + 1, space.space_to_ey_index(high))
@@ -513,7 +490,6 @@ class GaussianBeam(object):
             
             amp_tmp = -self.amp
             TransparentHz = TransparentMinusXHz
-            distance_metric = self._distance_from_axis_in_x
             
         else:
             return None
@@ -521,7 +497,7 @@ class GaussianBeam(object):
         for i in xrange(low_idx[0], high_idx[0]):
             for j in xrange(low_idx[1], high_idx[1]):
                 for k in xrange(low_idx[2], high_idx[2]):
-                    if in_range((i,j,k), material_hz, const.Hz):
+                    if in_range((i, j, k), material_hz, const.Hz):
                         point = space.hz_index_to_space(i, j, k)
                          
                         mat_objs = self.geom_tree.material_of_point(point)
@@ -529,33 +505,25 @@ class GaussianBeam(object):
                         mu_r = mat_objs[0].mu_r
                         aux_fdtd = self._get_aux_fdtd(epsilon_r, mu_r, space)
                         
-                        r = distance_metric(point)
+                        r = self._dist_from_beam_axis(point)
                         amp = amp_tmp * exp(-(r / self.width)**2)
 
                         material_hz[i,j,k] = TransparentHz(material_hz[i,j,k], mu_r, amp, self.aux_fdtd)
              
-    def _distance_from_axis(self, point, axis_component):
+    def _dist_from_beam_axis(self, point):
         """Calculate distance from beam axis.
         
         Arguments:
-            point -- point location in space coordinate
-            axis_component -- constants.{X, Y, Z} 
+            point -- point location in space coordinate 
         """
         
-        if axis_component is const.X:
-            return norm(point[1:] - self.center[1:])
-        elif axis_component is const.Y:
-            return norm(point[0:3:2] - self.center[0:3:2])
-        elif axis_component is const.Z:
-            return norm(point[:2] - self.center[:2])
-        else:
-            return None
-        
-    def _distance_from_axis_in_x(self, point):
-        return self._distance_from_axis(point, const.X)
+        if self.direction is const.PlusX or self.direction is const.MinusX:
+            k = (1, 0, 0)
+        elif self.direction is const.PlusY or self.direction is const.MinusY:
+            k = (0, 1, 0)
+        elif self.direciton is const.PlusZ or self.direction is const.MinusZ:
+            k = (0, 0, 1)
+            
+        return norm(cross(k, self.center - point))
+
     
-    def _distance_from_axis_in_y(self, point):
-        return self._distance_from_axis(point, const.Y)
-    
-    def _distance_from_axis_in_z(self, point):
-        return self._distance_from_axis(point, const.Z)
