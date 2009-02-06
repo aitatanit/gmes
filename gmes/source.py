@@ -162,29 +162,37 @@ class TotalFieldScatteredField(object):
 class GaussianBeam(object):
     """Launch a transparent Gaussian beam.
     
-    """
+    It works as a guided mode with Gaussian profile is launched through the incidence interface.
+    The incidence interface is transparent, thus the scattered wave can penetrate through the 
+    interface plane.
     
-    def __init__(self, direction, center, size, freq, polarization, width=inf, amp=1):
+    """
+    def __init__(self, directivity, center, size, direction, freq, polarization, width=inf, amp=1):
         """
         
         Arguments:
+            directivity -- directivity of the incidence interface.
+            center -- center of the incidence interface. The beam axis crosses this point.
+            size --  size of the incidence interface plane.
             direction -- propagation direction of the beam.
-            center --
-            size --
-            freq --
-            polarization --
-            width -- the beam radius. The default is inf.
+            freq -- oscillating frequency of the beam.
+            polarization -- electric field direction of the beam.
+            width -- the Gaussian beam radius. The default is inf.
             amp -- amplitude of the plane wave. The default is 1.
             
         """
-        
         # launching plane parameters
-        self.direction = direction
+        self.directivity = directivity
+        self.k = array(direction, float) / norm(direction)
         self.center = array(center, float)
         self.size = array(size, float)
+        
         self.half_size = .5 * self.size
         self.freq = float(freq)
-        self.polarization = polarization
+        self.e_direction = array(polarization, float) / norm(polarization)
+        
+        # direction of h field
+        self.h_direction = cross(self.k, self.e_direction)
         
         # spot size of Gaussian beam
         self.width = float(width)
@@ -198,32 +206,44 @@ class GaussianBeam(object):
     def _get_aux_fdtd(self, epsilon_r, mu_r, space):
         # two 10 meshes for the ABC,
         # 3 ex point (1 for the source) and 4 hy points for the free space
-        aux_size = array((0 , 0, 24), float) / space.res[self.direction.tag]
-        aux_space = Cartesian(size=aux_size, resolution=space.res[self.direction.tag], dt=space.dt, parallel=False)
+        
+        dz = 1. / space.res.max()
+        border = self.center + self.size
+        aux_long_size = \
+        2 * self._dist_from_center_along_aux_fdtd(border) + 30 * dz
+        src_pnt = (0, 0, -self._dist_from_center_along_aux_fdtd(border) - 5 * dz)        
+        aux_size = (0 , 0, aux_long_size)
+
+        aux_space = Cartesian(size=aux_size, resolution=1/dz, dt=space.dt, parallel=False)
         aux_geom_list = (DefaultMaterial(material=Dielectric(epsilon_r, mu_r)),
-                         Boundary(material=CPML(epsilon_r, mu_r), thickness=10. / aux_space.res[2], size=aux_size))
-        aux_src_list = (Dipole(src_time=Continuous(freq=self.freq), component=const.Ex, pos=(0,0,0)),)
+                         Boundary(material=CPML(epsilon_r, mu_r), thickness=10*dz, size=aux_size))
+        aux_src_list = (Dipole(src_time=Continuous(freq=self.freq), component=const.Ex, pos=src_pnt),)
         aux_fdtd = TEMzFDTD(aux_space, aux_geom_list, aux_src_list, verbose=False)
         
         return aux_fdtd
         
     def set_pointwise_source_ex(self, material_ex, space):
+        cosine = dot(self.e_direction, (1, 0, 0))
+        
+        if cosine == 0:
+            return None
+        
         high = self.center + self.half_size
         low = self.center - self.half_size
         
         high_idx = map(lambda x: x + 1, space.space_to_ex_index(high))
         low_idx = space.space_to_ex_index(low)
         
-        if self.direction is const.PlusY and self.polarization is const.X:
+        if self.directivity is const.PlusY:
             TransparentEx = TransparentPlusYEx
             
-        elif self.direction is const.MinusY and self.polarization is const.X:
+        elif self.directivity is const.MinusY:
             TransparentEx = TransparentMinusYEx
             
-        elif self.direction is const.PlusZ and self.polarization is const.X:
+        elif self.directivity is const.PlusZ:
             TransparentEx = TransparentPlusZEx
             
-        elif self.direction is const.MinusZ and self.polarization is const.X:
+        elif self.directivity is const.MinusZ:
             TransparentEx = TransparentMinusZEx
             
         else:
@@ -236,32 +256,40 @@ class GaussianBeam(object):
                         point = space.ex_index_to_space(i, j, k)
                         
                         r = self._dist_from_beam_axis(point)
-                        amp = self.amp * exp(-(r / self.width)**2)
+                        amp = cosine * self.amp * exp(-(r / self.width)**2)
                         
                         mat_objs = self.geom_tree.material_of_point(point)
                         epsilon_r = mat_objs[0].epsilon_r
                         mu_r = mat_objs[0].mu_r
                         aux_fdtd = self._get_aux_fdtd(epsilon_r, mu_r, space)
                         
-                        material_ex[i,j,k] = TransparentEx(material_ex[i,j,k], epsilon_r, amp, aux_fdtd)
+                        samp_pnt = (0, 0, self._dist_from_center_along_aux_fdtd(point))
+                        
+                        material_ex[i,j,k] = TransparentEx(material_ex[i,j,k], epsilon_r,
+                                                           amp, aux_fdtd, samp_pnt)
         
     def set_pointwise_source_ey(self, material_ey, space):
+        cosine = dot(self.e_direction, (0, 1, 0))
+        
+        if cosine == 0:
+            return None
+        
         high = self.center + self.half_size
         low = self.center - self.half_size
         
         high_idx = map(lambda x: x + 1, space.space_to_ey_index(high))
         low_idx = space.space_to_ey_index(low)
         
-        if self.direction is const.PlusZ and self.polarization is const.Y:
+        if self.directivity is const.PlusZ:
             TransparentEy = TransparentPlusZEy
             
-        elif self.direction is const.MinusZ and self.polarization is const.Y:
+        elif self.directivity is const.MinusZ:
             TransparentEy = TransparentMinusZEy
             
-        elif self.direction is const.PlusX and self.polarization is const.Y:
+        elif self.directivity is const.PlusX:
             TransparentEy = TransparentPlusXEy
             
-        elif self.direction is const.MinusX and self.polarization is const.Y:
+        elif self.directivity is const.MinusX:
             TransparentEy = TransparentMinusXEy
             
         else:
@@ -274,32 +302,40 @@ class GaussianBeam(object):
                         point = space.ey_index_to_space(i, j, k)
                         
                         r = self._dist_from_beam_axis(point)
-                        amp = self.amp * exp(-(r / self.width)**2)
+                        amp = cosine * self.amp * exp(-(r / self.width)**2)
                         
                         mat_objs = self.geom_tree.material_of_point(point)
                         epsilon_r = mat_objs[0].epsilon_r
                         mu_r = mat_objs[0].mu_r
                         aux_fdtd = self._get_aux_fdtd(epsilon_r, mu_r, space)
                         
-                        material_ey[i,j,k] = TransparentEy(material_ey[i,j,k], epsilon_r, amp, aux_fdtd)
+                        samp_pnt = (0, 0, self._dist_from_center_along_aux_fdtd(point))
+                        
+                        material_ey[i,j,k] = TransparentEy(material_ey[i,j,k], epsilon_r, 
+                                                           amp, aux_fdtd, samp_pnt)
 
     def set_pointwise_source_ez(self, material_ez, space):
+        cosine = dot(self.e_direction, (0, 0, 1))
+        
+        if cosine == 0:
+            return None
+        
         high = self.center + self.half_size
         low = self.center - self.half_size
         
         high_idx = map(lambda x: x + 1, space.space_to_ez_index(high))
         low_idx = space.space_to_ez_index(low)
         
-        if self.direction is const.PlusY and self.polarization is const.Z:
+        if self.directivity is const.PlusY:
             TransparentEz = TransparentPlusYEz
             
-        elif self.direction is const.MinusY and self.polarization is const.Z:
+        elif self.directivity is const.MinusY:
             TransparentEz = TransparentMinusYEz
             
-        elif self.direction is const.PlusX and self.polarization is const.Z:
+        elif self.directivity is const.PlusX:
             TransparentEz = TransparentPlusXEz
             
-        elif self.direction is const.MinusX and self.polarization is const.Z:
+        elif self.directivity is const.MinusX:
             TransparentEz = TransparentMinusXEz
             
         else:
@@ -312,57 +348,61 @@ class GaussianBeam(object):
                         point = space.ez_index_to_space(i, j, k)
                         
                         r = self._dist_from_beam_axis(point)
-                        amp = self.amp * exp(-(r / self.width)**2)
+                        amp = cosine * self.amp * exp(-(r / self.width)**2)
                         
                         mat_objs = self.geom_tree.material_of_point(point)
                         epsilon_r = mat_objs[0].epsilon_r
                         mu_r = mat_objs[0].mu_r
                         aux_fdtd = self._get_aux_fdtd(epsilon_r, mu_r, space)
                         
-                        material_ez[i,j,k] = TransparentEz(material_ez[i,j,k], epsilon_r, amp, aux_fdtd)
+                        samp_pnt = (0, 0, self._dist_from_center_along_aux_fdtd(point))
+                        
+                        material_ez[i,j,k] = TransparentEz(material_ez[i,j,k], epsilon_r, 
+                                                           amp, aux_fdtd, samp_pnt)
 
     def set_pointwise_source_hx(self, material_hx, space):
+        cosine = dot(self.h_direction, (1, 0, 0))
+        
+        if cosine == 0:
+            return None
+        
         high = self.center + self.half_size
         low = self.center - self.half_size
 
-        if self.direction is const.PlusY and self.polarization is const.Z:
+        if self.directivity is const.PlusY:
             high_idx = map(lambda x: x + 1, space.space_to_ez_index(high))
             low_idx = space.space_to_ez_index(low)
             
             high_idx = (high_idx[0], high_idx[1], high_idx[2] + 1)
             low_idx = (low_idx[0], low_idx[1], low_idx[2] + 1)
             
-            amp_tmp = self.amp
             TansparentHx = TransparentPlusYHx
             
-        elif self.direction is const.MinusY and self.polarization is const.Z:
+        elif self.directivity is const.MinusY:
             high_idx = map(lambda x: x + 1, space.space_to_ez_index(high))
             low_idx = space.space_to_ez_index(low)
             
             high_idx = (high_idx[0], high_idx[1] + 1, high_idx[2] + 1)
             low_idx = (low_idx[0], low_idx[1] + 1, low_idx[2] + 1)
             
-            amp_tmp = -self.amp
             TransparentHx = TransparentMinusYHx
             
-        elif self.direction is const.PlusZ and self.polarization is const.Y:
+        elif self.directivity is const.PlusZ:
             high_idx = map(lambda x: x + 1, space.space_to_ey_index(high))
             low_idx = space.space_to_ey_index(low)
             
             high_idx = (high_idx[0], high_idx[1] + 1, high_idx[2])
             low_idx = (low_idx[0], low_idx[1] + 1, low_idx[2])
             
-            amp_tmp = -self.amp
             TransparentHx = TransparentPlusZHx
             
-        elif self.direction is const.MinusZ and self.polarization is const.Y:
+        elif self.directivity is const.MinusZ:
             high_idx = map(lambda x: x + 1, space.space_to_ey_index(high))
             low_idx = space.space_to_ey_index(low)
             
             high_idx = (high_idx[0], high_idx[1] + 1, high_idx[2] + 1)
             low_idx = (low_idx[0], low_idx[1] + 1, low_idx[2] + 1)
             
-            amp_tmp = self.amp
             TransparentHx = TransparentMinusZHx
             
         else:
@@ -380,52 +420,56 @@ class GaussianBeam(object):
                         aux_fdtd = self._get_aux_fdtd(epsilon_r, mu_r, space)
                         
                         r = self._dist_from_beam_axis(point)
-                        amp = amp_tmp * exp(-(r / self.width)**2) 
-
-                        material_hx[i,j,k] = TransparentHx(material_hx[i,j,k], mu_r, amp, aux_fdtd)
+                        amp = cosine * self.amp * exp(-(r / self.width)**2) 
+                        
+                        samp_pnt = (0, 0, self._dist_from_center_along_aux_fdtd(point))
+                        
+                        material_hx[i,j,k] = TransparentHx(material_hx[i,j,k], mu_r, 
+                                                           amp, aux_fdtd, samp_pnt)
 
     def set_pointwise_source_hy(self, material_hy, space):
+        cosine = dot(self.h_direction, (0, 1, 0))
+        
+        if cosine == 0:
+            return None
+        
         high = self.center + self.half_size
         low = self.center - self.half_size
         
-        if self.direction is const.PlusZ and self.polarization is const.X:
+        if self.directivity is const.PlusZ:
             high_idx = map(lambda x: x + 1, space.space_to_ex_index(high))
             low_idx = space.space_to_ex_index(low)
             
             high_idx = (high_idx[0] + 1, high_idx[1], high_idx[2])
             low_idx = (low_idx[0] + 1, low_idx[1], low_idx[2])
             
-            amp_tmp = self.amp
             TransparentHy = TransparentPlusZHy
             
-        elif self.direction is const.MinusZ and self.polarization is const.X:
+        elif self.directivity is const.MinusZ:
             high_idx = map(lambda x: x + 1, space.space_to_ex_index(high))
             low_idx = space.space_to_ex_index(low)
             
             high_idx = (high_idx[0] + 1, high_idx[1], high_idx[2] + 1)
             low_idx = (low_idx[0] + 1, low_idx[1], low_idx[2] + 1)
             
-            amp_tmp = -self.amp
             TransparentHy = TransparentMinusZHy
             
-        elif self.direction is const.PlusX and self.polarization is const.Z:
+        elif self.directivity is const.PlusX:
             high_idx = map(lambda x: x + 1, space.space_to_ez_index(high))
             low_idx = space.space_to_ez_index(low)
             
             high_idx = (high_idx[0], high_idx[1], high_idx[2] + 1)
             low_idx = (low_idx[0], low_idx[1], low_idx[2] + 1)
             
-            amp_tmp = -self.amp
             TransparentHy = TransparentPlusXHy
             
-        elif self.direction is const.MinusX and self.polarization is const.Z:
+        elif self.directivity is const.MinusX:
             high_idx = map(lambda x: x + 1, space.space_to_ex_index(high))
             low_idx = space.space_to_ex_index(low)
             
             high_idx = (high_idx[0] + 1, high_idx[1], high_idx[2] + 1)
             low_idx = (low_idx[0] + 1, low_idx[1], low_idx[2] + 1)
             
-            amp_tmp = -self.amp
             TransparentHy = TransparentMinusXHy
             
         else:
@@ -443,52 +487,56 @@ class GaussianBeam(object):
                         aux_fdtd = self._get_aux_fdtd(epsilon_r, mu_r, space)
                         
                         r = self._dist_from_beam_axis(point)
-                        amp = amp_tmp * exp(-(r / self.width)**2)
-
-                        material_hy[i,j,k] = TransparentHy(material_hy[i,j,k], mu_r, amp, aux_fdtd)
+                        amp = cosine * self.amp * exp(-(r / self.width)**2)
+                        
+                        samp_pnt = (0, 0, self._dist_from_center_along_aux_fdtd(point))
+                        
+                        material_hy[i,j,k] = TransparentHy(material_hy[i,j,k], mu_r, 
+                                                           amp, aux_fdtd, samp_pnt)
                         
     def set_pointwise_source_hz(self, material_hz, space):
+        cosine = dot(self.h_direction, (0, 0, 1))
+        
+        if cosine == 0:
+            return None
+        
         high = self.center + self.half_size
         low = self.center - self.half_size
         
-        if self.direction is const.PlusY and self.polarization is const.X:
+        if self.directivity is const.PlusY:
             high_idx = map(lambda x: x + 1, space.space_to_ex_index(high))
             low_idx = space.space_to_ex_index(low)
             
             high_idx = (high_idx[0] + 1, high_idx[1], high_idx[2])
             low_idx = (low_idx[0] + 1, low_idx[1], low_idx[2])
     
-            amp_tmp = -self.amp
             TransparentHz = TransparentPlusYHz
             
-        elif self.direction is const.MinusY and self.polarization is const.X:
+        elif self.directivity is const.MinusY:
             high_idx = map(lambda x: x + 1, space.space_to_ex_index(high))
             low_idx = space.space_to_ex_index(low)
             
             high_idx = (high_idx[0] + 1, high_idx[1] + 1, high_idx[2])
             low_idx = (low_idx[0] + 1, low_idx[1] + 1, low_idx[2])
             
-            amp_tmp = self.amp
             TransparentHz = TransparentMinusYHz
-                                   
-        elif self.direction is const.PlusX and self.polarization is const.Y:
+            
+        elif self.directivity is const.PlusX:
             high_idx = map(lambda x: x + 1, space.space_to_ey_index(high))
             low_idx = space.space_to_ey_index(low)
             
             high_idx = (high_idx[0], high_idx[1] + 1, high_idx[2])
             low_idx = (low_idx[0], low_idx[1] + 1, low_idx[2])
             
-            amp_tmp = self.amp
             TransparentHz = TransparentPlusXHz
             
-        elif self.direction is const.MinusX and self.polarization is const.Y:
+        elif self.directivity is const.MinusX:
             high_idx = map(lambda x: x + 1, space.space_to_ey_index(high))
             low_idx = space.space_to_ey_index(low)
             
             high_idx = (high_idx[0] + 1, high_idx[1] + 1, high_idx[2])
             low_idx = (low_idx[0] + 1, low_idx[1] + 1, low_idx[2])
             
-            amp_tmp = -self.amp
             TransparentHz = TransparentMinusXHz
             
         else:
@@ -499,31 +547,44 @@ class GaussianBeam(object):
                 for k in xrange(low_idx[2], high_idx[2]):
                     if in_range((i, j, k), material_hz, const.Hz):
                         point = space.hz_index_to_space(i, j, k)
-                         
+                        
                         mat_objs = self.geom_tree.material_of_point(point)
                         epsilon_r = mat_objs[0].epsilon_r
                         mu_r = mat_objs[0].mu_r
                         aux_fdtd = self._get_aux_fdtd(epsilon_r, mu_r, space)
                         
                         r = self._dist_from_beam_axis(point)
-                        amp = amp_tmp * exp(-(r / self.width)**2)
-
-                        material_hz[i,j,k] = TransparentHz(material_hz[i,j,k], mu_r, amp, self.aux_fdtd)
-             
+                        amp = cosine * self.amp * exp(-(r / self.width)**2)
+                        
+                        samp_pnt = (0, 0, self._dist_from_center_along_aux_fdtd(point))
+                        
+                        material_hz[i,j,k] = TransparentHz(material_hz[i,j,k], mu_r, 
+                                                           amp, self.aux_fdtd, samp_pnt)
+                        
     def _dist_from_beam_axis(self, point):
-        """Calculate distance from beam axis.
+        """Calculate distance from the beam axis.
         
         Arguments:
-            point -- point location in space coordinate 
-        """
-        
-        if self.direction is const.PlusX or self.direction is const.MinusX:
-            k = (1, 0, 0)
-        elif self.direction is const.PlusY or self.direction is const.MinusY:
-            k = (0, 1, 0)
-        elif self.direciton is const.PlusZ or self.direction is const.MinusZ:
-            k = (0, 0, 1)
+            point -- location in the space coordinate 
             
-        return norm(cross(k, self.center - point))
+        """   
+        return norm(cross(self.k, self.center - point))
 
+    def _dist_from_center(self, point):
+        """Calculate distance from the interface plane center.
+        
+        Arguments:
+            point -- location in the space coordinate
+            
+        """
+        return norm(self.center - point)
+    
+    def _dist_from_center_along_aux_fdtd(self, point):
+        """Calculate projected distance from center along the aux_fdtd.
+        
+        Arguments:
+            point -- location iin the space coordinate
+            
+        """
+        return dot(self.k, point - self.center)
     
