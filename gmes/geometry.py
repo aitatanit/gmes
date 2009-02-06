@@ -1432,7 +1432,7 @@ class Cylinder(Cone):
         print " " * indent, 
         print "center", self.center,
         print "radius", self.radius,
-        print "height" , self.height,
+        print "height", self.height,
         print "axis", self.axis
         if self.material:
             self.material.display_info(indent + 5)
@@ -1505,7 +1505,7 @@ class Block(_Block):
                 independent. They default to the three Cartesian axis.
                 
         """
-        _Block.__init__(self, e1, e2, e3, size, material, center)
+        _Block.__init__(self, material, e1, e2, e3, size, center)
         
     def display_info(self, indent=0):
         print " " * indent, "block"
