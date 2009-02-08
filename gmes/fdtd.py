@@ -332,11 +332,13 @@ class FDTD(object):
     def talk_with_ex_neighbors(self):
         """Synchronize ex data.
         
+        This method uses the object serialization interface of MPI4Python.
+        
         """
         # send ex field data to -y direction and receive from +y direction.
         dest, src = self.space.cart_comm.Shift(1, -1)
         self.ex[:, -1, :-1] = \
-        self.space.cart_comm.Sendrecv(self.ex[:, 0 ,:-1], dest, const.Ex.tag,
+        self.space.cart_comm.Sendrecv(self.ex[:, 0,:-1], dest, const.Ex.tag,
                                       None, src, const.Ex.tag)
         
         # send ex field data to -z direction and receive from +z direction.    
@@ -347,6 +349,8 @@ class FDTD(object):
         
     def talk_with_ey_neighbors(self):
         """Synchronize ey data.
+        
+        This method uses the object serialization interface of MPI4Python.
         
         """
         # send ey field data to -z direction and receive from +z direction.
@@ -364,6 +368,8 @@ class FDTD(object):
     def talk_with_ez_neighbors(self):
         """Synchronize ez data.
         
+        This method uses the object serialization interface of MPI4Python.
+        
         """
         # send ez field data to -x direction and receive from +x direction.
         dest, src = self.space.cart_comm.Shift(0, -1)
@@ -379,6 +385,8 @@ class FDTD(object):
                  
     def talk_with_hx_neighbors(self):
         """Synchronize hx data.
+        
+        This method uses the object serialization interface of MPI4Python.
         
         """
         # send hx field data to +y direction and receive from -y direction.
@@ -396,6 +404,8 @@ class FDTD(object):
     def talk_with_hy_neighbors(self):
         """Synchronize hy data.
         
+        This method uses the object serialization interface of MPI4Python.
+        
         """
         # send hy field data to +z direction and receive from -z direction.
         dest, src = self.space.cart_comm.Shift(2, 1)
@@ -411,6 +421,8 @@ class FDTD(object):
         
     def talk_with_hz_neighbors(self):
         """Synchronize hz data.
+        
+        This method uses the object serialization interface of MPI4Python.
         
         """
         # send hz field data to +x direction and receive from -x direction.
@@ -438,7 +450,7 @@ class FDTD(object):
 #            chatter.join()
         
         self.talk_with_hx_neighbors()
-        self.talk_with_hy_neighbors() 
+        self.talk_with_hy_neighbors()
         self.talk_with_hz_neighbors()
 
         # FIXME: Thread makes GMES slow.
