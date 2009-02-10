@@ -336,13 +336,13 @@ class FDTD(object):
         
         """
         # send ex field data to -y direction and receive from +y direction.
-        dest, src = self.space.cart_comm.Shift(1, -1)
+        src, dest = self.space.cart_comm.Shift(1, -1)
         self.ex[:, -1, :-1] = \
         self.space.cart_comm.Sendrecv(self.ex[:, 0,:-1], dest, const.Ex.tag,
                                       None, src, const.Ex.tag)
         
         # send ex field data to -z direction and receive from +z direction.    
-        dest, src = self.space.cart_comm.Shift(2, -1)
+        src, dest = self.space.cart_comm.Shift(2, -1)
         self.ex[:, :-1, -1] = \
         self.space.cart_comm.Sendrecv(self.ex[:, :-1, 0], dest, const.Ex.tag,
                                       None, src, const.Ex.tag)
@@ -354,13 +354,13 @@ class FDTD(object):
         
         """
         # send ey field data to -z direction and receive from +z direction.
-        dest, src = self.space.cart_comm.Shift(2, -1)
+        src, dest = self.space.cart_comm.Shift(2, -1)
         self.ey[:-1, :, -1] = \
         self.space.cart_comm.Sendrecv(self.ey[:-1, :, 0], dest, const.Ey.tag,
                                       None, src, const.Ey.tag)
                    
         # send ey field data to -x direction and receive from +x direction.
-        dest, src = self.space.cart_comm.Shift(0, -1)            
+        src, dest = self.space.cart_comm.Shift(0, -1)            
         self.ey[-1, :, :-1] = \
         self.space.cart_comm.Sendrecv(self.ey[0, :, :-1], dest, const.Ey.tag,
                                       None, src, const.Ey.tag)
@@ -372,13 +372,13 @@ class FDTD(object):
         
         """
         # send ez field data to -x direction and receive from +x direction.
-        dest, src = self.space.cart_comm.Shift(0, -1)
+        src, dest = self.space.cart_comm.Shift(0, -1)
         self.ez[-1, :-1, :] = \
         self.space.cart_comm.Sendrecv(self.ez[0, :-1, :], dest, const.Ez.tag,
                                       None, src, const.Ez.tag)
                    
         # send ez field data to -y direction and receive from +y direction.
-        dest, src = self.space.cart_comm.Shift(1, -1)
+        src, dest = self.space.cart_comm.Shift(1, -1)
         self.ez[:-1, -1, :] = \
         self.space.cart_comm.Sendrecv(self.ez[:-1, 0, :], dest, const.Ez.tag,
                                       None, src, const.Ez.tag) 
@@ -390,13 +390,13 @@ class FDTD(object):
         
         """
         # send hx field data to +y direction and receive from -y direction.
-        dest, src = self.space.cart_comm.Shift(1, 1)
+        src, dest = self.space.cart_comm.Shift(1, 1)
         self.hx[:, 0, 1:] = \
         self.space.cart_comm.Sendrecv(self.hx[:, -1, 1:], dest, const.Hx.tag,
                                       None, src, const.Hx.tag)
         
         # send hx field data to +z direction and receive from -z direction.    
-        dest, src = self.space.cart_comm.Shift(2, 1)
+        src, dest = self.space.cart_comm.Shift(2, 1)
         self.hx[:, 1:, 0] = \
         self.space.cart_comm.Sendrecv(self.hx[:, 1:, -1], dest, const.Hx.tag,
                                       None, src, const.Hx.tag)
@@ -408,13 +408,13 @@ class FDTD(object):
         
         """
         # send hy field data to +z direction and receive from -z direction.
-        dest, src = self.space.cart_comm.Shift(2, 1)
+        src, dest = self.space.cart_comm.Shift(2, 1)
         self.hy[1:, :, 0] = \
         self.space.cart_comm.Sendrecv(self.hy[1:, :, -1], dest, const.Hy.tag,
                                       None, src, const.Hy.tag)
                    
         # send hy field data to +x direction and receive from -x direction.
-        dest, src = self.space.cart_comm.Shift(0, 1)
+        src, dest = self.space.cart_comm.Shift(0, 1)
         self.hy[0, :, 1:] = \
         self.space.cart_comm.Sendrecv(self.hy[-1, :, 1:], dest, const.Hy.tag,
                                       None, src, const.Hy.tag)
@@ -426,13 +426,13 @@ class FDTD(object):
         
         """
         # send hz field data to +x direction and receive from -x direction.
-        dest, src = self.space.cart_comm.Shift(0, 1)
+        src, dest = self.space.cart_comm.Shift(0, 1)
         self.hz[0, 1:, :] = \
         self.space.cart_comm.Sendrecv(self.hz[-1, 1:, :], dest, const.Hz.tag,
                                       None, src, const.Hz.tag)
         
         # send hz field data to +y direction and receive from -y direction.
-        dest, src = self.space.cart_comm.Shift(1, 1)
+        src, dest = self.space.cart_comm.Shift(1, 1)
         self.hz[1:, 0, :] = \
         self.space.cart_comm.Sendrecv(self.hz[1:, -1, :], dest, const.Hz.tag,
                                       None, src, const.Hz.tag)

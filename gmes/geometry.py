@@ -85,8 +85,6 @@ class Cartesian(object):
         res -- number of sections of one unit length
         dx, dy, dz -- the space differentials
         dt -- the time differential
-        courant_limit -- the Courant stability bound of an explicit FDTD method
-        courant_ratio -- the ratio of dt to Courant stability bound
         whole_field_size -- the total array size for the each component of 
             the electromagnetic field except the communication buffers
         my_id -- mpi rank of this node
@@ -140,14 +138,15 @@ class Cartesian(object):
             dz = inf
             
         # Courant stability bound
-        self.courant_limit = 1 / (const.c0 * sqrt(dx**-2 + dy**-2 + dz**-2))
+        courant_limit = 1 / (const.c0 * sqrt(dx**-2 + dy**-2 + dz**-2))
         
+        # courant_ratio: the ratio of dt to Courant stability bound
         if dt is None:
-            self.courant_ratio = float(courant_ratio)
-            self.dt = self.courant_ratio * self.courant_limit
+            courant_ratio = float(courant_ratio)
+            self.dt = courant_ratio * courant_limit
         else:
             self.dt = float(dt)
-            self.courant_ratio = self.dt / self.courant_limit
+            courant_ratio = self.dt / courant_limit
 
         # the size of the whole field set 
         whole_field_size = []
@@ -171,16 +170,15 @@ class Cartesian(object):
             self.numprocs = 1
             self.cart_comm = AuxiCartComm()
             
-        self.my_cart_idx = \
-        self.cart_comm.Get_coords(self.cart_comm.rank)
+        self.my_cart_idx = self.cart_comm.topo[2]
         
         # usually the my_field_size is general_field_size,
         # except the last node in each dimension.
         self.general_field_size = \
         self.whole_field_size / self.cart_comm.topo[0]
         
-        # my_field_size may be smaller than general_field_size
-        # at the last node in each dimension.
+        # my_field_size may be different than general_field_size at the last 
+        # node in each dimension.
         self.my_field_size = self.get_my_field_size()   
         
     def get_my_field_size(self):
