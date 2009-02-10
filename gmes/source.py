@@ -376,7 +376,7 @@ class GaussianBeam(object):
             high_idx = (high_idx[0], high_idx[1], high_idx[2] + 1)
             low_idx = (low_idx[0], low_idx[1], low_idx[2] + 1)
             
-            TansparentHx = TransparentPlusYHx
+            TransparentHx = TransparentPlusYHx
             
         elif self.directivity is const.MinusY:
             high_idx = map(lambda x: x + 1, space.space_to_ez_index(high))
