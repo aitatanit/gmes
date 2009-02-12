@@ -66,7 +66,7 @@ class AuxiCartComm(object):
     
     def Sendrecv(self, sendbuf, dest=0, sendtag=0, 
                  recvbuf=None, source=0, recvtag=0, status=None):
-        """Mimic Sendrecv function.
+        """Mimic Sendrecv method.
         
         All arguments except message are ignored.
         
@@ -74,6 +74,9 @@ class AuxiCartComm(object):
         return sendbuf
         
     def Reduce(self, value, root=0, op=None):
+        """Mimic Reduce method.
+        
+        """
         return value
     
     
@@ -161,10 +164,10 @@ class Cartesian(object):
             if not parallel:
                 raise StandardError
             
-            self.my_id = MPI.COMM_WORLD.rank
-            self.numprocs = MPI.COMM_WORLD.size
+            self.my_id = MPI.WORLD.rank
+            self.numprocs = MPI.WORLD.size
             self.cart_comm = \
-            MPI.COMM_WORLD.Create_cart(self.find_best_deploy(),(1,1,1))
+            MPI.WORLD.Create_cart(self.find_best_deploy(), (1, 1, 1))
         except StandardError:
             self.my_id = 0
             self.numprocs = 1
@@ -195,7 +198,9 @@ class Cartesian(object):
         
         for i in xrange(3):
             if self.my_cart_idx[i] == dims[i] - 1:
-                field_size[i] = self.whole_field_size[i] - self.my_cart_idx[i] * self.general_field_size[i]
+                field_size[i] = \
+                self.whole_field_size[i] - (self.my_cart_idx[i] * 
+                                            self.general_field_size[i])
             else:
                 field_size[i] = self.general_field_size[i]
         
@@ -252,84 +257,96 @@ class Cartesian(object):
         """Return an initialized array for Ex field component.
         
         """
-        ex_shape = self.my_field_size[0], self.my_field_size[1] + 1, self.my_field_size[2] + 1
+        ex_shape = (self.my_field_size[0], self.my_field_size[1] + 1, 
+                    self.my_field_size[2] + 1)
         return zeros(ex_shape, float)
     
     def get_ey_storage(self):
         """Return an initialized array for Ey field component.
         
         """
-        ey_shape = self.my_field_size[0] + 1, self.my_field_size[1], self.my_field_size[2] + 1
+        ey_shape = (self.my_field_size[0] + 1, self.my_field_size[1], 
+                    self.my_field_size[2] + 1)
         return zeros(ey_shape, float)
     
     def get_ez_storage(self):
         """Return an initialized array for Ez field component.
         
         """
-        ez_shape = self.my_field_size[0] + 1, self.my_field_size[1] + 1, self.my_field_size[2]
+        ez_shape = (self.my_field_size[0] + 1, self.my_field_size[1] + 1, 
+                    self.my_field_size[2])
         return zeros(ez_shape, float)
     
     def get_hx_storage(self):
         """Return an initialized array for Hx field component.
         
         """
-        hx_shape = self.my_field_size[0], self.my_field_size[1] + 1, self.my_field_size[2] + 1
+        hx_shape = (self.my_field_size[0], self.my_field_size[1] + 1, 
+                    self.my_field_size[2] + 1)
         return zeros(hx_shape, float)
     
     def get_hy_storage(self):    
         """Return an initialized array for Hy field component.
         
         """
-        hy_shape = self.my_field_size[0] + 1, self.my_field_size[1], self.my_field_size[2] + 1
+        hy_shape = (self.my_field_size[0] + 1, self.my_field_size[1], 
+                    self.my_field_size[2] + 1)
         return zeros(hy_shape, float)
     
     def get_hz_storage(self):
         """Return an initialized array for Hz field component.
         
         """
-        hz_shape = self.my_field_size[0] + 1, self.my_field_size[1] + 1, self.my_field_size[2]
+        hz_shape = (self.my_field_size[0] + 1, self.my_field_size[1] + 1, 
+                    self.my_field_size[2])
         return zeros(hz_shape, float)
 
     def get_material_ex_storage(self):
         """Return an array for Ex pointwise materials.
         
         """
-        ex_shape = self.my_field_size[0], self.my_field_size[1] + 1, self.my_field_size[2] + 1
+        ex_shape = (self.my_field_size[0], self.my_field_size[1] + 1, 
+                    self.my_field_size[2] + 1)
         return empty(ex_shape, object)
     
     def get_material_ey_storage(self):
         """Return an array for Ey pointwise materials.
         
         """
-        ey_shape = self.my_field_size[0] + 1, self.my_field_size[1], self.my_field_size[2] + 1
+        ey_shape = (self.my_field_size[0] + 1, self.my_field_size[1], 
+                    self.my_field_size[2] + 1)
         return empty(ey_shape, object)
     
     def get_material_ez_storage(self):
         """Return an array for Ez pointwise materials.
         
         """
-        ez_shape = self.my_field_size[0] + 1, self.my_field_size[1] + 1, self.my_field_size[2]
+        ez_shape = (self.my_field_size[0] + 1, self.my_field_size[1] + 1, 
+                    self.my_field_size[2])
         return empty(ez_shape, object)
     
     def get_material_hx_storage(self):
         """Return an array for Hx pointwise materials.
         
         """
-        hx_shape = self.my_field_size[0], self.my_field_size[1] + 1, self.my_field_size[2] + 1
+        hx_shape = (self.my_field_size[0], self.my_field_size[1] + 1, 
+                    self.my_field_size[2] + 1)
         return empty(hx_shape, object)
     
     def get_material_hy_storage(self):
         """Return an array for Hy pointwise materials.
         
         """
-        hy_shape = self.my_field_size[0] + 1, self.my_field_size[1], self.my_field_size[2] + 1
+        hy_shape = (self.my_field_size[0] + 1, self.my_field_size[1], 
+                    self.my_field_size[2] + 1)
         return empty(hy_shape, object)
     
     def get_material_hz_storage(self):
         """Return an array for Hz pointwise materials.
         
         """
-        hz_shape = self.my_field_size[0] + 1, self.my_field_size[1] + 1, self.my_field_size[2]
+        hz_shape = (self.my_field_size[0] + 1, self.my_field_size[1] + 1, 
+                    self.my_field_size[2])
         return empty(hz_shape, object)
 
     def ex_index_to_space(self, *index):
@@ -391,7 +408,8 @@ class Cartesian(object):
             if self.whole_field_size[i] == 1:
                 idx[i] = 0
             else:
-                idx[i] = global_idx[i] - self.my_cart_idx[i] * self.general_field_size[i]
+                idx[i] = global_idx[i] - (self.my_cart_idx[i] * 
+                                          self.general_field_size[i])
                   
         return tuple(idx)
     
@@ -425,7 +443,8 @@ class Cartesian(object):
             if self.whole_field_size[i] == 1:
                 idx[i] = 0
             else:
-                idx[i] = global_idx[i] - self.my_cart_idx[i] * self.general_field_size[i]
+                idx[i] = global_idx[i] - (self.my_cart_idx[i] * 
+                                          self.general_field_size[i])
                   
         return tuple(idx)
     
@@ -488,7 +507,8 @@ class Cartesian(object):
             if self.whole_field_size[i] == 1:
                 idx[i] = 0
             else:
-                idx[i] = global_idx[i] - self.my_cart_idx[i] * self.general_field_size[i]
+                idx[i] = global_idx[i] - (self.my_cart_idx[i] * 
+                                          self.general_field_size[i])
                   
         return tuple(idx)
         
@@ -522,7 +542,8 @@ class Cartesian(object):
             if self.whole_field_size[i] == 1:
                 idx[i] = 0
             else:
-                idx[i] = global_idx[i] - self.my_cart_idx[i] * self.general_field_size[i]
+                idx[i] = global_idx[i] - (self.my_cart_idx[i] * 
+                                          self.general_field_size[i])
                   
         return tuple(idx)
     
@@ -585,7 +606,8 @@ class Cartesian(object):
             if self.whole_field_size[i] == 1:
                 idx[i] = 0
             else:
-                idx[i] = global_idx[i] - self.my_cart_idx[i] * self.general_field_size[i]
+                idx[i] = global_idx[i] - (self.my_cart_idx[i] * 
+                                          self.general_field_size[i])
                     
         return tuple(idx)
         
@@ -619,7 +641,8 @@ class Cartesian(object):
             if self.whole_field_size[i] == 1:
                 idx[i] = 0
             else:
-                idx[i] = global_idx[i] - self.my_cart_idx[i] * self.general_field_size[i]
+                idx[i] = global_idx[i] - (self.my_cart_idx[i] * 
+                                          self.general_field_size[i])
                     
         return tuple(idx)
 
@@ -1310,11 +1333,11 @@ class Cone(GeometricObject):
     """Form a cone or possibly a truncated cone. 
     
     Attributes:
-    	center -- coordinates of the center of this geometric object
-    	axis -- unit vector of axis
-    	height -- length of axis
-    	box -- bounding box
-    	
+        center -- coordinates of the center of this geometric object
+        axis -- unit vector of axis
+        height -- length of axis
+        box -- bounding box
+        
     """
     def __init__(self, material, radius2=0, axis=(1,0,0), radius=1, height=1, center=(0,0,0)):
         """
