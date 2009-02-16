@@ -119,7 +119,7 @@ class _Continuous(_SrcTime):
         
 
 class TransparentElectric(object):
-    def __init__(self, pw_material, epsilon_r, amp, aux_fdtd, samp_pnt):
+    def __init__(self, pw_material, epsilon_r, amp, aux_fdtd, samp_pnt, corrective):
         self.idx = pw_material.i, pw_material.j, pw_material.k
         self.pw_material = pw_material
         self.epsilon = epsilon_r * const.epsilon0
@@ -133,165 +133,166 @@ class TransparentElectric(object):
         self.r1 = samp_idx[2] - floor(samp_idx[2])
         self.r0 = 1 - self.r1
 
+        self.corrective = corrective
         
 class TransparentPlusYEx(TransparentElectric):
-    def __init__(self, pw_material_ex, epsilon_r, amp, aux_fdtd, samp_pnt):
-        TransparentElectric.__init__(self, pw_material_ex, epsilon_r, amp, aux_fdtd, samp_pnt)
+    def __init__(self, pw_material_ex, epsilon_r, amp, aux_fdtd, samp_pnt, corrective):
+        TransparentElectric.__init__(self, pw_material_ex, epsilon_r, amp, aux_fdtd, samp_pnt, corrective)
         
     def update(self, ex, hz, hy, dt, dy, dz):
         self.pw_material.update(ex, hz, hy, dt, dy, dz)
         
         aux_fdtd_hy = self.r0 * self.aux_fdtd.hy[self.samp_idx0] + self.r1 * self.aux_fdtd.hy[self.samp_idx1]
         
-        ex[self.idx] -= dt / (self.epsilon * dy) * self.amp * aux_fdtd_hy
+        ex[self.idx] -= dt / (self.corrective * self.epsilon * dy) * self.amp * aux_fdtd_hy
         self.aux_fdtd.step()
         
         
 class TransparentPlusYEz(TransparentElectric):
-    def __init__(self, pw_material_ez, epsilon_r, amp, aux_fdtd, samp_pnt):
-        TransparentElectric.__init__(self, pw_material_ez, epsilon_r, amp, aux_fdtd, samp_pnt)
+    def __init__(self, pw_material_ez, epsilon_r, amp, aux_fdtd, samp_pnt, corrective):
+        TransparentElectric.__init__(self, pw_material_ez, epsilon_r, amp, aux_fdtd, samp_pnt, corrective)
         
     def update(self, ez, hy, hx, dt, dx, dy):
         self.pw_material.update(ez, hy, hx, dt, dx, dy)
         
         aux_fdtd_hy = self.r0 * self.aux_fdtd.hy[self.samp_idx0] + self.r1 * self.aux_fdtd.hy[self.samp_idx1]
         
-        ez[self.idx] += dt / (self.epsilon * dy) * self.amp * aux_fdtd_hy
+        ez[self.idx] += dt / (self.corrective * self.epsilon * dy) * self.amp * aux_fdtd_hy
         self.aux_fdtd.step()
         
 
 class TransparentMinusYEx(TransparentElectric):
-    def __init__(self, pw_material_ex, epsilon_r, amp, aux_fdtd, samp_pnt):
-        TransparentElectric.__init__(self, pw_material_ex, epsilon_r, amp, aux_fdtd, samp_pnt)
+    def __init__(self, pw_material_ex, epsilon_r, amp, aux_fdtd, samp_pnt, corrective):
+        TransparentElectric.__init__(self, pw_material_ex, epsilon_r, amp, aux_fdtd, samp_pnt, corrective)
         
     def update(self, ex, hz, hy, dt, dy, dz):
         self.pw_material.update(ex, hz, hy, dt, dy, dz)
         
         aux_fdtd_hy = self.r0 * self.aux_fdtd.hy[self.samp_idx0] + self.r1 * self.aux_fdtd.hy[self.samp_idx1]
         
-        ex[self.idx] += dt / (self.epsilon * dy) * self.amp * aux_fdtd_hy
+        ex[self.idx] += dt / (self.corrective * self.epsilon * dy) * self.amp * aux_fdtd_hy
         self.aux_fdtd.step()
         
         
 class TransparentMinusYEz(TransparentElectric):
-    def __init__(self, pw_material_ez, epsilon_r, amp, aux_fdtd, samp_pnt):
-        TransparentElectric.__init__(self, pw_material_ez, epsilon_r, amp, aux_fdtd, samp_pnt)
+    def __init__(self, pw_material_ez, epsilon_r, amp, aux_fdtd, samp_pnt, corrective):
+        TransparentElectric.__init__(self, pw_material_ez, epsilon_r, amp, aux_fdtd, samp_pnt, corrective)
         
     def update(self, ez, hy, hx, dt, dx, dy):
         self.pw_material.update(ez, hy, hx, dt, dx, dy)
         
         aux_fdtd_hy = self.r0 * self.aux_fdtd.hy[self.samp_idx0] + self.r1 * self.aux_fdtd.hy[self.samp_idx1]
         
-        ez[self.idx] -= dt / (self.epsilon * dy) * self.amp * aux_fdtd_hy
+        ez[self.idx] -= dt / (self.corrective * self.epsilon * dy) * self.amp * aux_fdtd_hy
         self.aux_fdtd.step()
         
 
 class TransparentPlusZEx(TransparentElectric):
-    def __init__(self, pw_material_ex, epsilon_r, amp, aux_fdtd, samp_pnt):
-        TransparentElectric.__init__(self, pw_material_ex, epsilon_r, amp, aux_fdtd, samp_pnt)
+    def __init__(self, pw_material_ex, epsilon_r, amp, aux_fdtd, samp_pnt, corrective):
+        TransparentElectric.__init__(self, pw_material_ex, epsilon_r, amp, aux_fdtd, samp_pnt, corrective)
         
     def update(self, ex, hz, hy, dt, dy, dz):
         self.pw_material.update(ex, hz, hy, dt, dy, dz)
         
         aux_fdtd_hy = self.r0 * self.aux_fdtd.hy[self.samp_idx0] + self.r1 * self.aux_fdtd.hy[self.samp_idx1]
         
-        ex[self.idx] += dt / (self.epsilon * dz) * self.amp * aux_fdtd_hy
+        ex[self.idx] += dt / (self.corrective * self.epsilon * dz) * self.amp * aux_fdtd_hy
         self.aux_fdtd.step()
         
         
 class TransparentPlusZEy(TransparentElectric):
-    def __init__(self, pw_material_ey, epsilon_r, amp, aux_fdtd, samp_pnt):
-        TransparentElectric.__init__(self, pw_material_ey, epsilon_r, amp, aux_fdtd, samp_pnt)
+    def __init__(self, pw_material_ey, epsilon_r, amp, aux_fdtd, samp_pnt, corrective):
+        TransparentElectric.__init__(self, pw_material_ey, epsilon_r, amp, aux_fdtd, samp_pnt, corrective)
         
     def update(self, ey, hx, hz, dt, dz, dx):
         self.pw_material.update(ey, hx, hz, dt, dz, dx)
         
         aux_fdtd_hy = self.r0 * self.aux_fdtd.hy[self.samp_idx0] + self.r1 * self.aux_fdtd.hy[self.samp_idx1]
         
-        ey[self.idx] -= dt / (self.epsilon * dz) * self.amp * aux_fdtd_hy
+        ey[self.idx] -= dt / (self.corrective * self.epsilon * dz) * self.amp * aux_fdtd_hy
         self.aux_fdtd.step()
         
 
 class TransparentMinusZEx(TransparentElectric):
-    def __init__(self, pw_material_ex, epsilon_r, amp, aux_fdtd, samp_pnt):
-        TransparentElectric.__init__(self, pw_material_ex, epsilon_r, amp, aux_fdtd, samp_pnt)
+    def __init__(self, pw_material_ex, epsilon_r, amp, aux_fdtd, samp_pnt, corrective):
+        TransparentElectric.__init__(self, pw_material_ex, epsilon_r, amp, aux_fdtd, samp_pnt, corrective)
         
     def update(self, ex, hz, hy, dt, dy, dz):
         self.pw_material.update(ex, hz, hy, dt, dy, dz)
         
         aux_fdtd_hy = self.r0 * self.aux_fdtd.hy[self.samp_idx0] + self.r1 * self.aux_fdtd.hy[self.samp_idx1]
         
-        ex[self.idx] -= dt / (self.epsilon * dz) * self.amp * aux_fdtd_hy
+        ex[self.idx] -= dt / (self.corrective * self.epsilon * dz) * self.amp * aux_fdtd_hy
         self.aux_fdtd.step()
         
         
 class TransparentMinusZEy(TransparentElectric):
-    def __init__(self, pw_material_ey, epsilon_r, amp, aux_fdtd, samp_pnt):
-        TransparentElectric.__init__(self, pw_material_ey, epsilon_r, amp, aux_fdtd, samp_pnt)
+    def __init__(self, pw_material_ey, epsilon_r, amp, aux_fdtd, samp_pnt, corrective):
+        TransparentElectric.__init__(self, pw_material_ey, epsilon_r, amp, aux_fdtd, samp_pnt, corrective)
         
     def update(self, ey, hx, hz, dt, dz, dx):
         self.pw_material.update(ey, hx, hz, dt, dz, dx)
         
         aux_fdtd_hy = self.r0 * self.aux_fdtd.hy[self.samp_idx0] + self.r1 * self.aux_fdtd.hy[self.samp_idx1]
         
-        ey[self.idx] += dt / (self.epsilon * dz) * self.amp * aux_fdtd_hy
+        ey[self.idx] += dt / (self.corrective * self.epsilon * dz) * self.amp * aux_fdtd_hy
         self.aux_fdtd.step()
 
                                                 
 class TransparentPlusXEy(TransparentElectric):
-    def __init__(self, pw_material_ey, epsilon_r, amp, aux_fdtd, samp_pnt):
-        TransparentElectric.__init__(self, pw_material_ey, epsilon_r, amp, aux_fdtd, samp_pnt)
+    def __init__(self, pw_material_ey, epsilon_r, amp, aux_fdtd, samp_pnt, corrective):
+        TransparentElectric.__init__(self, pw_material_ey, epsilon_r, amp, aux_fdtd, samp_pnt, corrective)
         
     def update(self, ey, hx, hz, dt, dz, dx):
         self.pw_material.update(ey, hx, hz, dt, dz, dx)
         
         aux_fdtd_hy = self.r0 * self.aux_fdtd.hy[self.samp_idx0] + self.r1 * self.aux_fdtd.hy[self.samp_idx1]
         
-        ey[self.idx] += dt / (self.epsilon * dx) * self.amp * aux_fdtd_hy
+        ey[self.idx] += dt / (self.corrective * self.epsilon * dx) * self.amp * aux_fdtd_hy
         self.aux_fdtd.step()
         
 
 class TransparentPlusXEz(TransparentElectric):
-    def __init__(self, pw_material_ez, epsilon_r, amp, aux_fdtd, samp_pnt):
-        TransparentElectric.__init__(self, pw_material_ez, epsilon_r, amp, aux_fdtd, samp_pnt)
+    def __init__(self, pw_material_ez, epsilon_r, amp, aux_fdtd, samp_pnt, corrective):
+        TransparentElectric.__init__(self, pw_material_ez, epsilon_r, amp, aux_fdtd, samp_pnt, corrective)
         
     def update(self, ez, hy, hx, dt, dx, dy):
         self.pw_material.update(ez, hy, hx, dt, dx, dy)
 
         aux_fdtd_hy = self.r0 * self.aux_fdtd.hy[self.samp_idx0] + self.r1 * self.aux_fdtd.hy[self.samp_idx1]
     
-        ez[self.idx] -= dt / (self.epsilon * dx) * self.amp * aux_fdtd_hy
+        ez[self.idx] -= dt / (self.corrective * self.epsilon * dx) * self.amp * aux_fdtd_hy
         self.aux_fdtd.step()
 
         
 class TransparentMinusXEy(TransparentElectric):
-    def __init__(self, pw_material_ey, epsilon_r, amp, aux_fdtd, samp_pnt):
-        TransparentElectric.__init__(self, pw_material_ey, epsilon_r, amp, aux_fdtd, samp_pnt)
+    def __init__(self, pw_material_ey, epsilon_r, amp, aux_fdtd, samp_pnt, corrective):
+        TransparentElectric.__init__(self, pw_material_ey, epsilon_r, amp, aux_fdtd, samp_pnt, corrective)
         
     def update(self, ey, hx, hz, dt, dz, dx):
         self.pw_material.update(ey, hx, hz, dt, dz, dx)
         
         aux_fdtd_hy = self.r0 * self.aux_fdtd.hy[self.samp_idx0] + self.r1 * self.aux_fdtd.hy[self.samp_idx1]
         
-        ey[self.idx] -= dt / (self.epsilon * dx) * self.amp * aux_fdtd_hy
+        ey[self.idx] -= dt / (self.corrective * self.epsilon * dx) * self.amp * aux_fdtd_hy
         self.aux_fdtd.step()
         
 
 class TransparentMinusXEz(TransparentElectric):
-    def __init__(self, pw_material_ez, epsilon_r, amp, aux_fdtd, samp_pnt):
-        TransparentElectric.__init__(self, pw_material_ez, epsilon_r, amp, aux_fdtd, samp_pnt)
+    def __init__(self, pw_material_ez, epsilon_r, amp, aux_fdtd, samp_pnt, corrective):
+        TransparentElectric.__init__(self, pw_material_ez, epsilon_r, amp, aux_fdtd, samp_pnt, corrective)
         
     def update(self, ez, hy, hx, dt, dx, dy):
         self.pw_material.update(ez, hy, hx, dt, dx, dy)
         
         aux_fdtd_hy = self.r0 * self.aux_fdtd.hy[self.samp_idx0] + self.r1 * self.aux_fdtd.hy[self.samp_idx1]
         
-        ez[self.idx] += dt / (self.epsilon * dx) * self.amp * aux_fdtd_hy
+        ez[self.idx] += dt / (self.corrective * self.epsilon * dx) * self.amp * aux_fdtd_hy
         self.aux_fdtd.step()
         
         
 class TransparentMagnetic(object):
-    def __init__(self, pw_material, mu_r, amp, aux_fdtd, samp_pnt):
+    def __init__(self, pw_material, mu_r, amp, aux_fdtd, samp_pnt, corrective):
         self.idx = pw_material.i, pw_material.j, pw_material.k
         self.pw_material = pw_material
         self.mu = mu_r * const.mu0
@@ -306,10 +307,11 @@ class TransparentMagnetic(object):
         self.r1 = samp_idx[2] - floor(samp_idx[2])
         self.r0 = 1 - self.r1
         
+        self.corrective = corrective
 
 class TransparentPlusYHz(TransparentMagnetic):
-    def __init__(self, pw_material_hz, mu_r, amp, aux_fdtd, samp_pnt):
-        TransparentMagnetic.__init__(self, pw_material_hz, mu_r, amp, aux_fdtd, samp_pnt)
+    def __init__(self, pw_material_hz, mu_r, amp, aux_fdtd, samp_pnt, corrective):
+        TransparentMagnetic.__init__(self, pw_material_hz, mu_r, amp, aux_fdtd, samp_pnt, corrective)
         
     def update(self, hz, ey, ex, dt, dx, dy):
         self.pw_material.update(hz, ey, ex, dt, dx, dy)
@@ -317,12 +319,12 @@ class TransparentPlusYHz(TransparentMagnetic):
         
         aux_fdtd_ex = self.r0 * self.aux_fdtd.ex[self.samp_idx0] + self.r1 * self.aux_fdtd.ex[self.samp_idx1]
         
-        hz[self.idx] -= dt / (self.mu * dy) * self.amp * aux_fdtd_ex
+        hz[self.idx] -= dt / (self.corrective * self.mu * dy) * self.amp * aux_fdtd_ex
         
         
 class TransparentPlusYHx(TransparentMagnetic):
-    def __init__(self, pw_material_hx, mu_r, amp, aux_fdtd, samp_pnt):
-        TransparentMagnetic.__init__(self, pw_material_hx, mu_r, amp, aux_fdtd, samp_pnt)
+    def __init__(self, pw_material_hx, mu_r, amp, aux_fdtd, samp_pnt, corrective):
+        TransparentMagnetic.__init__(self, pw_material_hx, mu_r, amp, aux_fdtd, samp_pnt, corrective)
         
     def update(self, hx, ez, ey, dt, dy, dz):
         self.pw_material.update(hx, ez, ey, dt, dy, dz)
@@ -330,12 +332,12 @@ class TransparentPlusYHx(TransparentMagnetic):
         
         aux_fdtd_ex = self.r0 * self.aux_fdtd.ex[self.samp_idx0] + self.r1 * self.aux_fdtd.ex[self.samp_idx1]
         
-        hx[self.idx] += dt / (self.mu * dy) * self.amp * aux_fdtd_ex
+        hx[self.idx] += dt / (self.corrective * self.mu * dy) * self.amp * aux_fdtd_ex
         
 
 class TransparentMinusYHz(TransparentMagnetic):
-    def __init__(self, pw_material_hz, mu_r, amp, aux_fdtd, samp_pnt):
-        TransparentMagnetic.__init__(self, pw_material_hz, mu_r, amp, aux_fdtd, samp_pnt)
+    def __init__(self, pw_material_hz, mu_r, amp, aux_fdtd, samp_pnt, corrective):
+        TransparentMagnetic.__init__(self, pw_material_hz, mu_r, amp, aux_fdtd, samp_pnt, corrective)
         
     def update(self, hz, ey, ex, dt, dx, dy):
         self.pw_material.update(hz, ey, ex, dt, dx, dy)
@@ -343,12 +345,12 @@ class TransparentMinusYHz(TransparentMagnetic):
         
         aux_fdtd_ex = self.r0 * self.aux_fdtd.ex[self.samp_idx0] + self.r1 * self.aux_fdtd.ex[self.samp_idx1]
         
-        hz[self.idx] += dt / (self.mu * dy) * self.amp * aux_fdtd_ex
+        hz[self.idx] += dt / (self.corrective * self.mu * dy) * self.amp * aux_fdtd_ex
         
         
 class TransparentMinusYHx(TransparentMagnetic):
-    def __init__(self, pw_material_hx, mu_r, amp, aux_fdtd, samp_pnt):
-        TransparentMagnetic.__init__(self, pw_material_hx, mu_r, amp, aux_fdtd, samp_pnt)
+    def __init__(self, pw_material_hx, mu_r, amp, aux_fdtd, samp_pnt, corrective):
+        TransparentMagnetic.__init__(self, pw_material_hx, mu_r, amp, aux_fdtd, samp_pnt, corrective)
         
     def update(self, hx, ez, ey, dt, dy, dz):
         self.pw_material.update(hx, ez, ey, dt, dy, dz)
@@ -356,12 +358,12 @@ class TransparentMinusYHx(TransparentMagnetic):
         
         aux_fdtd_ex = self.r0 * self.aux_fdtd.ex[self.samp_idx0] + self.r1 * self.aux_fdtd.ex[self.samp_idx1]
         
-        hx[self.idx] -= dt / (self.mu * dy) * self.amp * aux_fdtd_ex
+        hx[self.idx] -= dt / (self.corrective * self.mu * dy) * self.amp * aux_fdtd_ex
         
         
 class TransparentPlusZHy(TransparentMagnetic):
-    def __init__(self, pw_material_hy, mu_r, amp, aux_fdtd, samp_pnt):
-        TransparentMagnetic.__init__(self, pw_material_hy, mu_r, amp, aux_fdtd, samp_pnt)
+    def __init__(self, pw_material_hy, mu_r, amp, aux_fdtd, samp_pnt, corrective):
+        TransparentMagnetic.__init__(self, pw_material_hy, mu_r, amp, aux_fdtd, samp_pnt, corrective)
         
     def update(self, hy, ex, ez, dt, dz, dx):
         self.pw_material.update(hy, ex, ez, dt, dz, dx)
@@ -369,12 +371,12 @@ class TransparentPlusZHy(TransparentMagnetic):
         
         aux_fdtd_ex = self.r0 * self.aux_fdtd.ex[self.samp_idx0] + self.r1 * self.aux_fdtd.ex[self.samp_idx1]
         
-        hy[self.idx] += dt / (self.mu * dz) * self.amp * aux_fdtd_ex
+        hy[self.idx] += dt / (self.corrective * self.mu * dz) * self.amp * aux_fdtd_ex
         
         
 class TransparentPlusZHx(TransparentMagnetic):
-    def __init__(self, pw_material_hx, mu_r, amp, aux_fdtd, samp_pnt):
-        TransparentMagnetic.__init__(self, pw_material_hx, mu_r, amp, aux_fdtd, samp_pnt)
+    def __init__(self, pw_material_hx, mu_r, amp, aux_fdtd, samp_pnt, corrective):
+        TransparentMagnetic.__init__(self, pw_material_hx, mu_r, amp, aux_fdtd, samp_pnt, corrective)
         
     def update(self, hx, ez, ey, dt, dy, dz):
         self.pw_material.update(hx, ez, ey, dt, dy, dz)
@@ -382,12 +384,12 @@ class TransparentPlusZHx(TransparentMagnetic):
         
         aux_fdtd_ex = self.r0 * self.aux_fdtd.ex[self.samp_idx0] + self.r1 * self.aux_fdtd.ex[self.samp_idx1]
         
-        hx[self.idx] -= dt / (self.mu * dz) * self.amp * aux_fdtd_ex
+        hx[self.idx] -= dt / (self.corrective * self.mu * dz) * self.amp * aux_fdtd_ex
         
 
 class TransparentMinusZHy(TransparentMagnetic):
-    def __init__(self, pw_material_hy, mu_r, amp, aux_fdtd, samp_pnt):
-        TransparentMagnetic.__init__(self, pw_material_hy, mu_r, amp, aux_fdtd, samp_pnt)
+    def __init__(self, pw_material_hy, mu_r, amp, aux_fdtd, samp_pnt, corrective):
+        TransparentMagnetic.__init__(self, pw_material_hy, mu_r, amp, aux_fdtd, samp_pnt, corrective)
         
     def update(self, hy, ex, ez, dt, dz, dx):
         self.pw_material.update(hy, ex, ez, dt, dz, dx)
@@ -395,12 +397,12 @@ class TransparentMinusZHy(TransparentMagnetic):
         
         aux_fdtd_ex = self.r0 * self.aux_fdtd.ex[self.samp_idx0] + self.r1 * self.aux_fdtd.ex[self.samp_idx1]
         
-        hy[self.idx] -= dt / (self.mu * dz) * self.amp * aux_fdtd_ex
+        hy[self.idx] -= dt / (self.corrective * self.mu * dz) * self.amp * aux_fdtd_ex
         
         
 class TransparentMinusZHx(TransparentMagnetic):
-    def __init__(self, pw_material_hx, mu_r, amp, aux_fdtd, samp_pnt):
-        TransparentMagnetic.__init__(self, pw_material_hx, mu_r, amp, aux_fdtd, samp_pnt)
+    def __init__(self, pw_material_hx, mu_r, amp, aux_fdtd, samp_pnt, corrective):
+        TransparentMagnetic.__init__(self, pw_material_hx, mu_r, amp, aux_fdtd, samp_pnt, corrective)
         
     def update(self, hx, ez, ey, dt, dy, dz):
         self.pw_material.update(hx, ez, ey, dt, dy, dz)
@@ -408,12 +410,12 @@ class TransparentMinusZHx(TransparentMagnetic):
         
         aux_fdtd_ex = self.r0 * self.aux_fdtd.ex[self.samp_idx0] + self.r1 * self.aux_fdtd.ex[self.samp_idx1]
         
-        hx[self.idx] += dt / (self.mu * dz) * self.amp * aux_fdtd_ex
+        hx[self.idx] += dt / (self.corrective * self.mu * dz) * self.amp * aux_fdtd_ex
         
                                 
 class TransparentPlusXHz(TransparentMagnetic):
-    def __init__(self, pw_material_hz, mu_r, amp, aux_fdtd, samp_pnt):
-        TransparentMagnetic.__init__(self, pw_material_hz, mu_r, amp, aux_fdtd, samp_pnt)
+    def __init__(self, pw_material_hz, mu_r, amp, aux_fdtd, samp_pnt, corrective):
+        TransparentMagnetic.__init__(self, pw_material_hz, mu_r, amp, aux_fdtd, samp_pnt, corrective)
         
     def update(self, hz, ey, ex, dt, dx, dy):
         self.pw_material.update(hz, ey, ex, dt, dx, dy)
@@ -421,12 +423,12 @@ class TransparentPlusXHz(TransparentMagnetic):
         
         aux_fdtd_ex = self.r0 * self.aux_fdtd.ex[self.samp_idx0] + self.r1 * self.aux_fdtd.ex[self.samp_idx1]
         
-        hz[self.idx] += dt / (self.mu * dx) * self.amp * aux_fdtd_ex
+        hz[self.idx] += dt / (self.corrective * self.mu * dx) * self.amp * aux_fdtd_ex
         
         
 class TransparentPlusXHy(TransparentMagnetic):
-    def __init__(self, pw_material_hy, mu_r, amp, aux_fdtd, samp_pnt):
-        TransparentMagnetic.__init__(self, pw_material_hy, mu_r, amp, aux_fdtd, samp_pnt)
+    def __init__(self, pw_material_hy, mu_r, amp, aux_fdtd, samp_pnt, corrective):
+        TransparentMagnetic.__init__(self, pw_material_hy, mu_r, amp, aux_fdtd, samp_pnt, corrective)
         
     def update(self, hy, ex, ez, dt, dz, dx):
         self.pw_material.update(hy, ex, ez, dt, dz, dx)
@@ -434,12 +436,12 @@ class TransparentPlusXHy(TransparentMagnetic):
         
         aux_fdtd_ex = self.r0 * self.aux_fdtd.ex[self.samp_idx0] + self.r1 * self.aux_fdtd.ex[self.samp_idx1]
         
-        hy[self.idx] -= dt / (self.mu * dx) * self.amp * aux_fdtd_ex
+        hy[self.idx] -= dt / (self.corrective * self.mu * dx) * self.amp * aux_fdtd_ex
         
                 
 class TransparentMinusXHz(TransparentMagnetic):
-    def __init__(self, pw_material_hz, mu_r, amp, aux_fdtd, samp_pnt):
-        TransparentMagnetic.__init__(self, pw_material_hz, mu_r, amp, aux_fdtd, samp_pnt)
+    def __init__(self, pw_material_hz, mu_r, amp, aux_fdtd, samp_pnt, corrective):
+        TransparentMagnetic.__init__(self, pw_material_hz, mu_r, amp, aux_fdtd, samp_pnt, corrective)
         
     def update(self, hz, ey, ex, dt, dx, dy):
         self.pw_material.update(hz, ey, ex, dt, dx, dy)
@@ -447,12 +449,12 @@ class TransparentMinusXHz(TransparentMagnetic):
         
         aux_fdtd_ex = self.r0 * self.aux_fdtd.ex[self.samp_idx0] + self.r1 * self.aux_fdtd.ex[self.samp_idx1]
         
-        hz[self.idx] -= dt / (self.mu * dx) * self.amp * aux_fdtd_ex
+        hz[self.idx] -= dt / (self.corrective * self.mu * dx) * self.amp * aux_fdtd_ex
         
         
 class TransparentMinusXHy(TransparentMagnetic):
-    def __init__(self, pw_material_hy, mu_r, amp, aux_fdtd, samp_pnt):
-        TransparentMagnetic.__init__(self, pw_material_hy, mu_r, amp, aux_fdtd, samp_pnt)
+    def __init__(self, pw_material_hy, mu_r, amp, aux_fdtd, samp_pnt, corrective):
+        TransparentMagnetic.__init__(self, pw_material_hy, mu_r, amp, aux_fdtd, samp_pnt, corrective)
         
     def update(self, hy, ex, ez, dt, dz, dx):
         self.pw_material.update(hy, ex, ez, dt, dz, dx)
@@ -460,6 +462,6 @@ class TransparentMinusXHy(TransparentMagnetic):
         
         aux_fdtd_ex = self.r0 * self.aux_fdtd.ex[self.samp_idx0] + self.r1 * self.aux_fdtd.ex[self.samp_idx1]
         
-        hy[self.idx] += dt / (self.mu * dx) * self.amp * aux_fdtd_ex
+        hy[self.idx] += dt / (self.corrective * self.mu * dx) * self.amp * aux_fdtd_ex
         
         

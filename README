@@ -8,7 +8,7 @@ sourceforge:
 http://www.sf.net/projects/gmes
 
 The most current development version is always available from a 
-subversion repostiory:
+subversion repository:
 
 http://gmes.svn.sf.net/svnroot/gmes/trunk
 
@@ -17,14 +17,13 @@ http://gmes.svn.sf.net/svnroot/gmes/trunk
 1.1. GNU/Linux
 
 GMES has been tested on Etch (stable) and Sid (unstable) version of
-Debian GNU/Linux. Also, GMES works on Hardy Heron version of Ubuntu. On
-Linux, you can use all features of GMES.
+Debian GNU/Linux. Also, GMES works on Hardy Heron and Intrepid Ibex
+version of Ubuntu. On Linux, you can use all features of GMES.
 
 1.1. Windows
 
 GMES has been tested on Windows XP Professional Service Pack 3 and
-Vista Enterprise K Service Pack 1. On Windows, you can not use a 
-parallel calculation feature using MPI.
+Vista Enterprise K Service Pack 1.
 
 1. Preliminaries
 
@@ -41,14 +40,14 @@ following programs to install and execute GMES.
 segmentation fault. 0.87.7-0.3 of Debian Etch and 0.92.2.0001 of 
 Enthought Python for Windows are fine. (Debian package: 
 python-matplotlib)
-* MPI4Python >= 0.6.0 (optional)
+* MPI4Python >= 0.6.0 (optional) (with MPICH2 >= 1.0.8)
 * swig >= 1.3 (for compile) (Debian package: swig)
-* gcc (for compile)
+* gcc (to compile)
 
 1.1. Windows
 
-Enthought Python distribution provides all programs on which GMES 
-depends.
+Enthought Python distribution provides all programs except MPI4Python
+and MPI2 implementation on which GMES depends.
 
 * Enthought Python Distribution (EPD) >= 2.5.2001
 
@@ -84,9 +83,12 @@ $ python setup.py build_ext -c mingw32
 
 1. Execution Commands
 
-1.1. GNU/Linux with MPI
+1.1. GNU/Linux with MPI2
 
-$ mpiexec -machinefile <HOST FILE> -n <N> pyMPI <GMES SCRIPT>
+Your MPI2 implementation may requires pre- or post- commands to exploit
+the parallel environment.
+ 
+$ mpiexec -machinefile <HOST FILE> -l -n <N> python <GMES SCRIPT>
 
 1. Known Issues
 
@@ -96,14 +98,18 @@ fdtd.show_* methods use Matplotlib packages. The Matplotlib package for
 Windows seems to that it does not handle multiple plots in multiple
 windows.
 
-1.2. numpy.inf
+1.1. numpy.inf
 
-GMES does not treat well the value of numpy.inf. Please use large
+GMES does not treat well the value of numpy.inf. Please use large 
 enough value instead of numpy.inf.
 
 1. FAQ
 
-1.1. Plot window forwarding in MPI execution
+1.1. In Windows(TM), Why does the display window freeze when I use 
+	FDTD.show_permittivity_* and FDTD.show_* simultaneously?
 
+The Windows version of matplotlib dose not handle the the multiple 
+display windows fluently. The Linux version of matplotlib does not have
+this problem.
 
 Kyungwon Chun (kwchun@gist.ac.kr)

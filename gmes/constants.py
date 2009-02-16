@@ -9,6 +9,8 @@ except:
 
 from math import sqrt
 
+from numpy import *
+
 # physical constants
 
 # Vaccum permittivity
@@ -58,12 +60,25 @@ class Z(Directional):
     tag = 2
     
     
-class PlusX(X): pass
-class MinusX(X): pass
-class PlusY(Y): pass
-class MinusY(Y): pass
-class PlusZ(Z): pass
-class MinusZ(Z): pass
+class PlusX(X):
+    vector = array((1., 0., 0.))
+    
+    
+class MinusX(X):
+    vector = array((-1., 0., 0.))
+    
+    
+class PlusY(Y):
+    vector = array((0., 1., 0.))
+    
+class MinusY(Y):
+    vector = array((0., -1., 0.))
+    
+class PlusZ(Z):
+    vector = array((0., 0., 1.))
+    
+class MinusZ(Z):
+    vector = array((0., 0., -1.))
 
 
 class Component(object):
