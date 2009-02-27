@@ -117,8 +117,78 @@ class Dummy(Material):
     def get_pointwise_material_hz(self, idx, coords, underneath=None):
         pw_obj = DummyHz(idx, self.mu_r)
         return pw_obj
+
     
+class Zero(Material):
+    """A material type which sets the field value zero.
     
+    """
+    def display_info(self, indentby=0):
+        """Display the parameter values.
+        
+        """
+        print " " * indentby, "zero object"
+        
+    def get_pointwise_material_ex(self, idx, coords, underneath=None):
+        pw_obj = ZeroEx(idx, self.epsilon_r)
+        return pw_obj
+    
+    def get_pointwise_mateiral_ey(self, idx, coords, underneath=None):
+        pw_obj = ZeroEy(idx, self.epsilon_r)
+        return pw_obj
+    
+    def get_pointwise_material_ez(self, idx, coords, underneath=None):
+        pw_obj = ZeroEz(idx, self.epsilon_r)
+        return pw_obj
+    
+    def get_pointwise_material_hx(self, idx, coords, underneath=None):
+        pw_obj = ZeroHx(idx, self.mu_r)
+        return pw_obj
+    
+    def get_pointwise_material_hy(self, idx, coords, underneath=None):
+        pw_obj = ZeroHy(idx, self.mu_r)
+        return pw_obj
+    
+    def get_pointwise_material_hz(self, idx, coords, underneath=None):
+        pw_obj = ZeroHz(idx, self.mu_r)
+        return pw_obj
+    
+
+class One(Material):
+    """A material type which sets the field value one.
+    
+    """
+    def display_info(self, indentby=0):
+        """Display the parameter values.
+        
+        """
+        print " " * indentby, "one object"
+        
+    def get_pointwise_material_ex(self, idx, coords, underneath=None):
+        pw_obj = OneEx(idx, self.epsilon_r)
+        return pw_obj
+    
+    def get_pointwise_mateiral_ey(self, idx, coords, underneath=None):
+        pw_obj = OneEy(idx, self.epsilon_r)
+        return pw_obj
+    
+    def get_pointwise_material_ez(self, idx, coords, underneath=None):
+        pw_obj = OneEz(idx, self.epsilon_r)
+        return pw_obj
+    
+    def get_pointwise_material_hx(self, idx, coords, underneath=None):
+        pw_obj = OneHx(idx, self.mu_r)
+        return pw_obj
+    
+    def get_pointwise_material_hy(self, idx, coords, underneath=None):
+        pw_obj = OneHy(idx, self.mu_r)
+        return pw_obj
+    
+    def get_pointwise_material_hz(self, idx, coords, underneath=None):
+        pw_obj = OneHz(idx, self.mu_r)
+        return pw_obj
+    
+            
 class Dielectric(Material):
     def __init__(self, epsilon_r=1, mu_r=1):
         """Representation of dielectric medium.

@@ -4,6 +4,8 @@
 #define SWIG_FILE_WITH_INIT
 #include "pointwise_material.hh"
 #include "pointwise_dummy.hh"
+#include "pointwise_zero.hh"
+#include "pointwise_one.hh"
 #include "pointwise_dielectric.hh"
 #include "pointwise_upml.hh"
 #include "pointwise_cpml.hh"
@@ -15,13 +17,10 @@
 %include "numpy.i"
 
 %init %{
-  import_array();
+import_array();
 %}
 
 %define %apply_numpy_typemaps(TYPE)
-
-%apply (TYPE* IN_ARRAY1, int DIM1)
-      {(const TYPE* const idx, int size)};
 
 %apply (TYPE* IN_ARRAY3, int DIM1, int DIM2, int DIM3)
       {(const TYPE* const in_field1, int in1_dim1, int in1_dim2, int in1_dim3)};
@@ -58,9 +57,10 @@
       
 %enddef    /* %apply_numpy_typemaps() macro */
 
-%apply_numpy_typemaps(int)
 %apply_numpy_typemaps(double)
 
+%apply (int* IN_ARRAY1, int DIM1) {(const int* const idx, int size)};
+      
 %define Property(py, cpp, prop, get, set)
 %feature("shadow") cpp::set %{ %}
 %feature("shadow") cpp::get %{
@@ -79,12 +79,18 @@ Property(DielectricElectric, gmes::DielectricElectric, epsilon, get_epsilon, set
 Property(DielectricMagnetic, gmes::DielectricMagnetic, mu, get_mu, set_mu)
 Property(DummyElectric, gmes::DummyElectric, epsilon, get_epsilon, set_epsilon)
 Property(DummyMagnetic, gmes::DummyMagnetic, mu, get_mu, set_mu)
+Property(ZeroElectric, gmes::ZeroElectric, epsilon, get_epsilon, set_epsilon)
+Property(ZeroMagnetic, gmes::ZeroMagnetic, mu, get_mu, set_mu)
+Property(OneElectric, gmes::OneElectric, epsilon, get_epsilon, set_epsilon)
+Property(OneMagnetic, gmes::OneMagnetic, mu, get_mu, set_mu)
 Property(UPMLElectric, gmes::UPMLElectric, epsilon, get_epsilon, set_epsilon)
 Property(UPMLMagnetic, gmes::UPMLMagnetic, mu, get_mu, set_mu)
 
 // Include the header file to be wrapped
 %include "pointwise_material.hh"
 %include "pointwise_dummy.hh"
+%include "pointwise_zero.hh"
+%include "pointwise_one.hh"
 %include "pointwise_dielectric.hh"
 %include "pointwise_upml.hh"
 %include "pointwise_cpml.hh"
