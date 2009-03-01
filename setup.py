@@ -21,34 +21,42 @@ base = os.getcwd() + '/'
 _pointwise_material = Extension(name = 'gmes._pointwise_material',
                                 sources = ['src/pointwise_material.i',
                                            'src/pointwise_material.cc',
-                                           'src/pointwise_cpml.cc',                                           
+                                           'src/pointwise_cpml.cc',
                                            'src/pointwise_dielectric.cc',
                                            'src/pointwise_dummy.cc',
+                                           'src/pointwise_zero.cc',
+                                           'src/pointwise_one.cc',
                                            'src/pointwise_upml.cc',
-                                           ],
-                                           swig_opts = ['-c++', '-small'],
-                                           language = 'c++',
-                                           include_dirs = [numpy_include],
-                                           extra_compile_args=['-Wall'],
-                                )
+                                           'src/constants.cc'],
+                                depends = ['src/pointwise_material.hh',
+                                           'src/pointwise_cpml.hh',
+                                           'src/pointwise_dielectric.hh',
+                                           'src/pointwise_dummy.hh',
+                                           'src/pointwise_zero.hh',
+                                           'src/pointwise_one.hh',
+                                           'src/pointwise_upml.hh',
+                                           'src/constants.hh'],
+                                include_dirs = [numpy_include],
+                                swig_opts = ['-python', '-c++'],
+                                language = 'c++',
+                                extra_compile_args=[])
 
 # _constants module
 _constants = Extension(name = 'gmes._constants',
                        sources = ['src/constants.i',
-                                  'src/constants.cc',
-                                  ],
-                                  swig_opts = ['-c++', '-small'],
-                                  language = 'c++',
-                                  extra_compile_args=['-Wall'],
-                                  )
+                                  'src/constants.cc'],
+                       depends = ['src/constants.hh'],
+                       include_dirs = [numpy_include],
+                       swig_opts = ['-python', '-c++'],
+                       language = 'c++',
+                       extra_compile_args=[])
 
 setup(name = PACKAGE,
       version = VERSION,
       description = "GIST Maxwell's Equations Solver",
       long_description = """
-      GMES is a python package to solve the Maxwell's equations
-      using the explicit Finite-Difference Time-Domain method.
-      """,
+      GMES is a Python package to solve the Maxwell's equations
+      using the explicit Finite-Difference Time-Domain method.""",
       author = 'Kyungwon Chun',
       author_email = 'kwchun@gist.ac.kr',
       maintainer = 'Kyungwon Chun',
@@ -63,7 +71,5 @@ setup(name = PACKAGE,
 #                    'gmes.show',
 #                    'gmes.sources',
 #                    'gmes.pointwise_material'],
-#      ext_modules = [_pointwise_material,
-#                     _constants],
-      ext_modules = [_pointwise_material],
-      )
+      ext_modules = [_pointwise_material,
+                     _constants])

@@ -105,11 +105,25 @@ enough value instead of numpy.inf.
 
 1. FAQ
 
-1.1. In Windows(TM), Why does the display window freeze when I use 
+1.1. In Windows(TM), why does the display window freeze when I use 
 	FDTD.show_permittivity_* and FDTD.show_* simultaneously?
 
 The Windows version of matplotlib dose not handle the the multiple 
 display windows fluently. The Linux version of matplotlib does not have
 this problem.
 
+1.1. In Windows(TM), the compile command dies with the following error.
+
+g++: build\temp.win32-2.5\Release\src\lib_pointwise_material.a: No such
+file or directory
+
+Comment out the following the third line from 
+C:<Python Folder>\Lib\distutils\cygwinccompiler.py.
+
+# dllwrap uses different options than gcc/ld
+if self.linker_dll == "dllwrap":
+    extra_preargs.extend(["--output-lib", lib_file])
+    # for dllwrap we have to use a special option
+    extra_preargs.extend(["--def", def_file])
+    
 Kyungwon Chun (kwchun@gist.ac.kr)
