@@ -12,14 +12,14 @@
 #include "pointwise_drude.hh"
 %}
 
-// %feature("kwargs");
-
 // Get the NumPy typemaps
 %include "numpy.i"
 
 %init %{
 import_array();
 %}
+
+%feature("compactdefaultargs");
 
 %define %apply_numpy_typemaps(TYPE)
 
@@ -79,20 +79,8 @@ if _newclass:prop = property(eval("_"+__name__.split('.')[-1]).##py##_##get, eva
 Property(PointwiseMaterial, gmes::PointwiseMaterial, i, get_i, set_i)
 Property(PointwiseMaterial, gmes::PointwiseMaterial, j, get_j, set_j)
 Property(PointwiseMaterial, gmes::PointwiseMaterial, k, get_k, set_k)
-Property(DummyElectric, gmes::DummyEelctric, epsilon, get_epsilon, set_epsilon)
-Property(DummyMagnetic, gmes::DummyMagnetic, mu, get_mu, set_mu)
-//Property(CPMLElectric, gmes::CPMLElectric, epsilon, get_epsilon, set_epsilon)
-//Property(CPMLMagnetic, gmes::CPMLMagnetic, mu, get_mu, set_mu)
-//Property(DielectricElectric, gmes::DielectricElectric, epsilon, get_epsilon, set_epsilon)
-//Property(DielectricMagnetic, gmes::DielectricMagnetic, mu, get_mu, set_mu)
-//Property(DummyElectric, gmes::DummyElectric, epsilon, get_epsilon, set_epsilon)
-//Property(DummyMagnetic, gmes::DummyMagnetic, mu, get_mu, set_mu)
-//Property(ZeroElectric, gmes::ZeroElectric, epsilon, get_epsilon, set_epsilon)
-//Property(ZeroMagnetic, gmes::ZeroMagnetic, mu, get_mu, set_mu)
-//Property(OneElectric, gmes::OneElectric, epsilon, get_epsilon, set_epsilon)
-//Property(OneMagnetic, gmes::OneMagnetic, mu, get_mu, set_mu)
-//Property(UPMLElectric, gmes::UPMLElectric, epsilon, get_epsilon, set_epsilon)
-//Property(UPMLMagnetic, gmes::UPMLMagnetic, mu, get_mu, set_mu)
+Property(DummyElectric, gmes::MaterialElectric, epsilon, get_epsilon, set_epsilon)
+Property(DummyMagnetic, gmes::MaterialMagnetic, mu, get_mu, set_mu)
 
 // Include the header file to be wrapped
 %include "pointwise_material.hh"
