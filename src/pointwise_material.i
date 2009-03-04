@@ -19,8 +19,6 @@
 import_array();
 %}
 
-%feature("compactdefaultargs");
-
 %define %apply_numpy_typemaps(TYPE)
 
 %apply (TYPE* IN_ARRAY1, int DIM1)

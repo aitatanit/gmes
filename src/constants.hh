@@ -2,7 +2,6 @@
 #define CONSTANTS_HH_
 
 #include <cmath>
-#include <stdexcept>
 
 namespace gmes
 {
@@ -38,149 +37,222 @@ const double ATTO = 1e-18;
 class Component
 {
 public:
-	Component()
-	{
-		throw std::runtime_error("component classes should be used as a class.");
-	}
+	Component();
 	static int get_tag()
 	{
 		return tag;
 	}
-
-protected:
+private:
 	static const int tag = 0;
 };
 
 class Electric: public Component
 {
-protected:
+public:
+	static int get_tag()
+	{
+		return tag;
+	}
+private:
 	static const int tag = 1;
 };
 
 class Ex: public Electric
 {
-protected:
+public:
+	static int get_tag()
+	{
+		return tag;
+	}
+private:
 	static const int tag = 3;
 };
 
 class Ey: public Electric
 {
-protected:
+public:
+	static int get_tag()
+	{
+		return tag;
+	}
+private:
 	static const int tag = 4;
 };
 
 class Ez: public Electric
 {
-protected:
+public:
+	static int get_tag()
+	{
+		return tag;
+	}
+private:
 	static const int tag = 5;
 };
 
 class Magnetic: public Component
 {
-protected:
+public:
+	static int get_tag()
+	{
+		return tag;
+	}
+private:
 	static const int tag = 2;
 };
 
 class Hx: public Magnetic
 {
-protected:
+public:
+	static int get_tag()
+	{
+		return tag;
+	}
+private:
 	static const int tag = 6;
 };
 
 class Hy: public Magnetic
 {
-protected:
+public:
+	static int get_tag()
+	{
+		return tag;
+	}
+private:
 	static const int tag = 7;
 };
 
 class Hz: public Magnetic
 {
-protected:
+public:
+	static int get_tag()
+	{
+		return tag;
+	}
+private:
 	static const int tag = 8;
 };
 
 class Directional
 {
 public:
-	Directional()
-	{
-		throw std::runtime_error(
-				"directional classes should be used as a class.");
-	}
+	Directional();
 	static int get_tag()
 	{
 		return tag;
 	}
-	static void get_vector(double vector[3])
-	{
-		vector[0] = vector[0];
-		vector[1] = vector[1];
-		vector[2] = vector[2];
-	}
-protected:
-	static const double vector[];
+private:
 	static const int tag = 10;
 };
 
 class X: public Directional
 {
-protected:
-	static const double vector[];
+public:
+	static int get_tag()
+	{
+		return tag;
+	}
+private:
 	static const int tag = 11;
 };
 
 class Y: public Directional
 {
-protected:
-	static const double vector[];
+public:
+	static int get_tag()
+	{
+		return tag;
+	}
+private:
 	static const int tag = 12;
 };
 
 class Z: public Directional
 {
-protected:
-	static const double vector[];
+public:
+	static int get_tag()
+	{
+		return tag;
+	}
+private:
 	static const int tag = 13;
 };
 
 class PlusX: public X
 {
-protected:
+public:
+	static int get_tag()
+	{
+		return tag;
+	}
+	static void get_vector(double vector[3]);
+private:
 	static const double vector[];
 	static const int tag = 14;
 };
 
 class MinusX: public X
 {
-protected:
+public:
+	static int get_tag()
+	{
+		return tag;
+	}
+	static void get_vector(double vector[3]);
+private:
 	static const double vector[];
 	static const int tag = 15;
 };
 
 class PlusY: public Y
 {
-protected:
+public:
+	static int get_tag()
+	{
+		return tag;
+	}
+	static void get_vector(double vector[3]);
+private:
 	static const double vector[];
 	static const int tag = 16;
 };
 
 class MinusY: public Y
 {
-protected:
+public:
+	static int get_tag()
+	{
+		return tag;
+	}
+	static void get_vector(double vector[3]);
+private:
 	static const double vector[];
 	static const int tag = 17;
 };
 
 class PlusZ: public Z
 {
-protected:
+public:
+	static int get_tag()
+	{
+		return tag;
+	}
+	static void get_vector(double vector[3]);
+private:
 	static const double vector[];
 	static const int tag = 18;
 };
 
 class MinusZ: public Z
 {
-protected:
+public:
+	static int get_tag()
+	{
+		return tag;
+	}
+	static void get_vector(double vector[3]);
+private:
 	static const double vector[];
 	static const int tag = 19;
 };
