@@ -10,80 +10,50 @@
 
 using namespace gmes;
 
-DummyElectric::DummyElectric(const int * const idx, int size, double epsilon_r)
-    : PointwiseMaterial(idx, size)
-{
-    epsilon = epsilon_r * epsilon0;
-}
-
-void
-DummyElectric::set_epsilon(double epsilon_r)
-{
-	epsilon = epsilon_r * epsilon0;
-}
-
-void 
-DummyEx::update(double * const ex, int ex_x_size, int ex_y_size, int ex_z_size,
-		     const double * const hz, int hz_x_size, int hz_y_size, int hz_z_size,
-		     const double * const hy, int hy_x_size, int hy_y_size, int hy_z_size,
-		     double dt, double dy, double dz)
+void DummyEx::update(double * const ex, int ex_x_size, int ex_y_size,
+		int ex_z_size, const double * const hz, int hz_x_size, int hz_y_size,
+		int hz_z_size, const double * const hy, int hy_x_size, int hy_y_size,
+		int hy_z_size, double dt, double dy, double dz)
 {
 	return;
 }
 
-void
-DummyEy::update(double * const ey, int ey_x_size, int ey_y_size, int ey_z_size,
-		     const double * const hx, int hx_x_size, int hx_y_size, int hx_z_size,
-		     const double * const hz, int hz_x_size, int hz_y_size, int hz_z_size,
-		     double dt, double dz, double dx)
+void DummyEy::update(double * const ey, int ey_x_size, int ey_y_size,
+		int ey_z_size, const double * const hx, int hx_x_size, int hx_y_size,
+		int hx_z_size, const double * const hz, int hz_x_size, int hz_y_size,
+		int hz_z_size, double dt, double dz, double dx)
 {
 	return;
 }
 
-void
-DummyEz::update(double * const ez, int ez_x_size, int ez_y_size, int ez_z_size,
-		     const double * const hy, int hy_x_size, int hy_y_size, int hy_z_size,
-		     const double * const hx, int hx_x_size, int hx_y_size, int hx_z_size,
-		     double dt, double dx, double dy)
+void DummyEz::update(double * const ez, int ez_x_size, int ez_y_size,
+		int ez_z_size, const double * const hy, int hy_x_size, int hy_y_size,
+		int hy_z_size, const double * const hx, int hx_x_size, int hx_y_size,
+		int hx_z_size, double dt, double dx, double dy)
 {
 	return;
 }
 
-DummyMagnetic::DummyMagnetic(const int * const idx, int size, double mu_r)
-    : PointwiseMaterial(idx, size)
+void DummyHx::update(double * const hx, int hx_x_size, int hx_y_size,
+		int hx_z_size, const double * const ez, int ez_x_size, int ez_y_size,
+		int ez_z_size, const double * const ey, int ey_x_size, int ey_y_size,
+		int ey_z_size, double dt, double dy, double dz)
 {
-    mu = mu_r * mu0;
+	return;
 }
 
-void 
-DummyMagnetic::set_mu(double mu_r)
+void DummyHy::update(double * const hy, int hy_x_size, int hy_y_size,
+		int hy_z_size, const double * const ex, int ex_x_size, int ex_y_size,
+		int ex_z_size, const double * const ez, int ez_x_size, int ez_y_size,
+		int ez_z_size, double dt, double dz, double dx)
 {
-	mu = mu_r * mu0;
+	return;
 }
 
-void
-DummyHx::update(double * const hx, int hx_x_size, int hx_y_size, int hx_z_size,
-			 const double * const ez, int ez_x_size, int ez_y_size, int ez_z_size,
-		     const double * const ey, int ey_x_size, int ey_y_size, int ey_z_size,
-		     double dt, double dy, double dz)
+void DummyHz::update(double * const hz, int hz_x_size, int hz_y_size,
+		int hz_z_size, const double * const ey, int ey_x_size, int ey_y_size,
+		int ey_z_size, const double * const ex, int ex_x_size, int ex_y_size,
+		int ex_z_size, double dt, double dx, double dy)
 {
-    return;
-}
-
-void
-DummyHy::update(double * const hy, int hy_x_size, int hy_y_size, int hy_z_size,
-		     const double * const ex, int ex_x_size, int ex_y_size, int ex_z_size,
-		     const double * const ez, int ez_x_size, int ez_y_size, int ez_z_size,
-		     double dt, double dz, double dx)
-{
-    return;
-}
-
-void
-DummyHz::update(double * const hz, int hz_x_size, int hz_y_size, int hz_z_size,
-		     const double * const ey, int ey_x_size, int ey_y_size, int ey_z_size,
-		     const double * const ex, int ex_x_size, int ex_y_size, int ex_z_size,
-		     double dt, double dx, double dy)
-{
-    return;
+	return;
 }

@@ -558,3 +558,55 @@ class CPML(PML):
         pw_obj = CPMLHz(idx, underneath.mu_r, bx, by, cx, cy, kappax, kappay)
         return pw_obj
         
+        
+class Drude(Dielectric):
+    """
+    
+    """
+    def __init__(self, epsilon_inf, omega_p, gamma_p, mu_r=1):
+        """
+        Arguments:
+            epsilon_inf: relative permittivity at infinite frequency
+            omega_p: the pole resonant frequency 
+            gamma_p: the inverse of the pole relaxation time
+            mu_r: relative magnetic permeability
+        """
+        Dielectric.__init__(self, epsilon_r=epsilon_inf, mu_r=mu_r)
+        self.omega_p = array(omega_p, float)
+        self.gamma_p = array(gamma_p, float)
+    
+    def display_info(self, indent=0):
+        """Display the parameter values.
+        
+        """
+        print " " * indent, "Drude dispersion media"
+        print " " * indent, 
+        print "infinite permittivity:", self.epsilon_r,
+        print "plasma frequency:", self.omega_p
+        print "relaxation frequency:", self.gamma_p
+        print "relative permeability:", self.mu_r
+         
+    def get_pointwise_material_ex(self, idx, coords, underneath=None):
+        pw_obj = DrudeEx(idx, self.epsilon_r, self.omega_p, self.gamma_p)
+        return pw_obj
+
+    def get_pointwise_material_ey(self, idx, coords, underneath=None):
+        pw_obj = DrudeEy(idx, self.epsilon_r, self.omega_p, self.gamma_p)
+        return pw_obj
+    
+    def get_pointwise_material_ez(self, idx, coords, underneath=None):
+        pw_obj = DrudeEz(idx, self.epsilon_r, self.omega_p, self.gamma_p)
+        return pw_obj
+    
+    def get_pointwise_material_hx(self, idx, coords, underneath=None):
+        pw_obj = DrudeHx(idx, self.mu_r)
+        return pw_obj
+    
+    def get_pointwise_material_hy(self, idx, coords, underneath=None):
+        pw_obj = DrudeHy(idx, self.mu_r)
+        return pw_obj
+    
+    def get_pointwise_material_hz(self, idx, coords, underneath=None):
+        pw_obj = DrudeHz(idx, self.mu_r)
+        return pw_obj
+    

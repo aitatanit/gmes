@@ -1,14 +1,15 @@
 #ifndef CONSTANTS_HH_
+#define CONSTANTS_HH_
+
 #include <cmath>
 #include <stdexcept>
 
-namespace gmes {
+namespace gmes
+{
 // physical constants
 
 // Vaccum permittivity
 // const double epsilon0 = 8.854187817e-12; // in SI unit (Ampere Second / Meter / Vol)
-#define CONSTANTS_HH_
-
 const double epsilon0 = 1.0; // normalized
 
 // Vacuum permeability
@@ -34,12 +35,15 @@ const double PICO = 1e-12;
 const double FEMTO = 1e-15;
 const double ATTO = 1e-18;
 
-class Component {
+class Component
+{
 public:
-	Component() {
+	Component()
+	{
 		throw std::runtime_error("component classes should be used as a class.");
 	}
-	static int get_tag() {
+	static int get_tag()
+	{
 		return tag;
 	}
 
@@ -47,56 +51,68 @@ protected:
 	static const int tag = 0;
 };
 
-class Electric: public Component {
+class Electric: public Component
+{
 protected:
 	static const int tag = 1;
 };
 
-class Ex: public Electric {
+class Ex: public Electric
+{
 protected:
 	static const int tag = 3;
 };
 
-class Ey: public Electric {
+class Ey: public Electric
+{
 protected:
 	static const int tag = 4;
 };
 
-class Ez: public Electric {
+class Ez: public Electric
+{
 protected:
 	static const int tag = 5;
 };
 
-class Magnetic: public Component {
+class Magnetic: public Component
+{
 protected:
 	static const int tag = 2;
 };
 
-class Hx: public Magnetic {
+class Hx: public Magnetic
+{
 protected:
 	static const int tag = 6;
 };
 
-class Hy: public Magnetic {
+class Hy: public Magnetic
+{
 protected:
 	static const int tag = 7;
 };
 
-class Hz: public Magnetic {
+class Hz: public Magnetic
+{
 protected:
 	static const int tag = 8;
 };
 
-class Directional {
+class Directional
+{
 public:
-	Directional() {
+	Directional()
+	{
 		throw std::runtime_error(
 				"directional classes should be used as a class.");
 	}
-	static int get_tag() {
+	static int get_tag()
+	{
 		return tag;
 	}
-	static void get_vector(double vector[3]) {
+	static void get_vector(double vector[3])
+	{
 		vector[0] = vector[0];
 		vector[1] = vector[1];
 		vector[2] = vector[2];
@@ -106,55 +122,64 @@ protected:
 	static const int tag = 10;
 };
 
-class X: public Directional {
+class X: public Directional
+{
 protected:
 	static const double vector[];
 	static const int tag = 11;
 };
 
-class Y: public Directional {
+class Y: public Directional
+{
 protected:
 	static const double vector[];
 	static const int tag = 12;
 };
 
-class Z: public Directional {
+class Z: public Directional
+{
 protected:
 	static const double vector[];
 	static const int tag = 13;
 };
 
-class PlusX: public X {
+class PlusX: public X
+{
 protected:
 	static const double vector[];
 	static const int tag = 14;
 };
 
-class MinusX: public X {
+class MinusX: public X
+{
 protected:
 	static const double vector[];
 	static const int tag = 15;
 };
 
-class PlusY: public Y {
+class PlusY: public Y
+{
 protected:
 	static const double vector[];
 	static const int tag = 16;
 };
 
-class MinusY: public Y {
+class MinusY: public Y
+{
 protected:
 	static const double vector[];
 	static const int tag = 17;
 };
 
-class PlusZ: public Z {
+class PlusZ: public Z
+{
 protected:
 	static const double vector[];
 	static const int tag = 18;
 };
 
-class MinusZ: public Z {
+class MinusZ: public Z
+{
 protected:
 	static const double vector[];
 	static const int tag = 19;

@@ -1,5 +1,4 @@
 #include "pointwise_zero.hh"
-#include "constants.hh"
 
 #define ex(i,j,k) ex[((i)*ex_y_size+(j))*ex_z_size+(k)]
 #define ey(i,j,k) ey[((i)*ey_y_size+(j))*ey_z_size+(k)]
@@ -10,80 +9,50 @@
 
 using namespace gmes;
 
-ZeroElectric::ZeroElectric(const int * const idx, int size, double epsilon_r)
-    : PointwiseMaterial(idx, size)
+void ZeroEx::update(double * const ex, int ex_x_size, int ex_y_size,
+		int ex_z_size, const double * const hz, int hz_x_size, int hz_y_size,
+		int hz_z_size, const double * const hy, int hy_x_size, int hy_y_size,
+		int hy_z_size, double dt, double dy, double dz)
 {
-    epsilon = epsilon_r * epsilon0;
+	ex(i,j,k) = 0.;
 }
 
-void
-ZeroElectric::set_epsilon(double epsilon_r)
+void ZeroEy::update(double * const ey, int ey_x_size, int ey_y_size,
+		int ey_z_size, const double * const hx, int hx_x_size, int hx_y_size,
+		int hx_z_size, const double * const hz, int hz_x_size, int hz_y_size,
+		int hz_z_size, double dt, double dz, double dx)
 {
-    epsilon = epsilon_r * epsilon0;
+	ey(i,j,k) = 0.;
 }
 
-void
-ZeroEx::update(double * const ex, int ex_x_size, int ex_y_size, int ex_z_size,
-		     const double * const hz, int hz_x_size, int hz_y_size, int hz_z_size,
-		     const double * const hy, int hy_x_size, int hy_y_size, int hy_z_size,
-		     double dt, double dy, double dz)
+void ZeroEz::update(double * const ez, int ez_x_size, int ez_y_size,
+		int ez_z_size, const double * const hy, int hy_x_size, int hy_y_size,
+		int hy_z_size, const double * const hx, int hx_x_size, int hx_y_size,
+		int hx_z_size, double dt, double dx, double dy)
 {
-    ex(i,j,k) = 0;
+	ez(i,j,k) = 0.;
 }
 
-void
-ZeroEy::update(double * const ey, int ey_x_size, int ey_y_size, int ey_z_size,
-		     const double * const hx, int hx_x_size, int hx_y_size, int hx_z_size,
-		     const double * const hz, int hz_x_size, int hz_y_size, int hz_z_size,
-		     double dt, double dz, double dx)
+void ZeroHx::update(double * const hx, int hx_x_size, int hx_y_size,
+		int hx_z_size, const double * const ez, int ez_x_size, int ez_y_size,
+		int ez_z_size, const double * const ey, int ey_x_size, int ey_y_size,
+		int ey_z_size, double dt, double dy, double dz)
 {
-    ey(i,j,k) = 0;
+	hx(i,j,k) = 0.;
 }
 
-void
-ZeroEz::update(double * const ez, int ez_x_size, int ez_y_size, int ez_z_size,
-		     const double * const hy, int hy_x_size, int hy_y_size, int hy_z_size,
-		     const double * const hx, int hx_x_size, int hx_y_size, int hx_z_size,
-		     double dt, double dx, double dy)
+void ZeroHy::update(double * const hy, int hy_x_size, int hy_y_size,
+		int hy_z_size, const double * const ex, int ex_x_size, int ex_y_size,
+		int ex_z_size, const double * const ez, int ez_x_size, int ez_y_size,
+		int ez_z_size, double dt, double dz, double dx)
 {
-    ez(i,j,k) = 0;
+	hy(i,j,k) = 0.;
 }
 
-ZeroMagnetic::ZeroMagnetic(const int * const idx, int size, double mu_r)
-    : PointwiseMaterial(idx, size)
+void ZeroHz::update(double * const hz, int hz_x_size, int hz_y_size,
+		int hz_z_size, const double * const ey, int ey_x_size, int ey_y_size,
+		int ey_z_size, const double * const ex, int ex_x_size, int ex_y_size,
+		int ex_z_size, double dt, double dx, double dy)
 {
-    mu = mu_r * mu0;
-}
-
-void
-ZeroMagnetic::set_mu(double mu_r)
-{
-    mu = mu_r * mu0;
-}
-
-void
-ZeroHx::update(double * const hx, int hx_x_size, int hx_y_size, int hx_z_size,
-		     const double * const ez, int ez_x_size, int ez_y_size, int ez_z_size,
-		     const double * const ey, int ey_x_size, int ey_y_size, int ey_z_size,
-		     double dt, double dy, double dz)
-{
-    hx(i,j,k) = 0;
-}
-
-void
-ZeroHy::update(double * const hy, int hy_x_size, int hy_y_size, int hy_z_size,
-		     const double * const ex, int ex_x_size, int ex_y_size, int ex_z_size,
-		     const double * const ez, int ez_x_size, int ez_y_size, int ez_z_size,
-		     double dt, double dz, double dx)
-{
-    hy(i,j,k) = 0;
-}
-
-void
-ZeroHz::update(double * const hz, int hz_x_size, int hz_y_size, int hz_z_size,
-		     const double * const ey, int ey_x_size, int ey_y_size, int ey_z_size,
-		     const double * const ex, int ex_x_size, int ex_y_size, int ex_z_size,
-		     double dt, double dx, double dy)
-{
-    hz(i,j,k) = 0;
+	hz(i,j,k) = 0.;
 }
