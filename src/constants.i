@@ -14,70 +14,90 @@ import_array();
 
 %apply (double ARGOUT_ARRAY1[ANY]) {(double vector[3])};
 
+%rename(_component) gmes::Component;
+%rename(_electric) gmes::Electric;
+%rename(_ex) gmes::Ex;
+%rename(_ey) gmes::Ey;
+%rename(_ez) gmes::Ez;
+%rename(_magnetic) gmes::Magnetic;
+%rename(_hx) gmes::Hx;
+%rename(_hy) gmes::Hy;
+%rename(_hz) gmes::Hz;
+%rename(_directional) gmes::Directional;
+%rename(_x) gmes::X;
+%rename(_y) gmes::Y;
+%rename(_z) gmes::Z;
+%rename(_plus_x) gmes::PlusX;
+%rename(_plus_y) gmes::PlusY;
+%rename(_plus_z) gmes::PlusZ;
+%rename(_minus_x) gmes::MinusX;
+%rename(_minus_y) gmes::MinusY;
+%rename(_minus_z) gmes::MinusZ;
+
 // Include the header file to be wrapped
 %include "constants.hh"
 
 %pythoncode %{
-class Component(Component):
-    tag = Component_get_tag()
+class Component(_component):
+    tag = _component_get_tag()
+	
+class Electric(Component):
+    tag = _electric_get_tag()
     
-class Electric(Electric):
-    tag = Electric_get_tag()
+class Ex(Electric):
+    tag = _ex_get_tag()
     
-class Ex(Ex):
-    tag = Ex_get_tag()
+class Ey(Electric):
+    tag = _ey_get_tag()
     
-class Ey(Ey):
-    tag = Ey_get_tag()
+class Ez(Electric):
+    tag = _ez_get_tag()
     
-class Ez(Ez):
-    tag = Ez_get_tag()
+class Magnetic(Component):
+    tag = _magnetic_get_tag()
     
-class Magnetic(Magnetic):
-    tag = Magnetic_get_tag()
+class Hx(Magnetic):
+    tag = _hx_get_tag()
     
-class Hx(Hx):
-    tag = Hx_get_tag()
+class Hy(Magnetic):
+    tag = _hy_get_tag()
     
-class Hy(Hy):
-    tag = Hy_get_tag()
+class Hz(Magnetic):
+    tag = _hz_get_tag()
     
-class Hz(Hz):
-    tag = Hz_get_tag()
+class Directional(_directional):
+    tag = _directional_get_tag()
     
-#class Directional(Directional):
-#    tag = Directional_get_tag()
+class X(Directional):
+    tag = _x_get_tag()
     
-class X(X):
-    tag = X_get_tag()
+class Y(Directional):
+    tag = _y_get_tag()
     
-class Y(Y):
-    tag = Y_get_tag()
+class Z(Directional):
+    tag = _z_get_tag()
     
-class Z(Z):
-    tag = Z_get_tag()
+class PlusX(X):
+    tag = _plus_x_get_tag()
+    vector = _plus_x_get_vector()
     
-class PlusX(PlusX):
-    tag = PlusX_get_tag()
-    vector = PlusX_get_vector()
+class MinusX(X):
+    tag = _minus_x_get_tag()
+    vector = _minus_x_get_vector()
     
-class MinusX(MinusX):
-    tag = MinusX_get_tag()
-    vector = MinusX_get_vector()
+class PlusY(Y):
+    tag = _plus_y_get_tag()
+    vector = _plus_y_get_vector()
     
-class PlusY(PlusY):
-    tag = PlusY_get_tag()
-    vector = PlusY_get_vector()
+class MinusY(Y):
+    tag = _minus_y_get_tag()
+    vector = _minus_y_get_vector()
     
-class MinusY(MinusY):
-    tag = MinusY_get_tag()
-    vector = MinusY_get_vector()
+class PlusZ(Z):
+    tag = _plus_z_get_tag()
+    vector = _plus_z_get_vector()
     
-class PlusZ(PlusZ):
-    tag = PlusZ_get_tag()
-    vector = PlusZ_get_vector()
-    
-class MinusZ(MinusZ):
-    tag = MinusZ_get_tag()
-    vector = MinusZ_get_vector()
+class MinusZ(Z):
+    tag = _minus_z_get_tag()
+    vector = _minus_z_get_vector()
 %}
