@@ -74,7 +74,7 @@ class FDTD(object):
             print "done."
             
         if verbose:
-            print "The geometric tree follows ..."
+            print "The geometric tree follows..."
             self.geom_tree.display_info()
             
         if verbose:
@@ -88,7 +88,7 @@ class FDTD(object):
             print "done."
             
         if verbose:
-            print "The source list information follows ..."
+            print "The source list information follows..."
             for so in self.src_list:
                 so.display_info()
                 
@@ -890,7 +890,6 @@ class FDTD(object):
             xlabel, ylabel= 'z', 'x'
             
         elif axis is const.Z:
-            print 'DEBUG:', 'DEBUG:'
             low = idx_to_spc(0, 0, 0)
             high_idx = [i - 1 for i in material.shape]
             high = idx_to_spc(high_idx)

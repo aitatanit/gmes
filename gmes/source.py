@@ -18,14 +18,28 @@ from geometry import Cartesian, DefaultMaterial, Boundary, in_range
 from fdtd import TEMzFDTD
 from material import Dielectric, CPML
 
+#
+# SrcTime: Continuous, Bandpass
+# Src: Dipole, GaussianBeam
+#
+
 
 class SrcTime(object):
     """Time-dependent part of a source.
     
     """
-    pass
+    def display_info(self, indent=0):
+        pass
     
+
+class Src(object):
+    """Space-dependent part of a source.
     
+    """
+    def display_info(self, indent=0):
+        pass
+    
+        
 class Continuous(SrcTime):
     """Continuous (CW) source with (optional) slow turn-on and/or turn-off.
     
@@ -40,7 +54,16 @@ class Continuous(SrcTime):
             self.width = 3 / self.freq
         else:
             self.width = float(width)
-        
+
+    def display_info(self, indent=0):
+        print " " * indent, "continuous source"
+        print " " * indent,
+        print "frequency:", self.freq,
+        print "initial phase advance:", self.phase,
+        print "start time:", self.start,
+        print "end time:", self.end,
+        print "raising duration:", self.width
+                
     def dipole(self, time):
         ts = time - self.start
         te = self.end - time
@@ -56,19 +79,10 @@ class Continuous(SrcTime):
             env = 1
             
         return env * cos(2 * pi * self.freq * time - self.phase)
-    
-    def display_info(self, indent=0):
-        print " " * indent, "continuous source"
-        print " " * indent,
-        print "frequency:", self.freq,
-        print "initial phase advance:", self.phase,
-        print "start time:", self.start,
-        print "end time:", self.end,
-        print "raising duration:", self.width
 
 
 class Bandpass(SrcTime):
-    """Gaussian-envelope source.
+    """a pulse source with Gaussian-envelope
     
     """
     def __init__(self, freq, fwidth):
@@ -85,12 +99,6 @@ class Bandpass(SrcTime):
         if self.peak - self.cutoff < 0:
             self.peak += self.cutoff - self.peak
     
-    def dipole(self, time):
-        tt = time - self.peak
-        if (abs(tt) > self.cutoff): return 0.0
-
-        return exp(-.5 * (tt * self.fwidth)**2) * cos(2 * pi * self.freq * time)
-    
     def display_info(self, indent=0):
         print " " * indent, "bandpass source"
         print " " * indent,
@@ -98,9 +106,15 @@ class Bandpass(SrcTime):
         print "bandwidth:", self.fwidth,
         print "peak time:", self.peak
         print "cutoff:", self.cutoff
+            
+    def dipole(self, time):
+        tt = time - self.peak
+        if (abs(tt) > self.cutoff): return 0.0
+
+        return exp(-.5 * (tt * self.fwidth)**2) * cos(2 * pi * self.freq * time)
         
         
-class Dipole(object):
+class Dipole(Src):
     def __init__(self, src_time, pos, component, amp=1):
         self.pos = array(pos, float)
         self.comp = component
@@ -110,6 +124,14 @@ class Dipole(object):
     def init(self, geom_tree, space):
         pass
     
+    def display_info(self, indent=0):
+        print " " * indent, "Hertzian dipole source:"
+        print " " * indent, "center:", self.pos
+        print " " * indent, "polarization direction:", self.comp
+        print " " * indent, "maximum amp.:", self.amp
+        
+        self.src_time.display_info(4)
+        
     def set_pointwise_source_ex(self, material_ex, space):
         if self.comp is const.Ex:
             idx = space.space_to_ex_index(self.pos)
@@ -153,7 +175,7 @@ class Dipole(object):
                                             space.dt, self.amp)
 
 
-class TotalFieldScatteredField(object):
+class TotalFieldScatteredField(Src):
     def __init__(self, theta, phi, psi, low, high):
         self.theta = float(theta)
         self.phi = float(theta)
@@ -165,7 +187,7 @@ class TotalFieldScatteredField(object):
         pass
     
     
-class GaussianBeam(object):
+class GaussianBeam(Src):
     """Launch a transparent Gaussian beam.
     
     It works as a guided mode with Gaussian profile is launched through the incidence interface.
@@ -173,7 +195,7 @@ class GaussianBeam(object):
     interface plane.
     
     """
-    def __init__(self, src_time, directivity, center, size, direction, polarization, width=inf, amp=1):
+    def __init__(self, src_time, directivity, center, size, direction, polarization, waist=inf, amp=1):
         """
         
         Arguments:
@@ -183,7 +205,7 @@ class GaussianBeam(object):
             direction -- propagation direction of the beam.
             freq -- oscillating frequency of the beam.
             polarization -- electric field direction of the beam.
-            width -- the Gaussian beam radius. The default is inf.
+            waist -- the Gaussian beam radius. The default is inf.
             amp -- amplitude of the plane wave. The default is 1.
             
         """
@@ -208,13 +230,24 @@ class GaussianBeam(object):
         self.h_direction = cross(self.k, self.e_direction)
         
         # spot size of Gaussian beam
-        self.width = float(width)
+        self.waist = float(waist)
         
         # maximum amplitude of stimulus
         self.amp = float(amp)
         
     def init(self, geom_tree, space):
         self.geom_tree = geom_tree
+        
+    def display_info(self, indent=0):
+        print " " * indent, "Gaussian beam source:"
+        print " " * indent, "propagation direction:", self.k
+        print " " * indent, "center:", self.center
+        print " " * indent, "source plane size:", self.size 
+        print " " * indent, "polarization direction:", self.e_direction
+        print " " * indent, "beam waist:", self.waist
+        print " " * indent, "maximum amp.:", self.amp
+        
+        self.src_time.display_info(4)
         
     def _get_wave_number(self, k, epsilon_r, mu_r, space):
         """Return the numerical wave number for auxiliary fdtd.
@@ -247,10 +280,10 @@ class GaussianBeam(object):
     def _get_aux_fdtd(self, epsilon_r, mu_r, dz, dt):
         border = self.center + self.size
         aux_long_size = \
-        2 * self._dist_from_center_along_aux_fdtd(border) + 30 * dz
+        2 * abs(self._dist_from_center_along_aux_fdtd(border)) + 30 * dz
         src_pnt = (0, 0, -self._dist_from_center_along_aux_fdtd(border) - 5 * dz)        
         aux_size = (0 , 0, aux_long_size)
-
+        
         aux_space = Cartesian(size=aux_size, 
                               resolution=1./dz, 
                               dt=dt, 
@@ -310,7 +343,7 @@ class GaussianBeam(object):
                         point = space.ex_index_to_space(i, j, k)
                         
                         r = self._dist_from_beam_axis(point)
-                        amp = cosine * self.amp * exp(-(r / self.width)**2)
+                        amp = cosine * self.amp * exp(-(r / self.waist)**2)
                         
                         mat_objs = self.geom_tree.material_of_point(point)
                         epsilon_r = mat_objs[0].epsilon_r
@@ -375,7 +408,7 @@ class GaussianBeam(object):
                         point = space.ey_index_to_space(i, j, k)
                         
                         r = self._dist_from_beam_axis(point)
-                        amp = cosine * self.amp * exp(-(r / self.width)**2)
+                        amp = cosine * self.amp * exp(-(r / self.waist)**2)
                         
                         mat_objs = self.geom_tree.material_of_point(point)
                         epsilon_r = mat_objs[0].epsilon_r
@@ -440,7 +473,7 @@ class GaussianBeam(object):
                         point = space.ez_index_to_space(i, j, k)
                         
                         r = self._dist_from_beam_axis(point)
-                        amp = cosine * self.amp * exp(-(r / self.width)**2)
+                        amp = cosine * self.amp * exp(-(r / self.waist)**2)
                         
                         mat_objs = self.geom_tree.material_of_point(point)
                         epsilon_r = mat_objs[0].epsilon_r
@@ -532,7 +565,7 @@ class GaussianBeam(object):
                                                       aux_dz, space.dt)
                         
                         r = self._dist_from_beam_axis(point)
-                        amp = cosine * self.amp * exp(-(r / self.width)**2) 
+                        amp = cosine * self.amp * exp(-(r / self.waist)**2) 
                         
                         samp_pnt = \
                         (0, 0, self._dist_from_center_along_aux_fdtd(point))
@@ -618,7 +651,7 @@ class GaussianBeam(object):
                                                       aux_dz, space.dt)
                         
                         r = self._dist_from_beam_axis(point)
-                        amp = cosine * self.amp * exp(-(r / self.width)**2)
+                        amp = cosine * self.amp * exp(-(r / self.waist)**2)
                         
                         samp_pnt = \
                         (0, 0, self._dist_from_center_along_aux_fdtd(point))
@@ -704,7 +737,7 @@ class GaussianBeam(object):
                                                       aux_dz, space.dt)
                         
                         r = self._dist_from_beam_axis(point)
-                        amp = cosine * self.amp * exp(-(r / self.width)**2)
+                        amp = cosine * self.amp * exp(-(r / self.waist)**2)
                         
                         samp_pnt = \
                         (0, 0, self._dist_from_center_along_aux_fdtd(point))
