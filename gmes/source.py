@@ -249,7 +249,7 @@ class GaussianBeam(Src):
         
         self.src_time.display_info(4)
         
-    def _get_wave_number(self, k, epsilon_r, mu_r, space):
+    def _get_wave_number(self, k, epsilon_r, mu_r, space, error=1.e-3):
         """Return the numerical wave number for auxiliary fdtd.
         
         Arguments:
@@ -261,18 +261,18 @@ class GaussianBeam(Src):
         """
         ds = array((space.dx, space.dy, space.dz))
         dt = space.dt
-        k1_scalar = 0
-        k2_scalar = 1
+        k1_scalar = inf
+        k2_scalar = 2 * pi * self.src_time.freq
         
-        while k2_scalar - k1_scalar > 0.1:
+        while abs(k2_scalar - k1_scalar) > error:
             k1_scalar = k2_scalar
             
-            numerator = 2 * (sum(((sin(.5 * k1_scalar * k * ds) / ds)**2)) -
-                             epsilon_r * mu_r * 
-                             (sin(pi * self.src_time.freq * dt) / dt)**2)
-            denominator = sum(k1_scalar * sin(k1_scalar * k * ds) / ds)
+            f = (sum(((sin(.5 * k1_scalar * k * ds) / ds)**2)) - 
+                         sqrt(epsilon_r * mu_r) * 
+                         (sin(pi * self.src_time.freq * dt) / dt / const.c0)**2)
+            f_prime = .5 * sum(k * sin(k1_scalar * k * ds) / ds)
             
-            k2_scalar = k1_scalar - numerator / denominator
+            k2_scalar = k1_scalar - f / f_prime
             
         return k2_scalar
     
@@ -355,7 +355,7 @@ class GaussianBeam(Src):
                         
                         # v_in_axis / v_in_k
                         v_ratio = \
-                        self._get_wave_number(self.k, epsilon_r, mu_r, space) /\
+                        self._get_wave_number(self.k, epsilon_r, mu_r, space) / \
                         self._get_wave_number(in_axis_k, epsilon_r, mu_r, space)
                                                 
                         material_ex[i,j,k] = TransparentEx(material_ex[i,j,k], 
@@ -418,14 +418,14 @@ class GaussianBeam(Src):
                         
                         # v_in_axis / v_in_k
                         v_ratio = \
-                        self._get_wave_number(self.k, epsilon_r, mu_r, space) /\
+                        self._get_wave_number(self.k, epsilon_r, mu_r, space) / \
                         self._get_wave_number(in_axis_k, epsilon_r, mu_r, space)
                         
                         material_ey[i,j,k] = TransparentEy(material_ey[i,j,k], 
                                                            epsilon_r, amp, 
                                                            aux_fdtd, samp_pnt,
                                                            v_ratio)
-
+                        
     def set_pointwise_source_ez(self, material_ez, space):
         cosine = dot(self.e_direction, (0, 0, 1))
         
@@ -481,14 +481,14 @@ class GaussianBeam(Src):
                         
                         # v_in_axis / v_in_k
                         v_ratio = \
-                        self._get_wave_number(self.k, epsilon_r, mu_r, space) /\
+                        self._get_wave_number(self.k, epsilon_r, mu_r, space) / \
                         self._get_wave_number(in_axis_k, epsilon_r, mu_r, space)
                                                 
                         material_ez[i,j,k] = TransparentEz(material_ez[i,j,k], 
                                                            epsilon_r, amp, 
                                                            aux_fdtd, samp_pnt,
                                                            v_ratio)
-
+                        
     def set_pointwise_source_hx(self, material_hx, space):
         cosine = dot(self.h_direction, (1, 0, 0))
         
@@ -565,7 +565,7 @@ class GaussianBeam(Src):
                         
                         # v_in_axis / v_in_k
                         v_ratio = \
-                        self._get_wave_number(self.k, epsilon_r, mu_r, space) /\
+                        self._get_wave_number(self.k, epsilon_r, mu_r, space) / \
                         self._get_wave_number(in_axis_k, epsilon_r, mu_r, space)
                                                 
                         material_hx[i,j,k] = TransparentHx(material_hx[i,j,k], 
@@ -649,7 +649,7 @@ class GaussianBeam(Src):
                         
                         # v_in_axis / v_in_k
                         v_ratio = \
-                        self._get_wave_number(self.k, epsilon_r, mu_r, space) /\
+                        self._get_wave_number(self.k, epsilon_r, mu_r, space) / \
                         self._get_wave_number(in_axis_k, epsilon_r, mu_r, space)
                                                 
                         material_hy[i,j,k] = TransparentHy(material_hy[i,j,k], 
@@ -733,7 +733,7 @@ class GaussianBeam(Src):
                         
                         # v_in_axis / v_in_k
                         v_ratio = \
-                        self._get_wave_number(self.k, epsilon_r, mu_r, space) /\
+                        self._get_wave_number(self.k, epsilon_r, mu_r, space) / \
                         self._get_wave_number(in_axis_k, epsilon_r, mu_r, space)
                         
                         material_hz[i,j,k] = TransparentHz(material_hz[i,j,k],
