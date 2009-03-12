@@ -259,8 +259,7 @@ class GaussianBeam(Src):
             space -- Cartesian instance
             
         """
-        k = array(k, float)
-        dx = array((space.dx, space.dy, space.dz))
+        ds = array((space.dx, space.dy, space.dz))
         dt = space.dt
         k1_scalar = 0
         k2_scalar = 1
@@ -268,20 +267,20 @@ class GaussianBeam(Src):
         while k2_scalar - k1_scalar > 0.1:
             k1_scalar = k2_scalar
             
-            numerator = 2 * (sum(((sin(.5 * k1_scalar * k * dx) / dx)**2)) -
+            numerator = 2 * (sum(((sin(.5 * k1_scalar * k * ds) / ds)**2)) -
                              epsilon_r * mu_r * 
                              (sin(pi * self.src_time.freq * dt) / dt)**2)
-            denominator = sum(k1_scalar * sin(k1_scalar * k * dx) / dx)
+            denominator = sum(k1_scalar * sin(k1_scalar * k * ds) / ds)
             
             k2_scalar = k1_scalar - numerator / denominator
             
         return k2_scalar
     
     def _get_aux_fdtd(self, epsilon_r, mu_r, dz, dt):
-        border = self.center + self.size
+        border = self.center + .5 * self.size
         aux_long_size = \
         2 * abs(self._dist_from_center_along_aux_fdtd(border)) + 30 * dz
-        src_pnt = (0, 0, -self._dist_from_center_along_aux_fdtd(border) - 5 * dz)        
+        src_pnt = (0, 0, -self._dist_from_center_along_aux_fdtd(border) - 5 * dz)
         aux_size = (0 , 0, aux_long_size)
         
         aux_space = Cartesian(size=aux_size, 
@@ -335,7 +334,7 @@ class GaussianBeam(Src):
             
         else:
             return None
-        
+            
         for i in xrange(low_idx[0], high_idx[0]):
             for j in xrange(low_idx[1], high_idx[1]):
                 for k in xrange(low_idx[2], high_idx[2]):
@@ -343,7 +342,7 @@ class GaussianBeam(Src):
                         point = space.ex_index_to_space(i, j, k)
                         
                         r = self._dist_from_beam_axis(point)
-                        amp = cosine * self.amp * exp(-(r / self.waist)**2)
+                        amp = cosine * self.amp / exp((r / self.waist)**2)
                         
                         mat_objs = self.geom_tree.material_of_point(point)
                         epsilon_r = mat_objs[0].epsilon_r
@@ -360,10 +359,8 @@ class GaussianBeam(Src):
                         self._get_wave_number(in_axis_k, epsilon_r, mu_r, space)
                                                 
                         material_ex[i,j,k] = TransparentEx(material_ex[i,j,k], 
-                                                           epsilon_r,
-                                                           amp, 
-                                                           aux_fdtd, 
-                                                           samp_pnt,
+                                                           epsilon_r, amp, 
+                                                           aux_fdtd, samp_pnt,
                                                            v_ratio)
         
     def set_pointwise_source_ey(self, material_ey, space):
@@ -400,7 +397,7 @@ class GaussianBeam(Src):
             
         else:
             return None
-        
+            
         for i in xrange(low_idx[0], high_idx[0]):
             for j in xrange(low_idx[1], high_idx[1]):
                 for k in xrange(low_idx[2], high_idx[2]):
@@ -408,7 +405,7 @@ class GaussianBeam(Src):
                         point = space.ey_index_to_space(i, j, k)
                         
                         r = self._dist_from_beam_axis(point)
-                        amp = cosine * self.amp * exp(-(r / self.waist)**2)
+                        amp = cosine * self.amp / exp((r / self.waist)**2)
                         
                         mat_objs = self.geom_tree.material_of_point(point)
                         epsilon_r = mat_objs[0].epsilon_r
@@ -425,10 +422,8 @@ class GaussianBeam(Src):
                         self._get_wave_number(in_axis_k, epsilon_r, mu_r, space)
                         
                         material_ey[i,j,k] = TransparentEy(material_ey[i,j,k], 
-                                                           epsilon_r, 
-                                                           amp, 
-                                                           aux_fdtd, 
-                                                           samp_pnt,
+                                                           epsilon_r, amp, 
+                                                           aux_fdtd, samp_pnt,
                                                            v_ratio)
 
     def set_pointwise_source_ez(self, material_ez, space):
@@ -465,7 +460,7 @@ class GaussianBeam(Src):
             
         else:
             return None
-        
+            
         for i in xrange(low_idx[0], high_idx[0]):
             for j in xrange(low_idx[1], high_idx[1]):
                 for k in xrange(low_idx[2], high_idx[2]):
@@ -473,7 +468,7 @@ class GaussianBeam(Src):
                         point = space.ez_index_to_space(i, j, k)
                         
                         r = self._dist_from_beam_axis(point)
-                        amp = cosine * self.amp * exp(-(r / self.waist)**2)
+                        amp = cosine * self.amp / exp((r / self.waist)**2)
                         
                         mat_objs = self.geom_tree.material_of_point(point)
                         epsilon_r = mat_objs[0].epsilon_r
@@ -490,10 +485,8 @@ class GaussianBeam(Src):
                         self._get_wave_number(in_axis_k, epsilon_r, mu_r, space)
                                                 
                         material_ez[i,j,k] = TransparentEz(material_ez[i,j,k], 
-                                                           epsilon_r, 
-                                                           amp, 
-                                                           aux_fdtd, 
-                                                           samp_pnt,
+                                                           epsilon_r, amp, 
+                                                           aux_fdtd, samp_pnt,
                                                            v_ratio)
 
     def set_pointwise_source_hx(self, material_hx, space):
@@ -551,7 +544,7 @@ class GaussianBeam(Src):
             
         else:
             return None
-        
+            
         for i in xrange(low_idx[0], high_idx[0]):
             for j in xrange(low_idx[1], high_idx[1]):
                 for k in xrange(low_idx[2], high_idx[2]):
@@ -565,7 +558,7 @@ class GaussianBeam(Src):
                                                       aux_dz, space.dt)
                         
                         r = self._dist_from_beam_axis(point)
-                        amp = cosine * self.amp * exp(-(r / self.waist)**2) 
+                        amp = cosine * self.amp / exp((r / self.waist)**2) 
                         
                         samp_pnt = \
                         (0, 0, self._dist_from_center_along_aux_fdtd(point))
@@ -576,10 +569,8 @@ class GaussianBeam(Src):
                         self._get_wave_number(in_axis_k, epsilon_r, mu_r, space)
                                                 
                         material_hx[i,j,k] = TransparentHx(material_hx[i,j,k], 
-                                                           mu_r, 
-                                                           amp, 
-                                                           aux_fdtd, 
-                                                           samp_pnt,
+                                                           mu_r, amp, 
+                                                           aux_fdtd, samp_pnt,
                                                            v_ratio)
 
     def set_pointwise_source_hy(self, material_hy, space):
@@ -637,7 +628,7 @@ class GaussianBeam(Src):
             
         else:
             return None
-        
+            
         for i in xrange(low_idx[0], high_idx[0]):
             for j in xrange(low_idx[1], high_idx[1]):
                 for k in xrange(low_idx[2], high_idx[2]):
@@ -651,7 +642,7 @@ class GaussianBeam(Src):
                                                       aux_dz, space.dt)
                         
                         r = self._dist_from_beam_axis(point)
-                        amp = cosine * self.amp * exp(-(r / self.waist)**2)
+                        amp = cosine * self.amp / exp((r / self.waist)**2)
                         
                         samp_pnt = \
                         (0, 0, self._dist_from_center_along_aux_fdtd(point))
@@ -662,10 +653,8 @@ class GaussianBeam(Src):
                         self._get_wave_number(in_axis_k, epsilon_r, mu_r, space)
                                                 
                         material_hy[i,j,k] = TransparentHy(material_hy[i,j,k], 
-                                                           mu_r, 
-                                                           amp, 
-                                                           aux_fdtd, 
-                                                           samp_pnt,
+                                                           mu_r, amp, 
+                                                           aux_fdtd, samp_pnt,
                                                            v_ratio)
                         
     def set_pointwise_source_hz(self, material_hz, space):
@@ -723,7 +712,7 @@ class GaussianBeam(Src):
             
         else:
             return None
-        
+                     
         for i in xrange(low_idx[0], high_idx[0]):
             for j in xrange(low_idx[1], high_idx[1]):
                 for k in xrange(low_idx[2], high_idx[2]):
@@ -746,12 +735,10 @@ class GaussianBeam(Src):
                         v_ratio = \
                         self._get_wave_number(self.k, epsilon_r, mu_r, space) /\
                         self._get_wave_number(in_axis_k, epsilon_r, mu_r, space)
-                                                
+                        
                         material_hz[i,j,k] = TransparentHz(material_hz[i,j,k],
-                                                           mu_r, 
-                                                           amp,
-                                                           aux_fdtd, 
-                                                           samp_pnt,
+                                                           mu_r, amp, 
+                                                           aux_fdtd, samp_pnt,
                                                            v_ratio)
                         
     def _dist_from_beam_axis(self, point):
@@ -761,7 +748,7 @@ class GaussianBeam(Src):
             point -- location in the space coordinate 
             
         """   
-        return norm(cross(self.k, self.center - point))
+        return norm(cross(self.k, point - self.center))
 
     def _dist_from_center(self, point):
         """Calculate distance from the interface plane center.
@@ -774,6 +761,9 @@ class GaussianBeam(Src):
     
     def _dist_from_center_along_aux_fdtd(self, point):
         """Calculate projected distance from center along the aux_fdtd.
+        
+        This method returns positive value when the point is located in
+        the k direction relative to the center.
         
         Arguments:
             point -- location iin the space coordinate
