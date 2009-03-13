@@ -280,7 +280,7 @@ class GaussianBeam(Src):
         border = self.center + .5 * self.size
         aux_long_size = \
         2 * abs(self._dist_from_center_along_aux_fdtd(border)) + 30 * dz
-        src_pnt = (0, 0, -self._dist_from_center_along_aux_fdtd(border) - 5 * dz)
+        src_pnt = (0, 0, -abs(self._dist_from_center_along_aux_fdtd(border)) - 5 * dz)
         aux_size = (0 , 0, aux_long_size)
         
         aux_space = Cartesian(size=aux_size, 
@@ -312,25 +312,23 @@ class GaussianBeam(Src):
         high_idx = map(lambda x: x + 1, space.space_to_ex_index(high))
         low_idx = space.space_to_ex_index(low)
         
+        in_axis_k = self.directivity.vector
+        
         if self.directivity is const.PlusY:
             TransparentEx = TransparentPlusYEx
             aux_dz = space.dy
-            in_axis_k = const.PlusY.vector
             
         elif self.directivity is const.MinusY:
             TransparentEx = TransparentMinusYEx
             aux_dz = space.dy
-            in_axis_k = const.PlusY.vector
             
         elif self.directivity is const.PlusZ:
             TransparentEx = TransparentPlusZEx
             aux_dz = space.dz
-            in_axis_k = const.PlusZ.vector
             
         elif self.directivity is const.MinusZ:
             TransparentEx = TransparentMinusZEx
             aux_dz = space.dz
-            in_axis_k = const.PlusZ.vector
             
         else:
             return None
@@ -375,25 +373,23 @@ class GaussianBeam(Src):
         high_idx = map(lambda x: x + 1, space.space_to_ey_index(high))
         low_idx = space.space_to_ey_index(low)
         
+        in_axis_k = self.directivity.vector
+        
         if self.directivity is const.PlusZ:
             TransparentEy = TransparentPlusZEy
             aux_dz = space.dz
-            in_axis_k = const.PlusZ.vector
             
         elif self.directivity is const.MinusZ:
             TransparentEy = TransparentMinusZEy
             aux_dz = space.dz
-            in_axis_k = const.PlusZ.vector
             
         elif self.directivity is const.PlusX:
             TransparentEy = TransparentPlusXEy
             aux_dz = space.dx
-            in_axis_k = const.PlusX.vector
             
         elif self.directivity is const.MinusX:
             TransparentEy = TransparentMinusXEy
             aux_dz = space.dx
-            in_axis_k = const.PlusX.vector
             
         else:
             return None
@@ -438,25 +434,23 @@ class GaussianBeam(Src):
         high_idx = map(lambda x: x + 1, space.space_to_ez_index(high))
         low_idx = space.space_to_ez_index(low)
         
+        in_axis_k = self.directivity.vector
+        
         if self.directivity is const.PlusX:
             TransparentEz = TransparentPlusXEz
             aux_dz = space.dx
-            in_axis_k = const.PlusX.vector
             
         elif self.directivity is const.MinusX:
             TransparentEz = TransparentMinusXEz
             aux_dz = space.dx
-            in_axis_k = const.PlusX.vector
             
         elif self.directivity is const.PlusY:
             TransparentEz = TransparentPlusYEz
             aux_dz = space.dy
-            in_axis_k = const.PlusY.vector
             
         elif self.directivity is const.MinusY:
             TransparentEz = TransparentMinusYEz
             aux_dz = space.dy
-            in_axis_k = const.PlusY.vector
             
         else:
             return None
@@ -488,7 +482,7 @@ class GaussianBeam(Src):
                                                            epsilon_r, amp, 
                                                            aux_fdtd, samp_pnt,
                                                            v_ratio)
-                        
+        
     def set_pointwise_source_hx(self, material_hx, space):
         cosine = dot(self.h_direction, (1, 0, 0))
         
@@ -497,7 +491,9 @@ class GaussianBeam(Src):
         
         high = self.center + self.half_size
         low = self.center - self.half_size
-
+        
+        in_axis_k = self.directivity.vector
+        
         if self.directivity is const.PlusY:
             high_idx = map(lambda x: x + 1, space.space_to_ez_index(high))
             low_idx = space.space_to_ez_index(low)
@@ -507,7 +503,6 @@ class GaussianBeam(Src):
             
             TransparentHx = TransparentPlusYHx
             aux_dz = space.dy
-            in_axis_k = const.PlusY.vector
             
         elif self.directivity is const.MinusY:
             high_idx = map(lambda x: x + 1, space.space_to_ez_index(high))
@@ -518,7 +513,6 @@ class GaussianBeam(Src):
             
             TransparentHx = TransparentMinusYHx
             aux_dz = space.dy
-            in_axis_k = const.PlusY.vector
             
         elif self.directivity is const.PlusZ:
             high_idx = map(lambda x: x + 1, space.space_to_ey_index(high))
@@ -529,7 +523,6 @@ class GaussianBeam(Src):
             
             TransparentHx = TransparentPlusZHx
             aux_dz = space.dz
-            in_axis_k = const.PlusZ.vector
             
         elif self.directivity is const.MinusZ:
             high_idx = map(lambda x: x + 1, space.space_to_ey_index(high))
@@ -540,7 +533,6 @@ class GaussianBeam(Src):
             
             TransparentHx = TransparentMinusZHx
             aux_dz = space.dz
-            in_axis_k = const.PlusZ.vector
             
         else:
             return None
@@ -582,6 +574,8 @@ class GaussianBeam(Src):
         high = self.center + self.half_size
         low = self.center - self.half_size
         
+        in_axis_k = self.directivity.vector
+        
         if self.directivity is const.PlusZ:
             high_idx = map(lambda x: x + 1, space.space_to_ex_index(high))
             low_idx = space.space_to_ex_index(low)
@@ -591,7 +585,6 @@ class GaussianBeam(Src):
             
             TransparentHy = TransparentPlusZHy
             aux_dz = space.dz
-            in_axis_k = const.PlusZ.vector
             
         elif self.directivity is const.MinusZ:
             high_idx = map(lambda x: x + 1, space.space_to_ex_index(high))
@@ -602,7 +595,6 @@ class GaussianBeam(Src):
             
             TransparentHy = TransparentMinusZHy
             aux_dz = space.dz
-            in_axis_k = const.PlusZ.vector
             
         elif self.directivity is const.PlusX:
             high_idx = map(lambda x: x + 1, space.space_to_ez_index(high))
@@ -613,7 +605,6 @@ class GaussianBeam(Src):
             
             TransparentHy = TransparentPlusXHy
             aux_dz = space.dx
-            in_axis_k = const.PlusX.vector
             
         elif self.directivity is const.MinusX:
             high_idx = map(lambda x: x + 1, space.space_to_ex_index(high))
@@ -624,7 +615,6 @@ class GaussianBeam(Src):
             
             TransparentHy = TransparentMinusXHy
             aux_dz = space.dx
-            in_axis_k = const.PlusX.vector
             
         else:
             return None
@@ -666,6 +656,8 @@ class GaussianBeam(Src):
         high = self.center + self.half_size
         low = self.center - self.half_size
         
+        in_axis_k = self.directivity.vector
+        
         if self.directivity is const.PlusX:
             high_idx = map(lambda x: x + 1, space.space_to_ey_index(high))
             low_idx = space.space_to_ey_index(low)
@@ -675,7 +667,6 @@ class GaussianBeam(Src):
             
             TransparentHz = TransparentPlusXHz
             aux_dz = space.dx
-            in_axis_k = const.PlusX.vector
             
         elif self.directivity is const.MinusX:
             high_idx = map(lambda x: x + 1, space.space_to_ey_index(high))
@@ -686,7 +677,6 @@ class GaussianBeam(Src):
             
             TransparentHz = TransparentMinusXHz
             aux_dz = space.dx
-            in_axis_k = const.PlusX.vector
             
         elif self.directivity is const.PlusY:
             high_idx = map(lambda x: x + 1, space.space_to_ex_index(high))
@@ -697,7 +687,6 @@ class GaussianBeam(Src):
     
             TransparentHz = TransparentPlusYHz
             aux_dz = space.dy
-            in_axis_k = const.PlusY.vector
             
         elif self.directivity is const.MinusY:
             high_idx = map(lambda x: x + 1, space.space_to_ex_index(high))
@@ -708,7 +697,6 @@ class GaussianBeam(Src):
             
             TransparentHz = TransparentMinusYHz
             aux_dz = space.dy
-            in_axis_k = const.PlusY.vector
             
         else:
             return None
