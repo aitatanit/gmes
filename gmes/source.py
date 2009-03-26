@@ -176,36 +176,18 @@ class Dipole(Src):
 
 
 class TotalFieldScatteredField(Src):
-    def __init__(self, theta, phi, psi, low, high):
-        self.theta = float(theta)
-        self.phi = float(theta)
-        self.psi = float(psi)
-        self.low = array(low, float)
-        self.high = array(high, float)
-
-    def generate_aux_fdtd(self, space):
-        pass
-    
-    
-class GaussianBeam(Src):
-    """Launch a transparent Gaussian beam.
-    
-    It works as a guided mode with Gaussian profile is launched through the incidence interface.
-    The incidence interface is transparent, thus the scattered wave can penetrate through the 
-    interface plane.
+    """Set a total and scattered field zone to launch a plane wave.
     
     """
-    def __init__(self, src_time, directivity, center, size, direction, polarization, waist=inf, amp=1):
-        """
+    def __init__(self, src_time, center, size, direction, polarization, amp=1):
+        """Constructor
         
         Arguments:
-            directivity -- directivity of the incidence interface.
             center -- center of the incidence interface. The beam axis crosses this point.
             size --  size of the incidence interface plane.
             direction -- propagation direction of the beam.
             freq -- oscillating frequency of the beam.
             polarization -- electric field direction of the beam.
-            waist -- the Gaussian beam radius. The default is inf.
             amp -- amplitude of the plane wave. The default is 1.
             
         """
@@ -213,11 +195,6 @@ class GaussianBeam(Src):
             self.src_time = src_time
         else:
             raise TypeError, 'src_time must be an instance of SrcTime.'
-           
-        if issubclass(directivity, const.Directional):
-            self.directivity = directivity
-        else:
-            raise TypeError, 'directivity must be a Directional type.' 
 
         self.k = array(direction, float) / norm(direction)
         self.center = array(center, float)
@@ -229,26 +206,58 @@ class GaussianBeam(Src):
         # direction of h field
         self.h_direction = cross(self.k, self.e_direction)
         
-        # spot size of Gaussian beam
-        self.waist = float(waist)
-        
         # maximum amplitude of stimulus
         self.amp = float(amp)
-        
+    
+        self.on_axis_k = self._axis_in_k()
+         
     def init(self, geom_tree, space):
         self.geom_tree = geom_tree
         
     def display_info(self, indent=0):
-        print " " * indent, "Gaussian beam source:"
+        print " " * indent, "plane-wave source:"
         print " " * indent, "propagation direction:", self.k
         print " " * indent, "center:", self.center
         print " " * indent, "source plane size:", self.size 
         print " " * indent, "polarization direction:", self.e_direction
-        print " " * indent, "beam waist:", self.waist
-        print " " * indent, "maximum amp.:", self.amp
+        print " " * indent, "amp.:", self.amp
         
         self.src_time.display_info(4)
+
+    def _dist_from_center(self, point):
+        """Calculate distance from the interface plane center.
         
+        Arguments:
+            point -- location in the space coordinate
+            
+        """
+        return norm(self.center - point)
+    
+    def  _dist_from_center_along_beam_axis(self, point):
+        """Calculate projected distance from center along the beam axis.
+        
+        This method returns positive value when the point is located in
+        the k direction relative to the center.
+        
+        Arguments:
+            point -- location iin the space coordinate
+            
+        """
+        return dot(self.k, point - self.center)
+    
+    def _axis_in_k(self):
+        dot_with_axis = {}
+        
+        dot_with_axis[const.PlusX] = dot(const.PlusX.vector, self.k)
+        dot_with_axis[const.PlusY] = dot(const.PlusY.vector, self.k)
+        dot_with_axis[const.PlusY] = dot(const.PlusY.vector, self.k)
+        dot_with_axis[const.MinusX] = dot(const.MinusX.vector, self.k)
+        dot_with_axis[const.MinusY] = dot(const.MinusY.vector, self.k)
+        dot_with_axis[const.MinusZ] = dot(const.MinusZ.vector, self.k)
+        
+        max_item =  max(dot_with_axis.items(), key=lambda item:item[1])
+        return max_item[0]
+    
     def _get_wave_number(self, k, epsilon_r, mu_r, space, error=1.e-3):
         """Return the numerical wave number for auxiliary fdtd.
         
@@ -275,12 +284,12 @@ class GaussianBeam(Src):
             k2_scalar = k1_scalar - f / f_prime
             
         return k2_scalar
-    
+
     def _get_aux_fdtd(self, epsilon_r, mu_r, dz, dt):
         border = self.center + .5 * self.size
         aux_long_size = \
-        2 * abs(self._dist_from_center_along_aux_fdtd(border)) + 30 * dz
-        src_pnt = (0, 0, -abs(self._dist_from_center_along_aux_fdtd(border)) - 5 * dz)
+        2 * abs(self._dist_from_center_along_beam_axis(border)) + 30 * dz
+        src_pnt = (0, 0, -abs(self._dist_from_center_along_beam_axis(border)) - 5 * dz)
         aux_size = (0 , 0, aux_long_size)
         
         aux_space = Cartesian(size=aux_size, 
@@ -299,7 +308,518 @@ class GaussianBeam(Src):
                             verbose=False)
         
         return aux_fdtd
+    
+    def _set_pointwise_source(self, space, component, cosine, low_idx, high_idx, source, material):
+        aux_ds = {const.PlusX: space.dx, const.MinusX: space.dx,  
+                  const.PlusY: space.dy, const.MinusY: space.dy,
+                  const.PlusZ: space.dz, const.MinusZ: space.dz}
         
+        idx_to_spc = {const.Ex: space.ex_index_to_space,
+                      const.Ey: space.ey_index_to_space,
+                      const.Ez: space.ez_index_to_space,
+                      const.Hx: space.hx_index_to_space,
+                      const.Hy: space.hy_index_to_space,
+                      const.Hz: space.hz_index_to_space}
+        
+        low_idx_array = array(low_idx)
+        high_idx_array = array(high_idx)
+        
+        for i, j, k in ndindex(*(high_idx_array - low_idx_array)):
+            i, j, k = (i, j, k) + low_idx_array
+            
+            if in_range((i, j, k), material, component):
+                point = idx_to_spc[component](i, j, k)
+                
+                amp = cosine * self.amp
+                
+                mat_objs = self.geom_tree.material_of_point(point)
+                epsilon_r = mat_objs[0].epsilon_r
+                mu_r = mat_objs[0].mu_r
+                aux_fdtd = self._get_aux_fdtd(epsilon_r, mu_r, 
+                                              aux_ds[self.on_axis_k], space.dt)
+                
+                samp_pnt = \
+                (0, 0, self._dist_from_center_along_beam_axis(point))
+                
+                # v_in_axis / v_in_k
+                v_ratio = \
+                self._get_wave_number(self.k, epsilon_r, mu_r, space) / \
+                self._get_wave_number(self.on_axis_k.vector, epsilon_r, mu_r, space)
+                                        
+                material[i,j,k] = source(material[i,j,k], epsilon_r,
+                                         amp, aux_fdtd, samp_pnt,
+                                         v_ratio)
+    
+    def set_pointwise_source_ex(self, material_ex, space):
+        cosine = dot(self.e_direction, (1, 0, 0))
+        
+        if cosine == 0:
+            return None
+        
+        # -y interface
+        low = self.center - self.half_size
+        high = self.center + self.half_size * (1, -1, 1)
+        
+        low_idx = space.space_to_ex_index(low)  
+        high_idx = map(lambda x: x + 1, space.space_to_ex_index(high))
+        
+        pw_source = TransparentMinusYEx
+
+        self._set_pointwise_source(space, const.Ex, cosine,  
+                                   low_idx, high_idx,
+                                   pw_source, material_ex)
+        
+        # +y interface
+        low = self.center - self.half_size * (1, -1, 1)
+        high = self.center + self.half_size
+        
+        low_idx = space.space_to_ex_index(low)  
+        high_idx = map(lambda x: x + 1, space.space_to_ex_index(high))
+        
+        pw_source = TransparentPlusYEx
+
+        self._set_pointwise_source(space, const.Ex, cosine,  
+                                   low_idx, high_idx, 
+                                   pw_source, material_ex)
+        
+        # -z interface
+        low = self.center - self.half_size
+        high = self.center + self.half_size * (1, 1, -1)
+        
+        low_idx = space.space_to_ex_index(low)  
+        high_idx = map(lambda x: x + 1, space.space_to_ex_index(high))
+        
+        pw_source = TransparentMinusZEx
+
+        self._set_pointwise_source(space, const.Ex, cosine,  
+                                   low_idx, high_idx, 
+                                   pw_source, material_ex)
+        
+        # +z interface
+        low = self.center - self.half_size * (1, 1, -1)
+        high = self.center + self.half_size
+        
+        low_idx = space.space_to_ex_index(low)  
+        high_idx = map(lambda x: x + 1, space.space_to_ex_index(high))
+        
+        pw_source = TransparentPlusZEx
+
+        self._set_pointwise_source(space, const.Ex, cosine,  
+                                   low_idx, high_idx, 
+                                   pw_source, material_ex)
+    
+    def set_pointwise_source_ey(self, material_ey, space):
+        cosine = dot(self.e_direction, (0, 1, 0))
+        
+        if cosine == 0:
+            return None
+        
+        # -z interface
+        low = self.center - self.half_size
+        high = self.center + self.half_size * (1, 1, -1)
+        
+        low_idx = space.space_to_ey_index(low)  
+        high_idx = map(lambda x: x + 1, space.space_to_ey_index(high))
+        
+        pw_source = TransparentMinusZEy
+
+        self._set_pointwise_source(space, const.Ey, cosine,  
+                                   low_idx, high_idx, 
+                                   pw_source, material_ey)
+        
+        # +z interface
+        low = self.center - self.half_size * (1, 1, -1)
+        high = self.center + self.half_size
+        
+        low_idx = space.space_to_ey_index(low)  
+        high_idx = map(lambda x: x + 1, space.space_to_ey_index(high))
+        
+        pw_source = TransparentPlusZEy
+
+        self._set_pointwise_source(space, const.Ey, cosine,  
+                                   low_idx, high_idx,
+                                   pw_source, material_ey)
+        
+        # -x interface
+        low = self.center - self.half_size
+        high = self.center + self.half_size * (-1, 1, 1)
+        
+        low_idx = space.space_to_ey_index(low)  
+        high_idx = map(lambda x: x + 1, space.space_to_ey_index(high))
+        
+        pw_source = TransparentMinusXEy
+
+        self._set_pointwise_source(space, const.Ey, cosine,  
+                                   low_idx, high_idx,
+                                   pw_source, material_ey)
+        
+        # +x interface
+        low = self.center - self.half_size * (-1, 1, 1)
+        high = self.center + self.half_size
+        
+        low_idx = space.space_to_ey_index(low)  
+        high_idx = map(lambda x: x + 1, space.space_to_ey_index(high))
+        
+        pw_source = TransparentPlusXEy
+
+        self._set_pointwise_source(space, const.Ey, cosine,  
+                                   low_idx, high_idx, 
+                                   pw_source, material_ey)
+    
+    def set_pointwise_source_ez(self, material_ez, space):
+        cosine = dot(self.e_direction, (0, 0, 1))
+        
+        if cosine == 0:
+            return None
+        
+        # -x interface
+        low = self.center - self.half_size
+        high = self.center + self.half_size * (-1, 1, 1)
+        
+        low_idx = space.space_to_ez_index(low)  
+        high_idx = map(lambda x: x + 1, space.space_to_ez_index(high))
+        
+        pw_source = TransparentMinusXEz
+
+        self._set_pointwise_source(space, const.Ez, cosine,  
+                                   low_idx, high_idx, 
+                                   pw_source, material_ez)
+        
+        # +x interface
+        low = self.center - self.half_size * (-1, 1, 1)
+        high = self.center + self.half_size
+        
+        low_idx = space.space_to_ez_index(low)  
+        high_idx = map(lambda x: x + 1, space.space_to_ez_index(high))
+        
+        pw_source = TransparentPlusXEz
+
+        self._set_pointwise_source(space, const.Ez, cosine,  
+                                   low_idx, high_idx, 
+                                   pw_source, material_ez)
+        
+        # -y interface
+        low = self.center - self.half_size
+        high = self.center + self.half_size * (1, -1, 1)
+        
+        low_idx = space.space_to_ez_index(low)  
+        high_idx = map(lambda x: x + 1, space.space_to_ez_index(high))
+        
+        pw_source = TransparentMinusYEz
+
+        self._set_pointwise_source(space, const.Ez, cosine,  
+                                   low_idx, high_idx, 
+                                   pw_source, material_ez)
+        
+        # +y interface
+        low = self.center - self.half_size * (1, -1, 1)
+        high = self.center + self.half_size
+        
+        low_idx = space.space_to_ez_index(low)  
+        high_idx = map(lambda x: x + 1, space.space_to_ez_index(high))
+        
+        pw_source = TransparentPlusYEz
+
+        self._set_pointwise_source(space, const.Ez, cosine,  
+                                   low_idx, high_idx, 
+                                   pw_source, material_ez)
+    
+    def set_pointwise_source_hx(self, material_hx, space):
+        cosine = dot(self.h_direction, (1, 0, 0))
+        
+        if cosine == 0:
+            return None
+        
+        # -y interface
+        low = self.center - self.half_size
+        high = self.center + self.half_size * (1, -1, 1)
+        
+        low_idx = space.space_to_ez_index(low)
+        high_idx = map(lambda x: x + 1, space.space_to_ez_index(high))
+        
+        low_idx = (low_idx[0], low_idx[1], low_idx[2] + 1)    
+        high_idx = (high_idx[0], high_idx[1], high_idx[2] + 1)
+        
+        pw_source = TransparentMinusYHx
+        
+        self._set_pointwise_source(space, const.Hx, cosine,  
+                                   low_idx, high_idx, 
+                                   pw_source, material_hx)
+        
+        # +y interface
+        low = self.center - self.half_size * (1, -1, 1)
+        high = self.center + self.half_size
+        
+        low_idx = space.space_to_ez_index(low)
+        high_idx = map(lambda x: x + 1, space.space_to_ez_index(high))
+        
+        low_idx = (low_idx[0], low_idx[1] + 1, low_idx[2] + 1)
+        high_idx = (high_idx[0], high_idx[1] + 1, high_idx[2] + 1)    
+            
+        pw_source = TransparentPlusYHx
+        
+        self._set_pointwise_source(space, const.Hx, cosine,  
+                                   low_idx, high_idx,
+                                   pw_source, material_hx)
+        
+        # -z interface
+        low = self.center - self.half_size
+        high = self.center + self.half_size * (1, 1, -1)
+        
+        low_idx = space.space_to_ey_index(low)
+        high_idx = map(lambda x: x + 1, space.space_to_ey_index(high))
+        
+        low_idx = (low_idx[0], low_idx[1] + 1, low_idx[2])
+        high_idx = (high_idx[0], high_idx[1] + 1, high_idx[2])
+        
+        pw_source = TransparentMinusZHx
+        
+        self._set_pointwise_source(space, const.Hx, cosine,  
+                                   low_idx, high_idx,
+                                   pw_source, material_hx)
+        
+        # +z interface
+        low = self.center - self.half_size * (1, 1, -1)
+        high = self.center + self.half_size
+        
+        low_idx = space.space_to_ey_index(low)
+        high_idx = map(lambda x: x + 1, space.space_to_ey_index(high))
+            
+        low_idx = (low_idx[0], low_idx[1] + 1, low_idx[2] + 1)
+        high_idx = (high_idx[0], high_idx[1] + 1, high_idx[2] + 1)
+        
+        pw_source = TransparentPlusZHx
+            
+        self._set_pointwise_source(space, const.Hx, cosine,  
+                                   low_idx, high_idx,
+                                   pw_source, material_hx)
+    
+    def set_pointwise_source_hy(self, material_hy, space):
+        cosine = dot(self.h_direction, (0, 1, 0))
+        
+        if cosine == 0:
+            return None
+        
+        # -z interface
+        low = self.center - self.half_size
+        high = self.center + self.half_size * (1, 1, -1)
+        
+        low_idx = space.space_to_ex_index(low)
+        high_idx = map(lambda x: x + 1, space.space_to_ex_index(high))
+            
+        low_idx = (low_idx[0] + 1, low_idx[1], low_idx[2])
+        high_idx = (high_idx[0] + 1, high_idx[1], high_idx[2])
+            
+        pw_source = TransparentMinusZHy
+        
+        self._set_pointwise_source(space, const.Hy, cosine,  
+                                   low_idx, high_idx,
+                                   pw_source, material_hy)
+        
+        # +z interface
+        low = self.center - self.half_size * (1, 1, -1)
+        high = self.center + self.half_size
+        
+        low_idx = space.space_to_ex_index(low)
+        high_idx = map(lambda x: x + 1, space.space_to_ex_index(high))
+            
+        low_idx = (low_idx[0] + 1, low_idx[1], low_idx[2] + 1)
+        high_idx = (high_idx[0] + 1, high_idx[1], high_idx[2] + 1)
+            
+        pw_source = TransparentPlusZHy
+        
+        self._set_pointwise_source(space, const.Hy, cosine,  
+                                   low_idx, high_idx,
+                                   pw_source, material_hy)
+            
+        # -x interface
+        low = self.center - self.half_size * (-1, 1, 1)
+        high = self.center + self.half_size
+        
+        low_idx = space.space_to_ez_index(low)
+        high_idx = map(lambda x: x + 1, space.space_to_ez_index(high))
+            
+        low_idx = (low_idx[0], low_idx[1], low_idx[2] + 1)
+        high_idx = (high_idx[0], high_idx[1], high_idx[2] + 1)
+            
+        pw_source = TransparentMinusXHy
+        
+        self._set_pointwise_source(space, const.Hy, cosine,  
+                                   low_idx, high_idx,
+                                   pw_source, material_hy)
+        
+        # +x interface
+        low = self.center - self.half_size
+        high = self.center + self.half_size * (-1, 1, 1)
+        
+        low_idx = space.space_to_ex_index(low)
+        high_idx = map(lambda x: x + 1, space.space_to_ex_index(high))
+            
+        low_idx = (low_idx[0] + 1, low_idx[1], low_idx[2] + 1)
+        high_idx = (high_idx[0] + 1, high_idx[1], high_idx[2] + 1)
+            
+        pw_source = TransparentPlusXHy
+        
+        self._set_pointwise_source(space, const.Hy, cosine,  
+                                   low_idx, high_idx,
+                                   pw_source, material_hy)
+    
+    def set_pointwise_source_hz(self, material_hz, space):
+        cosine = dot(self.h_direction, (0, 0, 1))
+        
+        if cosine == 0:
+            return None
+        
+        # -x interface
+        low = self.center - self.half_size
+        high = self.center + self.half_size * (-1, 1, 1)
+        
+        low_idx = space.space_to_ey_index(low)
+        high_idx = map(lambda x: x + 1, space.space_to_ey_index(high))
+            
+        low_idx = (low_idx[0], low_idx[1] + 1, low_idx[2])
+        high_idx = (high_idx[0], high_idx[1] + 1, high_idx[2])
+            
+        pw_source = TransparentMinusXHz
+        
+        self._set_pointwise_source(space, const.Hz, cosine,  
+                                   low_idx, high_idx,
+                                   pw_source, material_hz)
+        
+        # +x interface
+        low = self.center - self.half_size * (-1, 1, 1)
+        high = self.center + self.half_size
+        
+        low_idx = space.space_to_ey_index(low)
+        high_idx = map(lambda x: x + 1, space.space_to_ey_index(high))
+            
+        low_idx = (low_idx[0] + 1, low_idx[1] + 1, low_idx[2])
+        high_idx = (high_idx[0] + 1, high_idx[1] + 1, high_idx[2])
+            
+        pw_source = TransparentPlusXHz
+        
+        self._set_pointwise_source(space, const.Hz, cosine,  
+                                   low_idx, high_idx,
+                                   pw_source, material_hz)
+        
+        # -y interface
+        low = self.center - self.half_size
+        high = self.center + self.half_size * (1, -1, 1)
+        
+        low_idx = space.space_to_ex_index(low)
+        high_idx = map(lambda x: x + 1, space.space_to_ex_index(high))
+            
+        low_idx = (low_idx[0] + 1, low_idx[1], low_idx[2])
+        high_idx = (high_idx[0] + 1, high_idx[1], high_idx[2])
+        
+        pw_source = TransparentMinusYHz
+        
+        self._set_pointwise_source(space, const.Hz, cosine,  
+                                   low_idx, high_idx,
+                                   pw_source, material_hz)
+            
+        # +y interface
+        low = self.center - self.half_size * (1, -1, 1)
+        high = self.center + self.half_size
+        
+        low_idx = space.space_to_ex_index(low)
+        high_idx = map(lambda x: x + 1, space.space_to_ex_index(high))
+            
+        low_idx = (low_idx[0] + 1, low_idx[1] + 1, low_idx[2])
+        high_idx = (high_idx[0] + 1, high_idx[1] + 1, high_idx[2])
+            
+        pw_source = TransparentPlusYHz
+        
+        self._set_pointwise_source(space, const.Hz, cosine,  
+                                   low_idx, high_idx,
+                                   pw_source, material_hz)
+        
+class GaussianBeam( TotalFieldScatteredField):
+    """Launch a transparent Gaussian beam.
+    
+    It works as a guided mode with Gaussian profile is launched through the incidence interface.
+    The incidence interface is transparent, thus the scattered wave can penetrate through the 
+    interface plane.
+    
+    """
+    def __init__(self, src_time, directivity, center, size, direction, polarization, waist=inf, amp=1):
+        """
+        
+        Arguments:
+            directivity -- directivity of the incidence interface.
+            center -- center of the incidence interface. The beam axis crosses this point.
+            size --  size of the incidence interface plane.
+            direction -- propagation direction of the beam.
+            freq -- oscillating frequency of the beam.
+            polarization -- electric field direction of the beam.
+            waist -- the Gaussian beam radius. The default is inf.
+            amp -- amplitude of the plane wave. The default is 1.
+            
+        """
+        TotalFieldScatteredField.__init__(self, src_time, center, size, direction, polarization, amp)
+        
+        if issubclass(directivity, const.Directional):
+            self.directivity = directivity
+        else:
+            raise TypeError, 'directivity must be a Directional type.'
+        
+        # spot size of Gaussian beam
+        self.waist = float(waist)
+        
+    def display_info(self, indent=0):
+        print " " * indent, "Gaussian beam source:"
+        print " " * indent, "propagation direction:", self.k
+        print " " * indent, "center:", self.center
+        print " " * indent, "source plane size:", self.size 
+        print " " * indent, "polarization direction:", self.e_direction
+        print " " * indent, "beam waist:", self.waist
+        print " " * indent, "maximum amp.:", self.amp
+        
+        self.src_time.display_info(4)
+            
+    def _dist_from_beam_axis(self, point):
+        """Calculate distance from the beam axis.
+        
+        Arguments:
+            point -- location in the space coordinate 
+            
+        """   
+        return norm(cross(self.k, point - self.center))
+    
+    def _set_pointwise_source(self, space, component, cosine, material, low_idx, high_idx, source, idx_to_spc):
+        aux_ds = {const.PlusX: space.dx, const.MinusX: space.dx,  
+                  const.PlusY: space.dy, const.MinusY: space.dy,
+                  const.PlusZ: space.dz, const.MinusZ: space.dz}
+        
+        low_idx_array = array(low_idx)
+        high_idx_array = array(high_idx)
+        
+        for i, j, k in ndindex(*(high_idx_array - low_idx_array)):
+            i, j, k = (i, j, k) + low_idx_array
+            
+            if in_range((i, j, k), material, component):
+                point = idx_to_spc(i, j, k)
+                
+                mat_objs = self.geom_tree.material_of_point(point)
+                epsilon_r = mat_objs[0].epsilon_r
+                mu_r = mat_objs[0].mu_r
+                aux_fdtd = self._get_aux_fdtd(epsilon_r, mu_r, 
+                                              aux_ds[self.directivity], space.dt)
+                
+                r = self._dist_from_beam_axis(point)
+                amp = cosine * self.amp * exp(-(r / self.waist)**2)
+                
+                samp_pnt = \
+                (0, 0, self._dist_from_center_along_beam_axis(point))
+                
+                # v_in_axis / v_in_k
+                v_ratio = \
+                self._get_wave_number(self.k, epsilon_r, mu_r, space) / \
+                self._get_wave_number(self.directivity.vector, epsilon_r, mu_r, space)
+
+                material[i,j,k] = source(material[i,j,k], mu_r, amp, 
+                                         aux_fdtd, samp_pnt, v_ratio)
+                
     def set_pointwise_source_ex(self, material_ex, space):
         cosine = dot(self.e_direction, (1, 0, 0))
         
@@ -312,54 +832,28 @@ class GaussianBeam(Src):
         high_idx = map(lambda x: x + 1, space.space_to_ex_index(high))
         low_idx = space.space_to_ex_index(low)
         
-        in_axis_k = self.directivity.vector
-        
         if self.directivity is const.PlusY:
-            TransparentEx = TransparentPlusYEx
-            aux_dz = space.dy
+            pw_source = TransparentMinusYEx
+            idx_to_spc = lambda i, j, k: space.hz_index_to_space(i + 1, j, k)
             
         elif self.directivity is const.MinusY:
-            TransparentEx = TransparentMinusYEx
-            aux_dz = space.dy
+            pw_source = TransparentPlusYEx
+            idx_to_spc = lambda i, j, k: space.hz_index_to_space(i + 1, j + 1, k)
             
         elif self.directivity is const.PlusZ:
-            TransparentEx = TransparentPlusZEx
-            aux_dz = space.dz
+            pw_source = TransparentMinusZEx
+            idx_to_spc = lambda i, j, k: space.hy_index_to_space(i + 1, j, k)
             
         elif self.directivity is const.MinusZ:
-            TransparentEx = TransparentMinusZEx
-            aux_dz = space.dz
+            pw_source = TransparentPlusZEx
+            idx_to_spc = lambda i, j, k: space.hy_index_to_space(i + 1, j, k + 1)
             
         else:
             return None
             
-        for i in xrange(low_idx[0], high_idx[0]):
-            for j in xrange(low_idx[1], high_idx[1]):
-                for k in xrange(low_idx[2], high_idx[2]):
-                    if in_range((i, j, k), material_ex, const.Ex):
-                        point = space.ex_index_to_space(i, j, k)
-                        
-                        r = self._dist_from_beam_axis(point)
-                        amp = cosine * self.amp / exp((r / self.waist)**2)
-                        
-                        mat_objs = self.geom_tree.material_of_point(point)
-                        epsilon_r = mat_objs[0].epsilon_r
-                        mu_r = mat_objs[0].mu_r
-                        aux_fdtd = self._get_aux_fdtd(epsilon_r, mu_r, 
-                                                      aux_dz, space.dt)
-                        
-                        samp_pnt = \
-                        (0, 0, self._dist_from_center_along_aux_fdtd(point))
-                        
-                        # v_in_axis / v_in_k
-                        v_ratio = \
-                        self._get_wave_number(self.k, epsilon_r, mu_r, space) / \
-                        self._get_wave_number(in_axis_k, epsilon_r, mu_r, space)
-                                                
-                        material_ex[i,j,k] = TransparentEx(material_ex[i,j,k], 
-                                                           epsilon_r, amp, 
-                                                           aux_fdtd, samp_pnt,
-                                                           v_ratio)
+        self._set_pointwise_source(space, const.Ex, cosine, material_ex, 
+                                   low_idx, high_idx,
+                                   pw_source, idx_to_spc)
         
     def set_pointwise_source_ey(self, material_ey, space):
         cosine = dot(self.e_direction, (0, 1, 0))
@@ -373,55 +867,29 @@ class GaussianBeam(Src):
         high_idx = map(lambda x: x + 1, space.space_to_ey_index(high))
         low_idx = space.space_to_ey_index(low)
         
-        in_axis_k = self.directivity.vector
-        
         if self.directivity is const.PlusZ:
-            TransparentEy = TransparentPlusZEy
-            aux_dz = space.dz
+            TransparentEy = TransparentMinusZEy
+            idx_to_spc = lambda i, j, k: space.hx_index_to_space(i, j + 1, k)
             
         elif self.directivity is const.MinusZ:
-            TransparentEy = TransparentMinusZEy
-            aux_dz = space.dz
+            TransparentEy = TransparentPlusZEy
+            idx_to_spc = lambda i, j, k: space.hx_index_to_space(i, j + 1, k + 1)
             
         elif self.directivity is const.PlusX:
-            TransparentEy = TransparentPlusXEy
-            aux_dz = space.dx
+            TransparentEy = TransparentMinusXEy
+            idx_to_spc = lambda i, j, k: space.hz_index_to_space(i, j + 1, k)
             
         elif self.directivity is const.MinusX:
-            TransparentEy = TransparentMinusXEy
-            aux_dz = space.dx
+            TransparentEy = TransparentPlusXEy
+            idx_to_spc = lambda i, j, k: space.hz_index_to_space(i + 1, j + 1, k)
             
         else:
             return None
             
-        for i in xrange(low_idx[0], high_idx[0]):
-            for j in xrange(low_idx[1], high_idx[1]):
-                for k in xrange(low_idx[2], high_idx[2]):
-                    if in_range((i, j, k), material_ey, const.Ey):
-                        point = space.ey_index_to_space(i, j, k)
-                        
-                        r = self._dist_from_beam_axis(point)
-                        amp = cosine * self.amp / exp((r / self.waist)**2)
-                        
-                        mat_objs = self.geom_tree.material_of_point(point)
-                        epsilon_r = mat_objs[0].epsilon_r
-                        mu_r = mat_objs[0].mu_r
-                        aux_fdtd = self._get_aux_fdtd(epsilon_r, mu_r, 
-                                                      aux_dz, space.dt)
-                        
-                        samp_pnt = \
-                        (0, 0, self._dist_from_center_along_aux_fdtd(point))
-                        
-                        # v_in_axis / v_in_k
-                        v_ratio = \
-                        self._get_wave_number(self.k, epsilon_r, mu_r, space) / \
-                        self._get_wave_number(in_axis_k, epsilon_r, mu_r, space)
-                        
-                        material_ey[i,j,k] = TransparentEy(material_ey[i,j,k], 
-                                                           epsilon_r, amp, 
-                                                           aux_fdtd, samp_pnt,
-                                                           v_ratio)
-                        
+        self._set_pointwise_source(space, const.Ey, cosine, material_ey,
+                                   low_idx, high_idx,
+                                   TransparentEy, idx_to_spc)
+        
     def set_pointwise_source_ez(self, material_ez, space):
         cosine = dot(self.e_direction, (0, 0, 1))
         
@@ -434,54 +902,28 @@ class GaussianBeam(Src):
         high_idx = map(lambda x: x + 1, space.space_to_ez_index(high))
         low_idx = space.space_to_ez_index(low)
         
-        in_axis_k = self.directivity.vector
-        
         if self.directivity is const.PlusX:
-            TransparentEz = TransparentPlusXEz
-            aux_dz = space.dx
+            TransparentEz = TransparentMinusXEz
+            idx_to_spc = lambda i, j, k: space.hy_index_to_space(i, j, k + 1)
             
         elif self.directivity is const.MinusX:
-            TransparentEz = TransparentMinusXEz
-            aux_dz = space.dx
+            TransparentEz = TransparentPlusXEz
+            idx_to_spc = lambda i, j, k: space.hy_index_to_space(i + 1, j, k + 1)
             
         elif self.directivity is const.PlusY:
-            TransparentEz = TransparentPlusYEz
-            aux_dz = space.dy
+            TransparentEz = TransparentMinusYEz
+            idx_to_spc = lambda i, j, k: space.hx_index_to_space(i, j, k + 1)
             
         elif self.directivity is const.MinusY:
-            TransparentEz = TransparentMinusYEz
-            aux_dz = space.dy
+            TransparentEz = TransparentPlusYEz
+            idx_to_spc = lambda i, j, k: space.hx_index_to_space(i, j + 1, k + 1)
             
         else:
             return None
-            
-        for i in xrange(low_idx[0], high_idx[0]):
-            for j in xrange(low_idx[1], high_idx[1]):
-                for k in xrange(low_idx[2], high_idx[2]):
-                    if in_range((i, j, k), material_ez, const.Ez):
-                        point = space.ez_index_to_space(i, j, k)
-                        
-                        r = self._dist_from_beam_axis(point)
-                        amp = cosine * self.amp / exp((r / self.waist)**2)
-                        
-                        mat_objs = self.geom_tree.material_of_point(point)
-                        epsilon_r = mat_objs[0].epsilon_r
-                        mu_r = mat_objs[0].mu_r
-                        aux_fdtd = self._get_aux_fdtd(epsilon_r, mu_r, 
-                                                      aux_dz, space.dt)
-                        
-                        samp_pnt = \
-                        (0, 0, self._dist_from_center_along_aux_fdtd(point))
-                        
-                        # v_in_axis / v_in_k
-                        v_ratio = \
-                        self._get_wave_number(self.k, epsilon_r, mu_r, space) / \
-                        self._get_wave_number(in_axis_k, epsilon_r, mu_r, space)
-                                                
-                        material_ez[i,j,k] = TransparentEz(material_ez[i,j,k], 
-                                                           epsilon_r, amp, 
-                                                           aux_fdtd, samp_pnt,
-                                                           v_ratio)
+        
+        self._set_pointwise_source(space, const.Ez, cosine, material_ez,
+                                   low_idx, high_idx, 
+                                   TransparentEz, idx_to_spc)
         
     def set_pointwise_source_hx(self, material_hx, space):
         cosine = dot(self.h_direction, (1, 0, 0))
@@ -491,9 +933,7 @@ class GaussianBeam(Src):
         
         high = self.center + self.half_size
         low = self.center - self.half_size
-        
-        in_axis_k = self.directivity.vector
-        
+
         if self.directivity is const.PlusY:
             high_idx = map(lambda x: x + 1, space.space_to_ez_index(high))
             low_idx = space.space_to_ez_index(low)
@@ -501,8 +941,8 @@ class GaussianBeam(Src):
             high_idx = (high_idx[0], high_idx[1], high_idx[2] + 1)
             low_idx = (low_idx[0], low_idx[1], low_idx[2] + 1)
             
-            TransparentHx = TransparentPlusYHx
-            aux_dz = space.dy
+            TransparentHx = TransparentMinusYHx
+            idx_to_spc = lambda i, j, k: space.ez_index_to_space(i, j - 1, k - 1)
             
         elif self.directivity is const.MinusY:
             high_idx = map(lambda x: x + 1, space.space_to_ez_index(high))
@@ -511,8 +951,8 @@ class GaussianBeam(Src):
             high_idx = (high_idx[0], high_idx[1] + 1, high_idx[2] + 1)
             low_idx = (low_idx[0], low_idx[1] + 1, low_idx[2] + 1)
             
-            TransparentHx = TransparentMinusYHx
-            aux_dz = space.dy
+            TransparentHx = TransparentPlusYHx
+            idx_to_spc = lambda i, j, k: space.ez_index_to_space(i, j, k - 1)
             
         elif self.directivity is const.PlusZ:
             high_idx = map(lambda x: x + 1, space.space_to_ey_index(high))
@@ -521,8 +961,8 @@ class GaussianBeam(Src):
             high_idx = (high_idx[0], high_idx[1] + 1, high_idx[2])
             low_idx = (low_idx[0], low_idx[1] + 1, low_idx[2])
             
-            TransparentHx = TransparentPlusZHx
-            aux_dz = space.dz
+            TransparentHx = TransparentMinusZHx
+            idx_to_spc = lambda i, j, k: space.ey_index_to_space(i, j - 1, k - 1)
             
         elif self.directivity is const.MinusZ:
             high_idx = map(lambda x: x + 1, space.space_to_ey_index(high))
@@ -531,40 +971,16 @@ class GaussianBeam(Src):
             high_idx = (high_idx[0], high_idx[1] + 1, high_idx[2] + 1)
             low_idx = (low_idx[0], low_idx[1] + 1, low_idx[2] + 1)
             
-            TransparentHx = TransparentMinusZHx
-            aux_dz = space.dz
+            TransparentHx = TransparentPlusZHx
+            idx_to_spc = lambda i, j, k: space.ey_index_to_space(i, j - 1, k)
             
         else:
             return None
-            
-        for i in xrange(low_idx[0], high_idx[0]):
-            for j in xrange(low_idx[1], high_idx[1]):
-                for k in xrange(low_idx[2], high_idx[2]):
-                    if in_range((i, j, k), material_hx, const.Hx):
-                        point = space.hx_index_to_space(i, j, k)
-                        
-                        mat_objs = self.geom_tree.material_of_point(point)
-                        epsilon_r = mat_objs[0].epsilon_r
-                        mu_r = mat_objs[0].mu_r
-                        aux_fdtd = self._get_aux_fdtd(epsilon_r, mu_r, 
-                                                      aux_dz, space.dt)
-                        
-                        r = self._dist_from_beam_axis(point)
-                        amp = cosine * self.amp / exp((r / self.waist)**2) 
-                        
-                        samp_pnt = \
-                        (0, 0, self._dist_from_center_along_aux_fdtd(point))
-                        
-                        # v_in_axis / v_in_k
-                        v_ratio = \
-                        self._get_wave_number(self.k, epsilon_r, mu_r, space) / \
-                        self._get_wave_number(in_axis_k, epsilon_r, mu_r, space)
-                                                
-                        material_hx[i,j,k] = TransparentHx(material_hx[i,j,k], 
-                                                           mu_r, amp, 
-                                                           aux_fdtd, samp_pnt,
-                                                           v_ratio)
 
+        self._set_pointwise_source(space, const.Hx, cosine, material_hx,
+                                   low_idx, high_idx,
+                                   TransparentHx, idx_to_spc)
+        
     def set_pointwise_source_hy(self, material_hy, space):
         cosine = dot(self.h_direction, (0, 1, 0))
         
@@ -573,9 +989,7 @@ class GaussianBeam(Src):
         
         high = self.center + self.half_size
         low = self.center - self.half_size
-        
-        in_axis_k = self.directivity.vector
-        
+
         if self.directivity is const.PlusZ:
             high_idx = map(lambda x: x + 1, space.space_to_ex_index(high))
             low_idx = space.space_to_ex_index(low)
@@ -583,8 +997,8 @@ class GaussianBeam(Src):
             high_idx = (high_idx[0] + 1, high_idx[1], high_idx[2])
             low_idx = (low_idx[0] + 1, low_idx[1], low_idx[2])
             
-            TransparentHy = TransparentPlusZHy
-            aux_dz = space.dz
+            TransparentHy = TransparentMinusZHy
+            idx_to_spc = lambda i, j, k: space.ex_index_to_space(i - 1, j, k - 1)
             
         elif self.directivity is const.MinusZ:
             high_idx = map(lambda x: x + 1, space.space_to_ex_index(high))
@@ -593,8 +1007,8 @@ class GaussianBeam(Src):
             high_idx = (high_idx[0] + 1, high_idx[1], high_idx[2] + 1)
             low_idx = (low_idx[0] + 1, low_idx[1], low_idx[2] + 1)
             
-            TransparentHy = TransparentMinusZHy
-            aux_dz = space.dz
+            TransparentHy = TransparentPlusZHy
+            idx_to_spc = lambda i, j, k: space.ex_index_to_space(i - 1, j, k)
             
         elif self.directivity is const.PlusX:
             high_idx = map(lambda x: x + 1, space.space_to_ez_index(high))
@@ -603,8 +1017,8 @@ class GaussianBeam(Src):
             high_idx = (high_idx[0], high_idx[1], high_idx[2] + 1)
             low_idx = (low_idx[0], low_idx[1], low_idx[2] + 1)
             
-            TransparentHy = TransparentPlusXHy
-            aux_dz = space.dx
+            TransparentHy = TransparentMinusXHy
+            idx_to_spc = lambda i, j, k: space.ez_index_to_space(i - 1, j, k - 1)
             
         elif self.directivity is const.MinusX:
             high_idx = map(lambda x: x + 1, space.space_to_ex_index(high))
@@ -613,40 +1027,16 @@ class GaussianBeam(Src):
             high_idx = (high_idx[0] + 1, high_idx[1], high_idx[2] + 1)
             low_idx = (low_idx[0] + 1, low_idx[1], low_idx[2] + 1)
             
-            TransparentHy = TransparentMinusXHy
-            aux_dz = space.dx
+            TransparentHy = TransparentPlusXHy
+            idx_to_spc = lambda i, j, k: space.ez_index_to_space(i, j, k - 1)
             
         else:
             return None
-            
-        for i in xrange(low_idx[0], high_idx[0]):
-            for j in xrange(low_idx[1], high_idx[1]):
-                for k in xrange(low_idx[2], high_idx[2]):
-                    if in_range((i, j, k), material_hy, const.Hy):
-                        point = space.hy_index_to_space(i, j, k)
-                        
-                        mat_objs = self.geom_tree.material_of_point(point)
-                        epsilon_r = mat_objs[0].epsilon_r
-                        mu_r = mat_objs[0].mu_r
-                        aux_fdtd = self._get_aux_fdtd(epsilon_r, mu_r, 
-                                                      aux_dz, space.dt)
-                        
-                        r = self._dist_from_beam_axis(point)
-                        amp = cosine * self.amp / exp((r / self.waist)**2)
-                        
-                        samp_pnt = \
-                        (0, 0, self._dist_from_center_along_aux_fdtd(point))
-                        
-                        # v_in_axis / v_in_k
-                        v_ratio = \
-                        self._get_wave_number(self.k, epsilon_r, mu_r, space) / \
-                        self._get_wave_number(in_axis_k, epsilon_r, mu_r, space)
-                                                
-                        material_hy[i,j,k] = TransparentHy(material_hy[i,j,k], 
-                                                           mu_r, amp, 
-                                                           aux_fdtd, samp_pnt,
-                                                           v_ratio)
-                        
+        
+        self._set_pointwise_source(space, const.Hy, cosine, material_hy,
+                                   low_idx, high_idx,
+                                   TransparentHy, idx_to_spc)
+        
     def set_pointwise_source_hz(self, material_hz, space):
         cosine = dot(self.h_direction, (0, 0, 1))
         
@@ -656,8 +1046,6 @@ class GaussianBeam(Src):
         high = self.center + self.half_size
         low = self.center - self.half_size
         
-        in_axis_k = self.directivity.vector
-        
         if self.directivity is const.PlusX:
             high_idx = map(lambda x: x + 1, space.space_to_ey_index(high))
             low_idx = space.space_to_ey_index(low)
@@ -665,8 +1053,8 @@ class GaussianBeam(Src):
             high_idx = (high_idx[0], high_idx[1] + 1, high_idx[2])
             low_idx = (low_idx[0], low_idx[1] + 1, low_idx[2])
             
-            TransparentHz = TransparentPlusXHz
-            aux_dz = space.dx
+            TransparentHz = TransparentMinusXHz
+            idx_to_spc = lambda i, j, k: space.ey_index_to_space(i - 1, j - 1, k)
             
         elif self.directivity is const.MinusX:
             high_idx = map(lambda x: x + 1, space.space_to_ey_index(high))
@@ -675,8 +1063,8 @@ class GaussianBeam(Src):
             high_idx = (high_idx[0] + 1, high_idx[1] + 1, high_idx[2])
             low_idx = (low_idx[0] + 1, low_idx[1] + 1, low_idx[2])
             
-            TransparentHz = TransparentMinusXHz
-            aux_dz = space.dx
+            TransparentHz = TransparentPlusXHz
+            idx_to_spc = lambda i, j, k: space.ey_index_to_space(i, j - 1, k)
             
         elif self.directivity is const.PlusY:
             high_idx = map(lambda x: x + 1, space.space_to_ex_index(high))
@@ -685,8 +1073,8 @@ class GaussianBeam(Src):
             high_idx = (high_idx[0] + 1, high_idx[1], high_idx[2])
             low_idx = (low_idx[0] + 1, low_idx[1], low_idx[2])
     
-            TransparentHz = TransparentPlusYHz
-            aux_dz = space.dy
+            TransparentHz = TransparentMinusYHz
+            idx_to_spc = lambda i, j, k: space.ex_index_to_space(i - 1, j - 1, k)
             
         elif self.directivity is const.MinusY:
             high_idx = map(lambda x: x + 1, space.space_to_ex_index(high))
@@ -695,67 +1083,13 @@ class GaussianBeam(Src):
             high_idx = (high_idx[0] + 1, high_idx[1] + 1, high_idx[2])
             low_idx = (low_idx[0] + 1, low_idx[1] + 1, low_idx[2])
             
-            TransparentHz = TransparentMinusYHz
-            aux_dz = space.dy
+            TransparentHz = TransparentPlusYHz
+            idx_to_spc = lambda i, j, k: space.ex_index_to_space(i - 1, j, k)
             
         else:
             return None
-                     
-        for i in xrange(low_idx[0], high_idx[0]):
-            for j in xrange(low_idx[1], high_idx[1]):
-                for k in xrange(low_idx[2], high_idx[2]):
-                    if in_range((i, j, k), material_hz, const.Hz):
-                        point = space.hz_index_to_space(i, j, k)
-                        
-                        mat_objs = self.geom_tree.material_of_point(point)
-                        epsilon_r = mat_objs[0].epsilon_r
-                        mu_r = mat_objs[0].mu_r
-                        aux_fdtd = self._get_aux_fdtd(epsilon_r, mu_r, 
-                                                      aux_dz, space.dt)
-                        
-                        r = self._dist_from_beam_axis(point)
-                        amp = cosine * self.amp * exp(-(r / self.waist)**2)
-                        
-                        samp_pnt = \
-                        (0, 0, self._dist_from_center_along_aux_fdtd(point))
-                        
-                        # v_in_axis / v_in_k
-                        v_ratio = \
-                        self._get_wave_number(self.k, epsilon_r, mu_r, space) / \
-                        self._get_wave_number(in_axis_k, epsilon_r, mu_r, space)
-                        
-                        material_hz[i,j,k] = TransparentHz(material_hz[i,j,k],
-                                                           mu_r, amp, 
-                                                           aux_fdtd, samp_pnt,
-                                                           v_ratio)
-                        
-    def _dist_from_beam_axis(self, point):
-        """Calculate distance from the beam axis.
         
-        Arguments:
-            point -- location in the space coordinate 
-            
-        """   
-        return norm(cross(self.k, point - self.center))
-
-    def _dist_from_center(self, point):
-        """Calculate distance from the interface plane center.
+        self._set_pointwise_source(space, const.Hz, cosine, material_hz,
+                                   low_idx, high_idx, 
+                                   TransparentHz, idx_to_spc)
         
-        Arguments:
-            point -- location in the space coordinate
-            
-        """
-        return norm(self.center - point)
-    
-    def _dist_from_center_along_aux_fdtd(self, point):
-        """Calculate projected distance from center along the aux_fdtd.
-        
-        This method returns positive value when the point is located in
-        the k direction relative to the center.
-        
-        Arguments:
-            point -- location iin the space coordinate
-            
-        """
-        return dot(self.k, point - self.center)
-    
