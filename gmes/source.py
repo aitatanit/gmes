@@ -124,6 +124,9 @@ class Dipole(Src):
     def init(self, geom_tree, space):
         pass
     
+    def step(self):
+        pass
+    
     def display_info(self, indent=0):
         print " " * indent, "Hertzian dipole source:"
         print " " * indent, "center:", self.pos
@@ -195,7 +198,7 @@ class TotalFieldScatteredField(Src):
             self.src_time = src_time
         else:
             raise TypeError, 'src_time must be an instance of SrcTime.'
-
+        
         self.k = array(direction, float) / norm(direction)
         self.center = array(center, float)
         self.size = array(size, float)
@@ -208,11 +211,16 @@ class TotalFieldScatteredField(Src):
         
         # maximum amplitude of stimulus
         self.amp = float(amp)
-    
+        
         self.on_axis_k = self._axis_in_k()
-         
+        
     def init(self, geom_tree, space):
         self.geom_tree = geom_tree
+        
+        self.aux_fdtd = self._get_aux_fdtd(space)
+        
+    def step(self):
+        self.aux_fdtd.step()
         
     def display_info(self, indent=0):
         print " " * indent, "plane-wave source:"
@@ -223,10 +231,10 @@ class TotalFieldScatteredField(Src):
         print " " * indent, "amp.:", self.amp
         
         self.src_time.display_info(4)
-
+        
     def mode_function(self, x, y, z):
         return 1.0
-    
+        
     def _dist_from_center(self, point):
         """Calculate distance from the interface plane center.
         
@@ -297,19 +305,27 @@ class TotalFieldScatteredField(Src):
             
         return k2_scalar
 
-    def _get_aux_fdtd(self, epsilon_r, mu_r, dz, dt):
+    def _get_aux_fdtd(self, space):
+        aux_ds = {const.PlusX: space.dx, const.MinusX: space.dx,  
+                  const.PlusY: space.dy, const.MinusY: space.dy,
+                  const.PlusZ: space.dz, const.MinusZ: space.dz}
+        
+        dz = aux_ds[self.on_axis_k]
+        
         border = self.center + .5 * self.size
         aux_long_size = \
         2 * abs(self._dist_from_center_along_beam_axis(border)) + 30 * dz
         src_pnt = (0, 0, -abs(self._dist_from_center_along_beam_axis(border)) - 5 * dz)
         aux_size = (0 , 0, aux_long_size)
         
+        mat_objs =  self.geom_tree.material_of_point((inf, inf, inf))
+        
         aux_space = Cartesian(size=aux_size, 
                               resolution=1./dz, 
-                              dt=dt, 
+                              dt=space.dt, 
                               parallel=False)
-        aux_geom_list = (DefaultMaterial(material=Dielectric(epsilon_r, mu_r)),
-                         Boundary(material=CPML(epsilon_r, mu_r), 
+        aux_geom_list = (DefaultMaterial(material=mat_objs[0]),
+                         Boundary(material=CPML(), 
                                   thickness=10*dz, 
                                   size=aux_size))
         aux_src_list = (Dipole(src_time=deepcopy(self.src_time), 
@@ -321,9 +337,8 @@ class TotalFieldScatteredField(Src):
         
         return aux_fdtd
     
-    def _set_pointwise_source(self, space, component, cosine, material,
-                              low_idx, high_idx, source, 
-                              samp_i2s, face):
+    def _set_pw_source(self, space, component, cosine, material, 
+                       low_idx, high_idx, source, samp_i2s, face):
         """
         Arguments:
         space - the Coordinate object given as a FDTD argument.
@@ -335,6 +350,7 @@ class TotalFieldScatteredField(Src):
         source - the pointwise source class
         samp_i2s - the corresponding index_to_space function
         face - which side of the interface
+        
         """
         aux_ds = {const.PlusX: space.dx, const.MinusX: space.dx,  
                   const.PlusY: space.dy, const.MinusY: space.dy,
@@ -359,10 +375,7 @@ class TotalFieldScatteredField(Src):
                 mat_objs = self.geom_tree.material_of_point(point)
                 epsilon_r = mat_objs[0].epsilon_r
                 mu_r = mat_objs[0].mu_r
-                aux_fdtd = self._get_aux_fdtd(epsilon_r, mu_r, 
-                                              aux_ds[self.on_axis_k], 
-                                              space.dt)
-                
+
                 amp = cosine * self.amp * self.mode_function(*point)
 
                 samp_pnt = (0, 0, 
@@ -375,11 +388,11 @@ class TotalFieldScatteredField(Src):
                 
                 if issubclass(source, TransparentElectric):
                     material[i, j, k] = source(material[i, j, k], epsilon_r,
-                                               amp, aux_fdtd, samp_pnt,
+                                               amp, self.aux_fdtd, samp_pnt,
                                                v_ratio, face)
                 if issubclass(source, TransparentMagnetic):
                     material[i, j, k] = source(material[i, j, k], mu_r, 
-                                               amp, aux_fdtd, samp_pnt, 
+                                               amp, self.aux_fdtd, samp_pnt, 
                                                v_ratio, face)
                 
     def _set_pw_source_ex_minus_y(self, material_ex, space, cosine):
@@ -391,9 +404,9 @@ class TotalFieldScatteredField(Src):
 
         i2s = lambda i, j, k: space.hz_index_to_space(i + 1, j, k)
         
-        self._set_pointwise_source(space, const.Ex, cosine, material_ex, 
-                                   low_idx, high_idx, TransparentEx, 
-                                   i2s, const.MinusY)
+        self._set_pw_source(space, const.Ex, cosine, material_ex, 
+                            low_idx, high_idx, TransparentEx, 
+                            i2s, const.MinusY)
         
     def _set_pw_source_ex_plus_y(self, material_ex, space, cosine):
         low = self.center - self.half_size * (1, -1, 1)
@@ -404,10 +417,10 @@ class TotalFieldScatteredField(Src):
 
         i2s = lambda i, j, k: space.hz_index_to_space(i + 1, j + 1, k)
         
-        self._set_pointwise_source(space, const.Ex, cosine, material_ex,
-                                   low_idx, high_idx, TransparentEx, 
-                                   i2s, const.PlusY)
-    
+        self._set_pw_source(space, const.Ex, cosine, material_ex,
+                            low_idx, high_idx, TransparentEx, 
+                            i2s, const.PlusY)
+        
     def _set_pw_source_ex_minus_z(self, material_ex, space, cosine):
         low = self.center - self.half_size
         high = self.center + self.half_size * (1, 1, -1)
@@ -417,9 +430,9 @@ class TotalFieldScatteredField(Src):
 
         i2s = lambda i, j, k: space.hy_index_to_space(i + 1, j, k)
         
-        self._set_pointwise_source(space, const.Ex, cosine, material_ex,
-                                   low_idx, high_idx, TransparentEx, 
-                                   i2s, const.MinusZ)
+        self._set_pw_source(space, const.Ex, cosine, material_ex,
+                            low_idx, high_idx, TransparentEx, 
+                            i2s, const.MinusZ)
     
     def _set_pw_source_ex_plus_z(self, material_ex, space, cosine):
         low = self.center - self.half_size * (1, 1, -1)
@@ -430,9 +443,9 @@ class TotalFieldScatteredField(Src):
         
         i2s = lambda i, j, k: space.hy_index_to_space(i + 1, j, k + 1)
         
-        self._set_pointwise_source(space, const.Ex, cosine, material_ex,
-                                   low_idx, high_idx, TransparentEx, 
-                                   i2s, const.PlusZ)
+        self._set_pw_source(space, const.Ex, cosine, material_ex,
+                            low_idx, high_idx, TransparentEx, 
+                            i2s, const.PlusZ)
         
     def set_pointwise_source_ex(self, material_ex, space):
         cosine = dot(self.e_direction, (1, 0, 0))
@@ -454,9 +467,9 @@ class TotalFieldScatteredField(Src):
 
         i2s = lambda i, j, k: space.hx_index_to_space(i, j + 1, k)
         
-        self._set_pointwise_source(space, const.Ey, cosine, material_ey,
-                                   low_idx, high_idx, TransparentEy, 
-                                   i2s, const.MinusZ)
+        self._set_pw_source(space, const.Ey, cosine, material_ey,
+                            low_idx, high_idx, TransparentEy, 
+                            i2s, const.MinusZ)
     
     def _set_pw_source_ey_plus_z(self, material_ey, space, cosine):
         low = self.center - self.half_size * (1, 1, -1)
@@ -467,9 +480,9 @@ class TotalFieldScatteredField(Src):
 
         i2s = lambda i, j, k: space.hx_index_to_space(i, j + 1, k + 1)
         
-        self._set_pointwise_source(space, const.Ey, cosine, material_ey,
-                                   low_idx, high_idx, TransparentEy,
-                                   i2s, const.PlusZ)
+        self._set_pw_source(space, const.Ey, cosine, material_ey,
+                            low_idx, high_idx, TransparentEy,
+                            i2s, const.PlusZ)
     
     def _set_pw_source_ey_minus_x(self, material_ey, space, cosine):
         low = self.center - self.half_size
@@ -480,9 +493,9 @@ class TotalFieldScatteredField(Src):
 
         i2s = lambda i, j, k: space.hz_index_to_space(i, j + 1, k)
         
-        self._set_pointwise_source(space, const.Ey, cosine, material_ey,  
-                                   low_idx, high_idx, TransparentEy,
-                                   i2s, const.MinusX)
+        self._set_pw_source(space, const.Ey, cosine, material_ey,  
+                            low_idx, high_idx, TransparentEy,
+                            i2s, const.MinusX)
     
     def _set_pw_source_ey_plus_x(self, material_ey, space, cosine):
         low = self.center - self.half_size * (-1, 1, 1)
@@ -493,9 +506,9 @@ class TotalFieldScatteredField(Src):
 
         i2s = lambda i, j, k: space.hz_index_to_space(i + 1, j + 1, k)
         
-        self._set_pointwise_source(space, const.Ey, cosine, material_ey,  
-                                   low_idx, high_idx, TransparentEy,
-                                   i2s, const.PlusX)
+        self._set_pw_source(space, const.Ey, cosine, material_ey,  
+                            low_idx, high_idx, TransparentEy,
+                            i2s, const.PlusX)
     
     def set_pointwise_source_ey(self, material_ey, space):
         cosine = dot(self.e_direction, (0, 1, 0))
@@ -517,9 +530,9 @@ class TotalFieldScatteredField(Src):
 
         i2s = lambda i, j, k: space.hy_index_to_space(i, j, k + 1)
         
-        self._set_pointwise_source(space, const.Ez, cosine, material_ez,  
-                                   low_idx, high_idx, TransparentEz, 
-                                   i2s, const.MinusX)
+        self._set_pw_source(space, const.Ez, cosine, material_ez,  
+                            low_idx, high_idx, TransparentEz, 
+                            i2s, const.MinusX)
     
     def _set_pw_source_ez_plus_x(self, material_ez, space, cosine):
         low = self.center - self.half_size * (-1, 1, 1)
@@ -530,9 +543,9 @@ class TotalFieldScatteredField(Src):
 
         i2s = lambda i, j, k: space.hy_index_to_space(i + 1, j, k + 1)
         
-        self._set_pointwise_source(space, const.Ez, cosine, material_ez,
-                                   low_idx, high_idx, TransparentEz,
-                                   i2s, const.PlusX)
+        self._set_pw_source(space, const.Ez, cosine, material_ez,
+                            low_idx, high_idx, TransparentEz,
+                            i2s, const.PlusX)
     
     def _set_pw_source_ez_minus_y(self, material_ez, space, cosine):
         low = self.center - self.half_size
@@ -543,9 +556,9 @@ class TotalFieldScatteredField(Src):
 
         i2s = lambda i, j, k: space.hx_index_to_space(i, j, k + 1)
         
-        self._set_pointwise_source(space, const.Ez, cosine, material_ez,
-                                   low_idx, high_idx, TransparentEz, 
-                                   i2s, const.MinusY)
+        self._set_pw_source(space, const.Ez, cosine, material_ez,
+                            low_idx, high_idx, TransparentEz, 
+                            i2s, const.MinusY)
     
     def _set_pw_source_ez_plus_y(self, material_ez, space, cosine):
         low = self.center - self.half_size * (1, -1, 1)
@@ -556,9 +569,9 @@ class TotalFieldScatteredField(Src):
 
         i2s = lambda i, j, k: space.hx_index_to_space(i, j + 1, k + 1)
         
-        self._set_pointwise_source(space, const.Ez, cosine, material_ez,  
-                                   low_idx, high_idx, TransparentEz, 
-                                   i2s, const.PlusY)
+        self._set_pw_source(space, const.Ez, cosine, material_ez,  
+                            low_idx, high_idx, TransparentEz, 
+                            i2s, const.PlusY)
     
     def set_pointwise_source_ez(self, material_ez, space):
         cosine = dot(self.e_direction, (0, 0, 1))
@@ -583,9 +596,9 @@ class TotalFieldScatteredField(Src):
         
         i2s = lambda i, j, k: space.ez_index_to_space(i, j - 1, k - 1)
         
-        self._set_pointwise_source(space, const.Hx, cosine, material_hx,
-                                   low_idx, high_idx, TransparentHx, 
-                                   i2s, const.MinusY)
+        self._set_pw_source(space, const.Hx, cosine, material_hx,
+                            low_idx, high_idx, TransparentHx, 
+                            i2s, const.MinusY)
     
     def _set_pw_source_hx_plus_y(self, material_hx, space, cosine):
         low = self.center - self.half_size * (1, -1, 1)
@@ -599,9 +612,9 @@ class TotalFieldScatteredField(Src):
         
         i2s = lambda i, j, k: space.ez_index_to_space(i, j, k - 1)
         
-        self._set_pointwise_source(space, const.Hx, cosine, material_hx,  
-                                   low_idx, high_idx, TransparentHx,
-                                   i2s, const.PlusY)
+        self._set_pw_source(space, const.Hx, cosine, material_hx,  
+                            low_idx, high_idx, TransparentHx,
+                            i2s, const.PlusY)
     
     def _set_pw_source_hx_minus_z(self, material_hx, space, cosine):
         low = self.center - self.half_size
@@ -615,9 +628,9 @@ class TotalFieldScatteredField(Src):
         
         i2s = lambda i, j, k: space.ey_index_to_space(i, j - 1, k - 1)
         
-        self._set_pointwise_source(space, const.Hx, cosine, material_hx,
-                                   low_idx, high_idx, TransparentHx,
-                                   i2s, const.MinusZ)
+        self._set_pw_source(space, const.Hx, cosine, material_hx,
+                            low_idx, high_idx, TransparentHx,
+                            i2s, const.MinusZ)
     
     def _set_pw_source_hx_plus_z(self, material_hx, space, cosine):
         low = self.center - self.half_size * (1, 1, -1)
@@ -631,9 +644,9 @@ class TotalFieldScatteredField(Src):
         
         i2s = lambda i, j, k: space.ey_index_to_space(i, j - 1, k)
         
-        self._set_pointwise_source(space, const.Hx, cosine, material_hx,
-                                   low_idx, high_idx, TransparentHx,
-                                   i2s, const.PlusZ)
+        self._set_pw_source(space, const.Hx, cosine, material_hx,
+                            low_idx, high_idx, TransparentHx,
+                            i2s, const.PlusZ)
         
     def set_pointwise_source_hx(self, material_hx, space):
         cosine = dot(self.h_direction, (1, 0, 0))
@@ -658,9 +671,9 @@ class TotalFieldScatteredField(Src):
         
         i2s = lambda i, j, k: space.ex_index_to_space(i - 1, j, k - 1)
         
-        self._set_pointwise_source(space, const.Hy, cosine, material_hy,
-                                   low_idx, high_idx, TransparentHy,
-                                   i2s, const.MinusZ)
+        self._set_pw_source(space, const.Hy, cosine, material_hy,
+                            low_idx, high_idx, TransparentHy,
+                            i2s, const.MinusZ)
     
     def _set_pw_source_hy_plus_z(self, material_hy, space, cosine):
         low = self.center - self.half_size * (1, 1, -1)
@@ -674,9 +687,9 @@ class TotalFieldScatteredField(Src):
         
         i2s = lambda i, j, k: space.ex_index_to_space(i - 1, j, k)
         
-        self._set_pointwise_source(space, const.Hy, cosine, material_hy,
-                                   low_idx, high_idx, TransparentHy,
-                                   i2s, const.PlusZ)
+        self._set_pw_source(space, const.Hy, cosine, material_hy,
+                            low_idx, high_idx, TransparentHy,
+                            i2s, const.PlusZ)
     
     def _set_pw_source_hy_minus_x(self, material_hy, space, cosine):
         low = self.center - self.half_size * (-1, 1, 1)
@@ -690,9 +703,9 @@ class TotalFieldScatteredField(Src):
         
         i2s = lambda i, j, k: space.ez_index_to_space(i - 1, j, k - 1)
         
-        self._set_pointwise_source(space, const.Hy, cosine, material_hy,
-                                   low_idx, high_idx, TransparentHy,
-                                   i2s, const.MinusX)
+        self._set_pw_source(space, const.Hy, cosine, material_hy,
+                            low_idx, high_idx, TransparentHy,
+                            i2s, const.MinusX)
     
     def _set_pw_source_hy_plus_x(self, material_hy, space, cosine):
         low = self.center - self.half_size
@@ -706,9 +719,9 @@ class TotalFieldScatteredField(Src):
         
         i2s = lambda i, j, k: space.ez_index_to_space(i, j, k - 1)
         
-        self._set_pointwise_source(space, const.Hy, cosine, material_hy,
-                                   low_idx, high_idx, TransparentHy,
-                                   i2s, const.PlusX)
+        self._set_pw_source(space, const.Hy, cosine, material_hy,
+                            low_idx, high_idx, TransparentHy,
+                            i2s, const.PlusX)
     
     def set_pointwise_source_hy(self, material_hy, space):
         cosine = dot(self.h_direction, (0, 1, 0))
@@ -733,9 +746,9 @@ class TotalFieldScatteredField(Src):
         
         i2s = lambda i, j, k: space.ey_index_to_space(i - 1, j - 1, k)
         
-        self._set_pointwise_source(space, const.Hz, cosine, material_hz,
-                                   low_idx, high_idx, TransparentHz,
-                                   i2s, const.MinusX)
+        self._set_pw_source(space, const.Hz, cosine, material_hz,
+                            low_idx, high_idx, TransparentHz,
+                            i2s, const.MinusX)
     
     def _set_pw_source_hz_plus_x(self, material_hz, space, cosine):
         low = self.center - self.half_size * (-1, 1, 1)
@@ -749,9 +762,9 @@ class TotalFieldScatteredField(Src):
         
         i2s = lambda i, j, k: space.ey_index_to_space(i, j - 1, k)
         
-        self._set_pointwise_source(space, const.Hz, cosine, material_hz,
-                                   low_idx, high_idx, TransparentHz,
-                                   i2s, const.PlusX)
+        self._set_pw_source(space, const.Hz, cosine, material_hz,
+                            low_idx, high_idx, TransparentHz,
+                            i2s, const.PlusX)
     
     def _set_pw_source_hz_minus_y(self, material_hz, space, cosine):
         low = self.center - self.half_size
@@ -765,9 +778,9 @@ class TotalFieldScatteredField(Src):
         
         i2s = lambda i, j, k: space.ex_index_to_space(i - 1, j - 1, k)
         
-        self._set_pointwise_source(space, const.Hz, cosine, material_hz,
-                                   low_idx, high_idx, TransparentHz,
-                                   i2s, const.MinusY)
+        self._set_pw_source(space, const.Hz, cosine, material_hz,
+                            low_idx, high_idx, TransparentHz,
+                            i2s, const.MinusY)
     
     def _set_pw_source_hz_plus_y(self, material_hz, space, cosine):
         low = self.center - self.half_size * (1, -1, 1)
@@ -781,9 +794,9 @@ class TotalFieldScatteredField(Src):
         
         i2s = lambda i, j, k: space.ex_index_to_space(i - 1, j, k)
         
-        self._set_pointwise_source(space, const.Hz, cosine, material_hz,
-                                   low_idx, high_idx, TransparentHz,
-                                   i2s, const.PlusY)
+        self._set_pw_source(space, const.Hz, cosine, material_hz,
+                            low_idx, high_idx, TransparentHz,
+                            i2s, const.PlusY)
     
     def set_pointwise_source_hz(self, material_hz, space):
         cosine = dot(self.h_direction, (0, 0, 1))
@@ -912,7 +925,7 @@ class GaussianBeam( TotalFieldScatteredField):
         
         if cosine == 0:
             return None
-
+        
         if self.directivity is const.PlusY:
             self._set_pw_source_hx_minus_y(material_hx, space, cosine)
             
@@ -933,7 +946,7 @@ class GaussianBeam( TotalFieldScatteredField):
         
         if cosine == 0:
             return None
-
+        
         if self.directivity is const.PlusZ:
             self._set_pw_source_hy_minus_z(material_hy, space, cosine)
             
@@ -954,7 +967,7 @@ class GaussianBeam( TotalFieldScatteredField):
         
         if cosine == 0:
             return None
-        
+            
         if self.directivity is const.PlusX:
             self._set_pw_source_hz_minus_x(material_hz, space, cosine)
             

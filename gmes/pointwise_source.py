@@ -130,32 +130,31 @@ class TransparentElectric(object):
         self.epsilon = epsilon_r * epsilon0
         
         self.aux_fdtd = aux_fdtd
+            
+        self.face_list = [directional]
+        self.amp = {directional: amp}
+        
+        samp_idx = aux_fdtd.space.spc_to_exact_hy_idx(samp_pnt)
+        self.samp_idx0 = {directional: tuple(floor(samp_idx))}
+        self.samp_idx1 = {directional: tuple(floor(samp_idx) + (0, 0, 1))}
+        
+        r1_value = samp_idx[2] - floor(samp_idx[2])
+        self.r1 = {directional: r1_value}
+        self.r0 = {directional: 1 - r1_value}
+
+        self.corrective = {directional: corrective}
         
         if isinstance(pw_material, TransparentElectric):
             self.pw_material = pw_material.pw_material
             self += pw_material
-            
         else:
             self.pw_material = pw_material
-            
-            self.face_list = [directional]
-            self.amp = {directional: amp}
-            
-            samp_idx = aux_fdtd.space.spc_to_exact_hy_idx(samp_pnt)
-            self.samp_idx0 = {directional: tuple(floor(samp_idx))}
-            self.samp_idx1 = {directional: tuple(floor(samp_idx) + (0, 0, 1))}
-            
-            r1_value = samp_idx[2] - floor(samp_idx[2])
-            self.r1 = {directional: r1_value}
-            self.r0 = {directional: 1 - r1_value}
-    
-            self.corrective = {directional: corrective}
         
     def display_info(self, indent=0):
         print " " * indent, "Transparent source"
             
     def __iadd__(self, rhs):
-        self.face.extend(rhs.face)
+        self.face_list.extend(rhs.face_list)
         
         for face in rhs.face_list:
             self.amp[face] = rhs.amp[face]
@@ -163,7 +162,7 @@ class TransparentElectric(object):
             self.samp_idx1[face] = rhs.samp_idx1[face]
             self.r1[face] = rhs.r1[face]
             self.r0[face] = rhs.r0[face]
-            self.corrective = rhs.corrective[face]
+            self.corrective[face] = rhs.corrective[face]
             
         return self
         
@@ -182,8 +181,6 @@ class TransparentEx(TransparentElectric):
         
         for face in self.face_list:
             self._consist_cond[face](ex, hz, hy, dt, dy, dz, face)
-    
-        self.aux_fdtd.step()
         
     def _consistency_minus_y(self, ex, hz, hy, dt, dy, dz, face):
         incidnet_hz = (self.r0[face] * self.aux_fdtd.hy[self.samp_idx0[face]] +
@@ -232,8 +229,6 @@ class TransparentEy(TransparentElectric):
         
         for face in self.face_list:
             self._consist_cond[face](ey, hx, hz, dt, dz, dx, face)
-    
-        self.aux_fdtd.step()
         
     def _consistency_minus_z(self, ey, hx, hz, dt, dz, dx, face):
         incident_hx = (self.r0[face] * self.aux_fdtd.hy[self.samp_idx0[face]] + 
@@ -282,8 +277,6 @@ class TransparentEz(TransparentElectric):
         
         for face in self.face_list:
             self._consist_cond[face](ez, hy, hx, dt, dx, dy, face)
-    
-        self.aux_fdtd.step()
         
     def _consistency_minus_x(self, ez, hy, hx, dt, dx, dy, face):
         incident_hy = (self.r0[face] * self.aux_fdtd.hy[self.samp_idx0[face]] + 
@@ -327,31 +320,30 @@ class TransparentMagnetic(object):
         
         self.aux_fdtd = aux_fdtd
         
+        self.face_list = [directional]
+        self.amp = {directional: amp}
+        
+        samp_idx = aux_fdtd.space.spc_to_exact_ex_idx(samp_pnt)
+        self.samp_idx0 = {directional: tuple(floor(samp_idx))}
+        self.samp_idx1 = {directional: tuple(floor(samp_idx) + (0, 0, 1))}
+        
+        r1_value = samp_idx[2] - floor(samp_idx[2])
+        self.r1 = {directional: r1_value}
+        self.r0 = {directional: 1 - r1_value}
+
+        self.corrective = {directional: corrective}
+        
         if isinstance(pw_material, TransparentElectric):
             self.pw_material = pw_material.pw_material
             self += pw_material
-            
         else:
             self.pw_material = pw_material
             
-            self.face_list = [directional]
-            self.amp = {directional: amp}
-            
-            samp_idx = aux_fdtd.space.spc_to_exact_ex_idx(samp_pnt)
-            self.samp_idx0 = {directional: tuple(floor(samp_idx))}
-            self.samp_idx1 = {directional: tuple(floor(samp_idx) + (0, 0, 1))}
-            
-            r1_value = samp_idx[2] - floor(samp_idx[2])
-            self.r1 = {directional: r1_value}
-            self.r0 = {directional: 1 - r1_value}
-    
-            self.corrective = {directional: corrective}
-        
     def display_info(self, indent=0):
         print " " * indent, "Transparent source"
             
     def __iadd__(self, rhs):
-        self.face.extend(rhs.face)
+        self.face_list.extend(rhs.face_list)
         
         for face in rhs.face_list:
             self.amp[face] = rhs.amp[face]
@@ -359,7 +351,7 @@ class TransparentMagnetic(object):
             self.samp_idx1[face] = rhs.samp_idx1[face]
             self.r1[face] = rhs.r1[face]
             self.r0[face] = rhs.r0[face]
-            self.corrective = rhs.corrective[face]
+            self.corrective[face] = rhs.corrective[face]
             
         return self
    
@@ -375,8 +367,6 @@ class TransparentHx(TransparentMagnetic):
             
     def update(self, hx, ez, ey, dt, dy, dz):
         self.pw_material.update(hx, ez, ey, dt, dy, dz)
-        
-        self.aux_fdtd.step()
         
         for face in self.face_list:
             self._consist_cond[face](hx, ez, ey, dt, dy, dz, face)
@@ -405,7 +395,7 @@ class TransparentHx(TransparentMagnetic):
         hx[idx] -= (dt / (self.corrective[face] * self.mu * dz) * 
                     self.amp[face] * incidnet_ey)
 
-    def _consistency_plus_z(self, ehx, ez, ey, dt, dy, dz, face):
+    def _consistency_plus_z(self, hx, ez, ey, dt, dy, dz, face):
         incidnet_ey = (self.r0[face] * self.aux_fdtd.ex[self.samp_idx0[face]] +
                        self.r1[face] * self.aux_fdtd.ex[self.samp_idx1[face]])
         
@@ -425,8 +415,6 @@ class TransparentHy(TransparentMagnetic):
             
     def update(self, hy, ex, ez, dt, dz, dx):
         self.pw_material.update(hy, ex, ez, dt, dz, dx)
-        
-        self.aux_fdtd.step()
         
         for face in self.face_list:
             self._consist_cond[face](hy, ex, ez, dt, dz, dx, face)
@@ -476,8 +464,6 @@ class TransparentHz(TransparentMagnetic):
             
     def update(self, hz, ey, ex, dt, dx, dy):
         self.pw_material.update(hz, ey, ex, dt, dx, dy)
-        
-        self.aux_fdtd.step()
         
         for face in self.face_list:
             self._consist_cond[face](hz, ey, ex, dt, dx, dy, face)
