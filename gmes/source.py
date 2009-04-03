@@ -275,8 +275,14 @@ class TotalFieldScatteredField(Src):
         dot_with_axis[const.MinusY] = dot(const.MinusY.vector, self.k)
         dot_with_axis[const.MinusZ] = dot(const.MinusZ.vector, self.k)
         
-        max_item =  max(dot_with_axis.items(), key=lambda item:item[1])
-        return max_item[0]
+        # for Python < 2.5
+        dot_with_axis_swap = dict(map(lambda item: (item[1], item[0]), dot_with_axis.items()))
+        max_key = dot_with_axis_swap[max(dot_with_axis_swap.keys())]
+        return max_key
+        
+        # for Python >= 2.5
+#        max_item =  max(dot_with_axis.items(), key=lambda item:item[1])
+#        return max_item[0]
     
     def _get_wave_number(self, k, epsilon_r, mu_r, space, error=1.e-3):
         """Return the numerical wave number for auxiliary fdtd.
