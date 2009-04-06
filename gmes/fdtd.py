@@ -66,6 +66,9 @@ class FDTD(object):
         self.time_step = TimeStep()
         
         if verbose:
+            self.space.display_info()
+            
+        if verbose:
             print "Generating geometric binary search tree...",
             
         self.geom_tree = GeomBoxTree(self.geom_list)

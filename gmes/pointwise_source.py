@@ -151,7 +151,18 @@ class TransparentElectric(object):
             self.pw_material = pw_material
         
     def display_info(self, indent=0):
-        print " " * indent, "Transparent source"
+        print " " * indent, "array index:", self.i, self.j, self.k
+        print " " * indent, "electric permittivity:", self.epsilon
+        
+        for face in self.face_list:
+            print " " * indent, 
+            print "face:", face,
+            print "amp:", self.amp[face],
+            print "sampling index 0:", self.samp_idx0[face],
+            print "sampling index 1:", self.samp_idx1[face],
+            print "sampling ratio 0:", self.r0[face],
+            print "sampling ratio 1:", self.r1[face],
+            print "corrective:", self.corrective[face]
             
     def __iadd__(self, rhs):
         self.face_list.extend(rhs.face_list)
@@ -163,7 +174,7 @@ class TransparentElectric(object):
             self.r1[face] = rhs.r1[face]
             self.r0[face] = rhs.r0[face]
             self.corrective[face] = rhs.corrective[face]
-            
+        
         return self
         
         
@@ -175,7 +186,11 @@ class TransparentEx(TransparentElectric):
                               MinusZ: self._consistency_minus_z,
                               PlusY: self._consistency_plus_y,
                               PlusZ: self._consistency_plus_z}
-            
+        
+    def display_info(self, indent=0):
+        print " " * indent, "TransparentEx"
+        TransparentElectric.display_info(self, indent)
+         
     def update(self, ex, hz, hy, dt, dy, dz):
         self.pw_material.update(ex, hz, hy, dt, dy, dz)
         
@@ -190,7 +205,7 @@ class TransparentEx(TransparentElectric):
         ex[idx] -= (dt / (self.corrective[face] * self.epsilon * dy) *
                     self.amp[face] * incidnet_hz)
 
-    def _consistency_plus_y(self, ex, hz, hy, dt, dy, dz):
+    def _consistency_plus_y(self, ex, hz, hy, dt, dy, dz, face):
         incidnet_hz = (self.r0[face] * self.aux_fdtd.hy[self.samp_idx0[face]] + 
                        self.r1[face] * self.aux_fdtd.hy[self.samp_idx1[face]])
         
@@ -198,7 +213,7 @@ class TransparentEx(TransparentElectric):
         ex[idx] += (dt / (self.corrective[face] * self.epsilon * dy) *
                     self.amp[face] * incidnet_hz)
     
-    def _consistency_minus_z(self, ex, hz, hy, dt, dy, dz):
+    def _consistency_minus_z(self, ex, hz, hy, dt, dy, dz, face):
         incidnet_hy = (self.r0[face] * self.aux_fdtd.hy[self.samp_idx0[face]] + 
                        self.r1[face] * self.aux_fdtd.hy[self.samp_idx1[face]])
         
@@ -206,7 +221,7 @@ class TransparentEx(TransparentElectric):
         ex[idx] += (dt / (self.corrective[face] * self.epsilon * dz) *
                     self.amp[face] * incidnet_hy)
 
-    def _consistency_plus_z(self, ex, hz, hy, dt, dy, dz):
+    def _consistency_plus_z(self, ex, hz, hy, dt, dy, dz, face):
         incidnet_hy = (self.r0[face] * self.aux_fdtd.hy[self.samp_idx0[face]] +
                        self.r1[face] * self.aux_fdtd.hy[self.samp_idx1[face]])
         
@@ -214,7 +229,7 @@ class TransparentEx(TransparentElectric):
         ex[idx] -= (dt / (self.corrective[face] * self.epsilon * dz) *
                     self.amp[face] * incidnet_hy)
         
-
+        
 class TransparentEy(TransparentElectric):
     def __init__(self, pw_material, epsilon_r, amp, aux_fdtd, samp_pnt, corrective, directional):
         TransparentElectric.__init__(self, pw_material, epsilon_r, amp, aux_fdtd, samp_pnt, corrective, directional)
@@ -223,7 +238,11 @@ class TransparentEy(TransparentElectric):
                               MinusX: self._consistency_minus_x,
                               PlusZ: self._consistency_plus_z,
                               PlusX: self._consistency_plus_x}
-            
+    
+    def display_info(self, indent=0):
+        print " " * indent, "TransparentEy"
+        TransparentElectric.display_info(self, indent)
+        
     def update(self, ey, hx, hz, dt, dz, dx):
         self.pw_material.update(ey, hx, hz, dt, dz, dx)
         
@@ -271,7 +290,11 @@ class TransparentEz(TransparentElectric):
                               MinusY: self._consistency_minus_y,
                               PlusX: self._consistency_plus_x,
                               PlusY: self._consistency_plus_y}
-            
+        
+    def display_info(self, indent=0):
+        print " " * indent, "TransparentEz"
+        TransparentElectric.display_info(self, indent)
+                
     def update(self, ez, hy, hx, dt, dx, dy):
         self.pw_material.update(ez, hy, hx, dt, dx, dy)
         
@@ -338,9 +361,20 @@ class TransparentMagnetic(object):
             self += pw_material
         else:
             self.pw_material = pw_material
-            
+        
     def display_info(self, indent=0):
-        print " " * indent, "Transparent source"
+        print " " * indent, "array index:", self.i, self.j, self.k
+        print " " * indent, "magnetic permeability:", self.mu 
+        
+        for face in self.face_list:
+            print " " * indent, 
+            print "face:", face,
+            print "amp:", self.amp[face],
+            print "sampling index 0:", self.samp_idx0[face],
+            print "sampling index 1:", self.samp_idx1[face],
+            print "sampling ratio 0:", self.r0[face],
+            print "sampling ratio 1:", self.r1[face],
+            print "corrective:", self.corrective[face]
             
     def __iadd__(self, rhs):
         self.face_list.extend(rhs.face_list)
@@ -364,7 +398,11 @@ class TransparentHx(TransparentMagnetic):
                               MinusZ: self._consistency_minus_z,
                               PlusY: self._consistency_plus_y,
                               PlusZ: self._consistency_plus_z}
-            
+    
+    def display_info(self, indent=0):
+        print " " * indent, "TransparentHx"
+        TransparentMagnetic.display_info(self, indent)
+        
     def update(self, hx, ez, ey, dt, dy, dz):
         self.pw_material.update(hx, ez, ey, dt, dy, dz)
         
@@ -412,7 +450,11 @@ class TransparentHy(TransparentMagnetic):
                               MinusX: self._consistency_minus_x,
                               PlusZ: self._consistency_plus_z,
                               PlusX: self._consistency_plus_x}
-            
+    
+    def display_info(self, indent=0):
+        print " " * indent, "TransparentHy"
+        TransparentMagnetic.display_info(self, indent)
+        
     def update(self, hy, ex, ez, dt, dz, dx):
         self.pw_material.update(hy, ex, ez, dt, dz, dx)
         
@@ -461,7 +503,11 @@ class TransparentHz(TransparentMagnetic):
                               MinusY: self._consistency_minus_y,
                               PlusX: self._consistency_plus_x,
                               PlusY: self._consistency_plus_y}
-            
+    
+    def display_info(self, indent=0):
+        print " " * indent, "TransparentHz"
+        TransparentMagnetic.display_info(self, indent)
+                
     def update(self, hz, ey, ex, dt, dx, dy):
         self.pw_material.update(hz, ey, ex, dt, dx, dy)
         

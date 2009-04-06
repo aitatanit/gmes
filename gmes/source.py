@@ -266,6 +266,9 @@ class TotalFieldScatteredField(Src):
         return norm(cross(self.k, (x, y, z) - self.center))
     
     def _axis_in_k(self):
+        """Return the biggest component direction of k.
+        
+        """
         dot_with_axis = {}
                 
         dot_with_axis[dot(const.PlusX.vector, self.k)] = const.PlusX 
@@ -393,420 +396,444 @@ class TotalFieldScatteredField(Src):
                     material[i, j, k] = source(material[i, j, k], mu_r, 
                                                amp, self.aux_fdtd, samp_pnt, 
                                                v_ratio, face)
-                
-    def _set_pw_source_ex_minus_y(self, material_ex, space, cosine):
-        low = self.center - self.half_size
-        high = self.center + self.half_size * (1, -1, 1)
-        
-        low_idx = space.space_to_ex_index(low)  
-        high_idx = map(lambda x: x + 1, space.space_to_ex_index(high))
-
-        i2s = lambda i, j, k: space.hz_index_to_space(i + 1, j, k)
-        
-        self._set_pw_source(space, const.Ex, cosine, material_ex, 
-                            low_idx, high_idx, TransparentEx, 
-                            i2s, const.MinusY)
-        
-    def _set_pw_source_ex_plus_y(self, material_ex, space, cosine):
-        low = self.center - self.half_size * (1, -1, 1)
-        high = self.center + self.half_size
-        
-        low_idx = space.space_to_ex_index(low)  
-        high_idx = map(lambda x: x + 1, space.space_to_ex_index(high))
-
-        i2s = lambda i, j, k: space.hz_index_to_space(i + 1, j + 1, k)
-        
-        self._set_pw_source(space, const.Ex, cosine, material_ex,
-                            low_idx, high_idx, TransparentEx, 
-                            i2s, const.PlusY)
-        
-    def _set_pw_source_ex_minus_z(self, material_ex, space, cosine):
-        low = self.center - self.half_size
-        high = self.center + self.half_size * (1, 1, -1)
-        
-        low_idx = space.space_to_ex_index(low)  
-        high_idx = map(lambda x: x + 1, space.space_to_ex_index(high))
-
-        i2s = lambda i, j, k: space.hy_index_to_space(i + 1, j, k)
-        
-        self._set_pw_source(space, const.Ex, cosine, material_ex,
-                            low_idx, high_idx, TransparentEx, 
-                            i2s, const.MinusZ)
-    
-    def _set_pw_source_ex_plus_z(self, material_ex, space, cosine):
-        low = self.center - self.half_size * (1, 1, -1)
-        high = self.center + self.half_size
-        
-        low_idx = space.space_to_ex_index(low)  
-        high_idx = map(lambda x: x + 1, space.space_to_ex_index(high))
-        
-        i2s = lambda i, j, k: space.hy_index_to_space(i + 1, j, k + 1)
-        
-        self._set_pw_source(space, const.Ex, cosine, material_ex,
-                            low_idx, high_idx, TransparentEx, 
-                            i2s, const.PlusZ)
         
     def set_pointwise_source_ex(self, material_ex, space):
-        cosine = dot(self.e_direction, (1, 0, 0))
+        cosine = dot(self.h_direction, (0, 0, 1))
+        if cosine != 0:
+            self._set_pw_source_ex_minus_y(material_ex, space, cosine)
+            self._set_pw_source_ex_plus_y(material_ex, space, cosine)
+            
+        cosine = dot(self.h_direction, (0, 1, 0))
+        if cosine != 0:
+            self._set_pw_source_ex_minus_z(material_ex, space, cosine)
+            self._set_pw_source_ex_plus_z(material_ex, space, cosine)
         
-        if cosine == 0:
-            return None
-
-        self._set_pw_source_ex_minus_y(material_ex, space, cosine)
-        self._set_pw_source_ex_plus_y(material_ex, space, cosine)
-        self._set_pw_source_ex_minus_z(material_ex, space, cosine)
-        self._set_pw_source_ex_plus_z(material_ex, space, cosine)
+    def _set_pw_source_ex_minus_y(self, material_ex, space, cosine):
+        if 2 * space.half_size[1] > space.dy:
+            low = self.center - self.half_size
+            high = self.center + self.half_size * (1, -1, 1)
+            
+            low_idx = space.space_to_ex_index(low)  
+            high_idx = map(lambda x: x + 1, space.space_to_ex_index(high))
+    
+            hz_i2s = lambda i, j, k: space.hz_index_to_space(i + 1, j, k)
+            
+            self._set_pw_source(space, const.Ex, cosine, material_ex, 
+                                low_idx, high_idx, TransparentEx, 
+                                hz_i2s, const.MinusY)
+        
+    def _set_pw_source_ex_plus_y(self, material_ex, space, cosine):
+        if 2 * space.half_size[1] > space.dy:
+            low = self.center - self.half_size * (1, -1, 1)
+            high = self.center + self.half_size
+            
+            low_idx = space.space_to_ex_index(low)  
+            high_idx = map(lambda x: x + 1, space.space_to_ex_index(high))
+    
+            hz_i2s = lambda i, j, k: space.hz_index_to_space(i + 1, j + 1, k)
+            
+            self._set_pw_source(space, const.Ex, cosine, material_ex,
+                                low_idx, high_idx, TransparentEx, 
+                                hz_i2s, const.PlusY)
+        
+    def _set_pw_source_ex_minus_z(self, material_ex, space, cosine):
+        if 2 * space.half_size[2] > space.dz:
+            low = self.center - self.half_size
+            high = self.center + self.half_size * (1, 1, -1)
+            
+            low_idx = space.space_to_ex_index(low)  
+            high_idx = map(lambda x: x + 1, space.space_to_ex_index(high))
+    
+            hy_i2s = lambda i, j, k: space.hy_index_to_space(i + 1, j, k)
+            
+            self._set_pw_source(space, const.Ex, cosine, material_ex,
+                                low_idx, high_idx, TransparentEx, 
+                                hy_i2s, const.MinusZ)
+    
+    def _set_pw_source_ex_plus_z(self, material_ex, space, cosine):
+        if 2 * space.half_size[2] > space.dz:
+            low = self.center - self.half_size * (1, 1, -1)
+            high = self.center + self.half_size
+            
+            low_idx = space.space_to_ex_index(low)  
+            high_idx = map(lambda x: x + 1, space.space_to_ex_index(high))
+            
+            i2s = lambda i, j, k: space.hy_index_to_space(i + 1, j, k + 1)
+            
+            self._set_pw_source(space, const.Ex, cosine, material_ex,
+                                low_idx, high_idx, TransparentEx, 
+                                i2s, const.PlusZ)
+        
+    def set_pointwise_source_ey(self, material_ey, space):
+        cosine = dot(self.h_direction, (1, 0, 0))
+        if cosine != 0:
+            self._set_pw_source_ey_minus_z(material_ey, space, cosine)
+            self._set_pw_source_ey_plus_z(material_ey, space, cosine)
+            
+        cosine = dot(self.h_direction, (0, 0, 1))
+        if cosine != 0:
+            self._set_pw_source_ey_minus_x(material_ey, space, cosine)
+            self._set_pw_source_ey_plus_x(material_ey, space, cosine)
         
     def _set_pw_source_ey_minus_z(self, material_ey, space, cosine):
-        low = self.center - self.half_size
-        high = self.center + self.half_size * (1, 1, -1)
-        
-        low_idx = space.space_to_ey_index(low)  
-        high_idx = map(lambda x: x + 1, space.space_to_ey_index(high))
-
-        i2s = lambda i, j, k: space.hx_index_to_space(i, j + 1, k)
-        
-        self._set_pw_source(space, const.Ey, cosine, material_ey,
-                            low_idx, high_idx, TransparentEy, 
-                            i2s, const.MinusZ)
+        if 2 * space.half_size[2] > space.dz:
+            low = self.center - self.half_size
+            high = self.center + self.half_size * (1, 1, -1)
+            
+            low_idx = space.space_to_ey_index(low)  
+            high_idx = map(lambda x: x + 1, space.space_to_ey_index(high))
+    
+            hx_i2s = lambda i, j, k: space.hx_index_to_space(i, j + 1, k)
+            
+            self._set_pw_source(space, const.Ey, cosine, material_ey,
+                                low_idx, high_idx, TransparentEy, 
+                                hx_i2s, const.MinusZ)
     
     def _set_pw_source_ey_plus_z(self, material_ey, space, cosine):
-        low = self.center - self.half_size * (1, 1, -1)
-        high = self.center + self.half_size
-        
-        low_idx = space.space_to_ey_index(low)  
-        high_idx = map(lambda x: x + 1, space.space_to_ey_index(high))
-
-        i2s = lambda i, j, k: space.hx_index_to_space(i, j + 1, k + 1)
-        
-        self._set_pw_source(space, const.Ey, cosine, material_ey,
-                            low_idx, high_idx, TransparentEy,
-                            i2s, const.PlusZ)
+        if 2 * space.half_size[2] > space.dz:
+            low = self.center - self.half_size * (1, 1, -1)
+            high = self.center + self.half_size
+            
+            low_idx = space.space_to_ey_index(low)  
+            high_idx = map(lambda x: x + 1, space.space_to_ey_index(high))
+    
+            hx_i2s = lambda i, j, k: space.hx_index_to_space(i, j + 1, k + 1)
+            
+            self._set_pw_source(space, const.Ey, cosine, material_ey,
+                                low_idx, high_idx, TransparentEy,
+                                hx_i2s, const.PlusZ)
     
     def _set_pw_source_ey_minus_x(self, material_ey, space, cosine):
-        low = self.center - self.half_size
-        high = self.center + self.half_size * (-1, 1, 1)
-        
-        low_idx = space.space_to_ey_index(low)  
-        high_idx = map(lambda x: x + 1, space.space_to_ey_index(high))
-
-        i2s = lambda i, j, k: space.hz_index_to_space(i, j + 1, k)
-        
-        self._set_pw_source(space, const.Ey, cosine, material_ey,  
-                            low_idx, high_idx, TransparentEy,
-                            i2s, const.MinusX)
+        if 2 * space.half_size[0] > space.dx:
+            low = self.center - self.half_size
+            high = self.center + self.half_size * (-1, 1, 1)
+            
+            low_idx = space.space_to_ey_index(low)  
+            high_idx = map(lambda x: x + 1, space.space_to_ey_index(high))
+    
+            hz_i2s = lambda i, j, k: space.hz_index_to_space(i, j + 1, k)
+            
+            self._set_pw_source(space, const.Ey, cosine, material_ey,  
+                                low_idx, high_idx, TransparentEy,
+                                hz_i2s, const.MinusX)
     
     def _set_pw_source_ey_plus_x(self, material_ey, space, cosine):
-        low = self.center - self.half_size * (-1, 1, 1)
-        high = self.center + self.half_size
-        
-        low_idx = space.space_to_ey_index(low)  
-        high_idx = map(lambda x: x + 1, space.space_to_ey_index(high))
-
-        i2s = lambda i, j, k: space.hz_index_to_space(i + 1, j + 1, k)
-        
-        self._set_pw_source(space, const.Ey, cosine, material_ey,  
-                            low_idx, high_idx, TransparentEy,
-                            i2s, const.PlusX)
+        if 2 * space.half_size[0] > space.dx:
+            low = self.center - self.half_size * (-1, 1, 1)
+            high = self.center + self.half_size
+            
+            low_idx = space.space_to_ey_index(low)  
+            high_idx = map(lambda x: x + 1, space.space_to_ey_index(high))
     
-    def set_pointwise_source_ey(self, material_ey, space):
-        cosine = dot(self.e_direction, (0, 1, 0))
+            hz_i2s = lambda i, j, k: space.hz_index_to_space(i + 1, j + 1, k)
+            
+            self._set_pw_source(space, const.Ey, cosine, material_ey,  
+                                low_idx, high_idx, TransparentEy,
+                                hz_i2s, const.PlusX)
         
-        if cosine == 0:
-            return None
-        
-        self._set_pw_source_ey_minus_z(material_ey, space, cosine)
-        self._set_pw_source_ey_plus_z(material_ey, space, cosine)
-        self._set_pw_source_ey_minus_x(material_ey, space, cosine)
-        self._set_pw_source_ey_plus_x(material_ey, space, cosine)
-    
+    def set_pointwise_source_ez(self, material_ez, space):
+        cosine = dot(self.h_direction, (0, 1, 0))
+        if cosine != 0:
+            self._set_pw_source_ez_minus_x(material_ez, space, cosine)
+            self._set_pw_source_ez_plus_x(material_ez, space, cosine)
+            
+        cosine = dot(self.h_direction, (1, 0, 0))
+        if cosine != 0:
+            self._set_pw_source_ez_minus_y(material_ez, space, cosine)
+            self._set_pw_source_ez_plus_y(material_ez, space, cosine)
+                
     def _set_pw_source_ez_minus_x(self, material_ez, space, cosine):
-        low = self.center - self.half_size
-        high = self.center + self.half_size * (-1, 1, 1)
-        
-        low_idx = space.space_to_ez_index(low)  
-        high_idx = map(lambda x: x + 1, space.space_to_ez_index(high))
-
-        i2s = lambda i, j, k: space.hy_index_to_space(i, j, k + 1)
-        
-        self._set_pw_source(space, const.Ez, cosine, material_ez,  
-                            low_idx, high_idx, TransparentEz, 
-                            i2s, const.MinusX)
+        if 2 * space.half_size[0] > space.dx:
+            low = self.center - self.half_size
+            high = self.center + self.half_size * (-1, 1, 1)
+            
+            low_idx = space.space_to_ez_index(low)  
+            high_idx = map(lambda x: x + 1, space.space_to_ez_index(high))
+    
+            hy_i2s = lambda i, j, k: space.hy_index_to_space(i, j, k + 1)
+            
+            self._set_pw_source(space, const.Ez, cosine, material_ez,  
+                                low_idx, high_idx, TransparentEz, 
+                                hy_i2s, const.MinusX)
     
     def _set_pw_source_ez_plus_x(self, material_ez, space, cosine):
-        low = self.center - self.half_size * (-1, 1, 1)
-        high = self.center + self.half_size
-        
-        low_idx = space.space_to_ez_index(low)  
-        high_idx = map(lambda x: x + 1, space.space_to_ez_index(high))
-
-        i2s = lambda i, j, k: space.hy_index_to_space(i + 1, j, k + 1)
-        
-        self._set_pw_source(space, const.Ez, cosine, material_ez,
-                            low_idx, high_idx, TransparentEz,
-                            i2s, const.PlusX)
+        if 2 * space.half_size[0] > space.dx:
+            low = self.center - self.half_size * (-1, 1, 1)
+            high = self.center + self.half_size
+            
+            low_idx = space.space_to_ez_index(low)  
+            high_idx = map(lambda x: x + 1, space.space_to_ez_index(high))
+    
+            hy_i2s = lambda i, j, k: space.hy_index_to_space(i + 1, j, k + 1)
+            
+            self._set_pw_source(space, const.Ez, cosine, material_ez,
+                                low_idx, high_idx, TransparentEz,
+                                hy_i2s, const.PlusX)
     
     def _set_pw_source_ez_minus_y(self, material_ez, space, cosine):
-        low = self.center - self.half_size
-        high = self.center + self.half_size * (1, -1, 1)
-        
-        low_idx = space.space_to_ez_index(low)  
-        high_idx = map(lambda x: x + 1, space.space_to_ez_index(high))
-
-        i2s = lambda i, j, k: space.hx_index_to_space(i, j, k + 1)
-        
-        self._set_pw_source(space, const.Ez, cosine, material_ez,
-                            low_idx, high_idx, TransparentEz, 
-                            i2s, const.MinusY)
+        if 2 * space.half_size[1] > space.dy:
+            low = self.center - self.half_size
+            high = self.center + self.half_size * (1, -1, 1)
+            
+            low_idx = space.space_to_ez_index(low)  
+            high_idx = map(lambda x: x + 1, space.space_to_ez_index(high))
+    
+            hx_i2s = lambda i, j, k: space.hx_index_to_space(i, j, k + 1)
+            
+            self._set_pw_source(space, const.Ez, cosine, material_ez,
+                                low_idx, high_idx, TransparentEz, 
+                                hx_i2s, const.MinusY)
     
     def _set_pw_source_ez_plus_y(self, material_ez, space, cosine):
-        low = self.center - self.half_size * (1, -1, 1)
-        high = self.center + self.half_size
-        
-        low_idx = space.space_to_ez_index(low)  
-        high_idx = map(lambda x: x + 1, space.space_to_ez_index(high))
-
-        i2s = lambda i, j, k: space.hx_index_to_space(i, j + 1, k + 1)
-        
-        self._set_pw_source(space, const.Ez, cosine, material_ez,  
-                            low_idx, high_idx, TransparentEz, 
-                            i2s, const.PlusY)
-    
-    def set_pointwise_source_ez(self, material_ez, space):
-        cosine = dot(self.e_direction, (0, 0, 1))
-        
-        if cosine == 0:
-            return None
-        
-        self._set_pw_source_ez_minus_x(material_ez, space, cosine)
-        self._set_pw_source_ez_plus_x(material_ez, space, cosine)
-        self._set_pw_source_ez_minus_y(material_ez, space, cosine)
-        self._set_pw_source_ez_plus_y(material_ez, space, cosine)
-    
-    def _set_pw_source_hx_minus_y(self, material_hx, space, cosine):
-        low = self.center - self.half_size
-        high = self.center + self.half_size * (1, -1, 1)
-        
-        low_idx = space.space_to_ez_index(low)
-        high_idx = map(lambda x: x + 1, space.space_to_ez_index(high))
-        
-        low_idx = (low_idx[0], low_idx[1], low_idx[2] + 1)    
-        high_idx = (high_idx[0], high_idx[1], high_idx[2] + 1)
-        
-        i2s = lambda i, j, k: space.ez_index_to_space(i, j - 1, k - 1)
-        
-        self._set_pw_source(space, const.Hx, cosine, material_hx,
-                            low_idx, high_idx, TransparentHx, 
-                            i2s, const.MinusY)
-    
-    def _set_pw_source_hx_plus_y(self, material_hx, space, cosine):
-        low = self.center - self.half_size * (1, -1, 1)
-        high = self.center + self.half_size
-        
-        low_idx = space.space_to_ez_index(low)
-        high_idx = map(lambda x: x + 1, space.space_to_ez_index(high))
-        
-        low_idx = (low_idx[0], low_idx[1] + 1, low_idx[2] + 1)
-        high_idx = (high_idx[0], high_idx[1] + 1, high_idx[2] + 1)    
-        
-        i2s = lambda i, j, k: space.ez_index_to_space(i, j, k - 1)
-        
-        self._set_pw_source(space, const.Hx, cosine, material_hx,  
-                            low_idx, high_idx, TransparentHx,
-                            i2s, const.PlusY)
-    
-    def _set_pw_source_hx_minus_z(self, material_hx, space, cosine):
-        low = self.center - self.half_size
-        high = self.center + self.half_size * (1, 1, -1)
-        
-        low_idx = space.space_to_ey_index(low)
-        high_idx = map(lambda x: x + 1, space.space_to_ey_index(high))
-        
-        low_idx = (low_idx[0], low_idx[1] + 1, low_idx[2])
-        high_idx = (high_idx[0], high_idx[1] + 1, high_idx[2])
-        
-        i2s = lambda i, j, k: space.ey_index_to_space(i, j - 1, k - 1)
-        
-        self._set_pw_source(space, const.Hx, cosine, material_hx,
-                            low_idx, high_idx, TransparentHx,
-                            i2s, const.MinusZ)
-    
-    def _set_pw_source_hx_plus_z(self, material_hx, space, cosine):
-        low = self.center - self.half_size * (1, 1, -1)
-        high = self.center + self.half_size
-        
-        low_idx = space.space_to_ey_index(low)
-        high_idx = map(lambda x: x + 1, space.space_to_ey_index(high))
+        if 2 * space.half_size[1] > space.dy:
+            low = self.center - self.half_size * (1, -1, 1)
+            high = self.center + self.half_size
             
-        low_idx = (low_idx[0], low_idx[1] + 1, low_idx[2] + 1)
-        high_idx = (high_idx[0], high_idx[1] + 1, high_idx[2] + 1)
-        
-        i2s = lambda i, j, k: space.ey_index_to_space(i, j - 1, k)
-        
-        self._set_pw_source(space, const.Hx, cosine, material_hx,
-                            low_idx, high_idx, TransparentHx,
-                            i2s, const.PlusZ)
+            low_idx = space.space_to_ez_index(low)  
+            high_idx = map(lambda x: x + 1, space.space_to_ez_index(high))
+    
+            hx_i2s = lambda i, j, k: space.hx_index_to_space(i, j + 1, k + 1)
+            
+            self._set_pw_source(space, const.Ez, cosine, material_ez,  
+                                low_idx, high_idx, TransparentEz, 
+                                hx_i2s, const.PlusY)
         
     def set_pointwise_source_hx(self, material_hx, space):
-        cosine = dot(self.h_direction, (1, 0, 0))
-        
-        if cosine == 0:
-            return None
-        
-        self._set_pw_source_hx_minus_y(material_hx, space, cosine)
-        self._set_pw_source_hx_plus_y(material_hx, space, cosine)
-        self._set_pw_source_hx_minus_z(material_hx, space, cosine)
-        self._set_pw_source_hx_plus_z(material_hx, space, cosine)
-    
-    def _set_pw_source_hy_minus_z(self, material_hy, space, cosine):
-        low = self.center - self.half_size
-        high = self.center + self.half_size * (1, 1, -1)
-        
-        low_idx = space.space_to_ex_index(low)
-        high_idx = map(lambda x: x + 1, space.space_to_ex_index(high))
+        cosine = dot(self.e_direction, (0, 0, 1))
+        if cosine != 0:
+            self._set_pw_source_hx_minus_y(material_hx, space, cosine)
+            self._set_pw_source_hx_plus_y(material_hx, space, cosine)
             
-        low_idx = (low_idx[0] + 1, low_idx[1], low_idx[2])
-        high_idx = (high_idx[0] + 1, high_idx[1], high_idx[2])
+        cosine = dot(self.e_direction, (0, 1, 0))
+        if cosine != 0:   
+            self._set_pw_source_hx_minus_z(material_hx, space, cosine)
+            self._set_pw_source_hx_plus_z(material_hx, space, cosine)
         
-        i2s = lambda i, j, k: space.ex_index_to_space(i - 1, j, k - 1)
+    def _set_pw_source_hx_minus_y(self, material_hx, space, cosine):
+        if 2 * space.half_size[1] > space.dy:
+            low = self.center - self.half_size
+            high = self.center + self.half_size * (1, -1, 1)
+            
+            low_idx = space.space_to_ez_index(low)
+            high_idx = map(lambda x: x + 1, space.space_to_ez_index(high))
+            
+            low_idx = (low_idx[0], low_idx[1], low_idx[2] + 1)    
+            high_idx = (high_idx[0], high_idx[1], high_idx[2] + 1)
+            
+            ez_i2s = lambda i, j, k: space.ez_index_to_space(i, j, k - 1)
+            
+            self._set_pw_source(space, const.Hx, cosine, material_hx,
+                                low_idx, high_idx, TransparentHx, 
+                                ez_i2s, const.MinusY)
+    
+    def _set_pw_source_hx_plus_y(self, material_hx, space, cosine):
+        if 2 * space.half_size[1] > space.dy:
+            low = self.center - self.half_size * (1, -1, 1)
+            high = self.center + self.half_size
+            
+            low_idx = space.space_to_ez_index(low)
+            high_idx = map(lambda x: x + 1, space.space_to_ez_index(high))
+            
+            low_idx = (low_idx[0], low_idx[1] + 1, low_idx[2] + 1)
+            high_idx = (high_idx[0], high_idx[1] + 1, high_idx[2] + 1)    
+            
+            ez_i2s = lambda i, j, k: space.ez_index_to_space(i, j - 1, k - 1)
+            
+            self._set_pw_source(space, const.Hx, cosine, material_hx,  
+                                low_idx, high_idx, TransparentHx,
+                                ez_i2s, const.PlusY)
+    
+    def _set_pw_source_hx_minus_z(self, material_hx, space, cosine):
+        if 2 * space.half_size[2] > space.dz:
+            low = self.center - self.half_size
+            high = self.center + self.half_size * (1, 1, -1)
+            
+            low_idx = space.space_to_ey_index(low)
+            high_idx = map(lambda x: x + 1, space.space_to_ey_index(high))
+            
+            low_idx = (low_idx[0], low_idx[1] + 1, low_idx[2])
+            high_idx = (high_idx[0], high_idx[1] + 1, high_idx[2])
+            
+            ey_i2s = lambda i, j, k: space.ey_index_to_space(i, j - 1, k - 1)
+            
+            self._set_pw_source(space, const.Hx, cosine, material_hx,
+                                low_idx, high_idx, TransparentHx,
+                                ey_i2s, const.MinusZ)
+    
+    def _set_pw_source_hx_plus_z(self, material_hx, space, cosine):
+        if 2 * space.half_size[2] > space.dz:
+            low = self.center - self.half_size * (1, 1, -1)
+            high = self.center + self.half_size
+            
+            ey_low_idx = space.space_to_ey_index(low)
+            ey_high_idx = map(lambda x: x + 1, space.space_to_ey_index(high))
+            
+            low_idx = (ey_low_idx[0], ey_low_idx[1] + 1, ey_low_idx[2] + 1)
+            high_idx = (ey_high_idx[0], ey_high_idx[1] + 1, ey_high_idx[2] + 1)
+            
+            ey_i2s = lambda i, j, k: space.ey_index_to_space(i, j - 1, k)
+            
+            self._set_pw_source(space, const.Hx, cosine, material_hx,
+                                low_idx, high_idx, TransparentHx,
+                                ey_i2s, const.PlusZ)
         
-        self._set_pw_source(space, const.Hy, cosine, material_hy,
-                            low_idx, high_idx, TransparentHy,
-                            i2s, const.MinusZ)
+    def set_pointwise_source_hy(self, material_hy, space):
+        cosine = dot(self.e_direction, (1, 0, 0))
+        if cosine != 0:
+            self._set_pw_source_hy_minus_z(material_hy, space, cosine)
+            self._set_pw_source_hy_plus_z(material_hy, space, cosine)
+         
+        cosine = dot(self.e_direction, (0, 0, 1))
+        if cosine != 0:   
+            self._set_pw_source_hy_minus_x(material_hy, space, cosine)
+            self._set_pw_source_hy_plus_x(material_hy, space, cosine)
+                
+    def _set_pw_source_hy_minus_z(self, material_hy, space, cosine):
+        if 2 * space.half_size[2] > space.dz:
+            low = self.center - self.half_size
+            high = self.center + self.half_size * (1, 1, -1)
+            
+            low_idx = space.space_to_ex_index(low)
+            high_idx = map(lambda x: x + 1, space.space_to_ex_index(high))
+                
+            low_idx = (low_idx[0] + 1, low_idx[1], low_idx[2])
+            high_idx = (high_idx[0] + 1, high_idx[1], high_idx[2])
+            
+            ex_i2s = lambda i, j, k: space.ex_index_to_space(i - 1, j, k)
+            
+            self._set_pw_source(space, const.Hy, cosine, material_hy,
+                                low_idx, high_idx, TransparentHy,
+                                ex_i2s, const.MinusZ)
     
     def _set_pw_source_hy_plus_z(self, material_hy, space, cosine):
-        low = self.center - self.half_size * (1, 1, -1)
-        high = self.center + self.half_size
-        
-        low_idx = space.space_to_ex_index(low)
-        high_idx = map(lambda x: x + 1, space.space_to_ex_index(high))
+        if 2 * space.half_size[2] > space.dz:
+            low = self.center - self.half_size * (1, 1, -1)
+            high = self.center + self.half_size
             
-        low_idx = (low_idx[0] + 1, low_idx[1], low_idx[2] + 1)
-        high_idx = (high_idx[0] + 1, high_idx[1], high_idx[2] + 1)
-        
-        i2s = lambda i, j, k: space.ex_index_to_space(i - 1, j, k)
-        
-        self._set_pw_source(space, const.Hy, cosine, material_hy,
-                            low_idx, high_idx, TransparentHy,
-                            i2s, const.PlusZ)
+            low_idx = space.space_to_ex_index(low)
+            high_idx = map(lambda x: x + 1, space.space_to_ex_index(high))
+                
+            low_idx = (low_idx[0] + 1, low_idx[1], low_idx[2] + 1)
+            high_idx = (high_idx[0] + 1, high_idx[1], high_idx[2] + 1)
+            
+            ex_i2s = lambda i, j, k: space.ex_index_to_space(i - 1, j, k - 1)
+            
+            self._set_pw_source(space, const.Hy, cosine, material_hy,
+                                low_idx, high_idx, TransparentHy,
+                                ex_i2s, const.PlusZ)
     
     def _set_pw_source_hy_minus_x(self, material_hy, space, cosine):
-        low = self.center - self.half_size * (-1, 1, 1)
-        high = self.center + self.half_size
-        
-        low_idx = space.space_to_ez_index(low)
-        high_idx = map(lambda x: x + 1, space.space_to_ez_index(high))
+        if 2 * space.half_size[0] > space.dx:
+            low = self.center - self.half_size
+            high = self.center + self.half_size * (-1, 1, 1)
             
-        low_idx = (low_idx[0], low_idx[1], low_idx[2] + 1)
-        high_idx = (high_idx[0], high_idx[1], high_idx[2] + 1)
-        
-        i2s = lambda i, j, k: space.ez_index_to_space(i - 1, j, k - 1)
-        
-        self._set_pw_source(space, const.Hy, cosine, material_hy,
-                            low_idx, high_idx, TransparentHy,
-                            i2s, const.MinusX)
+            ez_low_idx = space.space_to_ez_index(low)
+            ez_high_idx = map(lambda x: x + 1, space.space_to_ez_index(high))
+                
+            low_idx = (ez_low_idx[0], ez_low_idx[1], ez_low_idx[2] + 1)
+            high_idx = (ez_high_idx[0], ez_high_idx[1], ez_high_idx[2] + 1)
+            
+            ez_i2s = lambda i, j, k: space.ez_index_to_space(i, j, k - 1)
+            
+            self._set_pw_source(space, const.Hy, cosine, material_hy,
+                                low_idx, high_idx, TransparentHy,
+                                ez_i2s, const.MinusX)
     
     def _set_pw_source_hy_plus_x(self, material_hy, space, cosine):
-        low = self.center - self.half_size
-        high = self.center + self.half_size * (-1, 1, 1)
-        
-        low_idx = space.space_to_ex_index(low)
-        high_idx = map(lambda x: x + 1, space.space_to_ex_index(high))
+        if 2 * space.half_size[0] > space.dx:
+            low = self.center - self.half_size * (-1, 1, 1)
+            high = self.center + self.half_size
             
-        low_idx = (low_idx[0] + 1, low_idx[1], low_idx[2] + 1)
-        high_idx = (high_idx[0] + 1, high_idx[1], high_idx[2] + 1)
+            ez_low_idx = space.space_to_ez_index(low)
+            ez_high_idx = map(lambda x: x + 1, space.space_to_ez_index(high))
+                
+            low_idx = (ez_low_idx[0] + 1, ez_low_idx[1], ez_low_idx[2] + 1)
+            high_idx = (ez_high_idx[0] + 1, ez_high_idx[1], ez_high_idx[2] + 1)
+            
+            ez_i2s = lambda i, j, k: space.ez_index_to_space(i - 1, j, k - 1)
+            
+            self._set_pw_source(space, const.Hy, cosine, material_hy,
+                                low_idx, high_idx, TransparentHy,
+                                ez_i2s, const.PlusX)
         
-        i2s = lambda i, j, k: space.ez_index_to_space(i, j, k - 1)
-        
-        self._set_pw_source(space, const.Hy, cosine, material_hy,
-                            low_idx, high_idx, TransparentHy,
-                            i2s, const.PlusX)
-    
-    def set_pointwise_source_hy(self, material_hy, space):
-        cosine = dot(self.h_direction, (0, 1, 0))
-        
-        if cosine == 0:
-            return None
-        
-        self._set_pw_source_hy_minus_z(material_hy, space, cosine)
-        self._set_pw_source_hy_plus_z(material_hy, space, cosine)
-        self._set_pw_source_hy_minus_x(material_hy, space, cosine)
-        self._set_pw_source_hy_plus_x(material_hy, space, cosine)
+    def set_pointwise_source_hz(self, material_hz, space):
+        cosine = dot(self.e_direction, (0, 1, 0))
+        if cosine != 0:
+            self._set_pw_source_hz_minus_x(material_hz, space, cosine)
+            self._set_pw_source_hz_plus_x(material_hz, space, cosine)
+            
+        cosine = dot(self.e_direction, (1, 0, 0))
+        if cosine != 0:
+            self._set_pw_source_hz_minus_y(material_hz, space, cosine)
+            self._set_pw_source_hz_plus_y(material_hz, space, cosine)
         
     def _set_pw_source_hz_minus_x(self, material_hz, space, cosine):
-        low = self.center - self.half_size
-        high = self.center + self.half_size * (-1, 1, 1)
-        
-        low_idx = space.space_to_ey_index(low)
-        high_idx = map(lambda x: x + 1, space.space_to_ey_index(high))
+        if 2 * space.half_size[0] > space.dx:
+            low = self.center - self.half_size
+            high = self.center + self.half_size * (-1, 1, 1)
             
-        low_idx = (low_idx[0], low_idx[1] + 1, low_idx[2])
-        high_idx = (high_idx[0], high_idx[1] + 1, high_idx[2])
-        
-        i2s = lambda i, j, k: space.ey_index_to_space(i - 1, j - 1, k)
-        
-        self._set_pw_source(space, const.Hz, cosine, material_hz,
-                            low_idx, high_idx, TransparentHz,
-                            i2s, const.MinusX)
+            low_idx = space.space_to_ey_index(low)
+            high_idx = map(lambda x: x + 1, space.space_to_ey_index(high))
+                
+            low_idx = (low_idx[0], low_idx[1] + 1, low_idx[2])
+            high_idx = (high_idx[0], high_idx[1] + 1, high_idx[2])
+            
+            ey_i2s = lambda i, j, k: space.ey_index_to_space(i, j - 1, k)
+            
+            self._set_pw_source(space, const.Hz, cosine, material_hz,
+                                low_idx, high_idx, TransparentHz,
+                                ey_i2s, const.MinusX)
     
     def _set_pw_source_hz_plus_x(self, material_hz, space, cosine):
-        low = self.center - self.half_size * (-1, 1, 1)
-        high = self.center + self.half_size
-        
-        low_idx = space.space_to_ey_index(low)
-        high_idx = map(lambda x: x + 1, space.space_to_ey_index(high))
+        if 2 * space.half_size[0] > space.dx:
+            low = self.center - self.half_size * (-1, 1, 1)
+            high = self.center + self.half_size
             
-        low_idx = (low_idx[0] + 1, low_idx[1] + 1, low_idx[2])
-        high_idx = (high_idx[0] + 1, high_idx[1] + 1, high_idx[2])
-        
-        i2s = lambda i, j, k: space.ey_index_to_space(i, j - 1, k)
-        
-        self._set_pw_source(space, const.Hz, cosine, material_hz,
-                            low_idx, high_idx, TransparentHz,
-                            i2s, const.PlusX)
+            low_idx = space.space_to_ey_index(low)
+            high_idx = map(lambda x: x + 1, space.space_to_ey_index(high))
+                
+            low_idx = (low_idx[0] + 1, low_idx[1] + 1, low_idx[2])
+            high_idx = (high_idx[0] + 1, high_idx[1] + 1, high_idx[2])
+            
+            ey_i2s = lambda i, j, k: space.ey_index_to_space(i - 1, j - 1, k)
+            
+            self._set_pw_source(space, const.Hz, cosine, material_hz,
+                                low_idx, high_idx, TransparentHz,
+                                ey_i2s, const.PlusX)
     
     def _set_pw_source_hz_minus_y(self, material_hz, space, cosine):
-        low = self.center - self.half_size
-        high = self.center + self.half_size * (1, -1, 1)
-        
-        low_idx = space.space_to_ex_index(low)
-        high_idx = map(lambda x: x + 1, space.space_to_ex_index(high))
+        if 2 * space.half_size[1] > space.dy:
+            low = self.center - self.half_size
+            high = self.center + self.half_size * (1, -1, 1)
             
-        low_idx = (low_idx[0] + 1, low_idx[1], low_idx[2])
-        high_idx = (high_idx[0] + 1, high_idx[1], high_idx[2])
-        
-        i2s = lambda i, j, k: space.ex_index_to_space(i - 1, j - 1, k)
-        
-        self._set_pw_source(space, const.Hz, cosine, material_hz,
-                            low_idx, high_idx, TransparentHz,
-                            i2s, const.MinusY)
+            low_idx = space.space_to_ex_index(low)
+            high_idx = map(lambda x: x + 1, space.space_to_ex_index(high))
+                
+            low_idx = (low_idx[0] + 1, low_idx[1], low_idx[2])
+            high_idx = (high_idx[0] + 1, high_idx[1], high_idx[2])
+            
+            ex_i2s = lambda i, j, k: space.ex_index_to_space(i, j - 1, k)
+            
+            self._set_pw_source(space, const.Hz, cosine, material_hz,
+                                low_idx, high_idx, TransparentHz,
+                                ex_i2s, const.MinusY)
     
     def _set_pw_source_hz_plus_y(self, material_hz, space, cosine):
-        low = self.center - self.half_size * (1, -1, 1)
-        high = self.center + self.half_size
-        
-        low_idx = space.space_to_ex_index(low)
-        high_idx = map(lambda x: x + 1, space.space_to_ex_index(high))
+        if 2 * space.half_size[1] > space.dy:
+            low = self.center - self.half_size * (1, -1, 1)
+            high = self.center + self.half_size
             
-        low_idx = (low_idx[0] + 1, low_idx[1] + 1, low_idx[2])
-        high_idx = (high_idx[0] + 1, high_idx[1] + 1, high_idx[2])
-        
-        i2s = lambda i, j, k: space.ex_index_to_space(i - 1, j, k)
-        
-        self._set_pw_source(space, const.Hz, cosine, material_hz,
-                            low_idx, high_idx, TransparentHz,
-                            i2s, const.PlusY)
-    
-    def set_pointwise_source_hz(self, material_hz, space):
-        cosine = dot(self.h_direction, (0, 0, 1))
-        
-        if cosine == 0:
-            return None
-
-        self._set_pw_source_hz_minus_x(material_hz, space, cosine)
-        self._set_pw_source_hz_plus_x(material_hz, space, cosine)
-        self._set_pw_source_hz_minus_y(material_hz, space, cosine)
-        self._set_pw_source_hz_plus_y(material_hz, space, cosine)
+            low_idx = space.space_to_ex_index(low)
+            high_idx = map(lambda x: x + 1, space.space_to_ex_index(high))
+                
+            low_idx = (low_idx[0] + 1, low_idx[1] + 1, low_idx[2])
+            high_idx = (high_idx[0] + 1, high_idx[1] + 1, high_idx[2])
+            
+            ex_2s = lambda i, j, k: space.ex_index_to_space(i - 1, j - 1, k)
+            
+            self._set_pw_source(space, const.Hz, cosine, material_hz,
+                                low_idx, high_idx, TransparentHz,
+                                ex_i2s, const.PlusY)    
         
         
 class GaussianBeam( TotalFieldScatteredField):
@@ -859,8 +886,8 @@ class GaussianBeam( TotalFieldScatteredField):
     def set_pointwise_source_ex(self, material_ex, space):
         cosine = dot(self.e_direction, (1, 0, 0))
         
-        if cosine == 0:
-            return None
+#        if cosine == 0:
+#            return None
         
         if self.directivity is const.PlusY:
             self._set_pw_source_ex_minus_y(material_ex, space, cosine)
@@ -880,8 +907,8 @@ class GaussianBeam( TotalFieldScatteredField):
     def set_pointwise_source_ey(self, material_ey, space):
         cosine = dot(self.e_direction, (0, 1, 0))
         
-        if cosine == 0:
-            return None
+#        if cosine == 0:
+#            return None
         
         if self.directivity is const.PlusZ:
             self._set_pw_source_ey_minus_z(material_ey, space, cosine)
@@ -901,8 +928,8 @@ class GaussianBeam( TotalFieldScatteredField):
     def set_pointwise_source_ez(self, material_ez, space):
         cosine = dot(self.e_direction, (0, 0, 1))
         
-        if cosine == 0:
-            return None
+#        if cosine == 0:
+#            return None
         
         if self.directivity is const.PlusX:
             self._set_pw_source_ez_minus_x(material_ez, space, cosine)
@@ -922,8 +949,8 @@ class GaussianBeam( TotalFieldScatteredField):
     def set_pointwise_source_hx(self, material_hx, space):
         cosine = dot(self.h_direction, (1, 0, 0))
         
-        if cosine == 0:
-            return None
+#        if cosine == 0:
+#            return None
         
         if self.directivity is const.PlusY:
             self._set_pw_source_hx_minus_y(material_hx, space, cosine)
@@ -943,8 +970,8 @@ class GaussianBeam( TotalFieldScatteredField):
     def set_pointwise_source_hy(self, material_hy, space):
         cosine = dot(self.h_direction, (0, 1, 0))
         
-        if cosine == 0:
-            return None
+#        if cosine == 0:
+#            return None
         
         if self.directivity is const.PlusZ:
             self._set_pw_source_hy_minus_z(material_hy, space, cosine)
@@ -964,8 +991,8 @@ class GaussianBeam( TotalFieldScatteredField):
     def set_pointwise_source_hz(self, material_hz, space):
         cosine = dot(self.h_direction, (0, 0, 1))
         
-        if cosine == 0:
-            return None
+#        if cosine == 0:
+#            return None
             
         if self.directivity is const.PlusX:
             self._set_pw_source_hz_minus_x(material_hz, space, cosine)
