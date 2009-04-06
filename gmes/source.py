@@ -884,126 +884,120 @@ class GaussianBeam( TotalFieldScatteredField):
         return exp(-(r / self.waist)**2)
         
     def set_pointwise_source_ex(self, material_ex, space):
-        cosine = dot(self.e_direction, (1, 0, 0))
-        
-#        if cosine == 0:
-#            return None
-        
         if self.directivity is const.PlusY:
+            cosine = dot(self.h_direction, (0, 0, 1))
             self._set_pw_source_ex_minus_y(material_ex, space, cosine)
             
         elif self.directivity is const.MinusY:
+            cosine = dot(self.h_direction, (0, 0, 1))
             self._set_pw_source_ex_plus_y(material_ex, space, cosine)
             
         elif self.directivity is const.PlusZ:
+            cosine = dot(self.h_direction, (0, 1, 0))
             self._set_pw_source_ex_minus_z(material_ex, space, cosine)
             
         elif self.directivity is const.MinusZ:
+            cosine = dot(self.h_direction, (0, 1, 0))
             self._set_pw_source_ex_plus_z(material_ex, space, cosine)
             
         else:
             return None
         
     def set_pointwise_source_ey(self, material_ey, space):
-        cosine = dot(self.e_direction, (0, 1, 0))
-        
-#        if cosine == 0:
-#            return None
-        
         if self.directivity is const.PlusZ:
+            cosine = dot(self.h_direction, (1, 0, 0))
             self._set_pw_source_ey_minus_z(material_ey, space, cosine)
             
         elif self.directivity is const.MinusZ:
+            cosine = dot(self.h_direction, (1, 0, 0))
             self._set_pw_source_ey_plus_z(material_ey, space, cosine)
             
         elif self.directivity is const.PlusX:
+            cosine = dot(self.h_direction, (0, 0, 1))
             self._set_pw_source_ey_minus_x(material_ey, space, cosine)
             
         elif self.directivity is const.MinusX:
+            cosine = dot(self.h_direction, (0, 0, 1))
             self._set_pw_source_ey_plus_x(material_ey, space, cosine)
             
         else:
             return None
         
     def set_pointwise_source_ez(self, material_ez, space):
-        cosine = dot(self.e_direction, (0, 0, 1))
-        
-#        if cosine == 0:
-#            return None
-        
         if self.directivity is const.PlusX:
+            cosine = dot(self.h_direction, (0, 1, 0))
             self._set_pw_source_ez_minus_x(material_ez, space, cosine)
             
         elif self.directivity is const.MinusX:
+            cosine = dot(self.h_direction, (0, 1, 0))
             self._set_pw_source_ez_plus_x(material_ez, space, cosine)
             
         elif self.directivity is const.PlusY:
+            cosine = dot(self.h_direction, (1, 0, 0))
             self._set_pw_source_ez_minus_y(material_ez, space, cosine)
             
         elif self.directivity is const.MinusY:
+            cosine = dot(self.h_direction, (1, 0, 0))
             self._set_pw_source_ez_plus_y(material_ez, space, cosine)
             
         else:
             return None
         
     def set_pointwise_source_hx(self, material_hx, space):
-        cosine = dot(self.h_direction, (1, 0, 0))
-        
-#        if cosine == 0:
-#            return None
-        
         if self.directivity is const.PlusY:
+            cosine = dot(self.e_direction, (0, 0, 1))
             self._set_pw_source_hx_minus_y(material_hx, space, cosine)
             
         elif self.directivity is const.MinusY:
+            cosine = dot(self.e_direction, (0, 0, 1))
             self._set_pw_source_hx_plus_y(material_hx, space, cosine)
             
         elif self.directivity is const.PlusZ:
+            cosine = dot(self.e_direction, (0, 1, 0))
             self._set_pw_source_hx_minus_z(material_hx, space, cosine)
             
         elif self.directivity is const.MinusZ:
+            cosine = dot(self.e_direction, (0, 1, 0))
             self._set_pw_source_hx_plus_z(material_hx, space, cosine)
             
         else:
             return None
         
     def set_pointwise_source_hy(self, material_hy, space):
-        cosine = dot(self.h_direction, (0, 1, 0))
-        
-#        if cosine == 0:
-#            return None
-        
         if self.directivity is const.PlusZ:
+            cosine = dot(self.e_direction, (1, 0, 0))
             self._set_pw_source_hy_minus_z(material_hy, space, cosine)
             
         elif self.directivity is const.MinusZ:
+            cosine = dot(self.e_direction, (1, 0, 0))
             self._set_pw_source_hy_plus_z(material_hy, space, cosine)
             
         elif self.directivity is const.PlusX:
+            cosine = dot(self.e_direction, (0, 0, 1))
             self._set_pw_source_hy_minus_x(material_hy, space, cosine)
             
         elif self.directivity is const.MinusX:
+            cosine = dot(self.e_direction, (0, 0, 1))
             self._set_pw_source_hy_plus_x(material_hy, space, cosine)
             
         else:
             return None
         
     def set_pointwise_source_hz(self, material_hz, space):
-        cosine = dot(self.h_direction, (0, 0, 1))
-        
-#        if cosine == 0:
-#            return None
-            
         if self.directivity is const.PlusX:
+            cosine = dot(self.e_direction, (0, 1, 0))
             self._set_pw_source_hz_minus_x(material_hz, space, cosine)
             
         elif self.directivity is const.MinusX:
+            cosine = dot(self.e_direction, (0, 1, 0))
             self._set_pw_source_hz_plus_x(material_hz, space, cosine)
             
         elif self.directivity is const.PlusY:
+            cosine = dot(self.e_direction, (1, 0, 0))
             self._set_pw_source_hz_minus_y(material_hz, space, cosine)
             
         elif self.directivity is const.MinusY:
+            cosine = dot(self.e_direction, (1, 0, 0))
             self._set_pw_source_hz_plus_y(material_hz, space, cosine)
             
         else:
