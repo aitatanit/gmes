@@ -1543,7 +1543,7 @@ class Ellipsoid(_Block):
     
     """
     def __init__(self, material, e1=(1,0,0), e2=(0,1,0), e3=(0,0,1), size=(1,1,1), center=(0,0,0)):
-        _Block.__init__(self, e1, e2, e3, size, material, center)
+        _Block.__init__(self, material, e1, e2, e3, size, center)
 
         self.inverse_semi_axes = 2 / array(size, float)
 
@@ -1586,7 +1586,7 @@ class Sphere(Ellipsoid):
         else:
             self.radius = radius
             
-        Ellipsoid.__init__(self, (1,0,0), (0,1,0), (0,0,1), (radius,radius,radius), material, center)
+        Ellipsoid.__init__(self, material, (1,0,0), (0,1,0), (0,0,1), (radius,radius,radius), center)
 
     def display_info(self, indent=0):
         print " " * indent, "sphere"
