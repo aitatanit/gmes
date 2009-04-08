@@ -308,17 +308,21 @@ class TotalFieldScatteredField(Src):
         return k2_scalar
 
     def _get_aux_fdtd(self, space):
+        """Returns a TEMz FDTD for a reference of a plane wave. 
+        
+        """
         aux_ds = {const.PlusX: space.dx, const.MinusX: space.dx,  
                   const.PlusY: space.dy, const.MinusY: space.dy,
                   const.PlusZ: space.dz, const.MinusZ: space.dz}
         
         dz = aux_ds[self.on_axis_k]
         
+        pml_thickness = 10 * dz
         border = self.center + .5 * self.size
-        aux_long_size = \
-        2 * abs(self._dist_from_center_along_beam_axis(border)) + 30 * dz
-        src_pnt = (0, 0, -abs(self._dist_from_center_along_beam_axis(border)) - 5 * dz)
-        aux_size = (0 , 0, aux_long_size)
+        
+        longitudinal_size = \
+        2 * (abs(self._dist_from_center_along_beam_axis(border)) + pml_thickness + dz)
+        aux_size = (0, 0, longitudinal_size)
         
         mat_objs =  self.geom_tree.material_of_point((inf, inf, inf))
         
@@ -328,8 +332,10 @@ class TotalFieldScatteredField(Src):
                               parallel=False)
         aux_geom_list = (DefaultMaterial(material=mat_objs[0]),
                          Boundary(material=CPML(), 
-                                  thickness=10*dz, 
-                                  size=aux_size))
+                                  thickness=pml_thickness, 
+                                  size=aux_size,
+                                  minus_z=False))
+        src_pnt = aux_space.ex_index_to_space(0, 0, 0)
         aux_src_list = (Dipole(src_time=deepcopy(self.src_time), 
                                component=const.Ex, 
                                pos=src_pnt),)
@@ -343,15 +349,15 @@ class TotalFieldScatteredField(Src):
                        low_idx, high_idx, source, samp_i2s, face):
         """
         Arguments:
-        space - the Coordinate object given as a FDTD argument.
-        component - Specify the field component.
-        cosine - the cosine of the field vector and the given component.
-        material - pointwise material object array.
-        low_idx - the low end index of the source boundary
-        high_idx - the high end index of the source boundary
-        source - the pointwise source class
-        samp_i2s - the corresponding index_to_space function
-        face - which side of the interface
+            space - the Coordinate object given as a FDTD argument.
+            component - Specify the field component.
+            cosine - the cosine of the field vector and the given component.
+            material - pointwise material object array.
+            low_idx - the low end index of the source boundary
+            high_idx - the high end index of the source boundary
+            source - the pointwise source class
+            samp_i2s - the corresponding index_to_space function
+            face - which side of the interface
         
         """
         aux_ds = {const.PlusX: space.dx, const.MinusX: space.dx,  

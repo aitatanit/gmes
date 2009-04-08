@@ -56,10 +56,6 @@ class FDTD(object):
         self.space = space
 		
         self.fig_id = self.space.my_id
-        
-        self.geom_list = deepcopy(geom_list)
-        for geom_obj in self.geom_list:
-            geom_obj.init(self.space)
             
         self.dx, self.dy, self.dz = space.dx, space.dy, space.dz
         self.dt = space.dt
@@ -67,6 +63,16 @@ class FDTD(object):
         
         if verbose:
             self.space.display_info()
+        
+        if verbose:
+            print "Initializing the geometry list...",
+            
+        self.geom_list = deepcopy(geom_list)
+        for geom_obj in self.geom_list:
+            geom_obj.init(self.space)
+            
+        if verbose:
+            print "done."
             
         if verbose:
             print "Generating geometric binary search tree...",

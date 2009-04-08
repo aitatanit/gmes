@@ -1622,58 +1622,17 @@ class Boundary(GeometricObject):
                  direction z is set. Default is True.
              minus_z -- Specify whether the low of the boundary in 
                  direction z is set. Default is True.
-         
-         """
+        
+        """
         self.d = float(thickness)
         
-        half_size = []
-        for i in size:
-            if i < 2 * self.d:
-                i = inf
-            else:
-                i *= 0.5
-            half_size.append(i)
-            
-        self.half_size = array(half_size, float)
+        self.half_size = .5 * array(size, float)
         
         self.box_list = []
         
-        if size[0] > 0:
-            if plus_x:
-                low = (self.half_size[0] - self.d, -self.half_size[1], -self.half_size[2])
-                high = self.half_size[:]
-                self.box_list.append(GeomBox(low, high))
-            if minus_x:
-                low = -self.half_size[:]
-                high = (-self.half_size[0] + self.d, self.half_size[1], self.half_size[2])
-                self.box_list.append(GeomBox(low, high))
-                
-        if size[1] > 0:
-            if plus_y:
-                low = (-self.half_size[0], self.half_size[1] - self.d, -self.half_size[2])
-                high = self.half_size[:]
-                self.box_list.append(GeomBox(low, high))
-            if minus_y:
-                low = -self.half_size[:]
-                high = (self.half_size[0], -self.half_size[1] + self.d, self.half_size[2])
-                self.box_list.append(GeomBox(low, high))
-                
-        if size[2] > 0:   
-            if plus_z:
-                low = (-self.half_size[0], -self.half_size[1], self.half_size[2] - self.d)
-                high = self.half_size[:]
-                self.box_list.append(GeomBox(low, high))
-            if minus_z:
-                low = -self.half_size[:]
-                high = (self.half_size[0], self.half_size[1], -self.half_size[2] + self.d)
-                self.box_list.append(GeomBox(low, high))
-        
-        self.plus_x = plus_x
-        self.minus_x = minus_x
-        self.plus_y = plus_y
-        self.minus_y = minus_y
-        self.plus_z = plus_z
-        self.minus_z = minus_z
+        self.minus_x, self.plus_x = minus_x, plus_x
+        self.minus_y, self.plus_y = minus_y, plus_y
+        self.minus_z, self.plus_z = minus_z, plus_z
          
         if material.__class__ .__name__ == 'CPML':
             pass
@@ -1682,17 +1641,50 @@ class Boundary(GeometricObject):
             pass
         
         GeometricObject.__init__(self, material)
-        
+                
     def init(self, space):
+        if 2 * self.half_size[0] < space.dx:
+            self.half_size[0] = 0.5 * space.dx
+        
+        if 2 * self.half_size[1] < space.dy:
+            self.half_size[1] = 0.5 * space.dy
+            
+        if 2 * self.half_size[2] < space.dz:
+            self.half_size[2] = 0.5 * space.dz
+            
+        if 2 * self.half_size[0] > space.dx:
+            if self.plus_x:
+                low = (self.half_size[0] - self.d, -self.half_size[1], -self.half_size[2])
+                high = self.half_size[:]
+                self.box_list.append(GeomBox(low, high))
+            if self.minus_x:
+                low = -self.half_size[:]
+                high = (-self.half_size[0] + self.d, self.half_size[1], self.half_size[2])
+                self.box_list.append(GeomBox(low, high))
+                
+        if 2 * self.half_size[1] > space.dy:
+            if self.plus_y:
+                low = (-self.half_size[0], self.half_size[1] - self.d, -self.half_size[2])
+                high = self.half_size[:]
+                self.box_list.append(GeomBox(low, high))
+            if self.minus_y:
+                low = -self.half_size[:]
+                high = (self.half_size[0], -self.half_size[1] + self.d, self.half_size[2])
+                self.box_list.append(GeomBox(low, high))
+                
+        if 2 * self.half_size[2] > space.dz:
+            if self.plus_z:
+                low = (-self.half_size[0], -self.half_size[1], self.half_size[2] - self.d)
+                high = self.half_size[:]
+                self.box_list.append(GeomBox(low, high))
+            if self.minus_z:
+                low = -self.half_size[:]
+                high = (self.half_size[0], self.half_size[1], -self.half_size[2] + self.d)
+                self.box_list.append(GeomBox(low, high))
+        
         self.material.init(self.d, space)
         
     def in_object(self, point):
-#        
-#        if len(point) == 1:
-#            idx_tmp = array(point[0], int)
-#        elif len(point) == 3:
-#            idx_tmp = array(point, int)
-            
         for box in self.box_list:
             if box.in_box(point):
                 return True
