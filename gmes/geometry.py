@@ -1586,7 +1586,7 @@ class Sphere(Ellipsoid):
         else:
             self.radius = radius
             
-        Ellipsoid.__init__(self, material, (1,0,0), (0,1,0), (0,0,1), (radius,radius,radius), center)
+        Ellipsoid.__init__(self, material, (1,0,0), (0,1,0), (0,0,1), (2*radius,2*radius,2*radius), center)
 
     def display_info(self, indent=0):
         print " " * indent, "sphere"
