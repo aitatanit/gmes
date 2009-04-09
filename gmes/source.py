@@ -842,7 +842,7 @@ class TotalFieldScatteredField(Src):
                                 ex_i2s, const.PlusY)    
         
         
-class GaussianBeam( TotalFieldScatteredField):
+class GaussianBeam(TotalFieldScatteredField):
     """Launch a transparent Gaussian beam.
     
     It works as a guided mode with Gaussian profile is launched through the incidence interface.
