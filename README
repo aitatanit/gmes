@@ -2,127 +2,126 @@ This README file describes how to compile and set up GMES.
 
 1. Download Latest Version
 
-You can download the latest release at the GMES project page of 
-sourceforge:
+You can download the latest release at the GMES project page of sourceforge:
 
 http://sourceforge.net/projects/gmes
 
-The most current development version is always available from a 
-subversion repository:
+The current development version is always available from a subversion 
+repository:
 
 http://gmes.svn.sf.net/svnroot/gmes/trunk
 
-1. Compatibility
+2. Compatibility
 
-1.1. GNU/Linux
+2.1. GNU/Linux
 
-GMES has been tested on Etch (stable) and Sid (unstable) version of
-Debian GNU/Linux. Also, GMES works on Hardy Heron and Intrepid Ibex
-version of Ubuntu. On Linux, you can use all features of GMES.
+GMES has been tested on Leny (stable) version of Debian GNU/Linux. Also, GMES
+works on Intrepid Ibex version of Ubuntu.
 
-1.1. Windows
+2.2. Windows
 
-GMES has been tested on Windows XP Professional Service Pack 3 and
+GMES has been tested on Windows XP Professional Service Pack 3 and Windows 
 Vista Enterprise K Service Pack 1.
 
-1. Preliminaries
+3. Preliminaries
 
-1.1. GNU/Linux
+3.1. GNU/Linux
 
-GMES uses various Python and non-Python programs. You will need 
-following programs to install and execute GMES.
+GMES uses various Python and non-Python programs. You will need following 
+programs to install and execute GMES. The following programs are provided as 
+packages on Debian and Ubuntu distributions, except the MPICH2 and MPI4Python.
 
 * python >= 2.4 (tested with 2.4 and 2.5)
 * numpy (Debian package: python-numpy)
 * scipy (Debian package: python-scipy)
 * pytables (optional) (Debian package: python-tables)
-* matplotlib: version 0.91.2-2 of Debian Sid sometimes causes 
-segmentation fault. 0.87.7-0.3 of Debian Etch and 0.92.2.0001 of 
-Enthought Python for Windows are fine. (Debian package: 
-python-matplotlib)
+* matplotlib: (Debian package: python-matplotlib)
 * MPI4Python >= 0.6.0 (optional) (with MPICH2 >= 1.0.8)
 * swig >= 1.3 (for compile) (Debian package: swig)
-* gcc (to compile)
+* g++ (to compile) (Debian package: g++)
 
-1.1. Windows
+3.2. Windows
 
-Enthought Python distribution provides all programs except MPI4Python
-and MPI2 implementation on which GMES depends.
+Enthought Python distribution provides all programs except MPICH2 and 
+MPI4Python on which GMES depends. We didn't tested the MPI environment on 
+Windows.
 
-* Enthought Python Distribution (EPD) >= 2.5.2001
+* Enthought Python Distribution (EPD) >= 4.2.30201
 
-1. Compile and Install
+4. Compile and Install
 
-1.1. For GNU/Linux
+If you like to test the GMES without or before installation, follow 'compile 
+for the inplace test' section. Otherwise, follow 'compile' and 'install' 
+sections in order. The command preceding '#' mark means that the command 
+should be executed as the root privilege. 
 
-1.1.1. compile for the inplace test
+4.1. For GNU/Linux
+
+4.1.1. compile for the inplace test
 
 $ python setup.py build_ext --inplace --swig-opts="-c++ -outdir gmes"
 
-1.1.1. compile
+4.1.2. compile
 
 $ python setup.py build_ext --swig-opts="-c++"
 
-1.1.1. install
+4.1.3. install
 
 # python setup.py install build_ext --swig-opts="-c++"
 
-1.1. For Windows
+4.2. For Windows
 
-1.1.1. compile for the inplace test
+4.2.1. compile for the inplace test
 
 $ python setup.py build_ext --inplace --swig-opts="-c++ -outdir gmes" -c mingw32
 
-1.1.1. compile
+4.2.2. compile
 
 $ python setup.py build_ext -c mingw32
 
-1.1.1. compile & install
+4.2.3. compile & install
 
 # python setup.py install build_ext -c mingw32
 
-1. Execution Commands
+5. Execution Commands
 
-1.1. GNU/Linux with MPI2
+5.1. GNU/Linux with MPI2
 
-Your MPI2 implementation may requires pre- or post- commands to exploit
-the parallel environment.
+Your MPI2 implementation may requires pre- or post- commands to exploit the 
+parallel environment. Consult the manuals of your MPI2 implementation for 
+these commands. <N> and <GMES SCRipT> indicate the number of parallel process
+and your script which uses the GMES package.
  
-$ mpiexec -machinefile <HOST FILE> -l -n <N> python <GMES SCRIPT>
+$ mpiexec -l -n <N> python <GMES SCRIPT>
 
-1. Known Issues
+6. Known Issues
 
-1.1. Matplotlib in Windows
+6.1. Matplotlib in Windows
 
-fdtd.show_* methods use Matplotlib packages. The Matplotlib package for
-Windows seems to that it does not handle multiple plots in multiple
-windows.
+The EPD version of the Matplotlib package which is required by fdtd.show_* 
+methods seems to that it does not handle multiple plots in multiple windows.
+Thus, on Windows, the multiple real-time display windows using fdtd.show_* 
+methods could be freeze. The Linux version of matplotlib does not have this 
+problem.
 
-1.1. numpy.inf
+6.2. numpy.inf
 
-GMES does not treat well the value of numpy.inf. Please use large 
-enough value instead of numpy.inf.
+GMES does not treat well the value of numpy.inf. Please use large enough 
+value instead of numpy.inf.
 
-1. FAQ
+6.3. compile failure on Windows
 
-1.1. In Windows(TM), why does the display window freeze when I use 
-	FDTD.show_permittivity_* and FDTD.show_* simultaneously?
-
-The Windows version of matplotlib dose not handle the the multiple 
-display windows fluently. The Linux version of matplotlib does not have
-this problem.
-
-1.1. In Windows(TM), the compile command dies with the following error.
+On Windows, the compile command may die with the following error.
 
 g++: build\temp.win32-2.5\Release\src\lib_pointwise_material.a: No such
 file or directory
 
-Comment out the following the third line from 
+If you meet this error, comment out the following third line from 
 C:<Python Folder>\Lib\distutils\cygwinccompiler.py.
 
 # dllwrap uses different options than gcc/ld
 if self.linker_dll == "dllwrap":
-    extra_preargs.extend(["--output-lib", lib_file])
+    # extra_preargs.extend(["--output-lib", lib_file]) <= this line
     # for dllwrap we have to use a special option
     extra_preargs.extend(["--def", def_file])
     
