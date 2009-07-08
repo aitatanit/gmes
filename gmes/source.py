@@ -318,10 +318,20 @@ class TotalFieldScatteredField(Src):
         dz = aux_ds[self.on_axis_k]
         
         pml_thickness = 10 * dz
-        border = self.center + .5 * self.size
         
-        longitudinal_size = \
-        2 * (abs(self._dist_from_center_along_beam_axis(border)) + pml_thickness + dz)
+        # find the furthest distance, max_abs_dist from the 
+        # longitudinal axis of the incomming wave
+        vertices = []
+        for x in (.5 * self.size[0], -.5 * self.size[0]):
+            for y in (.5 * self.size[1], -.5 * self.size[1]):
+                for z in (.5 * self.size[2], -.5 * self.size[2]):
+                    vertices.append(self.center + (x, y, z))
+                    
+        dist = map(self._dist_from_center_along_beam_axis, vertices)
+        abs_dist = map(abs, dist)
+        max_abs_dist = max(abs_dist)
+        
+        longitudinal_size = 2 * (max_abs_dist + pml_thickness + dz)
         aux_size = (0, 0, longitudinal_size)
         
         mat_objs =  self.geom_tree.material_of_point((inf, inf, inf))
