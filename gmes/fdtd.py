@@ -27,7 +27,7 @@ class TimeStep(object):
         t -- current time
         
     """
-    def __init__(self, n=0, t=0.0):
+    def __init__(self, n=0.0, t=0.0):
         self.n = n
         self.t = t
         
@@ -1662,7 +1662,7 @@ class TEMxFDTD(FDTD):
         self.talk_with_hz_neighbors()
         self.update_ey()
 
-        self.time_step.n += 5
+        self.time_step.n += .5
         self.time_step.t = self.time_step.n * self.dt
         
         self._step_aux_fdtd()
@@ -1670,7 +1670,7 @@ class TEMxFDTD(FDTD):
         self.talk_with_ey_neighbors()
         self.update_hz()
 
-        self.time_step.n += 5
+        self.time_step.n += .5
         self.time_step.t = self.time_step.n * self.dt
                 
         
@@ -1729,7 +1729,7 @@ class TEMyFDTD(FDTD):
         self.talk_with_hx_neighbors()
         self.update_ez()
 
-        self.time_step.n += 5
+        self.time_step.n += .5
         self.time_step.t = self.time_step.n * self.dt
         
         self._step_aux_fdtd()
@@ -1737,7 +1737,7 @@ class TEMyFDTD(FDTD):
         self.talk_with_ez_neighbors()
         self.update_hx()
 
-        self.time_step.n += 5
+        self.time_step.n += .5
         self.time_step.t = self.time_step.n * self.dt
 
         
@@ -1796,7 +1796,7 @@ class TEMzFDTD(FDTD):
         self.talk_with_hy_neighbors()
         self.update_ex()
 
-        self.time_step.n += 5
+        self.time_step.n += .5
         self.time_step.t = self.time_step.n * self.dt
         
         self._step_aux_fdtd()
@@ -1804,7 +1804,7 @@ class TEMzFDTD(FDTD):
         self.talk_with_ex_neighbors()
         self.update_hy()
 
-        self.time_step.n += 5
+        self.time_step.n += .5
         self.time_step.t = self.time_step.n * self.dt
         
                 
