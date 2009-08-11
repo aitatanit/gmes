@@ -341,7 +341,7 @@ class TotalFieldScatteredField(Src):
                               dt=space.dt, 
                               parallel=False)
         aux_geom_list = (DefaultMaterial(material=mat_objs[0]),
-                         Boundary(material=CPML(), 
+                         Boundary(material=CPML(kappa_max=2.0, sigma_max_ratio=2.0),
                                   thickness=pml_thickness, 
                                   size=aux_size,
                                   minus_z=False))

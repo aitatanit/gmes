@@ -448,7 +448,7 @@ class CPML(PML):
         sigma_max_ratio -- default 1
     
     """
-    def __init__(self, effective_epsilon_r=1, effective_mu_r=1, m=3, kappa_max=15, m_a=1, a_max=0, sigma_max_ratio=1):
+    def __init__(self, effective_epsilon_r=1, effective_mu_r=1, m=3, kappa_max=2, m_a=1, a_max=0, sigma_max_ratio=2):
         self.initialized = False
         
         self.m = float(m)
