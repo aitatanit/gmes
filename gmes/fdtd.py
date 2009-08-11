@@ -506,7 +506,10 @@ class FDTD(object):
         self.space.cart_comm.Sendrecv(self.hz[1:, -1, :], dest, const.Hz.tag,
                                       None, src, const.Hz.tag)
         
-    def step(self):
+    def step(self):        
+        self.time_step.n += .5
+        self.time_step.t = self.time_step.n * self.dt
+        
         # FIXME: MPI for Python is not thread safe.
 #        h_chatter_threads = (Thread(target=self.talk_with_hx_neighbors),
 #                             Thread(target=self.talk_with_hy_neighbors), 
@@ -571,9 +574,7 @@ class FDTD(object):
         self.update_hx()
         self.update_hy()
         self.update_hz()
-        
-        self.time_step.n += .5
-        self.time_step.t = self.time_step.n * self.dt
+
 
     def _show_line(self, component, start, end, y_range, msecs, title):
         """Wrapper method of show.ShowLine.
@@ -1095,6 +1096,9 @@ class TExFDTD(FDTD):
         Updates only Ey, Ez, and Hx field components.
         
         """
+        self.time_step.n += .5
+        self.time_step.t = self.time_step.n * self.dt
+        
         self.talk_with_hx_neighbors()
         
         # FIXME: Thread makes GMES slow.
@@ -1129,9 +1133,6 @@ class TExFDTD(FDTD):
         self.talk_with_ez_neighbors()
 
         self.update_hx()
-
-        self.time_step.n += .5
-        self.time_step.t = self.time_step.n * self.dt
         
         
 class TEyFDTD(FDTD):
@@ -1191,6 +1192,9 @@ class TEyFDTD(FDTD):
         Updates only Ez, Ex, and Hy field components.
         
         """
+        self.time_step.n += .5
+        self.time_step.t = self.time_step.n * self.dt
+        
         self.talk_with_hy_neighbors()
         
         # FIXME: Thread makes GMES slow.
@@ -1225,10 +1229,7 @@ class TEyFDTD(FDTD):
         self.talk_with_ex_neighbors()
 
         self.update_hy()
-
-        self.time_step.n += .5
-        self.time_step.t = self.time_step.n * self.dt
-                
+       
         
 class TEzFDTD(FDTD):
     """Two dimensional fdtd which has transverse-electric mode with respect to z
@@ -1286,6 +1287,9 @@ class TEzFDTD(FDTD):
         Updates only Ex, Ey, and Hz field components.
         
         """
+        self.time_step.n += .5
+        self.time_step.t = self.time_step.n * self.dt
+        
         self.talk_with_hz_neighbors()
         
         # FIXME: Thread makes GMES slow.
@@ -1320,10 +1324,7 @@ class TEzFDTD(FDTD):
         self.talk_with_ey_neighbors()
 
         self.update_hz()
-        
-        self.time_step.n += .5
-        self.time_step.t += self.dt
-        
+                
         
 class TMxFDTD(FDTD):
     """Two dimensional fdtd which has transverse-magnetic mode with respect to x.
@@ -1381,6 +1382,9 @@ class TMxFDTD(FDTD):
         Updates only Hy, Hz, and Ex field components.
         
         """
+        self.time_step.n += .5
+        self.time_step.t = self.time_step.n * self.dt    
+        
         # FIXME: MPI for Python is not thread safe.
 #        chatter_threads = (Thread(target=self.talk_with_hy_neighbors),
 #                           Thread(target=self.talk_with_hz_neighbors))
@@ -1397,7 +1401,7 @@ class TMxFDTD(FDTD):
         self.update_ex()
 
         self.time_step.n += .5
-        self.time_step.t = self.time_step.n * self.dt        
+        self.time_step.t = self.time_step.n * self.dt
         
         self._step_aux_fdtd()
         
@@ -1412,9 +1416,6 @@ class TMxFDTD(FDTD):
 #            
 #        for worker in worker_threads:
 #            worker.join()
-
-        self.time_step.n += .5
-        self.time_step.t = self.time_step.n * self.dt
 
 
 class TMyFDTD(FDTD):
@@ -1473,6 +1474,9 @@ class TMyFDTD(FDTD):
         Updates only Hz, Hx, and Ey field components.
         
         """
+        self.time_step.n += .5
+        self.time_step.t = self.time_step.n * self.dt
+        
         # FIXME: MPI for Python is not thread safe.
 #        chatter_threads = (Thread(target=self.talk_with_hz_neighbors),
 #                           Thread(target=self.talk_with_hx_neighbors))
@@ -1507,9 +1511,6 @@ class TMyFDTD(FDTD):
             
         self.update_hz()
         self.update_hx()
-
-        self.time_step.n += .5
-        self.time_step.t = self.time_step.n * self.dt
         
         
 class TMzFDTD(FDTD):
@@ -1568,6 +1569,9 @@ class TMzFDTD(FDTD):
         Updates only Hx, Hy, and Ez field components.
         
         """
+        self.time_step.n += .5
+        self.time_step.t = self.time_step.n * self.dt
+        
         # FIXME: MPI for Python is not thread safe.
 #        chatter_threads = (Thread(target=self.talk_with_hx_neighbors),
 #                           Thread(target=self.talk_with_hy_neighbors))
@@ -1603,9 +1607,6 @@ class TMzFDTD(FDTD):
         self.update_hx()
         self.update_hy()
         
-        self.time_step.n += .5
-        self.time_step.t = self.time_step.n * self.dt
-
 
 class TEMxFDTD(FDTD):
     """y-polarized and x-directed one dimensional fdtd class
@@ -1659,6 +1660,9 @@ class TEMxFDTD(FDTD):
         Update only Ey and Hz field components.
         
         """
+        self.time_step.n += .5
+        self.time_step.t = self.time_step.n * self.dt
+                
         self.talk_with_hz_neighbors()
         self.update_ey()
 
@@ -1669,9 +1673,6 @@ class TEMxFDTD(FDTD):
         
         self.talk_with_ey_neighbors()
         self.update_hz()
-
-        self.time_step.n += .5
-        self.time_step.t = self.time_step.n * self.dt
                 
         
 class TEMyFDTD(FDTD):
@@ -1726,6 +1727,9 @@ class TEMyFDTD(FDTD):
         Update only Ez and Hx field components.
         
         """
+        self.time_step.n += .5
+        self.time_step.t = self.time_step.n * self.dt
+                
         self.talk_with_hx_neighbors()
         self.update_ez()
 
@@ -1736,9 +1740,6 @@ class TEMyFDTD(FDTD):
         
         self.talk_with_ez_neighbors()
         self.update_hx()
-
-        self.time_step.n += .5
-        self.time_step.t = self.time_step.n * self.dt
 
         
 class TEMzFDTD(FDTD):
@@ -1793,6 +1794,9 @@ class TEMzFDTD(FDTD):
         Update only Ex and Hy field components.
         
         """
+        self.time_step.n += .5
+        self.time_step.t = self.time_step.n * self.dt
+        
         self.talk_with_hy_neighbors()
         self.update_ex()
 
@@ -1803,9 +1807,6 @@ class TEMzFDTD(FDTD):
         
         self.talk_with_ex_neighbors()
         self.update_hy()
-
-        self.time_step.n += .5
-        self.time_step.t = self.time_step.n * self.dt
         
                 
 if __name__ == '__main__':
