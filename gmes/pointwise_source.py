@@ -24,15 +24,15 @@ class DipoleElectric(object):
         self.n = 0
         
     def update(self, efield, hfield1, hfield2, dt, space_diff1, space_diff2):
+        self.n += 1
+        self.t = self.n * dt
+        
         src_t = self.src_time.dipole(self.t)
         
         if src_t is None:
             self.pw_material.update(efield, hfield1, hfield2, dt, space_diff1, space_diff2)
         else:
             efield[self.i, self.j, self.k] = self.amp * src_t
-
-        self.n += 1
-        self.t = self.n * dt
 
 
 class DipoleEx(DipoleElectric): pass
@@ -57,6 +57,9 @@ class DipoleMagnetic(object):
         self.n = 0.5
 
     def update(self, hfield, efield1, efield2, dt, space_diff1, space_diff2):
+        self.n += 1
+        self.t = self.n * dt
+        
         src_t = self.src_time.dipole(self.t)
         
         if src_t is None:
@@ -64,9 +67,6 @@ class DipoleMagnetic(object):
         else:
             hfield[self.i, self.j, self.k] = self.amp * self.src_t
 
-        self.n += 1
-        self.t = self.n * dt
-        
         
 class DipoleHx(DipoleMagnetic): pass
 
