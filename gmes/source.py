@@ -339,6 +339,7 @@ class TotalFieldScatteredField(Src):
         aux_space = Cartesian(size=aux_size, 
                               resolution=1./dz, 
                               dt=space.dt, 
+                              cyclic=(False,False,False),
                               parallel=False)
         aux_geom_list = (DefaultMaterial(material=mat_objs[0]),
                          Boundary(material=CPML(kappa_max=2.0, sigma_max_ratio=2.0),

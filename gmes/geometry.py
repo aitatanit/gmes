@@ -31,10 +31,11 @@ class AuxiCartComm(object):
         ndims -- dimensionality of this Cartesian topology
         
     """
-    def __init__(self):
+    def __init__(self, dims=(1,1,1), periods=(0,0,0), reorder=(0,0,0)):
         self.rank = 0
         self.dim = 3
-        self.topo = ((1,1,1), (1,1,1), (0,0,0))
+        cyclic = tuple(map(int,periods))
+        self.topo = ((1,1,1), cyclic, (0,0,0))
         
     def Get_cart_rank(self, coords):
         return 0
@@ -62,7 +63,10 @@ class AuxiCartComm(object):
             displacement -- steps to take in that dimension
             
         """
-        return 0, 0
+        if self.topo[1][direction]:
+            return 0, 0
+        else:
+            return -1, -1
     
     def Sendrecv(self, sendbuf, dest=0, sendtag=0, 
                  recvbuf=None, source=0, recvtag=0, status=None):
@@ -100,7 +104,8 @@ class Cartesian(object):
             the electromagnetic field of this node except the communication buffers
             
     """
-    def __init__(self, size, resolution=15, courant_ratio=.99, dt=None, cyclic=True, parallel=False):
+    def __init__(self, size, resolution=15, courant_ratio=.99, dt=None, 
+                 cyclic=(False,False,False), parallel=False):
         """
         Arguments:
             size -- a length three sequence consists of non-negative numbers
@@ -111,7 +116,8 @@ class Cartesian(object):
             dt -- the time differential
                 If None is given, dt is calculated using space differentials and courant_ratio.
                 default: None
-            cyclic -- 
+            cyclic --  length 3 tuple specifying whether the grid is periodic (True) or not (False) 
+                in each dimension  
             parallel -- whether space be divided into segments.
             
         """
@@ -167,7 +173,7 @@ class Cartesian(object):
             self.my_id = MPI.WORLD.rank
             self.numprocs = MPI.WORLD.size
             self.cart_comm = \
-            MPI.WORLD.Create_cart(self.find_best_deploy(), (1, 1, 1))
+            MPI.WORLD.Create_cart(self.find_best_deploy(), cyclic)
         except StandardError:
             self.my_id = 0
             self.numprocs = 1
