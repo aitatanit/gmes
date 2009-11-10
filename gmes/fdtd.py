@@ -1429,7 +1429,9 @@ class TMxFDTD(FDTD):
 #        for worker in worker_threads:
 #            worker.join()
 
-
+        self.update_hy()
+        self.update_hz()
+        
 class TMyFDTD(FDTD):
     """Two dimensional fdtd which has transverse-magnetic mode with respect to y
 
