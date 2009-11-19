@@ -78,7 +78,7 @@ class Continuous(SrcTime):
         else:
             env = 1
             
-        return env * cos(2 * pi * self.freq * time - self.phase)
+        return env * exp(2j * pi * self.freq * time - self.phase)
 
 
 class Bandpass(SrcTime):

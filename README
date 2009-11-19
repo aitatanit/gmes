@@ -59,7 +59,7 @@ should be executed as the root privilege.
 
 4.1.1. compile for the inplace test
 
-$ python setup.py build_ext --inplace --swig-opts="-c++ -outdir gmes"
+$ python setup.py build_ext --inplace --swig-opts="-c++ -outdir gmes/pw_material"
 
 4.1.2. compile
 
@@ -73,7 +73,7 @@ $ python setup.py build_ext --swig-opts="-c++"
 
 4.2.1. compile for the inplace test
 
-$ python setup.py build_ext --inplace --swig-opts="-c++ -outdir gmes" -c mingw32
+$ python setup.py build_ext --inplace --swig-opts="-c++ -outdir gmes/pw_material" -c mingw32
 
 4.2.2. compile
 

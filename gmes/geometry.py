@@ -31,7 +31,7 @@ class AuxiCartComm(object):
         ndims -- dimensionality of this Cartesian topology
         
     """
-    def __init__(self, dims=(1,1,1), periods=(0,0,0), reorder=(0,0,0)):
+    def __init__(self, dims=(1,1,1), periods=(1,1,1), reorder=(0,0,0)):
         self.rank = 0
         self.dim = 3
         cyclic = tuple(map(int,periods))
@@ -68,7 +68,7 @@ class AuxiCartComm(object):
         else:
             return -1, -1
     
-    def Sendrecv(self, sendbuf, dest=0, sendtag=0, 
+    def sendrecv(self, sendbuf, dest=0, sendtag=0, 
                  recvbuf=None, source=0, recvtag=0, status=None):
         """Mimic Sendrecv method.
         
@@ -105,19 +105,22 @@ class Cartesian(object):
             
     """
     def __init__(self, size, resolution=15, courant_ratio=.99, dt=None, 
-                 cyclic=(False,False,False), parallel=False):
+                 period=(inf,inf,inf), parallel=False):
         """
         Arguments:
             size -- a length three sequence consists of non-negative numbers
-            resolution -- number of sections of one unit (scalar or length 3 sequence)
+            resolution -- number of sections of one unit (scalar or length 3 
+                sequence)
                 default: 15
             courant_ratio -- the ratio of dt to Courant stability bound
                 default: 0.99
             dt -- the time differential
-                If None is given, dt is calculated using space differentials and courant_ratio.
+                If None is given, dt is calculated using space differentials 
+                and courant_ratio.
                 default: None
-            cyclic --  length 3 tuple specifying whether the grid is periodic (True) or not (False) 
-                in each dimension  
+            period -- length 3 tuple specifying spatial periods. inf for 
+                non-periodic dimension.
+                default: (inf,inf,inf)
             parallel -- whether space be divided into segments.
             
         """
@@ -166,14 +169,18 @@ class Cartesian(object):
                 whole_field_size.append(size + 1)
         self.whole_field_size = array(whole_field_size, int)
         
+        self.period = array(period, float)
+        
+        self.cmplx = False in [p == inf for p in self.period]
+
         try:
             if not parallel:
                 raise StandardError
             
-            self.my_id = MPI.WORLD.rank
-            self.numprocs = MPI.WORLD.size
+            self.my_id = MPI.COMM_WORLD.rank
+            self.numprocs = MPI.COMM_WORLD.size
             self.cart_comm = \
-            MPI.WORLD.Create_cart(self.find_best_deploy(), cyclic)
+            MPI.COMM_WORLD.Create_cart(self.find_best_deploy(), (1,1,1))
         except StandardError:
             self.my_id = 0
             self.numprocs = 1
@@ -265,7 +272,11 @@ class Cartesian(object):
         """
         ex_shape = (self.my_field_size[0], self.my_field_size[1] + 1, 
                     self.my_field_size[2] + 1)
-        return zeros(ex_shape, float)
+        
+        if self.cmplx:
+            return zeros(ex_shape, complex)
+        else:
+            return zeros(ex_shape, float)
     
     def get_ey_storage(self):
         """Return an initialized array for Ey field component.
@@ -273,7 +284,11 @@ class Cartesian(object):
         """
         ey_shape = (self.my_field_size[0] + 1, self.my_field_size[1], 
                     self.my_field_size[2] + 1)
-        return zeros(ey_shape, float)
+        
+        if self.cmplx:
+            return zeros(ey_shape, complex)
+        else:
+            return zeros(ey_shape, float)
     
     def get_ez_storage(self):
         """Return an initialized array for Ez field component.
@@ -281,7 +296,11 @@ class Cartesian(object):
         """
         ez_shape = (self.my_field_size[0] + 1, self.my_field_size[1] + 1, 
                     self.my_field_size[2])
-        return zeros(ez_shape, float)
+        
+        if self.cmplx:
+            return zeros(ez_shape, complex)
+        else:
+            return zeros(ez_shape, float)
     
     def get_hx_storage(self):
         """Return an initialized array for Hx field component.
@@ -289,7 +308,11 @@ class Cartesian(object):
         """
         hx_shape = (self.my_field_size[0], self.my_field_size[1] + 1, 
                     self.my_field_size[2] + 1)
-        return zeros(hx_shape, float)
+        
+        if self.cmplx:
+            return zeros(hx_shape, complex)
+        else:
+            return zeros(hx_shape, float)
     
     def get_hy_storage(self):    
         """Return an initialized array for Hy field component.
@@ -297,7 +320,11 @@ class Cartesian(object):
         """
         hy_shape = (self.my_field_size[0] + 1, self.my_field_size[1], 
                     self.my_field_size[2] + 1)
-        return zeros(hy_shape, float)
+        
+        if self.cmplx:
+            return zeros(hy_shape, complex)
+        else:
+            return zeros(hy_shape, float)
     
     def get_hz_storage(self):
         """Return an initialized array for Hz field component.
@@ -305,7 +332,11 @@ class Cartesian(object):
         """
         hz_shape = (self.my_field_size[0] + 1, self.my_field_size[1] + 1, 
                     self.my_field_size[2])
-        return zeros(hz_shape, float)
+        
+        if self.cmplx:
+            return zeros(hz_shape, complex)
+        else:
+            return zeros(hz_shape, float)
 
     def get_material_ex_storage(self):
         """Return an array for Ex pointwise materials.
@@ -1272,7 +1303,7 @@ class GeometricObject(object):
         self.box = self.geom_box()
         
     def init(self, space):
-        pass
+        self.material.init(space)
         
     def geom_box(self):
         """Return a bounding box enclosing this geometric object.
@@ -1688,7 +1719,7 @@ class Boundary(GeometricObject):
                 high = (self.half_size[0], self.half_size[1], -self.half_size[2] + self.d)
                 self.box_list.append(GeomBox(low, high))
         
-        self.material.init(self.d, space)
+        self.material.init(space, self.d)
         
     def in_object(self, point):
         for box in self.box_list:
@@ -1789,7 +1820,9 @@ def in_range(idx, numpy_array, component):
 if __name__ == '__main__':
     from material import *
     
-    geom_list = [DefaultMaterial(material=Dielectric()), Cone(0, (1,0,0), 1, 1, Dielectric(), (0,0,2)), Cone(0, (1,0,0), 1, 1, Dielectric(), (0,0,-2))]
+    geom_list = [DefaultMaterial(material=Dielectric()), 
+                 Cone(0, (1,0,0), 1, 1, Dielectric(), (0,0,2)), 
+                 Cone(0, (1,0,0), 1, 1, Dielectric(), (0,0,-2))]
     t = GeomBoxTree(geom_list)
     t.display_info()
     space = Cartesian(size=(5,5,5))

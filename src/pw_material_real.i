@@ -1,15 +1,15 @@
-%module pointwise_material
+%module pw_material_real
 
 %{
 #define SWIG_FILE_WITH_INIT
-#include "pointwise_material.hh"
-#include "pointwise_dummy.hh"
-#include "pointwise_zero.hh"
-#include "pointwise_one.hh"
-#include "pointwise_dielectric.hh"
-#include "pointwise_upml.hh"
-#include "pointwise_cpml.hh"
-#include "pointwise_drude.hh"
+#include "pw_material_real.hh"
+#include "pw_dummy_real.hh"
+#include "pw_zero_real.hh"
+#include "pw_one_real.hh"
+#include "pw_dielectric_real.hh"
+#include "pw_upml_real.hh"
+#include "pw_cpml_real.hh"
+#include "pw_drude_real.hh"
 %}
 
 // Get the NumPy typemaps
@@ -74,19 +74,19 @@ if _newclass:prop = property(eval("_"+__name__.split('.')[-1]).##py##_##get, eva
 %}
 %enddef
 
-Property(PointwiseMaterial, gmes::PointwiseMaterial, i, get_i, set_i)
-Property(PointwiseMaterial, gmes::PointwiseMaterial, j, get_j, set_j)
-Property(PointwiseMaterial, gmes::PointwiseMaterial, k, get_k, set_k)
+Property(PwMaterial, gmes::PwMaterial, i, get_i, set_i)
+Property(PwMaterial, gmes::PwMaterial, j, get_j, set_j)
+Property(PwMaterial, gmes::PwMaterial, k, get_k, set_k)
 Property(DummyElectric, gmes::MaterialElectric, epsilon, get_epsilon, set_epsilon)
 Property(DummyMagnetic, gmes::MaterialMagnetic, mu, get_mu, set_mu)
 
 // Include the header file to be wrapped
-%include "pointwise_material.hh"
-%include "pointwise_dummy.hh"
-%include "pointwise_zero.hh"
-%include "pointwise_one.hh"
-%include "pointwise_dielectric.hh"
-%include "pointwise_upml.hh"
-%include "pointwise_cpml.hh"
-%include "pointwise_drude.hh"
+%include "pw_material_real.hh"
+%include "pw_dummy_real.hh"
+%include "pw_zero_real.hh"
+%include "pw_one_real.hh"
+%include "pw_dielectric_real.hh"
+%include "pw_upml_real.hh"
+%include "pw_cpml_real.hh"
+%include "pw_drude_real.hh"
 

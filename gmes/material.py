@@ -9,7 +9,7 @@ except:
 
 from numpy import *
 
-from pointwise_material import *
+from pw_material import *
 import constants as const
 
 
@@ -29,7 +29,9 @@ class Material(object):
         Arguments:
             idx -- (local) array index of the target point
             coords -- (global) space coordinate of the target point
+            complex -- whether the EM field has complex value. Default is False.
             underneath -- underneath material object of the target point.
+            
         """
         raise NotImplementedError
     
@@ -39,7 +41,9 @@ class Material(object):
         Arguments:
             idx -- (local) array index of the target point
             coords -- (global) space coordinate of the target point
+            complex -- whether the EM field has complex value. Default is False.
             underneath -- underneath material object of the target point.
+            
         """
         raise NotImplementedError
     
@@ -49,7 +53,9 @@ class Material(object):
         Arguments:
             idx -- (local) array index of the target point
             coords -- (global) space coordinate of the target point
+            complex -- whether the EM field has complex value. Default is False.
             underneath -- underneath material object of the target point.
+            
         """
         raise NotImplementedError
     
@@ -59,7 +65,9 @@ class Material(object):
         Arguments:
             idx -- (local) array index of the target point
             coords -- (global) space coordinate of the target point
+            complex -- whether the EM field has complex value. Default is False.
             underneath -- underneath material object of the target point.
+            
         """
         raise NotImplementedError
     
@@ -69,7 +77,9 @@ class Material(object):
         Arguments:
             idx -- (local) array index of the target point
             coords -- (global) space coordinate of the target point
+            complex -- whether the EM field has complex value. Default is False.
             underneath -- underneath material object of the target point.
+            
         """
         raise NotImplementedError
     
@@ -79,11 +89,16 @@ class Material(object):
         Arguments:
             idx -- (local) array index of the target point
             coords -- (global) space coordinate of the target point
+            complex -- whether the EM field has complex value. Default is False.
             underneath -- underneath material object of the target point.
+            
         """
         raise NotImplementedError
     
-    
+    def init(self, space, param=None):
+        self.cmplx = space.cmplx
+        
+        
 class Dummy(Material):
     """A dummy material type which dosen't update the field component.
     
@@ -95,27 +110,51 @@ class Dummy(Material):
         print " " * indentby, "dummy object"
         
     def get_pointwise_material_ex(self, idx, coords, underneath=None):
-        pw_obj = DummyEx(idx, self.epsilon_r)
+        if self.cmplx:
+            pw_obj = DummyExCmplx(idx, self.epsilon_r)
+        else:
+            pw_obj = DummyExReal(idx, self.epsilon_r)
+            
         return pw_obj
     
     def get_pointwise_mateiral_ey(self, idx, coords, underneath=None):
-        pw_obj = DummyEy(idx, self.epsilon_r)
+        if self.cmplx:
+            pw_obj = DummyEyCmplx(idx, self.epsilon_r)
+        else:
+            pw_obj = DummyEyReal(idx, self.epsilon_r)
+            
         return pw_obj
     
     def get_pointwise_material_ez(self, idx, coords, underneath=None):
-        pw_obj = DummyEz(idx, self.epsilon_r)
+        if self.cmplx:
+            pw_obj = DummyEzCmplx(idx, self.epsilon_r)
+        else:
+            pw_obj = DummyEzReal(idx, self.epsilon_r)
+        
         return pw_obj
     
     def get_pointwise_material_hx(self, idx, coords, underneath=None):
-        pw_obj = DummyHx(idx, self.mu_r)
+        if self.cmplx:
+            pw_obj = DummyHxCmplx(idx, self.mu_r)
+        else:
+            pw_obj = DummyHxReal(idx, self.mu_r)
+        
         return pw_obj
     
     def get_pointwise_material_hy(self, idx, coords, underneath=None):
-        pw_obj = DummyHy(idx, self.mu_r)
+        if self.cmplx:
+            pw_obj = DummyHyCmplx(idx, self.mu_r)
+        else:
+            pw_obj = DummyHyReal(idx, self.mu_r)
+        
         return pw_obj
     
     def get_pointwise_material_hz(self, idx, coords, underneath=None):
-        pw_obj = DummyHz(idx, self.mu_r)
+        if self.cmplx:
+            pw_obj = DummyHzCmplx(idx, self.mu_r)
+        else:
+            pw_obj = DummyHzReal(idx, self.mu_r)
+        
         return pw_obj
 
     
@@ -130,27 +169,51 @@ class Zero(Material):
         print " " * indentby, "zero object"
         
     def get_pointwise_material_ex(self, idx, coords, underneath=None):
-        pw_obj = ZeroEx(idx, self.epsilon_r)
+        if self.cmplx:
+            pw_obj = ZeroExCmplx(idx, self.epsilon_r)
+        else:
+            pw_obj = ZeroExReal(idx, self.epsilon_r)
+            
         return pw_obj
     
     def get_pointwise_mateiral_ey(self, idx, coords, underneath=None):
-        pw_obj = ZeroEy(idx, self.epsilon_r)
+        if self.cmplx:
+            pw_obj = ZeroEyCmplx(idx, self.epsilon_r)
+        else:
+            pw_obj = ZeroEyReal(idx, self.epsilon_r)
+            
         return pw_obj
     
     def get_pointwise_material_ez(self, idx, coords, underneath=None):
-        pw_obj = ZeroEz(idx, self.epsilon_r)
+        if self.cmplx:
+            pw_obj = ZeroEzCmplx(idx, self.epsilon_r)
+        else:
+            pw_obj = ZeroEzReal(idx, self.epsilon_r)
+            
         return pw_obj
     
     def get_pointwise_material_hx(self, idx, coords, underneath=None):
-        pw_obj = ZeroHx(idx, self.mu_r)
+        if self.cmplx:
+            pw_obj = ZeroHxCmplx(idx, self.mu_r)
+        else:
+            pw_obj = ZeroHxReal(idx, self.mu_r)
+            
         return pw_obj
     
     def get_pointwise_material_hy(self, idx, coords, underneath=None):
-        pw_obj = ZeroHy(idx, self.mu_r)
+        if self.cmplx:
+            pw_obj = ZeroHyCmplx(idx, self.mu_r)
+        else:
+            pw_obj = ZeroHyReal(idx, self.mu_r)
+            
         return pw_obj
     
     def get_pointwise_material_hz(self, idx, coords, underneath=None):
-        pw_obj = ZeroHz(idx, self.mu_r)
+        if self.cmplx:
+            pw_obj = ZeroHzCmplx(idx, self.mu_r)
+        else:
+            pw_obj = ZeroHzReal(idx, self.mu_r)
+            
         return pw_obj
     
 
@@ -165,27 +228,51 @@ class One(Material):
         print " " * indentby, "one object"
         
     def get_pointwise_material_ex(self, idx, coords, underneath=None):
-        pw_obj = OneEx(idx, self.epsilon_r)
+        if self.cmplx:
+            pw_obj = OneExCmplx(idx, self.epsilon_r)
+        else:
+            pw_obj = OneExReal(idx, self.epsilon_r)
+            
         return pw_obj
     
     def get_pointwise_mateiral_ey(self, idx, coords, underneath=None):
-        pw_obj = OneEy(idx, self.epsilon_r)
+        if self.cmplx:
+            pw_obj = OneEyCmplx(idx, self.epsilon_r)
+        else:
+            pw_obj = OneEyReal(idx, self.epsilon_r)
+            
         return pw_obj
     
     def get_pointwise_material_ez(self, idx, coords, underneath=None):
-        pw_obj = OneEz(idx, self.epsilon_r)
+        if self.cmplx:
+            pw_obj = OneEzCmplx(idx, self.epsilon_r)
+        else:
+            pw_obj = OneEzReal(idx, self.epsilon_r)
+            
         return pw_obj
     
     def get_pointwise_material_hx(self, idx, coords, underneath=None):
-        pw_obj = OneHx(idx, self.mu_r)
+        if self.cmplx:
+            pw_obj = OneHxCmplx(idx, self.mu_r)
+        else:
+            pw_obj = OneHxReal(idx, self.mu_r)
+            
         return pw_obj
     
     def get_pointwise_material_hy(self, idx, coords, underneath=None):
-        pw_obj = OneHy(idx, self.mu_r)
+        if self.cmplx:
+            pw_obj = OneHyCmplx(idx, self.mu_r)
+        else:
+            pw_obj = OneHyReal(idx, self.mu_r)
+            
         return pw_obj
     
     def get_pointwise_material_hz(self, idx, coords, underneath=None):
-        pw_obj = OneHz(idx, self.mu_r)
+        if self.cmplx:
+            pw_obj = OneHzCmplx(idx, self.mu_r)
+        else:
+            pw_obj = OneHzReal(idx, self.mu_r)
+            
         return pw_obj
     
             
@@ -211,28 +298,53 @@ class Dielectric(Material):
         print "relative permeability:", self.mu_r
 
     def get_pointwise_material_ex(self, idx, coords, underneath=None):
-        pw_obj = DielectricEx(idx, self.epsilon_r)
+        if self.cmplx:
+            pw_obj = DielectricExCmplx(idx, self.epsilon_r)
+        else:
+            pw_obj = DielectricExReal(idx, self.epsilon_r)
+            
         return pw_obj
 
     def get_pointwise_material_ey(self, idx, coords, underneath=None):
-        pw_obj = DielectricEy(idx, self.epsilon_r)
+        if self.cmplx:
+            pw_obj = DielectricEyCmplx(idx, self.epsilon_r)
+        else:
+            pw_obj = DielectricEyReal(idx, self.epsilon_r)
+            
         return pw_obj
     
     def get_pointwise_material_ez(self, idx, coords, underneath=None):
-        pw_obj = DielectricEz(idx, self.epsilon_r)
+        if self.cmplx:
+            pw_obj = DielectricEzCmplx(idx, self.epsilon_r)
+        else:
+            pw_obj = DielectricEzReal(idx, self.epsilon_r)
+            
         return pw_obj
     
     def get_pointwise_material_hx(self, idx, coords, underneath=None):
-        pw_obj = DielectricHx(idx, self.mu_r)
+        if self.cmplx:
+            pw_obj = DielectricHxCmplx(idx, self.mu_r)
+        else:
+            pw_obj = DielectricHxReal(idx, self.mu_r)
+            
         return pw_obj
     
     def get_pointwise_material_hy(self, idx, coords, underneath=None):
-        pw_obj = DielectricHy(idx, self.mu_r)
+        if self.cmplx:
+            pw_obj = DielectricHyCmplx(idx, self.mu_r)
+        else:
+            pw_obj = DielectricHyReal(idx, self.mu_r)
+            
         return pw_obj
     
     def get_pointwise_material_hz(self, idx, coords, underneath=None):
-        pw_obj = DielectricHz(idx, self.mu_r)
+        if self.cmplx:
+            pw_obj = DielectricHzCmplx(idx, self.mu_r)
+        else:
+            pw_obj = DielectricHzReal(idx, self.mu_r)
+            
         return pw_obj
+
 
 class Compound(object):
     """Represent the compound material.
@@ -255,13 +367,15 @@ class PML(Material, Compound):
         initialized -- initialization semaphore 
         
     """
-    def init(self, thickness, space):
+    def init(self, space, thickness):
         """
         The thickness of PML layer is provided from the boundary instance 
-        which contain the pml. Also, the differential of space and time 
+        which contain the PML. Also, the differential of space and time 
         should get from the space instance.
         
         """
+        self.cmplx = space.cmplx
+        
         self.d = float(thickness)
         
         half_size = []
@@ -309,9 +423,11 @@ class PML(Material, Compound):
 class UPML(PML):
     """Form Uniaxial Perfectly Matched Layer (UPML).
     
-    This class implements Uniaxial PML represented in 'A. Taflove and S. C. Hagness, 
+    This class implements CFS PML represented in
+    S. Gedney, "Perfectly Matched Layer Absorbing Boundary Conditions,"
     Computational Electrodynamics: The Finite-Difference Time-Domain Method, 
-    3rd ed., Artech House, Inc., 2005.
+    Third Edition, A. Taflove and S.C. Hagness, eds., Artech House Publishers,
+    2005, pp. 273-328.
     
     Attributes:
         m -- 
@@ -378,7 +494,12 @@ class UPML(PML):
         c4 = self.c4(coords[2], 2)
         c5 = self.c5(coords[0], 0)
         c6 = self.c6(coords[0], 0)
-        pw_obj = UPMLEx(idx, underneath.epsilon_r, c1, c2, c3, c4, c5, c6)
+        
+        if self.cmplx:
+            pw_obj = UpmlExCmplx(idx, underneath.epsilon_r, c1, c2, c3, c4, c5, c6)
+        else:
+            pw_obj = UpmlExReal(idx, underneath.epsilon_r, c1, c2, c3, c4, c5, c6)
+            
         return pw_obj
     
     def get_pointwise_material_ey(self, idx, coords, underneath=None):
@@ -388,7 +509,12 @@ class UPML(PML):
         c4 = self.c4(coords[0], 0)
         c5 = self.c5(coords[1], 1)
         c6 = self.c6(coords[1], 1)
-        pw_obj = UPMLEy(idx, underneath.epsilon_r, c1, c2, c3, c4, c5, c6)
+        
+        if self.cmplx:
+            pw_obj = UpmlEyCmplx(idx, underneath.epsilon_r, c1, c2, c3, c4, c5, c6)
+        else:
+            pw_obj = UpmlEyReal(idx, underneath.epsilon_r, c1, c2, c3, c4, c5, c6)
+            
         return pw_obj
     
     def get_pointwise_material_ez(self, idx, coords, underneath=None):
@@ -398,7 +524,12 @@ class UPML(PML):
         c4 = self.c4(coords[1], 1)
         c5 = self.c5(coords[2], 2)
         c6 = self.c6(coords[2], 2)
-        pw_obj = UPMLEz(idx, underneath.epsilon_r, c1, c2, c3, c4, c5, c6)
+        
+        if self.cmplx:
+            pw_obj = UpmlEzCmplx(idx, underneath.epsilon_r, c1, c2, c3, c4, c5, c6)
+        else:
+            pw_obj = UpmlEzReal(idx, underneath.epsilon_r, c1, c2, c3, c4, c5, c6)
+            
         return pw_obj
     
     def get_pointwise_material_hx(self, idx, coords, underneath=None):
@@ -408,7 +539,12 @@ class UPML(PML):
         c4 = self.c4(coords[2], 2)
         c5 = self.c5(coords[0], 0)
         c6 = self.c6(coords[0], 0)
-        pw_obj = UPMLHx(idx, underneath.mu_r, c1, c2, c3, c4, c5, c6)
+        
+        if self.cmplx:
+            pw_obj = UpmlHxCmplx(idx, underneath.mu_r, c1, c2, c3, c4, c5, c6)
+        else:
+            pw_obj = UpmlHxReal(idx, underneath.mu_r, c1, c2, c3, c4, c5, c6)
+            
         return pw_obj
     
     def get_pointwise_material_hy(self, idx, coords, underneath=None):
@@ -418,7 +554,12 @@ class UPML(PML):
         c4 = self.c4(coords[0], 0)
         c5 = self.c5(coords[1], 1)
         c6 = self.c6(coords[1], 1)
-        pw_obj = UPMLHy(idx, underneath.mu_r, c1, c2, c3, c4, c5, c6)
+        
+        if self.cmplx:
+            pw_obj = UpmlHyCmplx(idx, underneath.mu_r, c1, c2, c3, c4, c5, c6)
+        else:
+            pw_obj = UpmlHyReal(idx, underneath.mu_r, c1, c2, c3, c4, c5, c6)
+            
         return pw_obj
     
     def get_pointwise_material_hz(self, idx, coords, underneath=None):
@@ -428,16 +569,23 @@ class UPML(PML):
         c4 = self.c4(coords[1], 1)
         c5 = self.c5(coords[2], 2)
         c6 = self.c6(coords[2], 2)
-        pw_obj = UPMLHz(idx, underneath.mu_r, c1, c2, c3, c4, c5, c6)
+        
+        if self.cmplx:
+            pw_obj = UpmlHzCmplx(idx, underneath.mu_r, c1, c2, c3, c4, c5, c6)
+        else:
+            pw_obj = UpmlHzReal(idx, underneath.mu_r, c1, c2, c3, c4, c5, c6)
+            
         return pw_obj
     
     
 class CPML(PML):
     """Form Complex Frequency Shifted (CFS) Perfectly Matched Layer (PML).
     
-    This class implements CFS PML represented in 'A. Taflove and S. C. Hagness, 
+    This class implements CFS PML represented in
+    S. Gedney, "Perfectly Matched Layer Absorbing Boundary Conditions,"
     Computational Electrodynamics: The Finite-Difference Time-Domain Method, 
-    3rd ed., Artech House, Inc., 2005.
+    Third Edition, A. Taflove and S.C. Hagness, eds., Artech House Publishers,
+    2005, pp. 273-328.
     
     Attributes:
         m -- default 3
@@ -505,7 +653,12 @@ class CPML(PML):
         cz = self.c(coords[2], 2)
         kappay = self.kappa(coords[1], 1)
         kappaz = self.kappa(coords[2], 2)
-        pw_obj = CPMLEx(idx, underneath.epsilon_r, by, bz, cy, cz, kappay, kappaz)
+        
+        if self.cmplx:
+            pw_obj = CpmlExCmplx(idx, underneath.epsilon_r, by, bz, cy, cz, kappay, kappaz)
+        else:
+            pw_obj = CpmlExReal(idx, underneath.epsilon_r, by, bz, cy, cz, kappay, kappaz)
+            
         return pw_obj
     
     def get_pointwise_material_ey(self, idx, coords, underneath=None):
@@ -515,7 +668,12 @@ class CPML(PML):
         cx = self.c(coords[0], 0)
         kappaz = self.kappa(coords[2], 2)
         kappax = self.kappa(coords[0], 0)
-        pw_obj = CPMLEy(idx, underneath.epsilon_r, bz, bx, cz, cx, kappaz, kappax)
+        
+        if self.cmplx:
+            pw_obj = CpmlEyCmplx(idx, underneath.epsilon_r, by, bz, cy, cz, kappay, kappaz)
+        else:
+            pw_obj = CpmlEyReal(idx, underneath.epsilon_r, by, bz, cy, cz, kappay, kappaz)
+            
         return pw_obj
     
     def get_pointwise_material_ez(self, idx, coords, underneath=None):
@@ -525,7 +683,12 @@ class CPML(PML):
         cy = self.c(coords[1], 1)
         kappax = self.kappa(coords[0], 0)
         kappay = self.kappa(coords[1], 1)
-        pw_obj = CPMLEz(idx, underneath.epsilon_r, bx, by, cx, cy, kappax, kappay)
+        
+        if self.cmplx:
+            pw_obj = CpmlEzCmplx(idx, underneath.epsilon_r, by, bz, cy, cz, kappay, kappaz)
+        else:
+            pw_obj = CpmlEzReal(idx, underneath.epsilon_r, by, bz, cy, cz, kappay, kappaz)
+            
         return pw_obj
     
     def get_pointwise_material_hx(self, idx, coords, underneath=None):
@@ -535,7 +698,12 @@ class CPML(PML):
         cz = self.c(coords[2], 2)
         kappay = self.kappa(coords[1], 1)
         kappaz = self.kappa(coords[2], 2)
-        pw_obj = CPMLHx(idx, underneath.mu_r, by, bz, cy, cz, kappay, kappaz)
+        
+        if self.cmplx:
+            pw_obj = CpmlHxCmplx(idx, underneath.mu_r, by, bz, cy, cz, kappay, kappaz)
+        else:
+            pw_obj = CpmlHxReal(idx, underneath.mu_r, by, bz, cy, cz, kappay, kappaz)
+            
         return pw_obj
     
     def get_pointwise_material_hy(self, idx, coords, underneath=None):
@@ -545,7 +713,12 @@ class CPML(PML):
         cx = self.c(coords[0], 0)
         kappaz = self.kappa(coords[2], 2)
         kappax = self.kappa(coords[0], 0)
-        pw_obj = CPMLHy(idx, underneath.mu_r, bz, bx, cz, cx, kappaz, kappax)
+        
+        if self.cmplx:
+            pw_obj = CpmlHyCmplx(idx, underneath.mu_r, by, bz, cy, cz, kappay, kappaz)
+        else:
+            pw_obj = CpmlHyReal(idx, underneath.mu_r, by, bz, cy, cz, kappay, kappaz)
+            
         return pw_obj
     
     def get_pointwise_material_hz(self, idx, coords, underneath=None):
@@ -555,7 +728,12 @@ class CPML(PML):
         cy = self.c(coords[1], 1)
         kappax = self.kappa(coords[0], 0)
         kappay = self.kappa(coords[1], 1)
-        pw_obj = CPMLHz(idx, underneath.mu_r, bx, by, cx, cy, kappax, kappay)
+        
+        if self.cmplx:
+            pw_obj = CpmlHzCmplx(idx, underneath.mu_r, by, bz, cy, cz, kappay, kappaz)
+        else:
+            pw_obj = CpmlHzReal(idx, underneath.mu_r, by, bz, cy, cz, kappay, kappaz)
+            
         return pw_obj
         
         
@@ -585,28 +763,52 @@ class Drude(Dielectric):
         print "plasma frequency:", self.omega_p
         print "relaxation frequency:", self.gamma_p
         print "relative permeability:", self.mu_r
-         
+        
     def get_pointwise_material_ex(self, idx, coords, underneath=None):
-        pw_obj = DrudeEx(idx, self.epsilon_r, self.omega_p, self.gamma_p)
+        if self.cmplx:
+            pw_obj = DrudeExCmplx(idx, self.epsilon_r, self.omega_p, self.gamma_p)
+        else:
+            pw_obj = DrudeExReal(idx, self.epsilon_r, self.omega_p, self.gamma_p)
+            
         return pw_obj
-
+    
     def get_pointwise_material_ey(self, idx, coords, underneath=None):
-        pw_obj = DrudeEy(idx, self.epsilon_r, self.omega_p, self.gamma_p)
+        if self.cmplx:
+            pw_obj = DrudeEyCmplx(idx, self.epsilon_r, self.omega_p, self.gamma_p)
+        else:
+            pw_obj = DrudeEyReal(idx, self.epsilon_r, self.omega_p, self.gamma_p)
+            
         return pw_obj
     
     def get_pointwise_material_ez(self, idx, coords, underneath=None):
-        pw_obj = DrudeEz(idx, self.epsilon_r, self.omega_p, self.gamma_p)
+        if self.cmplx:
+            pw_obj = DrudeEzCmplx(idx, self.epsilon_r, self.omega_p, self.gamma_p)
+        else:
+            pw_obj = DrudeEzReal(idx, self.epsilon_r, self.omega_p, self.gamma_p)
+            
         return pw_obj
     
     def get_pointwise_material_hx(self, idx, coords, underneath=None):
-        pw_obj = DrudeHx(idx, self.mu_r)
+        if self.cmplx:
+            pw_obj = DrudeHxCmplx(idx, self.mu_r, self.omega_p, self.gamma_p)
+        else:
+            pw_obj = DrudeHxReal(idx, self.mu_r, self.omega_p, self.gamma_p)
+            
         return pw_obj
     
     def get_pointwise_material_hy(self, idx, coords, underneath=None):
-        pw_obj = DrudeHy(idx, self.mu_r)
+        if self.cmplx:
+            pw_obj = DrudeHyCmplx(idx, self.mu_r, self.omega_p, self.gamma_p)
+        else:
+            pw_obj = DrudeHyReal(idx, self.mu_r, self.omega_p, self.gamma_p)
+            
         return pw_obj
     
     def get_pointwise_material_hz(self, idx, coords, underneath=None):
-        pw_obj = DrudeHz(idx, self.mu_r)
+        if self.cmplx:
+            pw_obj = DrudeHzCmplx(idx, self.mu_r, self.omega_p, self.gamma_p)
+        else:
+            pw_obj = DrudeHzReal(idx, self.mu_r, self.omega_p, self.gamma_p)
+            
         return pw_obj
-    
+        

@@ -12,10 +12,12 @@ from threading import Thread, Lock
 from numpy import *
 
 from geometry import GeomBoxTree, in_range
-from file_io import write_hdf5, snapshot
+#from file_io import write_hdf5, snapshot
 from show import ShowLine, ShowPlane, Snapshot
-from pointwise_material import DummyEx, DummyEy, DummyEz
-from pointwise_material import DummyHx, DummyHy, DummyHz
+from pw_material import DummyExReal, DummyEyReal, DummyEzReal
+from pw_material import DummyHxReal, DummyHyReal, DummyHzReal
+from pw_material import DummyExCmplx, DummyEyCmplx, DummyEzCmplx
+from pw_material import DummyHxCmplx, DummyHyCmplx, DummyHzCmplx
 import constants as const
 
 
@@ -37,7 +39,8 @@ class FDTD(object):
     
     Attributes:
         space -- geometry.Cartesian instance
-        ...
+        cmplx -- Boolean of whether field is complex. Determined by the 
+            space.period.
         
     """
     def __init__(self, space=None, geom_list=None, src_list=None, verbose=True):
@@ -49,12 +52,13 @@ class FDTD(object):
         verbose --
         
         """
-        self.lock_ex, self.lock_ey, self.lock_ez = Lock(), Lock(), Lock()
-        self.lock_hx, self.lock_hy, self.lock_hz = Lock(), Lock(), Lock()
+        self.lock_ex, self.lock_ey = Lock(), Lock()
+        self.lock_ez, self.lock_hx = Lock(), Lock()
+        self.lock_hy, self.lock_hz = Lock(), Lock()
         self.lock_fig = Lock()
        	
         self.space = space
-		
+                
         self.fig_id = self.space.my_id
             
         self.dx, self.dy, self.dz = space.dx, space.dy, space.dz
@@ -104,7 +108,7 @@ class FDTD(object):
         if verbose:
             print "Allocating memory for the electric & magnetic fields...",
             
-        # electric & magnetic field storages
+        # storage for the electric & magnetic field 
         self.ex = space.get_ex_storage()
         self.ey = space.get_ey_storage()
         self.ez = space.get_ez_storage()
@@ -116,12 +120,12 @@ class FDTD(object):
             print "done."
             
         if verbose:
-            print "ex field shape is", self.ex.shape
-            print "ey field shape is", self.ey.shape
-            print "ez field shape is", self.ez.shape
-            print "hx field shape is", self.hx.shape
-            print "hy field shape is", self.hy.shape
-            print "hz field shape is", self.hz.shape
+            print "ex field:", self.ex.dtype, self.ex.shape 
+            print "ey field:", self.ey.dtype, self.ey.shape 
+            print "ez field:", self.ez.dtype, self.ez.shape
+            print "hx field:", self.hx.dtype, self.hx.shape
+            print "hy field:", self.hy.dtype, self.hy.shape
+            print "hz field:", self.hz.dtype, self.hz.shape
             
         if verbose:
             print "Allocating memory for the material data...",
@@ -138,12 +142,12 @@ class FDTD(object):
             print "done."
             
         if verbose:
-            print "ex material shape is", self.material_ex.shape
-            print "ey material shape is", self.material_ey.shape
-            print "ez material shape is", self.material_ez.shape
-            print "hx material shape is", self.material_hx.shape
-            print "hy material shape is", self.material_hy.shape
-            print "hz material shape is", self.material_hz.shape
+            print "ex material:", self.material_ex.dtype, self.material_ex.shape
+            print "ey material:", self.material_ey.dtype, self.material_ey.shape
+            print "ez material:", self.material_ez.dtype, self.material_ez.shape
+            print "hx material:", self.material_hx.dtype, self.material_hx.shape
+            print "hy material:", self.material_hy.dtype, self.material_hy.shape
+            print "hz material:", self.material_hz.dtype, self.material_hz.shape
             
         if verbose:
             print "Mapping the pointwise material...",
@@ -171,12 +175,13 @@ class FDTD(object):
         
         """
         newcopy = self.__class__(self.space, self.geom_list, self.src_list, False)
-        newcopy.ex = array(self.ex)
-        newcopy.ey = array(self.ey)
-        newcopy.ez = array(self.ez)
-        newcopy.hx = array(self.hx)
-        newcopy.hy = array(self.hy)
-        newcopy.hz = array(self.hz)
+        newcopy.ex = array(self.ex_real)
+        newcopy.ey = array(self.ey_real)
+        newcopy.ez = array(self.ez_real)
+        newcopy.hx = array(self.hx_real)
+        newcopy.hy = array(self.hy_real)
+        newcopy.hz = array(self.hz_real)
+            
         newcopy.time_step = deepcopy(self.time_step)
         return newcopy
     	
@@ -187,6 +192,11 @@ class FDTD(object):
         at self.material_ex.
         
         """
+        if self.space.cmplx:
+            DummyEx = DummyExCmplx
+        else:
+            DUmmyEx = DummyExReal
+        
         self.lock_ex.acquire()
         shape = self.ex.shape
         for idx in ndindex(shape):
@@ -206,6 +216,11 @@ class FDTD(object):
         at self.material_ey.
         
         """
+        if self.space.cmplx:
+            DummyEy = DummyEyCmplx
+        else:
+            DUmmyEy = DummyEyReal
+            
         self.lock_ey.acquire()
         shape = self.ey.shape
         for idx in ndindex(shape):
@@ -225,6 +240,11 @@ class FDTD(object):
         at self.material_ez.
         
         """
+        if self.space.cmplx:
+            DummyEz = DummyEzCmplx
+        else:
+            DUmmyEz = DummyEzReal
+            
         self.lock_ez.acquire()
         shape = self.ez.shape
         for idx in ndindex(shape):
@@ -244,6 +264,11 @@ class FDTD(object):
         at self.material_hx.
         
         """
+        if self.space.cmplx:
+            DummyHx = DummyHxCmplx
+        else:
+            DUmmyHx = DummyHxReal
+            
         self.lock_hx.acquire()
         shape = self.hx.shape
         for idx in ndindex(shape):
@@ -263,6 +288,11 @@ class FDTD(object):
         at self.material_hy.
         
         """
+        if self.space.cmplx:
+            DummyHy = DummyHyCmplx
+        else:
+            DUmmyHy = DummyHyReal
+            
         self.lock_hy.acquire()
         shape = self.hy.shape
         for idx in ndindex(shape):
@@ -282,6 +312,11 @@ class FDTD(object):
         at self.material_hz.
         
         """
+        if self.space.cmplx:
+            DummyHz = DummyHzCmplx
+        else:
+            DUmmyHz = DummyHzReal
+            
         self.lock_hz.acquire()
         shape = self.hz.shape
         for idx in ndindex(shape):
@@ -295,27 +330,13 @@ class FDTD(object):
         self.lock_hz.release()
         
     def init_material(self):
-        # FIXME: Thread makes GMES slow.
-#        threads = (Thread(target=self.init_material_ex),
-#                   Thread(target=self.init_material_ey),
-#                   Thread(target=self.init_material_ez),
-#                   Thread(target=self.init_material_hx),
-#                   Thread(target=self.init_material_hy),
-#                   Thread(target=self.init_material_hz))
-#                   
-#        for thread in threads:
-#            thread.start()
-#            
-#        for thread in threads:
-#            thread.join()
-    	
         self.init_material_ex()
         self.init_material_ey()
         self.init_material_ez()
         self.init_material_hx()
         self.init_material_hy()
         self.init_material_hz()
-        	
+        
     def init_source_ex(self):
         for so in self.src_list:
             so.set_pointwise_source_ex(self.material_ex, self.space)
@@ -341,20 +362,6 @@ class FDTD(object):
             so.set_pointwise_source_hz(self.material_hz, self.space)
 			
     def init_source(self):
-        # FIXME: Thread makes GMES slow.
-#        threads = (Thread(target=self.init_source_ex),
-#                   Thread(target=self.init_source_ey),
-#                   Thread(target=self.init_source_ez),
-#                   Thread(target=self.init_source_hx),
-#                   Thread(target=self.init_source_hy),
-#                   Thread(target=self.init_source_hz))
-#        
-#        for thread in threads:
-#            thread.start()
-#			
-#        for thread in threads:
-#            thread.join()
-		
         self.init_source_ex()
         self.init_source_ey()
         self.init_source_ez()
@@ -407,17 +414,39 @@ class FDTD(object):
         # send ex field data to -y direction and receive from +y direction.
         src, dest = self.space.cart_comm.Shift(1, -1)
         if (dest >= 0):
-            self.ex[:, -1, :-1] = \
-            self.space.cart_comm.Sendrecv(self.ex[:, 0,:-1], dest, const.Ex.tag, 
+            if self.space.period[1] == inf:
+                phase_shift = 1
+            else:
+                dest_spc = self.space.ex_index_to_space(0, self.ex.shape[1] - 1, 0)[1]
+            
+                src_spc = self.space.ex_index_to_space(0, 0, 0)[1]
+                src_spc = self.space.cart_comm.sendrecv(src_spc, dest, const.Ex.tag,
+                                                        None, src, const.Ex.tag) 
+            
+                phase_shift = exp(2j * pi / self.space.period[1] * (dest_spc - src_spc))              
+                
+            self.ex[:, -1, :-1] = phase_shift * \
+            self.space.cart_comm.sendrecv(self.ex[:, 0,:-1], dest, const.Ex.tag,
                                           None, src, const.Ex.tag)
-       
+            
         # send ex field data to -z direction and receive from +z direction.    
         src, dest = self.space.cart_comm.Shift(2, -1)
         if (dest >= 0):
-            self.ex[:, :-1, -1] = \
-            self.space.cart_comm.Sendrecv(self.ex[:, :-1, 0], dest, const.Ex.tag,
+            if self.space.period[2] == inf:
+                phase_shift = 1
+            else:
+                dest_spc = self.space.ex_index_to_space(0, 0, self.ex.shape[2] - 1)[2]
+            
+                src_spc = self.space.ex_index_to_space(0, 0, 0)[2]
+                src_spc = self.space.cart_comm.sendrecv(src_spc, dest, const.Ex.tag,
+                                                        None, src, const.Ex.tag) 
+            
+                phase_shift = exp(2j * pi / self.space.period[2] * (dest_spc - src_spc))
+                
+            self.ex[:, :-1, -1] = phase_shift * \
+            self.space.cart_comm.sendrecv(self.ex[:, :-1, 0], dest, const.Ex.tag,
                                           None, src, const.Ex.tag)
-        
+            
     def talk_with_ey_neighbors(self):
         """Synchronize ey data.
         
@@ -427,17 +456,39 @@ class FDTD(object):
         # send ey field data to -z direction and receive from +z direction.
         src, dest = self.space.cart_comm.Shift(2, -1)
         if (dest >= 0):
-            self.ey[:-1, :, -1] = \
-            self.space.cart_comm.Sendrecv(self.ey[:-1, :, 0], dest, const.Ey.tag,
+            if self.space.period[2] == inf:
+                phase_shift = 1
+            else:
+                dest_spc = self.space.ey_index_to_space(0, 0, self.ey.shape[2] - 1)[2]
+            
+                src_spc = self.space.ey_index_to_space(0, 0, 0)[2]
+                src_spc = self.space.cart_comm.sendrecv(src_spc, dest, const.Ey.tag,
+                                                        None, src, const.Ey.tag) 
+            
+                phase_shift = exp(2j * pi / self.space.period[2] * (dest_spc - src_spc))
+                
+            self.ey[:-1, :, -1] = phase_shift * \
+            self.space.cart_comm.sendrecv(self.ey[:-1, :, 0], dest, const.Ey.tag,
                                           None, src, const.Ey.tag)
-                   
+            
         # send ey field data to -x direction and receive from +x direction.
         src, dest = self.space.cart_comm.Shift(0, -1)
         if (dest >= 0):
-            self.ey[-1, :, :-1] = \
-            self.space.cart_comm.Sendrecv(self.ey[0, :, :-1], dest, const.Ey.tag,
+            if self.space.period[0] == inf:
+                phase_shift = 1
+            else:    
+                dest_spc = self.space.ey_index_to_space(self.ey.shape[0] - 1, 0, 0)[0]
+            
+                src_spc = self.space.ey_index_to_space(0, 0, 0)[0]
+                src_spc = self.space.cart_comm.sendrecv(src_spc, dest, const.Ey.tag,
+                                                        None, src, const.Ey.tag)
+                
+                phase_shift = exp(2j * pi / self.space.period[0] * (dest_spc - src_spc)) 
+            
+            self.ey[-1, :, :-1] = phase_shift * \
+            self.space.cart_comm.sendrecv(self.ey[0, :, :-1], dest, const.Ey.tag,
                                           None, src, const.Ey.tag)
-        
+            
     def talk_with_ez_neighbors(self):
         """Synchronize ez data.
         
@@ -447,17 +498,39 @@ class FDTD(object):
         # send ez field data to -x direction and receive from +x direction.
         src, dest = self.space.cart_comm.Shift(0, -1)
         if (dest >= 0):
-            self.ez[-1, :-1, :] = \
-            self.space.cart_comm.Sendrecv(self.ez[0, :-1, :], dest, const.Ez.tag,
+            if self.space.period[0] == inf:
+                phase_shift = 1
+            else:
+                dest_spc = self.space.ez_index_to_space(self.ez.shape[0] - 1, 0, 0)[0]
+            
+                src_spc = self.space.ez_index_to_space(0, 0, 0)[0]
+                src_spc = self.space.cart_comm.sendrecv(src_spc, dest, const.Ez.tag,
+                                                        None, src, const.Ez.tag) 
+            
+                phase_shift = exp(2j * pi / self.space.period[0] * (dest_spc - src_spc))
+                
+            self.ez[-1, :-1, :] = phase_shift * \
+            self.space.cart_comm.sendrecv(self.ez[0, :-1, :], dest, const.Ez.tag,
                                           None, src, const.Ez.tag)
-                   
+            
         # send ez field data to -y direction and receive from +y direction.
         src, dest = self.space.cart_comm.Shift(1, -1)
         if (dest >= 0):
-            self.ez[:-1, -1, :] = \
-            self.space.cart_comm.Sendrecv(self.ez[:-1, 0, :], dest, const.Ez.tag,
+            if self.space.period[1] == inf:
+                phase_shift = 1
+            else:
+                dest_spc = self.space.ez_index_to_space(0, self.ez.shape[1] - 1, 0)[1]
+            
+                src_spc = self.space.ez_index_to_space(0, 0, 0)[1]
+                src_spc = self.space.cart_comm.sendrecv(src_spc, dest, const.Ez.tag,
+                                                        None, src, const.Ez.tag) 
+            
+                phase_shift = exp(2j * pi / self.space.period[1] * (dest_spc - src_spc))
+            
+            self.ez[:-1, -1, :] = phase_shift * \
+            self.space.cart_comm.sendrecv(self.ez[:-1, 0, :], dest, const.Ez.tag,
                                           None, src, const.Ez.tag)
-        
+            
     def talk_with_hx_neighbors(self):
         """Synchronize hx data.
         
@@ -467,17 +540,39 @@ class FDTD(object):
         # send hx field data to +y direction and receive from -y direction.
         src, dest = self.space.cart_comm.Shift(1, 1)
         if (dest >= 0):
-            self.hx[:, 0, 1:] = \
-            self.space.cart_comm.Sendrecv(self.hx[:, -1, 1:], dest, const.Hx.tag,
+            if self.space.period[1] == inf:
+                phase_shift = 1
+            else:
+                dest_spc =  self.space.hx_index_to_space(0, 0, 0)[1]
+            
+                src_spc = self.space.hx_index_to_space(0, self.hx.shape[1] - 1, 0)[1]
+                src_spc = self.space.cart_comm.sendrecv(src_spc, dest, const.Hx.tag,
+                                                        None, src, const.Hx.tag)
+            
+                phase_shift = exp(2j * pi / self.space.period[1] * (dest_spc - src_spc))
+                
+            self.hx[:, 0, 1:] = phase_shift * \
+            self.space.cart_comm.sendrecv(self.hx[:, -1, 1:], dest, const.Hx.tag,
                                           None, src, const.Hx.tag)
-        
+            
         # send hx field data to +z direction and receive from -z direction.    
         src, dest = self.space.cart_comm.Shift(2, 1)
         if (dest >= 0):
-            self.hx[:, 1:, 0] = \
-            self.space.cart_comm.Sendrecv(self.hx[:, 1:, -1], dest, const.Hx.tag,
+            if self.space.period[2] == inf:
+                phase_shift = 1
+            else:
+                dest_spc = self.space.hx_index_to_space(0, 0, 0)[2]
+            
+                src_spc = self.space.hx_index_to_space(0, 0, self.hx.shape[2] - 1)[2]
+                src_spc = self.space.cart_comm.sendrecv(src_spc, dest, const.Hx.tag,
+                                                        None, src, const.Hx.tag)
+            
+                phase_shift = exp(2j * pi / self.space.period[2] * (dest_spc - src_spc))
+                                
+            self.hx[:, 1:, 0] = phase_shift * \
+            self.space.cart_comm.sendrecv(self.hx[:, 1:, -1], dest, const.Hx.tag,
                                           None, src, const.Hx.tag)
-        
+            
     def talk_with_hy_neighbors(self):
         """Synchronize hy data.
         
@@ -487,17 +582,39 @@ class FDTD(object):
         # send hy field data to +z direction and receive from -z direction.
         src, dest = self.space.cart_comm.Shift(2, 1)
         if (dest >= 0):
-            self.hy[1:, :, 0] = \
-            self.space.cart_comm.Sendrecv(self.hy[1:, :, -1], dest, const.Hy.tag,
+            if self.space.period[2] == inf:
+                phase_shift = 1
+            else:
+                dest_spc = self.space.hy_index_to_space(0, 0, 0)[2]
+            
+                src_spc = self.space.hy_index_to_space(0, 0, self.hy.shape[2] - 1)[2]
+                src_spc = self.space.cart_comm.sendrecv(src_spc, dest, const.Hy.tag,
+                                                        None, src, const.Hy.tag)
+            
+                phase_shift = exp(2j * pi / self.space.period[1] * (dest_spc - src_spc))
+                
+            self.hy[1:, :, 0] = phase_shift * \
+            self.space.cart_comm.sendrecv(self.hy[1:, :, -1], dest, const.Hy.tag,
                                           None, src, const.Hy.tag)
-                   
+            
         # send hy field data to +x direction and receive from -x direction.
         src, dest = self.space.cart_comm.Shift(0, 1)
         if (dest >= 0):
-            self.hy[0, :, 1:] = \
-            self.space.cart_comm.Sendrecv(self.hy[-1, :, 1:], dest, const.Hy.tag,
+            if self.space.period[0] == inf:
+                phase_shift = 1
+            else:
+                dest_spc = self.space.hy_index_to_space(0, 0, 0)[0]
+            
+                src_spc = self.space.hy_index_to_space(self.hy.shape[0] - 1, 0, 0)[0]
+                src_spc = self.space.cart_comm.sendrecv(src_spc, dest, const.Hy.tag,
+                                                        None, src, const.Hy.tag)
+            
+                phase_shift = exp(2j * pi / self.space.period[0] * (dest_spc - src_spc))
+            
+            self.hy[0, :, 1:] = phase_shift * \
+            self.space.cart_comm.sendrecv(self.hy[-1, :, 1:], dest, const.Hy.tag,
                                           None, src, const.Hy.tag)
-        
+            
     def talk_with_hz_neighbors(self):
         """Synchronize hz data.
         
@@ -507,17 +624,39 @@ class FDTD(object):
         # send hz field data to +x direction and receive from -x direction.
         src, dest = self.space.cart_comm.Shift(0, 1)
         if (dest >= 0):
-            self.hz[0, 1:, :] = \
-            self.space.cart_comm.Sendrecv(self.hz[-1, 1:, :], dest, const.Hz.tag,
+            if self.space.period[0] == inf:
+                phase_shift = 1
+            else:
+                dest_spc = self.space.hz_index_to_space(0, 0, 0)[0]
+            
+                src_spc = self.space.hz_index_to_space(self.hz.shape[0] - 1, 0, 0)[0]
+                src_spc = self.space.cart_comm.sendrecv(src_spc, dest, const.Hz.tag,
+                                                        None, src, const.Hz.tag)
+            
+                phase_shift = exp(2j * pi / self.space.period[0] * (dest_spc - src_spc))
+            
+            self.hz[0, 1:, :] = phase_shift * \
+            self.space.cart_comm.sendrecv(self.hz[-1, 1:, :], dest, const.Hz.tag,
                                           None, src, const.Hz.tag)
-        
+            
         # send hz field data to +y direction and receive from -y direction.
         src, dest = self.space.cart_comm.Shift(1, 1)
         if (dest >= 0):
-            self.hz[1:, 0, :] = \
-            self.space.cart_comm.Sendrecv(self.hz[1:, -1, :], dest, const.Hz.tag,
+            if self.space.period[1] == inf:
+                phase_shift = 1
+            else:
+                dest_spc = self.space.hz_index_to_space(0, 0, 0)[1]
+            
+                src_spc = self.space.hz_index_to_space(0, self.hz.shape[1] - 1, 0)[1]
+                src_spc = self.space.cart_comm.sendrecv(src_spc, dest, const.Hz.tag,
+                                                        None, src, const.Hz.tag)
+            
+                phase_shift = exp(2j * pi / self.space.period[1] * (dest_spc - src_spc))
+                
+            self.hz[1:, 0, :] = phase_shift * \
+            self.space.cart_comm.sendrecv(self.hz[1:, -1, :], dest, const.Hz.tag,
                                           None, src, const.Hz.tag)
-        
+            
     def step(self):        
         self.time_step.n += .5
         self.time_step.t = self.time_step.n * self.dt
@@ -567,7 +706,7 @@ class FDTD(object):
 #                    
 #        for chatter in e_chatter_threads:
 #            chatter.join()
-
+    
         self.talk_with_ex_neighbors()
         self.talk_with_ey_neighbors()
         self.talk_with_ez_neighbors()
@@ -582,12 +721,12 @@ class FDTD(object):
 #            
 #        for worker in h_worker_threads:
 #            worker.join()
-            
+        
         self.update_hx()
         self.update_hy()
         self.update_hz()
-
-
+        
+        
     def _show_line(self, component, start, end, y_range, msecs, title):
         """Wrapper method of show.ShowLine.
 		
@@ -601,37 +740,37 @@ class FDTD(object):
         
         """
         if component is const.Ex:
-            field = self.ex
+            field = self.ex.real
             spc_to_idx = self.space.space_to_ex_index
             idx_to_spc = self.space.ex_index_to_space
             tmp_start_idx = (0,0,0)
             tmp_end_idx = field.shape[0] - 1, field.shape[1] - 2, field.shape[2] - 2
         elif component is const.Ey:
-            field = self.ey
+            field = self.ey.real
             spc_to_idx = self.space.space_to_ey_index
             idx_to_spc = self.space.ey_index_to_space
             tmp_start_idx = (0,0,0)
             tmp_end_idx = field.shape[0] - 2, field.shape[1] - 1, field.shape[2] - 2
         elif component is const.Ez:
-            field = self.ez
+            field = self.ez.real
             spc_to_idx = self.space.space_to_ez_index
             idx_to_spc = self.space.ez_index_to_space
             tmp_start_idx = (0,0,0)
             tmp_end_idx = field.shape[0] - 2, field.shape[1] - 2, field.shape[2] - 1
         elif component is const.Hx:
-            field = self.hx
+            field = self.hx.real
             spc_to_idx = self.space.space_to_hx_index
             idx_to_spc = self.space.hx_index_to_space
             tmp_start_idx = idx_to_spc(0, 1, 1)
             tmp_end_idx = field.shape[0] - 1, field.shape[1] - 1, field.shape[2] - 1
         elif component is const.Hy:
-            field = self.hy
+            field = self.hy.real
             spc_to_idx = self.space.space_to_hy_index
             idx_to_spc = self.space.hy_index_to_space
             tmp_start_idx = idx_to_spc(1, 0, 1)
             tmp_end_idx = field.shape[0] - 1, field.shape[1] - 1, field.shape[2] - 1
         elif component is const.Hz:
-            field = self.hz
+            field = self.hz.real
             spc_to_idx = self.space.space_to_hz_index
             idx_to_spc = self.space.hz_index_to_space
             tmp_start_idx = idx_to_spc(1, 1, 0)
@@ -736,32 +875,32 @@ class FDTD(object):
         
         """
         if component is const.Ex:
-            field = self.ex
+            field = self.ex.real
             spc_to_idx = self.space.space_to_ex_index
             idx_to_spc = self.space.ex_index_to_space
             tmp_cut_coords = idx_to_spc(0, 0, 0)
         elif component is const.Ey:
-            field = self.ey
+            field = self.ey.real
             spc_to_idx = self.space.space_to_ey_index
             idx_to_spc = self.space.ey_index_to_space
             tmp_cut_coords = idx_to_spc(0, 0, 0)
         elif component is const.Ez:
-            field = self.ez
+            field = self.ez.real
             spc_to_idx = self.space.space_to_ez_index
             idx_to_spc = self.space.ez_index_to_space
             tmp_cut_coords = idx_to_spc(0, 0, 0)
         elif component is const.Hx:
-            field = self.hx
+            field = self.hx.real
             spc_to_idx = self.space.space_to_hx_index
             idx_to_spc = self.space.hx_index_to_space
             tmp_cut_coords = idx_to_spc(0, 1, 1)
         elif component is const.Hy:
-            field = self.hy
+            field = self.hy.real
             spc_to_idx = self.space.space_to_hy_index
             idx_to_spc = self.space.hy_index_to_space
             tmp_cut_coords = idx_to_spc(1, 0, 1)
         elif component is const.Hz:
-            field = self.hz
+            field = self.hz.real
             spc_to_idx = self.space.space_to_hz_index
             idx_to_spc = self.space.hz_index_to_space
             tmp_cut_coords = idx_to_spc(1, 1, 0)
@@ -1822,7 +1961,7 @@ class TEMzFDTD(FDTD):
         self.talk_with_ex_neighbors()
         self.update_hy()
         
-                
+        
 if __name__ == '__main__':
     from math import sin
     
