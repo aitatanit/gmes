@@ -42,7 +42,7 @@ public:
 	virtual void update(double * const inplace_field, int inplace_dim1, int inplace_dim2, int inplace_dim3,
 			const double * const in_field1, int in1_dim1, int in1_dim2, int in1_dim3,
 			const double * const in_field2, int in2_dim1, int in2_dim2, int in2_dim3,
-			double, double, double) = 0;
+			double, double, double, double) = 0;
 
 protected:
 	int i, j, k;

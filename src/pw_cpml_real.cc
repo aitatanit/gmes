@@ -12,7 +12,7 @@ using namespace gmes;
 void CpmlExReal::update(double * const ex, int ex_x_size, int ex_y_size, int ex_z_size,
 		const double * const hz, int hz_x_size, int hz_y_size, int hz_z_size,
 		const double * const hy, int hy_x_size, int hy_y_size, int hy_z_size,
-		double dt, double dy, double dz)
+		double dy, double dz, double dt, double t)
 {
 	psi1 = b1 * psi1 + c1 * (hz(i+1,j+1,k) - hz(i+1,j,k)) / dy;
 	psi2 = b2 * psi2 + c2 * (hy(i+1,j,k+1) - hy(i+1,j,k)) / dz;
@@ -25,7 +25,7 @@ void CpmlExReal::update(double * const ex, int ex_x_size, int ex_y_size, int ex_
 void CpmlEyReal::update(double * const ey, int ey_x_size, int ey_y_size, int ey_z_size,
 		const double * const hx, int hx_x_size, int hx_y_size, int hx_z_size,
 		const double * const hz, int hz_x_size, int hz_y_size, int hz_z_size,
-		double dt, double dz, double dx)
+		double dz, double dx, double dt, double t)
 {
 	psi1 = b1 * psi1 + c1 * (hx(i,j+1,k+1) - hx(i,j+1,k)) / dz;
 	psi2 = b2 * psi2 + c2 * (hz(i+1,j+1,k) - hz(i,j+1,k)) / dx;
@@ -38,7 +38,7 @@ void CpmlEyReal::update(double * const ey, int ey_x_size, int ey_y_size, int ey_
 void CpmlEzReal::update(double * const ez, int ez_x_size, int ez_y_size, int ez_z_size,
 		const double * const hy, int hy_x_size, int hy_y_size, int hy_z_size,
 		const double * const hx, int hx_x_size, int hx_y_size, int hx_z_size,
-		double dt, double dx, double dy)
+		double dx, double dy, double dt, double t)
 {
 	psi1 = b1 * psi1 + c1 * (hy(i+1,j,k+1) - hy(i,j,k+1)) / dx;
 	psi2 = b2 * psi2 + c2 * (hx(i,j+1,k+1) - hx(i,j,k+1)) / dy;
@@ -51,7 +51,7 @@ void CpmlEzReal::update(double * const ez, int ez_x_size, int ez_y_size, int ez_
 void CpmlHxReal::update(double * const hx, int hx_x_size, int hx_y_size, int hx_z_size,
 		const double * const ez, int ez_x_size, int ez_y_size, int ez_z_size,
 		const double * const ey, int ey_x_size, int ey_y_size, int ey_z_size,
-		double dt, double dy, double dz)
+		double dy, double dz, double dt, double t)
 {
 	psi1 = b1 * psi1 + c1 * (ez(i,j,k-1) - ez(i,j-1,k-1)) / dy;
 	psi2 = b2 * psi2 + c2 * (ey(i,j-1,k) - ey(i,j-1,k-1)) / dz;
@@ -64,7 +64,7 @@ void CpmlHxReal::update(double * const hx, int hx_x_size, int hx_y_size, int hx_
 void CpmlHyReal::update(double * const hy, int hy_x_size, int hy_y_size, int hy_z_size,
 		const double * const ex, int ex_x_size, int ex_y_size, int ex_z_size,
 		const double * const ez, int ez_x_size, int ez_y_size, int ez_z_size,
-		double dt, double dz, double dx)
+		double dz, double dx, double dt, double t)
 {
 	psi1 = b1 * psi1 + c1 * (ex(i-1,j,k) - ex(i-1,j,k-1)) / dz;
 	psi2 = b2 * psi2 + c2 * (ez(i,j,k-1) - ez(i-1,j,k-1)) / dx;
@@ -77,7 +77,7 @@ void CpmlHyReal::update(double * const hy, int hy_x_size, int hy_y_size, int hy_
 void CpmlHzReal::update(double * const hz, int hz_x_size, int hz_y_size, int hz_z_size,
 		const double * const ey, int ey_x_size, int ey_y_size, int ey_z_size,
 		const double * const ex, int ex_x_size, int ex_y_size, int ex_z_size,
-		double dt, double dx, double dy)
+		double dx, double dy, double dt, double t)
 {
 	psi1 = b1 * psi1 + c1 * (ey(i,j-1,k) - ey(i-1,j-1,k)) / dx;
 	psi2 = b2 * psi2 + c2 * (ex(i-1,j,k) - ex(i-1,j-1,k)) / dy;

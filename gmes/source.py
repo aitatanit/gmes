@@ -11,7 +11,7 @@ from copy import deepcopy
 from numpy import *
 from numpy.linalg import norm
 
-from pointwise_source import *
+from pw_source import *
 import constants as const
 
 from geometry import Cartesian, DefaultMaterial, Boundary, in_range
@@ -176,7 +176,7 @@ class Dipole(Src):
             if in_range(idx, material_hz, const.Hz):
                 material_hz[idx] = DipoleHz(material_hz[idx], self.src_time, 
                                             space.dt, self.amp)
-
+                
 
 class TotalFieldScatteredField(Src):
     """Set a total and scattered field zone to launch a plane wave.

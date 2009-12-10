@@ -30,7 +30,7 @@ class CpmlExCmplx(CpmlElectricCmplx):
     def __init__(self, idx, epsilon_r, b1, b2, c1, c2, kappa1, kappa2):
         CpmlElectricCmplx.__init__(self, idx, epsilon_r, b1, b2, c1, c2, kappa1, kappa2)
         
-    def update(self, ex, hz, hy, dt, dy, dz):
+    def update(self, ex, hz, hy, dy, dz, dt, t):
         i, j, k = self.i, self.j, self.k
         
         self.psi1 = self.b1 * self.psi1 + self.c1 * (hz[i+1,j+1,k] - hz[i+1,j,k]) / dy;
@@ -45,7 +45,7 @@ class CpmlEyCmplx(CpmlElectricCmplx):
     def __init__(self, idx, epsilon_r, b1, b2, c1, c2, kappa1, kappa2):
         CpmlElectricCmplx.__init__(self, idx, epsilon_r, b1, b2, c1, c2, kappa1, kappa2)
         
-    def update(self, ey, hx, hz, dt, dz, dx):
+    def update(self, ey, hx, hz, dz, dx, dt, t):
         i, j, k = self.i, self.j, self.k
         
         self.psi1 = self.b1 * self.psi1 + self.c1 * (hx[i,j+1,k+1] - hx[i,j+1,k]) / dz
@@ -60,7 +60,7 @@ class CpmlEzCmplx(CpmlElectricCmplx):
     def __init__(self, idx, epsilon_r, b1, b2, c1, c2, kappa1, kappa2):
         CpmlElectricCmplx.__init__(self, idx, epsilon_r, b1, b2, c1, c2, kappa1, kappa2)
         
-    def update(self, ez, hy, hx, dt, dx, dy):
+    def update(self, ez, hy, hx, dx, dy, dt, t):
         i, j, k = self.i, self.j, self.k
         
         self.psi1 = self.b1 * self.psi1 + self.c1 * (hy[i+1,j,k+1] - hy[i,j,k+1]) / dx
@@ -85,7 +85,7 @@ class CpmlHxCmplx(CpmlMagneticCmplx):
     def __init__(self, idx, mu_r, b1, b2, c1, c2, kappa1, kappa2):
         CpmlMagneticCmplx.__init__(self, idx, mu_r, b1, b2, c1, c2, kappa1, kappa2)
         
-    def update(self, hx, ez, ey, dt, dy, dz):
+    def update(self, hx, ez, ey, dy, dz, dt, t):
         i, j, k = self.i, self.j, self.k
         
         self.psi1 = self.b1 * self.psi1 + self.c1 * (ez[i,j,k-1] - ez[i,j-1,k-1]) / dy
@@ -100,7 +100,7 @@ class CpmlHyCmplx(CpmlMagneticCmplx):
     def __init__(self, idx, mu_r, b1, b2, c1, c2, kappa1, kappa2):
         CpmlMagneticCmplx.__init__(self, idx, mu_r, b1, b2, c1, c2, kappa1, kappa2)
         
-    def update(self, hy, ex, ez, dt, dz, dx):
+    def update(self, hy, ex, ez, dz, dx, dt, t):
         i, j, k = self.i, self.j, self.k
         
         self.psi1 = self.b1 * self.psi1 + self.c1 * (ex[i-1,j,k] - ex[i-1,j,k-1]) / dz
@@ -115,7 +115,7 @@ class CpmlHzCmplx(CpmlMagneticCmplx):
     def __init__(self, idx, mu_r, b1, b2, c1, c2, kappa1, kappa2):
         CpmlMagneticCmplx.__init__(self, idx, mu_r, b1, b2, c1, c2, kappa1, kappa2)
         
-    def update(self, hz, ey, ex, dt, dx, dy):
+    def update(self, hz, ey, ex, dx, dy, dt, t):
         i, j, k = self.i, self.j, self.k
         
         self.psi1 = self.b1 * self.psi1 + self.c1 * (ey[i,j-1,k] - ey[i-1,j-1,k]) / dx

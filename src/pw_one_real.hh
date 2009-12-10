@@ -16,7 +16,7 @@ public:
 	void update(double * const ex, int ex_x_size, int ex_y_size, int ex_z_size,
 			const double * const hz, int hz_x_size, int hz_y_size, int hz_z_size,
 			const double * const hy, int hy_x_size, int hy_y_size, int hy_z_size,
-			double dt, double dy, double dz);
+			double dy, double dz, double dt, double t);
 };
 
 class OneEyReal: public DummyEyReal
@@ -30,7 +30,7 @@ public:
 	void update(double * const ey, int ey_x_size, int ey_y_size, int ey_z_size,
 			const double * const hx, int hx_x_size, int hx_y_size, int hx_z_size,
 			const double * const hz, int hz_x_size, int hz_y_size, int hz_z_size,
-			double dt, double dz, double dx);
+			double dz, double dx, double dt, double t);
 };
 
 class OneEzReal: public DummyEzReal
@@ -44,7 +44,7 @@ public:
 	void update(double * const ez, int ez_x_size, int ez_y_size, int ez_z_size,
 			const double * const hy, int hy_x_size, int hy_y_size, int hy_z_size,
 			const double * const hx, int hx_x_size, int hx_y_size, int hx_z_size,
-			double dt, double dx, double dy);
+			double dx, double dy, double dt, double t);
 };
 
 class OneHxReal: public DummyHxReal
@@ -58,7 +58,7 @@ public:
 	void update(double * const hx, int hx_x_size, int hx_y_size, int hx_z_size,
 			const double * const ez, int ez_x_size, int ez_y_size, int ez_z_size,
 			const double * const ey, int ey_x_size, int ey_y_size, int ey_z_size,
-			double dt, double dy, double dz);
+			double dy, double dz, double dt, double t);
 };
 
 class OneHyReal: public DummyHyReal
@@ -72,7 +72,7 @@ public:
 	void update(double * const hy, int hy_x_size, int hy_y_size, int hy_z_size,
 			const double * const ex, int ex_x_size, int ex_y_size, int ex_z_size,
 			const double * const ez, int ez_x_size, int ez_y_size, int ez_z_size,
-			double dt, double dz, double dx);
+			double dz, double dx, double dt, double t);
 };
 
 class OneHzReal: public DummyHzReal
@@ -86,7 +86,7 @@ public:
 	void update(double * const hz, int hz_x_size, int hz_y_size, int hz_z_size,
 			const double * const ey, int ey_x_size, int ey_y_size, int ey_z_size,
 			const double * const ex, int ex_x_size, int ex_y_size, int ex_z_size,
-			double dt, double dx, double dy);
+			double dx, double dy, double dt, double t);
 };
 }
 

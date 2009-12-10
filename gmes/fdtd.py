@@ -195,14 +195,14 @@ class FDTD(object):
         if self.space.cmplx:
             DummyEx = DummyExCmplx
         else:
-            DUmmyEx = DummyExReal
+            DummyEx = DummyExReal
         
         self.lock_ex.acquire()
         shape = self.ex.shape
         for idx in ndindex(shape):
-            if idx[1] == shape[1] - 1 or idx[2] == shape[2] - 1:
-                self.material_ex[idx] = DummyEx(idx, 1)
-            else:
+#            if idx[1] == shape[1] - 1 or idx[2] == shape[2] - 1:
+#                self.material_ex[idx] = DummyEx(idx, 1)
+#            else:
                 coords = self.space.ex_index_to_space(idx)
                 mat_obj, underneath = self.geom_tree.material_of_point(coords)
                 self.material_ex[idx] = \
@@ -219,14 +219,14 @@ class FDTD(object):
         if self.space.cmplx:
             DummyEy = DummyEyCmplx
         else:
-            DUmmyEy = DummyEyReal
+            DummyEy = DummyEyReal
             
         self.lock_ey.acquire()
         shape = self.ey.shape
         for idx in ndindex(shape):
-            if idx[2] == shape[2] - 1 or idx[0] == shape[0] - 1:
-                self.material_ey[idx] = DummyEy(idx, 1)
-            else:
+#            if idx[2] == shape[2] - 1 or idx[0] == shape[0] - 1:
+#                self.material_ey[idx] = DummyEy(idx, 1)
+#            else:
                 coords = self.space.ey_index_to_space(idx)
                 mat_obj, underneath = self.geom_tree.material_of_point(coords)
                 self.material_ey[idx] = \
@@ -243,14 +243,14 @@ class FDTD(object):
         if self.space.cmplx:
             DummyEz = DummyEzCmplx
         else:
-            DUmmyEz = DummyEzReal
+            DummyEz = DummyEzReal
             
         self.lock_ez.acquire()
         shape = self.ez.shape
         for idx in ndindex(shape):
-            if idx[0] == shape[0] - 1 or idx[1] == shape[1] - 1:
-                self.material_ez[idx] = DummyEz(idx, 1)
-            else:
+#            if idx[0] == shape[0] - 1 or idx[1] == shape[1] - 1:
+#                self.material_ez[idx] = DummyEz(idx, 1)
+#            else:
                 coords = self.space.ez_index_to_space(idx)
                 mat_obj, underneath = self.geom_tree.material_of_point(coords)
                 self.material_ez[idx] = \
@@ -267,14 +267,14 @@ class FDTD(object):
         if self.space.cmplx:
             DummyHx = DummyHxCmplx
         else:
-            DUmmyHx = DummyHxReal
+            DummyHx = DummyHxReal
             
         self.lock_hx.acquire()
         shape = self.hx.shape
         for idx in ndindex(shape):
-            if idx[1] == 0 or idx[2] == 0:
-                self.material_hx[idx] = DummyHx(idx, 1)
-            else:
+#            if idx[1] == 0 or idx[2] == 0:
+#                self.material_hx[idx] = DummyHx(idx, 1)
+#            else:
                 coords = self.space.hx_index_to_space(idx)
                 mat_obj, underneath = self.geom_tree.material_of_point(coords)
                 self.material_hx[idx] = \
@@ -291,14 +291,14 @@ class FDTD(object):
         if self.space.cmplx:
             DummyHy = DummyHyCmplx
         else:
-            DUmmyHy = DummyHyReal
+            DummyHy = DummyHyReal
             
         self.lock_hy.acquire()
         shape = self.hy.shape
         for idx in ndindex(shape):
-            if idx[2] == 0 or idx[0] == 0:
-                self.material_hy[idx] = DummyHy(idx, 1)
-            else:
+#            if idx[2] == 0 or idx[0] == 0:
+#                self.material_hy[idx] = DummyHy(idx, 1)
+#            else:
                 coords = self.space.hy_index_to_space(idx)
                 mat_obj, underneath = self.geom_tree.material_of_point(coords)
                 self.material_hy[idx] = \
@@ -315,14 +315,14 @@ class FDTD(object):
         if self.space.cmplx:
             DummyHz = DummyHzCmplx
         else:
-            DUmmyHz = DummyHzReal
+            DummyHz = DummyHzReal
             
         self.lock_hz.acquire()
         shape = self.hz.shape
         for idx in ndindex(shape):
-            if idx[0] == 0 or idx[1] == 0:
-                self.material_hz[idx] = DummyHz(idx, 1)
-            else:
+#            if idx[0] == 0 or idx[1] == 0:
+#                self.material_hz[idx] = DummyHz(idx, 1)
+#            else:
                 coords = self.space.hz_index_to_space(idx)
                 mat_obj, underneath = self.geom_tree.material_of_point(coords)
                 self.material_hz[idx] = \
@@ -372,37 +372,37 @@ class FDTD(object):
     def update_ex(self):
         self.lock_ex.acquire()
         for mo in self.material_ex.flat:
-            mo.update(self.ex, self.hz, self.hy, self.dt, self.dy, self.dz)
+            mo.update(self.ex, self.hz, self.hy, self.dy, self.dz, self.dt, self.time_step.t)
         self.lock_ex.release()
 
     def update_ey(self):
         self.lock_ey.acquire()
         for mo in self.material_ey.flat:
-            mo.update(self.ey, self.hx, self.hz, self.dt, self.dz, self.dx)
+            mo.update(self.ey, self.hx, self.hz, self.dz, self.dx, self.dt, self.time_step.t)
         self.lock_ey.release()
 		
     def update_ez(self):
         self.lock_ez.acquire()
         for mo in self.material_ez.flat:
-            mo.update(self.ez, self.hy, self.hx, self.dt, self.dx, self.dy)
+            mo.update(self.ez, self.hy, self.hx, self.dx, self.dy, self.dt, self.time_step.t)
         self.lock_ez.release()
 		
     def update_hx(self):
         self.lock_hx.acquire()
         for mo in self.material_hx.flat:
-            mo.update(self.hx, self.ez, self.ey, self.dt, self.dy, self.dz)
+            mo.update(self.hx, self.ez, self.ey, self.dy, self.dz, self.dt, self.time_step.t)
         self.lock_hx.release()
 		
     def update_hy(self):
         self.lock_hy.acquire()
         for mo in self.material_hy.flat:
-            mo.update(self.hy, self.ex, self.ez, self.dt, self.dz, self.dx)
+            mo.update(self.hy, self.ex, self.ez, self.dz, self.dx, self.dt, self.time_step.t)
         self.lock_hy.release()
 		
     def update_hz(self):
         self.lock_hz.acquire()
         for mo in self.material_hz.flat:
-            mo.update(self.hz, self.ey, self.ex, self.dt, self.dx, self.dy)
+            mo.update(self.hz, self.ey, self.ex, self.dx, self.dy, self.dt, self.time_step.t)
         self.lock_hz.release()
 
     def talk_with_ex_neighbors(self):
@@ -424,9 +424,9 @@ class FDTD(object):
                                                         None, src, const.Ex.tag) 
             
                 phase_shift = exp(2j * pi / self.space.period[1] * (dest_spc - src_spc))              
-                
+            
             self.ex[:, -1, :-1] = phase_shift * \
-            self.space.cart_comm.sendrecv(self.ex[:, 0,:-1], dest, const.Ex.tag,
+            self.space.cart_comm.sendrecv(self.ex[:, 0, :-1], dest, const.Ex.tag,
                                           None, src, const.Ex.tag)
             
         # send ex field data to -z direction and receive from +z direction.    
@@ -551,8 +551,11 @@ class FDTD(object):
             
                 phase_shift = exp(2j * pi / self.space.period[1] * (dest_spc - src_spc))
                 
-            self.hx[:, 0, 1:] = phase_shift * \
-            self.space.cart_comm.sendrecv(self.hx[:, -1, 1:], dest, const.Hx.tag,
+#            self.hx[:, 0, 1:] = phase_shift * \
+#            self.space.cart_comm.sendrecv(self.hx[:, -1, 1:], dest, const.Hx.tag,
+#                                          None, src, const.Hx.tag)
+            self.hx[:, 0, 0:] = phase_shift * \
+            self.space.cart_comm.sendrecv(self.hx[:, -1, 0:], dest, const.Hx.tag,
                                           None, src, const.Hx.tag)
             
         # send hx field data to +z direction and receive from -z direction.    
@@ -569,8 +572,11 @@ class FDTD(object):
             
                 phase_shift = exp(2j * pi / self.space.period[2] * (dest_spc - src_spc))
                                 
-            self.hx[:, 1:, 0] = phase_shift * \
-            self.space.cart_comm.sendrecv(self.hx[:, 1:, -1], dest, const.Hx.tag,
+#            self.hx[:, 1:, 0] = phase_shift * \
+#            self.space.cart_comm.sendrecv(self.hx[:, 1:, -1], dest, const.Hx.tag,
+#                                          None, src, const.Hx.tag)
+            self.hx[:, 0:, 0] = phase_shift * \
+            self.space.cart_comm.sendrecv(self.hx[:, 0:, -1], dest, const.Hx.tag,
                                           None, src, const.Hx.tag)
             
     def talk_with_hy_neighbors(self):
@@ -593,8 +599,11 @@ class FDTD(object):
             
                 phase_shift = exp(2j * pi / self.space.period[1] * (dest_spc - src_spc))
                 
-            self.hy[1:, :, 0] = phase_shift * \
-            self.space.cart_comm.sendrecv(self.hy[1:, :, -1], dest, const.Hy.tag,
+#            self.hy[1:, :, 0] = phase_shift * \
+#            self.space.cart_comm.sendrecv(self.hy[1:, :, -1], dest, const.Hy.tag,
+#                                          None, src, const.Hy.tag)
+            self.hy[0:, :, 0] = phase_shift * \
+            self.space.cart_comm.sendrecv(self.hy[0:, :, -1], dest, const.Hy.tag,
                                           None, src, const.Hy.tag)
             
         # send hy field data to +x direction and receive from -x direction.
@@ -611,8 +620,11 @@ class FDTD(object):
             
                 phase_shift = exp(2j * pi / self.space.period[0] * (dest_spc - src_spc))
             
-            self.hy[0, :, 1:] = phase_shift * \
-            self.space.cart_comm.sendrecv(self.hy[-1, :, 1:], dest, const.Hy.tag,
+#            self.hy[0, :, 1:] = phase_shift * \
+#            self.space.cart_comm.sendrecv(self.hy[-1, :, 1:], dest, const.Hy.tag,
+#                                          None, src, const.Hy.tag)
+            self.hy[0, :, 0:] = phase_shift * \
+            self.space.cart_comm.sendrecv(self.hy[-1, :, 0:], dest, const.Hy.tag,
                                           None, src, const.Hy.tag)
             
     def talk_with_hz_neighbors(self):
@@ -635,8 +647,11 @@ class FDTD(object):
             
                 phase_shift = exp(2j * pi / self.space.period[0] * (dest_spc - src_spc))
             
-            self.hz[0, 1:, :] = phase_shift * \
-            self.space.cart_comm.sendrecv(self.hz[-1, 1:, :], dest, const.Hz.tag,
+#            self.hz[0, 1:, :] = phase_shift * \
+#            self.space.cart_comm.sendrecv(self.hz[-1, 1:, :], dest, const.Hz.tag,
+#                                          None, src, const.Hz.tag)
+            self.hz[0, 0:, :] = phase_shift * \
+            self.space.cart_comm.sendrecv(self.hz[-1, 0:, :], dest, const.Hz.tag,
                                           None, src, const.Hz.tag)
             
         # send hz field data to +y direction and receive from -y direction.
@@ -653,8 +668,11 @@ class FDTD(object):
             
                 phase_shift = exp(2j * pi / self.space.period[1] * (dest_spc - src_spc))
                 
-            self.hz[1:, 0, :] = phase_shift * \
-            self.space.cart_comm.sendrecv(self.hz[1:, -1, :], dest, const.Hz.tag,
+#            self.hz[1:, 0, :] = phase_shift * \
+#            self.space.cart_comm.sendrecv(self.hz[1:, -1, :], dest, const.Hz.tag,
+#                                          None, src, const.Hz.tag)
+            self.hz[0:, 0, :] = phase_shift * \
+            self.space.cart_comm.sendrecv(self.hz[0:, -1, :], dest, const.Hz.tag,
                                           None, src, const.Hz.tag)
             
     def step(self):        

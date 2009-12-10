@@ -16,7 +16,7 @@ using namespace std;
 void DrudeExReal::update(double * const ex, int ex_x_size, int ex_y_size, int ex_z_size,
 		const double * const hz, int hz_x_size, int hz_y_size, int hz_z_size,
 		const double * const hy, int hy_x_size, int hy_y_size, int hy_z_size,
-		double dt, double dy, double dz)
+		double dy, double dz, double dt, double t)
 {
 	vector<double> q_tmp(omega_p.size());
 
@@ -40,7 +40,7 @@ void DrudeExReal::update(double * const ex, int ex_x_size, int ex_y_size, int ex
 void DrudeEyReal::update(double * const ey, int ey_x_size, int ey_y_size, int ey_z_size,
 		const double * const hx, int hx_x_size, int hx_y_size, int hx_z_size,
 		const double * const hz, int hz_x_size, int hz_y_size, int hz_z_size,
-		double dt, double dz, double dx)
+		double dz, double dx, double dt, double t)
 {
 	vector<double> q_tmp(omega_p.size());
 
@@ -64,7 +64,7 @@ void DrudeEyReal::update(double * const ey, int ey_x_size, int ey_y_size, int ey
 void DrudeEzReal::update(double * const ez, int ez_x_size, int ez_y_size, int ez_z_size,
 		const double * const hy, int hy_x_size, int hy_y_size, int hy_z_size,
 		const double * const hx, int hx_x_size, int hx_y_size, int hx_z_size,
-		double dt, double dx, double dy)
+		double dx, double dy, double dt, double t)
 {
 	vector<double> q_tmp(omega_p.size());
 
@@ -89,7 +89,7 @@ void DrudeEzReal::update(double * const ez, int ez_x_size, int ez_y_size, int ez
 //DrudeHxReal::update(double * const hx, int hx_x_size, int hx_y_size, int hx_z_size,
 //    const double * const ez, int ez_x_size, int ez_y_size, int ez_z_size,
 //    const double * const ey, int ey_x_size, int ey_y_size, int ey_z_size,
-//    double dt, double dy, double dz)
+//    double dy, double dz, double dt, double t)
 //{
 //  hx(i,j,k) -= dt / mu * ((ez(i,j,k-1) - ez(i,j-1,k-1)) / dy - (ey(i,j-1,k)
 //      - ey(i,j-1,k-1)) / dz);
@@ -99,7 +99,7 @@ void DrudeEzReal::update(double * const ez, int ez_x_size, int ez_y_size, int ez
 //DrudeHyReal::update(double * const hy, int hy_x_size, int hy_y_size, int hy_z_size,
 //    const double * const ex, int ex_x_size, int ex_y_size, int ex_z_size,
 //    const double * const ez, int ez_x_size, int ez_y_size, int ez_z_size,
-//    double dt, double dz, double dx)
+//    double dz, double dx, double dt, double t)
 //{
 //  hy(i,j,k) -= dt / mu * ((ex(i-1,j,k) - ex(i-1,j,k-1)) / dz - (ez(i,j,k-1)
 //      - ez(i-1,j,k-1)) / dx);
@@ -109,7 +109,7 @@ void DrudeEzReal::update(double * const ez, int ez_x_size, int ez_y_size, int ez
 //DrudeHzReal::update(double * const hz, int hz_x_size, int hz_y_size, int hz_z_size,
 //    const double * const ey, int ey_x_size, int ey_y_size, int ey_z_size,
 //    const double * const ex, int ex_x_size, int ex_y_size, int ex_z_size,
-//    double dt, double dx, double dy)
+//    double dx, double dy, double dt, double t)
 //{
 //  hz(i,j,k) -= dt / mu * ((ey(i,j-1,k) - ey(i-1,j-1,k)) / dx - (ex(i-1,j,k)
 //      - ex(i-1,j-1,k)) / dy);

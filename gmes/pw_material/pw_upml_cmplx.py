@@ -33,7 +33,7 @@ class UpmlExCmplx(UpmlElectricCmplx):
     def __init__(self, idx, epsilon_r, c1, c2, c3, c4, c5, c6):
         UpmlElectricCmplx.__init__(self, idx, epsilon_r, c1, c2, c3, c4, c5, c6)
         
-    def update(self, ex, hz, hy, dt, dy, dz):
+    def update(self, ex, hz, hy, dy, dz, dt, t):
         i, j, k = self.i, self.j, self.k
         
         dstore = self.d
@@ -47,7 +47,7 @@ class UpmlEyCmplx(UpmlElectricCmplx):
     def __init__(self, idx, epsilon_r, c1, c2, c3, c4, c5, c6):
         UpmlElectricCmplx.__init__(self, idx, epsilon_r, c1, c2, c3, c4, c5, c6)
         
-    def update(self, ey, hx, hz, dt, dz, dx):
+    def update(self, ey, hx, hz, dz, dx, dt, t):
         i, j, k = self.i, self.j, self.k
         
         dstore = self.d
@@ -61,7 +61,7 @@ class UpmlEzCmplx(UpmlElectricCmplx):
     def __init__(self, idx, epsilon_r, c1, c2, c3, c4, c5, c6):
         UpmlElectricCmplx.__init__(self, idx, epsilon_r, c1, c2, c3, c4, c5, c6)
         
-    def update(self, ez, hy, hx, dt, dx, dy):
+    def update(self, ez, hy, hx, dx, dy, dt, t):
         i, j, k = self.i, self.j, self.k
         
         dstore = self.d
@@ -87,7 +87,7 @@ class UpmlHxCmplx(UpmlMagneticCmplx):
     def __init__(self, idx, mu_r, c1, c2, c3, c4, c5, c6):
         UpmlMagneticCmplx.__init__(self, idx, mu_r, c1, c2, c3, c4, c5, c6)
 
-    def update(self, hx, ez, ey, dt, dy, dz):
+    def update(self, hx, ez, ey, dy, dz, dt, t):
         i, j, k = self.i, self.j, self.k
         
         bstore = self.b
@@ -101,7 +101,7 @@ class UpmlHyCmplx(UpmlMagneticCmplx):
     def __init__(self, idx, mu_r, c1, c2, c3, c4, c5, c6):
         UpmlMagneticCmplx.__init__(self, idx, mu_r, c1, c2, c3, c4, c5, c6)
 
-    def update(self, hy, ex, ez, dt, dz, dx):
+    def update(self, hy, ex, ez, dz, dx, dt, t):
         i, j, k = self.i, self.j, self.k
         
         bstore = self.b
@@ -115,7 +115,7 @@ class UpmlHzCmplx(UpmlMagneticCmplx):
     def __init__(self, idx, mu_r, c1, c2, c3, c4, c5, c6):
         UpmlMagneticCmplx.__init__(self, idx, mu_r, c1, c2, c3, c4, c5, c6)
 
-    def update(self, hz, ey, ex, dt, dx, dy):
+    def update(self, hz, ey, ex, dx, dy, dt, t):
         i, j, k = self.i, self.j, self.k
         
         bstore = self.b

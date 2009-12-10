@@ -13,14 +13,21 @@ public:
 		MaterialElectricReal(idx, size), epsilon(epsilon_r * epsilon0)
 	{
 	}
+
 	double get_epsilon()
 	{
 		return epsilon;
 	}
+
 	void set_epsilon(double epsilon_r)
 	{
 		epsilon = epsilon_r * epsilon0;
 	}
+
+	void update(double * const inplace_field, int inplace_dim1, int inplace_dim2, int inplace_dim3,
+				const double * const in_field1, int in1_dim1, int in1_dim2, int in1_dim3,
+				const double * const in_field2, int in2_dim1, int in2_dim2, int in2_dim3,
+				double d1, double d2, double dt, double t);
 
 protected:
 	double epsilon;
@@ -33,11 +40,6 @@ public:
 		DummyElectricReal(idx, size, epsilon_r)
 	{
 	}
-
-	void update(double * const ex, int ex_x_size, int ex_y_size, int ex_z_size,
-			const double * const hz, int hz_x_size, int hz_y_size, int hz_z_size,
-			const double * const hy, int hy_x_size, int hy_y_size, int hy_z_size,
-			double dt, double dy, double dz);
 };
 
 class DummyEyReal: public DummyElectricReal
@@ -47,11 +49,6 @@ public:
 		DummyElectricReal(idx, size, epsilon_r)
 	{
 	}
-
-	void update(double * const ey, int ey_x_size, int ey_y_size, int ey_z_size,
-			const double * const hx, int hx_x_size, int hx_y_size, int hx_z_size,
-			const double * const hz, int hz_x_size, int hz_y_size, int hz_z_size,
-			double dt, double dz, double dx);
 };
 
 class DummyEzReal: public DummyElectricReal
@@ -61,11 +58,6 @@ public:
 		DummyElectricReal(idx, size, epsilon_r)
 	{
 	}
-
-	void update(double * const ez, int ez_x_size, int ez_y_size, int ez_z_size,
-			const double * const hy, int hy_x_size, int hy_y_size, int hy_z_size,
-			const double * const hx, int hx_x_size, int hx_y_size, int hx_z_size,
-			double dt, double dx, double dy);
 };
 
 class DummyMagneticReal: public MaterialMagneticReal
@@ -75,14 +67,21 @@ public:
 		MaterialMagneticReal(idx, size), mu(mu_r * mu0)
 	{
 	}
+
 	double get_mu()
 	{
 		return mu;
 	}
+
 	void set_mu(double mu_r)
 	{
 		mu = mu_r * mu0;
 	}
+
+	void update(double * const inplace_field, int inplace_dim1, int inplace_dim2, int inplace_dim3,
+				const double * const in_field1, int in1_dim1, int in1_dim2, int in1_dim3,
+				const double * const in_field2, int in2_dim1, int in2_dim2, int in2_dim3,
+				double d1, double d2, double dt, double t);
 
 protected:
 	double mu;
@@ -95,11 +94,6 @@ public:
 		DummyMagneticReal(idx, size, mu_r)
 	{
 	}
-
-	void update(double * const hx, int hx_x_size, int hx_y_size, int hx_z_size,
-			const double * const ez, int ez_x_size, int ez_y_size, int ez_z_size,
-			const double * const ey, int ey_x_size, int ey_y_size, int ey_z_size,
-			double dt, double dy, double dz);
 };
 
 class DummyHyReal: public DummyMagneticReal
@@ -109,11 +103,6 @@ public:
 		DummyMagneticReal(idx, size, mu_r)
 	{
 	}
-
-	void update(double * const hy, int hy_x_size, int hy_y_size, int hy_z_size,
-			const double * const ex, int ex_x_size, int ex_y_size, int ex_z_size,
-			const double * const ez, int ez_x_size, int ez_y_size, int ez_z_size,
-			double dt, double dz, double dx);
 };
 
 class DummyHzReal: public DummyMagneticReal
@@ -123,11 +112,6 @@ public:
 		DummyMagneticReal(idx, size, mu_r)
 	{
 	}
-
-	void update(double * const hz, int hz_x_size, int hz_y_size, int hz_z_size,
-			const double * const ey, int ey_x_size, int ey_y_size, int ey_z_size,
-			const double * const ex, int ex_x_size, int ex_y_size, int ex_z_size,
-			double dt, double dx, double dy);
 };
 }
 

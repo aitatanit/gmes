@@ -670,9 +670,9 @@ class CPML(PML):
         kappax = self.kappa(coords[0], 0)
         
         if self.cmplx:
-            pw_obj = CpmlEyCmplx(idx, underneath.epsilon_r, by, bz, cy, cz, kappay, kappaz)
+            pw_obj = CpmlEyCmplx(idx, underneath.epsilon_r, bz, bx, cz, cx, kappaz, kappax)
         else:
-            pw_obj = CpmlEyReal(idx, underneath.epsilon_r, by, bz, cy, cz, kappay, kappaz)
+            pw_obj = CpmlEyReal(idx, underneath.epsilon_r, bz, bx, cz, cx, kappaz, kappax)
             
         return pw_obj
     
@@ -685,9 +685,9 @@ class CPML(PML):
         kappay = self.kappa(coords[1], 1)
         
         if self.cmplx:
-            pw_obj = CpmlEzCmplx(idx, underneath.epsilon_r, by, bz, cy, cz, kappay, kappaz)
+            pw_obj = CpmlEzCmplx(idx, underneath.epsilon_r, bx, by, cx, cy, kappax, kappay)
         else:
-            pw_obj = CpmlEzReal(idx, underneath.epsilon_r, by, bz, cy, cz, kappay, kappaz)
+            pw_obj = CpmlEzReal(idx, underneath.epsilon_r, bx, by, cx, cy, kappax, kappay)
             
         return pw_obj
     
@@ -715,9 +715,9 @@ class CPML(PML):
         kappax = self.kappa(coords[0], 0)
         
         if self.cmplx:
-            pw_obj = CpmlHyCmplx(idx, underneath.mu_r, by, bz, cy, cz, kappay, kappaz)
+            pw_obj = CpmlHyCmplx(idx, underneath.mu_r, bz, bx, cz, cx, kappaz, kappax)
         else:
-            pw_obj = CpmlHyReal(idx, underneath.mu_r, by, bz, cy, cz, kappay, kappaz)
+            pw_obj = CpmlHyReal(idx, underneath.mu_r, bz, bx, cz, cx, kappaz, kappax)
             
         return pw_obj
     
@@ -730,9 +730,9 @@ class CPML(PML):
         kappay = self.kappa(coords[1], 1)
         
         if self.cmplx:
-            pw_obj = CpmlHzCmplx(idx, underneath.mu_r, by, bz, cy, cz, kappay, kappaz)
+            pw_obj = CpmlHzCmplx(idx, underneath.mu_r, bx, by, cx, cy, kappax, kappay)
         else:
-            pw_obj = CpmlHzReal(idx, underneath.mu_r, by, bz, cy, cz, kappay, kappaz)
+            pw_obj = CpmlHzReal(idx, underneath.mu_r, bx, by, cx, cy, kappax, kappay)
             
         return pw_obj
         

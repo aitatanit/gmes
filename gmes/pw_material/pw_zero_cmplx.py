@@ -12,63 +12,39 @@ from gmes.constants import *
 
 
 class ZeroElectricCmplx(object):
-    def __init__(self, idx, epsilon_r):
+    def __init__(self, idx, epsilon_r=1):
         self.i, self.j, self.k = array(idx, int)
         self.epsilon = float(epsilon_r) * epsilon0
         
-        
-class ZeroExCmplx(ZeroElectricCmplx):
-    def __init__(self, idx, epsilon_r=1):
-        ZeroElectricCmplx.__init__(self, idx, epsilon_r)
-
-    def update(self, ex, hz, hy, dt, dy, dz):
-        ex[self.i, self.j, self.k] = 0
+    def update(self, efield, hfield1, hfield2, d1, d2, dt, t):
+        efield[self.i, self.j, self.k] = 0
         
         
-class ZeroEyCmplx(ZeroElectricCmplx):
-    def __init__(self, idx, epsilon_r=1):
-        ZeroElectricCmplx.__init__(self, idx, epsilon_r)
-
-    def update(self, ey, hx, hz, dt, dz, dx):
-        ey[self.i, self.j, self.k] = 0
+class ZeroExCmplx(ZeroElectricCmplx): pass
         
         
-class ZeroEzCmplx(ZeroElectricCmplx):
-    def __init__(self, idx, epsilon_r=1):
-        ZeroElectricCmplx.__init__(self, idx, epsilon_r)
-
-    def update(self, ez, hy, hx, dt, dx, dy):
-        ez[self.i, self.j, self.k] = 0
+class ZeroEyCmplx(ZeroElectricCmplx): pass
+        
+        
+class ZeroEzCmplx(ZeroElectricCmplx): pass
         
         
 class ZeroMagneticCmplx(object):
-    def __init__(self, idx, mu_r):
+    def __init__(self, idx, mu_r=1):
         self.i, self.j, self.k = array(idx, int)
         self.epsilon = float(mu_r) * mu0
         
+    def update(self, hfield, efield1, efield2, d1, d2, dt, t):
+        hfield[self.i, self.j, self.k] = 0
         
-class ZeroHxCmplx(ZeroMagneticCmplx):
-    def __init__(self, idx, mu_r=1):
-        ZeroMagneticCmplx.__init__(self, idx, mu_r)
-
-    def update(self, hx, ez, ey, dt, dy, dz):
-        hx[self.i, self.j, self.k] = 0
+           
+class ZeroHxCmplx(ZeroMagneticCmplx): pass
         
         
-class ZeroHyCmplx(ZeroMagneticCmplx):
-    def __init__(self, idx, mu_r=1):
-        ZeroMagneticCmplx.__init__(self, idx, mu_r)
-
-    def update(self, hy, ex, ez, dt, dz, dx):
-        hy[self.i, self.j, self.k] = 0
+class ZeroHyCmplx(ZeroMagneticCmplx): pass
         
 
-class ZeroHzCmplx(ZeroMagneticCmplx):
-    def __init__(self, idx, mu_r=1):
-        ZeroMagneticCmplx.__init__(self, idx, mu_r)
-
-    def update(self, hz, ey, ex, dt, dx, dy):
-        hz[self.i, self.j, self.k] = 0
+class ZeroHzCmplx(ZeroMagneticCmplx): pass
             
         
 if __name__ == '__main__':

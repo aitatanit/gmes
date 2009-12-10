@@ -30,7 +30,7 @@ class DrudeExCmplx(DrudeElectricCmplx):
     def __init__(self, idx, epsilon_inf, omega_p, gamma_p):
         DrudeElectricCmplx.__init__(self, idx, epsilon_inf, omega_p, gamma_p)
         
-    def update(self, ex, hz, hy, dt, dy, dz):
+    def update(self, ex, hz, hy, dy, dz, dt, t):
         i, j, k = self.i, self.j, self.k
         
         q_tmp = (4 * self.q_new + (self.gamma_p * dt - 2) * self.q_old - 
@@ -49,7 +49,7 @@ class DrudeEyCmplx(DrudeElectricCmplx):
     def __init__(self, idx, epsilon_inf, omega_p, gamma_p):
         DrudeElectricCmplx.__init__(self, idx, epsilon_inf, omega_p, gamma_p)
         
-    def update(self, ey, hx, hz, dt, dz, dx):
+    def update(self, ey, hx, hz, dz, dx, dt, t):
         i, j, k = self.i, self.j, self.k
         
         q_tmp = (4 * self.q_new + (self.gamma_p * dt - 2) * self.q_old - 
@@ -68,7 +68,7 @@ class DrudeEzCmplx(DrudeElectricCmplx):
     def __init__(self, idx, epsilon_inf, omega_p, gamma_p):
         DrudeElectricCmplx.__init__(self, idx, epsilon_inf, omega_p, gamma_p)
         
-    def update(self, ez, hy, hx, dt, dx, dy):
+    def update(self, ez, hy, hx, dx, dy, dt, t):
         i, j, k = self.i, self.j, self.k
         
         q_tmp = (4 * self.q_new + (self.gamma_p * dt - 2) * self.q_old - 

@@ -1479,7 +1479,7 @@ class Cylinder(Cone):
             center -- Center point of the object. Default is (0,0,0). 
         
         """
-        Cone.__init__(self, radius, axis, radius, height, material, center)
+        Cone.__init__(self, material, radius, axis, radius, height, center)
         
     def display_info(self, indent=0):
         """
