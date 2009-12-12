@@ -8,23 +8,35 @@
 #ifndef PW_CPML_REAL_HH_
 #define PW_CPML_REAL_HH_
 
-#include "pw_dummy_real.hh"
+#include "pw_material_real.hh"
 #include "constants.hh"
 
 namespace gmes
 {
-class CpmlElectricReal: public DummyElectricReal
+class CpmlElectricReal: public MaterialElectricReal
 {
 public:
 	CpmlElectricReal(const int * const idx, int size, double epsilon_r,
 			double b1_in, double b2_in, double c1_in, double c2_in,
 			double kappa1_in, double kappa2_in) :
-		DummyElectricReal(idx, size, epsilon_r), b1(b1_in), b2(b2_in), c1(c1_in),
-				c2(c2_in), kappa1(kappa1_in), kappa2(kappa2_in), psi1(0), psi2(0)
+		MaterialElectricReal(idx, size), epsilon(epsilon_r * epsilon0),
+		b1(b1_in), b2(b2_in), c1(c1_in), c2(c2_in),
+		kappa1(kappa1_in), kappa2(kappa2_in), psi1(0), psi2(0)
 	{
 	}
 
+	double get_epsilon()
+	{
+		return epsilon;
+	}
+
+	void set_epsilon(double epsilon_r)
+	{
+		epsilon = epsilon_r * epsilon0;
+	}
+
 protected:
+	double epsilon;
 	double b1, b2;
 	double c1, c2;
 	double kappa1, kappa2;
@@ -76,18 +88,30 @@ public:
 			double dx, double dy, double dt, double t);
 };
 
-class CpmlMagneticReal: public DummyMagneticReal
+class CpmlMagneticReal: public MaterialMagneticReal
 {
 public:
 	CpmlMagneticReal(const int * const idx, int size, double mu_r, double b1_in,
 			double b2_in, double c1_in, double c2_in, double kappa1_in,
 			double kappa2_in) :
-		DummyMagneticReal(idx, size, mu_r), b1(b1_in), b2(b2_in), c1(c1_in),
-				c2(c2_in), kappa1(kappa1_in), kappa2(kappa2_in), psi1(0), psi2(0)
+		MaterialMagneticReal(idx, size), mu(mu_r * mu0),
+		b1(b1_in), b2(b2_in), c1(c1_in), c2(c2_in),
+		kappa1(kappa1_in), kappa2(kappa2_in), psi1(0), psi2(0)
 	{
 	}
 
+	double get_mu()
+	{
+		return mu;
+	}
+
+	void set_mu(double mu_r)
+	{
+		mu = mu_r * mu0;
+	}
+
 protected:
+	double mu;
 	double b1, b2;
 	double c1, c2;
 	double kappa1, kappa2;

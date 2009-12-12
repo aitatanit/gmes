@@ -69,7 +69,7 @@ class Continuous(SrcTime):
         te = self.end - time
         
         if ts < 0 or te < 0:
-            return 0.0
+            return None
         
         if ts < self.width:
             env = sin(.5 * pi * ts / self.width)**2
@@ -106,10 +106,10 @@ class Bandpass(SrcTime):
         print "bandwidth:", self.fwidth,
         print "peak time:", self.peak
         print "cutoff:", self.cutoff
-            
+        
     def dipole(self, time):
         tt = time - self.peak
-        if (abs(tt) > self.cutoff): return 0.0
+        if (abs(tt) > self.cutoff): return None
 
         return exp(-.5 * (tt * self.fwidth)**2) * cos(2 * pi * self.freq * time)
         

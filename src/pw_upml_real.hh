@@ -8,22 +8,34 @@
 #ifndef PW_UPML_REAL_HH_
 #define PW_UPML_REAL_HH_
 
-#include "pw_dummy_real.hh"
+#include "pw_material_real.hh"
+#include "constants.hh"
 
 namespace gmes
 {
-class UpmlElectricReal: public DummyElectricReal
+class UpmlElectricReal: public MaterialElectricReal
 {
 public:
 	UpmlElectricReal(const int * const idx, int size, double epsilon_r,
 			double c1_in, double c2_in, double c3_in, double c4_in,
 			double c5_in, double c6_in) :
-		DummyElectricReal(idx, size, epsilon_r), c1(c1_in), c2(c2_in), c3(c3_in),
-				c4(c4_in), c5(c5_in), c6(c6_in), d(0)
+		MaterialElectricReal(idx, size), epsilon(epsilon_r * epsilon0),
+		c1(c1_in), c2(c2_in), c3(c3_in), c4(c4_in), c5(c5_in), c6(c6_in), d(0)
 	{
 	}
 
+	double get_epsilon()
+	{
+		return epsilon;
+	}
+
+	void set_epsilon(double epsilon_r)
+	{
+		epsilon = epsilon_r * epsilon0;
+	}
+
 protected:
+	double epsilon;
 	double c1, c2, c3, c4, c5, c6;
 	double d;
 };
@@ -73,18 +85,29 @@ public:
 			double dx, double dy, double dt, double t);
 };
 
-class UpmlMagneticReal: public DummyMagneticReal
+class UpmlMagneticReal: public MaterialMagneticReal
 {
 public:
-	UpmlMagneticReal(const int * const idx, int size, double mu_r, double c1_in,
-			double c2_in, double c3_in, double c4_in, double c5_in,
-			double c6_in) :
-		DummyMagneticReal(idx, size, mu_r), c1(c1_in), c2(c2_in), c3(c3_in), c4(
-				c4_in), c5(c5_in), c6(c6_in), b(0)
+	UpmlMagneticReal(const int * const idx, int size, double mu_r,
+			double c1_in, double c2_in, double c3_in, double c4_in,
+			double c5_in, double c6_in) :
+		MaterialMagneticReal(idx, size), mu(mu_r * mu0),
+		c1(c1_in), c2(c2_in), c3(c3_in), c4(c4_in), c5(c5_in), c6(c6_in), b(0)
 	{
 	}
 
+	double get_mu()
+	{
+		return mu;
+	}
+
+	void set_mu(double mu_r)
+	{
+		mu = mu_r * mu0;
+	}
+
 protected:
+	double mu;
 	double c1, c2, c3, c4, c5, c6;
 	double b;
 };
@@ -92,9 +115,9 @@ protected:
 class UpmlHxReal: public UpmlMagneticReal
 {
 public:
-	UpmlHxReal(const int * const idx, int size, double muR, double c1, double c2,
+	UpmlHxReal(const int * const idx, int size, double mu_r, double c1, double c2,
 			double c3, double c4, double c5, double c6) :
-		UpmlMagneticReal(idx, size, muR, c1, c2, c3, c4, c5, c6)
+		UpmlMagneticReal(idx, size, mu_r, c1, c2, c3, c4, c5, c6)
 	{
 	}
 
@@ -107,9 +130,9 @@ public:
 class UpmlHyReal: public UpmlMagneticReal
 {
 public:
-	UpmlHyReal(const int * const idx, int size, double muR, double c1, double c2,
+	UpmlHyReal(const int * const idx, int size, double mu_r, double c1, double c2,
 			double c3, double c4, double c5, double c6) :
-		UpmlMagneticReal(idx, size, muR, c1, c2, c3, c4, c5, c6)
+		UpmlMagneticReal(idx, size, mu_r, c1, c2, c3, c4, c5, c6)
 	{
 	}
 
@@ -122,9 +145,9 @@ public:
 class UpmlHzReal: public UpmlMagneticReal
 {
 public:
-	UpmlHzReal(const int * const idx, int size, double muR, double c1, double c2,
+	UpmlHzReal(const int * const idx, int size, double mu_r, double c1, double c2,
 			double c3, double c4, double c5, double c6) :
-		UpmlMagneticReal(idx, size, muR, c1, c2, c3, c4, c5, c6)
+		UpmlMagneticReal(idx, size, mu_r, c1, c2, c3, c4, c5, c6)
 	{
 	}
 

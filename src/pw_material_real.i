@@ -77,8 +77,8 @@ if _newclass:prop = property(eval("_"+__name__.split('.')[-1]).##py##_##get, eva
 Property(PwMaterialReal, gmes::PwMaterialReal, i, get_i, set_i)
 Property(PwMaterialReal, gmes::PwMaterialReal, j, get_j, set_j)
 Property(PwMaterialReal, gmes::PwMaterialReal, k, get_k, set_k)
-Property(DummyElectricReal, gmes::MaterialElectricReal, epsilon, get_epsilon, set_epsilon)
-Property(DummyMagneticReal, gmes::MaterialMagneticReal, mu, get_mu, set_mu)
+Property(MaterialElectricReal, gmes::MaterialElectricReal, epsilon, get_epsilon, set_epsilon)
+Property(MaterialMagneticReal, gmes::MaterialMagneticReal, mu, get_mu, set_mu)
 
 // Include the header file to be wrapped
 %include "pw_material_real.hh"

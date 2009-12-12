@@ -7,24 +7,27 @@
 
 #include <vector>
 
-#include "pw_dummy_real.hh"
+#include "constants.hh"
+#include "pw_material_real.hh"
 #include "pw_dielectric_real.hh"
 
 namespace gmes
 {
-class DrudeElectricReal: public DummyElectricReal
+class DrudeElectricReal: public MaterialElectricReal
 {
 public:
 	DrudeElectricReal(const int * const idx, int size, double epsilon_inf,
 			const double * const omega_p, int omega_p_size,
 			const double * const gamma_p, int gamma_p_size) :
-		DummyElectricReal(idx, size, epsilon_inf), omega_p(omega_p, omega_p
-				+ omega_p_size), gamma_p(gamma_p, gamma_p + gamma_p_size),
-				q_new(omega_p_size, 0.), q_old(omega_p_size, 0.)
+		MaterialElectricReal(idx, size), epsilon(epsilon_inf * epsilon0),
+		omega_p(omega_p, omega_p + omega_p_size),
+		gamma_p(gamma_p, gamma_p + gamma_p_size),
+		q_new(omega_p_size, 0.), q_old(omega_p_size, 0.)
 	{
 	}
 
 protected:
+	double epsilon;
 	std::vector<double> omega_p;
 	std::vector<double> gamma_p;
 	std::vector<double> q_new;
@@ -37,8 +40,8 @@ public:
 	DrudeExReal(const int * const idx, int size, double epsilon_inf,
 			const double * const omega_p, int omega_p_size,
 			const double * const gamma_p, int gamma_p_size) :
-		DrudeElectricReal(idx, size, epsilon_inf, omega_p, omega_p_size, gamma_p,
-				gamma_p_size)
+		DrudeElectricReal(idx, size, epsilon_inf, omega_p, omega_p_size,
+		gamma_p, gamma_p_size)
 	{
 	}
 

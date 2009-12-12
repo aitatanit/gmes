@@ -1,92 +1,117 @@
 #ifndef PW_ZERO_REAL_HH_
 #define PW_ZERO_REAL_HH_
 
-#include "pw_dummy_real.hh"
+#include "pw_material_real.hh"
+#include "constants.hh"
 
 namespace gmes
 {
-class ZeroExReal: public DummyExReal
+class ZeroElectricReal: public MaterialElectricReal
+{
+public:
+	ZeroElectricReal(const int * const idx, int size, double epsilon_r) :
+		MaterialElectricReal(idx, size), epsilon(epsilon_r * epsilon0)
+	{
+	}
+
+	double get_epsilon()
+	{
+		return epsilon;
+	}
+
+	void set_epsilon(double epsilon_r)
+	{
+		epsilon = epsilon_r * epsilon0;
+	}
+
+	void update(double * const inplace_field, int inplace_dim1, int inplace_dim2, int inplace_dim3,
+				const double * const in_field1, int in1_dim1, int in1_dim2, int in1_dim3,
+				const double * const in_field2, int in2_dim1, int in2_dim2, int in2_dim3,
+				double d1, double d2, double dt, double t);
+
+protected:
+	double epsilon;
+};
+
+class ZeroExReal: public ZeroElectricReal
 {
 public:
 	ZeroExReal(const int * const idx, int size, double epsilon_r = 1) :
-		DummyExReal(idx, size, epsilon_r)
+			ZeroElectricReal(idx, size, epsilon_r)
 	{
 	}
-
-	void update(double * const ex, int ex_x_size, int ex_y_size, int ex_z_size,
-			const double * const hz, int hz_x_size, int hz_y_size, int hz_z_size,
-			const double * const hy, int hy_x_size, int hy_y_size, int hy_z_size,
-			double dy, double dz, double dt, double t);
 };
 
-class ZeroEyReal: public DummyEyReal
+class ZeroEyReal: public ZeroElectricReal
 {
 public:
 	ZeroEyReal(const int * const idx, int size, double epsilon_r = 1) :
-		DummyEyReal(idx, size, epsilon_r)
+			ZeroElectricReal(idx, size, epsilon_r)
 	{
 	}
-
-	void update(double * const ey, int ey_x_size, int ey_y_size, int ey_z_size,
-			const double * const hx, int hx_x_size, int hx_y_size, int hx_z_size,
-			const double * const hz, int hz_x_size, int hz_y_size, int hz_z_size,
-			double dz, double dx, double dt, double t);
 };
 
-class ZeroEzReal: public DummyEzReal
+class ZeroEzReal: public ZeroElectricReal
 {
 public:
 	ZeroEzReal(const int * const idx, int size, double epsilon_r = 1) :
-		DummyEzReal(idx, size, epsilon_r)
+			ZeroElectricReal(idx, size, epsilon_r)
+	{
+	}
+};
+
+class ZeroMagneticReal: public MaterialMagneticReal
+{
+public:
+	ZeroMagneticReal(const int * const idx, int size, double mu_r) :
+		MaterialMagneticReal(idx, size), mu(mu_r * mu0)
 	{
 	}
 
-	void update(double * const ez, int ez_x_size, int ez_y_size, int ez_z_size,
-			const double * const hy, int hy_x_size, int hy_y_size, int hy_z_size,
-			const double * const hx, int hx_x_size, int hx_y_size, int hx_z_size,
-			double dx, double dy, double dt, double t);
+	double get_mu()
+	{
+		return mu;
+	}
+
+	void set_mu(double mu_r)
+	{
+		mu = mu_r * mu0;
+	}
+
+	void update(double * const inplace_field, int inplace_dim1, int inplace_dim2, int inplace_dim3,
+				const double * const in_field1, int in1_dim1, int in1_dim2, int in1_dim3,
+				const double * const in_field2, int in2_dim1, int in2_dim2, int in2_dim3,
+				double d1, double d2, double dt, double t);
+
+protected:
+	double mu;
 };
 
-class ZeroHxReal: public DummyHxReal
+class ZeroHxReal: public ZeroMagneticReal
 {
 public:
 	ZeroHxReal(const int * const idx, int size, double mu_r = 1) :
-		DummyHxReal(idx, size, mu_r)
+			ZeroMagneticReal(idx, size, mu_r)
 	{
 	}
-
-	void update(double * const hx, int hx_x_size, int hx_y_size, int hx_z_size,
-			const double * const ez, int ez_x_size, int ez_y_size, int ez_z_size,
-			const double * const ey, int ey_x_size, int ey_y_size, int ey_z_size,
-			double dy, double dz, double dt, double t);
 };
 
-class ZeroHyReal: public DummyHyReal
+class ZeroHyReal: public ZeroMagneticReal
 {
 public:
 	ZeroHyReal(const int * const idx, int size, double mu_r = 1) :
-		DummyHyReal(idx, size, mu_r)
+			ZeroMagneticReal(idx, size, mu_r)
 	{
 	}
-
-	void update(double * const hy, int hy_x_size, int hy_y_size, int hy_z_size,
-			const double * const ex, int ex_x_size, int ex_y_size, int ex_z_size,
-			const double * const ez, int ez_x_size, int ez_y_size, int ez_z_size,
-			double dz, double dx, double dt, double t);
 };
 
-class ZeroHzReal: public DummyHzReal
+class ZeroHzReal: public ZeroMagneticReal
 {
 public:
 	ZeroHzReal(const int * const idx, int size, double mu_r = 1) :
-		DummyHzReal(idx, size, mu_r)
+			ZeroMagneticReal(idx, size, mu_r)
 	{
 	}
-
-	void update(double * const hz, int hz_x_size, int hz_y_size, int hz_z_size,
-			const double * const ey, int ey_x_size, int ey_y_size, int ey_z_size,
-			const double * const ex, int ex_x_size, int ex_y_size, int ex_z_size,
-			double dx, double dy, double dt, double t);
 };
 }
 

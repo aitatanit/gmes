@@ -1,5 +1,4 @@
 #include "pw_dummy_real.hh"
-#include "constants.hh"
 
 #define inplace_field(i,j,k) inplace_field[((i)*inplace_dim2+(j))*inplace_dim3+(k)]
 

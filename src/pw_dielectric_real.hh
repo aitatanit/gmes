@@ -1,15 +1,38 @@
 #ifndef PW_DIELECTRIC_REAL_HH_
 #define PW_DIELECTRIC_REAL_HH_
 
-#include "pw_dummy_real.hh"
+#include "pw_material_real.hh"
+#include "constants.hh"
 
 namespace gmes
 {
-class DielectricExReal: public DummyExReal
+class DielectricElectricReal: public MaterialElectricReal
+{
+public:
+	DielectricElectricReal(const int * const idx, int size, double epsilon_r = 1) :
+		MaterialElectricReal(idx, size), epsilon(epsilon_r * epsilon0)
+		{
+		}
+
+	double get_epsilon()
+		{
+			return epsilon;
+		}
+
+	void set_epsilon(double epsilon_r)
+		{
+			epsilon = epsilon_r * epsilon0;
+		}
+
+protected:
+	double epsilon;
+};
+
+class DielectricExReal: public DielectricElectricReal
 {
 public:
 	DielectricExReal(const int * const idx, int size, double epsilon_r = 1) :
-		DummyExReal(idx, size, epsilon_r)
+			DielectricElectricReal(idx, size, epsilon_r)
 	{
 	}
 
@@ -19,11 +42,11 @@ public:
 			double dy, double dz, double dt, double t);
 };
 
-class DielectricEyReal: public DummyEyReal
+class DielectricEyReal: public DielectricElectricReal
 {
 public:
 	DielectricEyReal(const int * const idx, int size, double epsilon_r = 1) :
-		DummyEyReal(idx, size, epsilon_r)
+			DielectricElectricReal(idx, size, epsilon_r)
 	{
 	}
 
@@ -33,11 +56,11 @@ public:
 			double dz, double dx, double dt, double t);
 };
 
-class DielectricEzReal: public DummyEzReal
+class DielectricEzReal: public DielectricElectricReal
 {
 public:
 	DielectricEzReal(const int * const idx, int size, double epsilon_r = 1) :
-		DummyEzReal(idx, size, epsilon_r)
+			DielectricElectricReal(idx, size, epsilon_r)
 	{
 	}
 
@@ -47,11 +70,33 @@ public:
 			double dx, double dy, double dt, double t);
 };
 
-class DielectricHxReal: public DummyHxReal
+class DielectricMagneticReal: public MaterialMagneticReal
+{
+public:
+	DielectricMagneticReal(const int * const idx, int size, double mu_r = 1) :
+			MaterialMagneticReal(idx, size), mu(mu_r * mu0)
+		{
+		}
+
+	double get_mu()
+		{
+			return mu;
+		}
+
+	void set_mu(double mu_r)
+		{
+			mu = mu_r * mu0;
+		}
+
+protected:
+	double mu;
+};
+
+class DielectricHxReal: public DielectricMagneticReal
 {
 public:
 	DielectricHxReal(const int * const idx, int size, double mu_r = 1) :
-		DummyHxReal(idx, size, mu_r)
+			DielectricMagneticReal(idx, size, mu_r)
 	{
 	}
 
@@ -61,11 +106,11 @@ public:
 			double dy, double dz, double dt, double t);
 };
 
-class DielectricHyReal: public DummyHyReal
+class DielectricHyReal: public DielectricMagneticReal
 {
 public:
 	DielectricHyReal(const int * const idx, int size, double mu_r = 1) :
-		DummyHyReal(idx, size, mu_r)
+			DielectricMagneticReal(idx, size, mu_r)
 	{
 	}
 
@@ -75,11 +120,11 @@ public:
 			double dz, double dx, double dt, double t);
 };
 
-class DielectricHzReal: public DummyHzReal
+class DielectricHzReal: public DielectricMagneticReal
 {
 public:
 	DielectricHzReal(const int * const idx, int size, double mu_r = 1) :
-		DummyHzReal(idx, size, mu_r)
+			DielectricMagneticReal(idx, size, mu_r)
 	{
 	}
 
