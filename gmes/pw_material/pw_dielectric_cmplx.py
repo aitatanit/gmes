@@ -18,20 +18,14 @@ class DielectricElectricCmplx(object):
         
         
 class DielectricExCmplx(DielectricElectricCmplx):
-    def __init__(self, idx, epsilon_r=1):
-        DielectricElectricCmplx.__init__(self, idx, epsilon_r=1)
-        
     def update(self, ex, hz, hy, dy, dz, dt, t):
         i, j, k = self.i, self.j, self.k
-
+        
         ex[i,j,k] += dt / self.epsilon * ((hz[i+1,j+1,k] - hz[i+1,j,k]) / dy -
                                           (hy[i+1,j,k+1] - hy[i+1,j,k]) / dz)
 
 
 class DielectricEyCmplx(DielectricElectricCmplx):
-    def __init__(self, idx, epsilon_r=1):
-        DielectricElectricCmplx.__init__(self, idx, epsilon_r=1)
-        
     def update(self, ey, hx, hz, dz, dx, dt, t):
         i, j, k = self.i, self.j, self.k
         
@@ -40,9 +34,6 @@ class DielectricEyCmplx(DielectricElectricCmplx):
         
 
 class DielectricEzCmplx(DielectricElectricCmplx):
-    def __init__(self, idx, epsilon_r=1):
-        DielectricElectricCmplx.__init__(self, idx, epsilon_r=1)
-        
     def update(self, ez, hy, hx, dx, dy, dt, t):
         i, j, k = self.i, self.j, self.k
 
@@ -56,10 +47,7 @@ class DielectricMagneticCmplx(object):
         self.mu = float(mu_r) * mu0
         
         
-class DielectricHxCmplx(DielectricMagneticCmplx):
-    def __init__(self, idx, mu_r=1):
-        DielectricMagneticCmplx.__init__(self, idx, mu_r=1)
-        
+class DielectricHxCmplx(DielectricMagneticCmplx):    
     def update(self, hx, ez, ey, dy, dz, dt, t):
         i, j, k = self.i, self.j, self.k
 
@@ -67,10 +55,7 @@ class DielectricHxCmplx(DielectricMagneticCmplx):
                                      (ey[i,j-1,k] - ey[i,j-1,k-1]) / dz)
 
 
-class DielectricHyCmplx(DielectricMagneticCmplx): 
-    def __init__(self, idx, mu_r=1):
-        DielectricMagneticCmplx.__init__(self, idx, mu_r=1)
-        
+class DielectricHyCmplx(DielectricMagneticCmplx):     
     def update(self, hy, ex, ez, dz, dx, dt, t):
         i, j, k = self.i, self.j, self.k
 
@@ -78,10 +63,7 @@ class DielectricHyCmplx(DielectricMagneticCmplx):
                                      (ez[i,j,k-1] - ez[i-1,j,k-1]) / dx)
 
 
-class DielectricHzCmplx(DielectricMagneticCmplx):
-    def __init__(self, idx, mu_r=1):
-        DielectricMagneticCmplx.__init__(self, idx, mu_r=1)
-        
+class DielectricHzCmplx(DielectricMagneticCmplx):    
     def update(self, hz, ey, ex, dx, dy, dt, t):
         i, j, k = self.i, self.j, self.k
 

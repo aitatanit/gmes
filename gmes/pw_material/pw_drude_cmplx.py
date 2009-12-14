@@ -27,9 +27,6 @@ class DrudeElectricCmplx(object):
         
         
 class DrudeExCmplx(DrudeElectricCmplx):
-    def __init__(self, idx, epsilon_inf, omega_p, gamma_p):
-        DrudeElectricCmplx.__init__(self, idx, epsilon_inf, omega_p, gamma_p)
-        
     def update(self, ex, hz, hy, dy, dz, dt, t):
         i, j, k = self.i, self.j, self.k
         
@@ -46,9 +43,6 @@ class DrudeExCmplx(DrudeElectricCmplx):
     
     
 class DrudeEyCmplx(DrudeElectricCmplx):
-    def __init__(self, idx, epsilon_inf, omega_p, gamma_p):
-        DrudeElectricCmplx.__init__(self, idx, epsilon_inf, omega_p, gamma_p)
-        
     def update(self, ey, hx, hz, dz, dx, dt, t):
         i, j, k = self.i, self.j, self.k
         
@@ -65,9 +59,6 @@ class DrudeEyCmplx(DrudeElectricCmplx):
     
     
 class DrudeEzCmplx(DrudeElectricCmplx):
-    def __init__(self, idx, epsilon_inf, omega_p, gamma_p):
-        DrudeElectricCmplx.__init__(self, idx, epsilon_inf, omega_p, gamma_p)
-        
     def update(self, ez, hy, hx, dx, dy, dt, t):
         i, j, k = self.i, self.j, self.k
         
@@ -83,20 +74,14 @@ class DrudeEzCmplx(DrudeElectricCmplx):
                             (hx[i,j+1,k+1] - hx[i,j,k+1]) / dy) + q_diff_sum) / self.epsilon
     
     
-class DrudeHxCmplx(DielectricHxCmplx):
-    def __init__(self, idx, mu_r=1):
-        DielectricHxCmplx.__init__(self, idx, mu_r)
+class DrudeHxCmplx(DielectricHxCmplx): pass
 
 
-class DrudeHyCmplx(DielectricHyCmplx):
-    def __init__(self, idx, mu_r=1):
-        DielectricHyCmplx.__init__(self, idx, mu_r)
+class DrudeHyCmplx(DielectricHyCmplx): pass
+
         
-        
-class DrudeHzCmplx(DielectricHzCmplx):
-    def __init__(self, idx, mu_r=1):
-        DielectricHzCmplx.__init__(self, idx, mu_r)
-        
+class DrudeHzCmplx(DielectricHzCmplx): pass
+    
         
 if __name__ == '__main__':
     pass
