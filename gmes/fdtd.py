@@ -43,9 +43,10 @@ class FDTD(object):
     def __init__(self, space=None, geom_list=None, src_list=None, wavevector=False, verbose=True):
         """
         Argumetns:
-        space --
-        geom_list --
-        src_list --
+        space -- an instance which represents the coordinate system.
+        geom_list -- a list which represents the geometric structure.
+        src_list -- a list of source instances.
+        wavevector -- Bloch wave vector.
         verbose --
         
         """
@@ -182,12 +183,12 @@ class FDTD(object):
         
         """
         newcopy = self.__class__(self.space, self.geom_list, self.src_list, False)
-        newcopy.ex = array(self.ex_real)
-        newcopy.ey = array(self.ey_real)
-        newcopy.ez = array(self.ez_real)
-        newcopy.hx = array(self.hx_real)
-        newcopy.hy = array(self.hy_real)
-        newcopy.hz = array(self.hz_real)
+        newcopy.ex = array(self.ex)
+        newcopy.ey = array(self.ey)
+        newcopy.ez = array(self.ez)
+        newcopy.hx = array(self.hx)
+        newcopy.hy = array(self.hy)
+        newcopy.hz = array(self.hz)
             
         newcopy.time_step = deepcopy(self.time_step)
         return newcopy
@@ -289,6 +290,7 @@ class FDTD(object):
                 mat_obj = Dummy(mat_obj.epsilon_r, mat_obj.mu_r)
             self.material_hy[idx] = \
             mat_obj.get_pw_material_hy(idx, coords, underneath, self.cmplx)
+            
         self.lock_hy.release()
         
     def init_material_hz(self):
@@ -308,6 +310,7 @@ class FDTD(object):
                 mat_obj = Dummy(mat_obj.epsilon_r, mat_obj.mu_r)
             self.material_hz[idx] = \
             mat_obj.get_pw_material_hz(idx, coords, underneath, self.cmplx)
+            
         self.lock_hz.release()
         
     def init_material(self):
