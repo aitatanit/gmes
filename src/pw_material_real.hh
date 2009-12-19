@@ -45,7 +45,6 @@ public:
 	MaterialElectricReal(const int * const idx, int size) :
 		PwMaterialReal(idx, size) {
 	}
-
 	virtual ~MaterialElectricReal() {
 	}
 
@@ -58,7 +57,6 @@ public:
 	MaterialMagneticReal(const int * const idx, int size) :
 		PwMaterialReal(idx, size) {
 	}
-
 	virtual ~MaterialMagneticReal() {
 	}
 

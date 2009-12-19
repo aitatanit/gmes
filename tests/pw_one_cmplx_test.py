@@ -20,46 +20,47 @@ class TestSequence(unittest.TestCase):
         self.copyA[self.idx] = 1
         
         self.diff = 1
+        self.t = 0
         
     def testEx(self):
         sampleCmplx = OneExCmplx(self.idx)
         sampleCmplx.update(self.cmplxA, self.cmplxB, self.cmplxC, 
-                          self.diff, self.diff, self.diff)
+                          self.diff, self.diff, self.diff, self.t)
         
         self.assertEqual((self.cmplxA == self.copyA).all(), True)
                          
     def testEy(self):
         sampleCmplx = OneEyCmplx(self.idx)
         sampleCmplx.update(self.cmplxA, self.cmplxB, self.cmplxC, 
-                          self.diff, self.diff, self.diff)
+                          self.diff, self.diff, self.diff, self.t)
         
         self.assertEqual((self.cmplxA == self.copyA).all(), True)
         
     def testEz(self):
         sampleCmplx = OneEzCmplx(self.idx)
         sampleCmplx.update(self.cmplxA, self.cmplxB, self.cmplxC, 
-                          self.diff, self.diff, self.diff)
+                          self.diff, self.diff, self.diff, self.t)
         
         self.assertEqual((self.cmplxA == self.copyA).all(), True)
         
     def testHx(self):
         sampleCmplx = OneHxCmplx(self.idx)
         sampleCmplx.update(self.cmplxA, self.cmplxB, self.cmplxC, 
-                          self.diff, self.diff, self.diff)
+                          self.diff, self.diff, self.diff, self.t)
         
         self.assertEqual((self.cmplxA == self.copyA).all(), True)
         
     def testHy(self):
         sampleCmplx = OneHyCmplx(self.idx)
         sampleCmplx.update(self.cmplxA, self.cmplxB, self.cmplxC, 
-                          self.diff, self.diff, self.diff)
+                          self.diff, self.diff, self.diff, self.t)
         
         self.assertEqual((self.cmplxA == self.copyA).all(), True)
         
     def testHz(self):
         sampleCmplx = OneHzCmplx(self.idx)
         sampleCmplx.update(self.cmplxA, self.cmplxB, self.cmplxC, 
-                          self.diff, self.diff, self.diff)
+                          self.diff, self.diff, self.diff, self.t)
         
         self.assertEqual((self.cmplxA == self.copyA).all(), True)
         

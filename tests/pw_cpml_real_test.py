@@ -21,6 +21,7 @@ class TestSequence(unittest.TestCase):
         self.cmplxC = ones((3,3,3), complex)
         
         self.diff = 1
+        self.t = 0
         self.epsilon_r = 1
         self.mu_r = 1
         self.b1 = 1
@@ -36,9 +37,9 @@ class TestSequence(unittest.TestCase):
         sampleCmplx = CpmlExCmplx(self.idx, self.epsilon_r, self.b1, self.b2, 
                              self.c1, self.c2, self.kappa1, self.kappa2)
         sampleReal.update(self.realA, self.realB, self.realC, 
-                          self.diff, self.diff, self.diff)
+                          self.diff, self.diff, self.diff, self.t)
         sampleCmplx.update(self.cmplxA, self.cmplxB, self.cmplxC, 
-                           self.diff, self.diff, self.diff)
+                           self.diff, self.diff, self.diff, self.t)
         self.assertEqual((self.realA == self.cmplxA.real).all(), True)
         
     def testEy(self):
@@ -47,9 +48,9 @@ class TestSequence(unittest.TestCase):
         sampleCmplx = CpmlEyCmplx(self.idx, self.epsilon_r, self.b1, self.b2, 
                              self.c1, self.c2, self.kappa1, self.kappa2)
         sampleReal.update(self.realA, self.realB, self.realC, 
-                          self.diff, self.diff, self.diff)
+                          self.diff, self.diff, self.diff, self.t)
         sampleCmplx.update(self.cmplxA, self.cmplxB, self.cmplxC, 
-                           self.diff, self.diff, self.diff)
+                           self.diff, self.diff, self.diff, self.t)
         self.assertEqual((self.realA == self.cmplxA.real).all(), True)
         
     def testEz(self):
@@ -58,9 +59,9 @@ class TestSequence(unittest.TestCase):
         sampleCmplx = CpmlEzCmplx(self.idx, self.epsilon_r, self.b1, self.b2, 
                              self.c1, self.c2, self.kappa1, self.kappa2)
         sampleReal.update(self.realA, self.realB, self.realC, 
-                          self.diff, self.diff, self.diff)
+                          self.diff, self.diff, self.diff, self.t)
         sampleCmplx.update(self.cmplxA, self.cmplxB, self.cmplxC, 
-                           self.diff, self.diff, self.diff)
+                           self.diff, self.diff, self.diff, self.t)
         self.assertEqual((self.realA == self.cmplxA.real).all(), True)
         
     def testHx(self):
@@ -69,9 +70,9 @@ class TestSequence(unittest.TestCase):
         sampleCmplx = CpmlHxCmplx(self.idx, self.epsilon_r, self.b1, self.b2, 
                              self.c1, self.c2, self.kappa1, self.kappa2)
         sampleReal.update(self.realA, self.realB, self.realC, 
-                          self.diff, self.diff, self.diff)
+                          self.diff, self.diff, self.diff, self.t)
         sampleCmplx.update(self.cmplxA, self.cmplxB, self.cmplxC, 
-                           self.diff, self.diff, self.diff)
+                           self.diff, self.diff, self.diff, self.t)
         self.assertEqual((self.realA == self.cmplxA.real).all(), True)
         
     def testHy(self):
@@ -80,9 +81,9 @@ class TestSequence(unittest.TestCase):
         sampleCmplx = CpmlHyCmplx(self.idx, self.epsilon_r, self.b1, self.b2, 
                              self.c1, self.c2, self.kappa1, self.kappa2)
         sampleReal.update(self.realA, self.realB, self.realC, 
-                          self.diff, self.diff, self.diff)
+                          self.diff, self.diff, self.diff, self.t)
         sampleCmplx.update(self.cmplxA, self.cmplxB, self.cmplxC, 
-                           self.diff, self.diff, self.diff)
+                           self.diff, self.diff, self.diff, self.t)
         self.assertEqual((self.realA == self.cmplxA.real).all(), True)
         
     def testHz(self):
@@ -91,9 +92,9 @@ class TestSequence(unittest.TestCase):
         sampleCmplx = CpmlHzCmplx(self.idx, self.epsilon_r, self.b1, self.b2, 
                              self.c1, self.c2, self.kappa1, self.kappa2)
         sampleReal.update(self.realA, self.realB, self.realC, 
-                          self.diff, self.diff, self.diff)
+                          self.diff, self.diff, self.diff, self.t)
         sampleCmplx.update(self.cmplxA, self.cmplxB, self.cmplxC, 
-                           self.diff, self.diff, self.diff)
+                           self.diff, self.diff, self.diff, self.t)
         self.assertEqual((self.realA == self.cmplxA.real).all(), True)
         
         
