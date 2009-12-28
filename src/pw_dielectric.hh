@@ -1,0 +1,194 @@
+#ifndef PW_DIELECTRIC_HH_
+#define PW_DIELECTRIC_HH_
+
+#include "pw_material.hh"
+#include "constants.hh"
+
+#define ex(i,j,k) ex[((this->i)*ex_y_size+(this->j))*ex_z_size+(this->k)]
+#define ey(i,j,k) ey[((this->i)*ey_y_size+(this->j))*ey_z_size+(this->k)]
+#define ez(i,j,k) ez[((this->i)*ez_y_size+(this->j))*ez_z_size+(this->k)]
+#define hx(i,j,k) hx[((this->i)*hx_y_size+(this->j))*hx_z_size+(this->k)]
+#define hy(i,j,k) hy[((this->i)*hy_y_size+(this->j))*hy_z_size+(this->k)]
+#define hz(i,j,k) hz[((this->i)*hz_y_size+(this->j))*hz_z_size+(this->k)]
+
+namespace gmes
+{
+template <class T> class DielectricElectric: public MaterialElectric<T>
+{
+public:
+	DielectricElectric(const int * const idx, int size, double epsilon_r = 1) :
+		MaterialElectric<T>(idx, size), epsilon(epsilon_r * epsilon0)
+		{
+		}
+
+	double get_epsilon()
+		{
+			return epsilon;
+		}
+
+	void set_epsilon(double epsilon_r)
+		{
+			epsilon = epsilon_r * epsilon0;
+		}
+
+protected:
+	double epsilon;
+};
+
+template <class T> class DielectricEx: public DielectricElectric<T>
+{
+public:
+	DielectricEx(const int * const idx, int size, double epsilon_r = 1) :
+			DielectricElectric<T>(idx, size, epsilon_r)
+	{
+	}
+
+	void update(T * const ex, int ex_x_size, int ex_y_size, int ex_z_size,
+			const T * const hz, int hz_x_size, int hz_y_size, int hz_z_size,
+			const T * const hy, int hy_x_size, int hy_y_size, int hy_z_size,
+			double dy, double dz, double dt, double t)
+	{
+		ex(i,j,k) += dt / epsilon * ((hz(i+1,j+1,k) - hz(i+1,j,k)) / dy
+					- (hy(i+1,j,k+1) - hy(i+1,j,k)) / dz);
+	}
+
+protected:
+	using DielectricElectric<T>::epsilon;
+};
+
+template <class T> class DielectricEy: public DielectricElectric<T>
+{
+public:
+	DielectricEy(const int * const idx, int size, double epsilon_r = 1) :
+			DielectricElectric<T>(idx, size, epsilon_r)
+	{
+	}
+
+	void update(T * const ey, int ey_x_size, int ey_y_size, int ey_z_size,
+			const T * const hx, int hx_x_size, int hx_y_size, int hx_z_size,
+			const T * const hz, int hz_x_size, int hz_y_size, int hz_z_size,
+			double dz, double dx, double dt, double t)
+	{
+		ey(i,j,k) += dt / epsilon * ((hx(i,j+1,k+1) - hx(i,j+1,k)) / dz
+							- (hz(i+1,j+1,k) - hz(i,j+1,k)) / dx);
+	}
+
+protected:
+	using DielectricElectric<T>::epsilon;
+};
+
+template <class T> class DielectricEz: public DielectricElectric<T>
+{
+public:
+	DielectricEz(const int * const idx, int size, double epsilon_r = 1) :
+			DielectricElectric<T>(idx, size, epsilon_r)
+	{
+	}
+
+	void update(T * const ez, int ez_x_size, int ez_y_size, int ez_z_size,
+			const T * const hy, int hy_x_size, int hy_y_size, int hy_z_size,
+			const T * const hx, int hx_x_size, int hx_y_size, int hx_z_size,
+			double dx, double dy, double dt, double t)
+	{
+		ez(i,j,k) += dt / epsilon * ((hy(i+1,j,k+1) - hy(i,j,k+1)) / dx
+					- (hx(i,j+1,k+1) - hx(i,j,k+1)) / dy);
+	}
+
+protected:
+	using DielectricElectric<T>::epsilon;
+};
+
+template <class T> class DielectricMagnetic: public MaterialMagnetic<T>
+{
+public:
+	DielectricMagnetic(const int * const idx, int size, double mu_r = 1) :
+			MaterialMagnetic<T>(idx, size), mu(mu_r * mu0)
+		{
+		}
+
+	double get_mu()
+		{
+			return mu;
+		}
+
+	void set_mu(double mu_r)
+		{
+			mu = mu_r * mu0;
+		}
+
+protected:
+	double mu;
+};
+
+template <class T> class DielectricHx: public DielectricMagnetic<T>
+{
+public:
+	DielectricHx(const int * const idx, int size, double mu_r = 1) :
+			DielectricMagnetic<T>(idx, size, mu_r)
+	{
+	}
+
+	void update(T * const hx, int hx_x_size, int hx_y_size, int hx_z_size,
+			const T * const ez, int ez_x_size, int ez_y_size, int ez_z_size,
+			const T * const ey, int ey_x_size, int ey_y_size, int ey_z_size,
+			double dy, double dz, double dt, double t)
+	{
+		hx(i,j,k) -= dt / mu * ((ez(i,j,k-1) - ez(i,j-1,k-1)) / dy
+					- (ey(i,j-1,k) - ey(i,j-1,k-1)) / dz);
+	}
+
+protected:
+	using DielectricMagnetic<T>::mu;
+};
+
+template <class T> class DielectricHy: public DielectricMagnetic<T>
+{
+public:
+	DielectricHy(const int * const idx, int size, double mu_r = 1) :
+			DielectricMagnetic<T>(idx, size, mu_r)
+	{
+	}
+
+	void update(T * const hy, int hy_x_size, int hy_y_size, int hy_z_size,
+			const T * const ex, int ex_x_size, int ex_y_size, int ex_z_size,
+			const T * const ez, int ez_x_size, int ez_y_size, int ez_z_size,
+			double dz, double dx, double dt, double t)
+	{
+		hy(i,j,k) -= dt / mu * ((ex(i-1,j,k) - ex(i-1,j,k-1)) / dz
+					- (ez(i,j,k-1) - ez(i-1,j,k-1)) / dx);
+	}
+
+protected:
+	using DielectricMagnetic<T>::mu;
+};
+
+template <class T> class DielectricHz: public DielectricMagnetic<T>
+{
+public:
+	DielectricHz(const int * const idx, int size, double mu_r = 1) :
+			DielectricMagnetic<T>(idx, size, mu_r)
+	{
+	}
+
+	void update(T * const hz, int hz_x_size, int hz_y_size, int hz_z_size,
+			const T * const ey, int ey_x_size, int ey_y_size, int ey_z_size,
+			const T * const ex, int ex_x_size, int ex_y_size, int ex_z_size,
+			double dx, double dy, double dt, double t)
+	{
+		hz(i,j,k) -= dt / mu * ((ey(i,j-1,k) - ey(i-1,j-1,k)) / dx
+					- (ex(i-1,j,k) - ex(i-1,j-1,k)) / dy);
+	}
+
+protected:
+	using DielectricMagnetic<T>::mu;
+};
+}
+
+#undef ex
+#undef ey
+#undef ez
+#undef hx
+#undef hy
+#undef hz
+
+#endif /*PW_DIELECTRIC_HH_*/

@@ -5,6 +5,7 @@ new_path = os.path.abspath('../')
 sys.path.append(new_path)
 
 import unittest
+from numpy import *
 from gmes.pw_material import * 
 
     

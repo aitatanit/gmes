@@ -5,6 +5,7 @@ new_path = os.path.abspath('../')
 sys.path.append(new_path)
 
 import unittest
+from numpy import *
 from gmes.pw_material import * 
 
     
@@ -17,48 +18,47 @@ class TestSequence(unittest.TestCase):
         self.realC = empty((3,3,3))
         
         self.copyA = array(self.realA)
-        self.copyA[self.idx] = 1
         
         self.diff = 1
         self.t = 0
         
     def testEx(self):
-        sampleReal = OneExReal(self.idx)
+        sampleReal = DummyExReal(self.idx)
         sampleReal.update(self.realA, self.realB, self.realC, 
                           self.diff, self.diff, self.diff, self.t)
         
         self.assertEqual((self.realA == self.copyA).all(), True)
                          
     def testEy(self):
-        sampleReal = OneEyReal(self.idx)
+        sampleReal = DummyEyReal(self.idx)
         sampleReal.update(self.realA, self.realB, self.realC, 
                           self.diff, self.diff, self.diff, self.t)
         
         self.assertEqual((self.realA == self.copyA).all(), True)
         
     def testEz(self):
-        sampleReal = OneEzReal(self.idx)
+        sampleReal = DummyEzReal(self.idx)
         sampleReal.update(self.realA, self.realB, self.realC, 
                           self.diff, self.diff, self.diff, self.t)
         
         self.assertEqual((self.realA == self.copyA).all(), True)
         
     def testHx(self):
-        sampleReal = OneHxReal(self.idx)
+        sampleReal = DummyHxReal(self.idx)
         sampleReal.update(self.realA, self.realB, self.realC, 
                           self.diff, self.diff, self.diff, self.t)
         
         self.assertEqual((self.realA == self.copyA).all(), True)
         
     def testHy(self):
-        sampleReal = OneHyReal(self.idx)
+        sampleReal = DummyHyReal(self.idx)
         sampleReal.update(self.realA, self.realB, self.realC, 
                           self.diff, self.diff, self.diff, self.t)
         
         self.assertEqual((self.realA == self.copyA).all(), True)
         
     def testHz(self):
-        sampleReal = OneHzReal(self.idx)
+        sampleReal = DummyHzReal(self.idx)
         sampleReal.update(self.realA, self.realB, self.realC, 
                           self.diff, self.diff, self.diff, self.t)
         
