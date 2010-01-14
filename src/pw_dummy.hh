@@ -6,7 +6,7 @@
 
 namespace gmes
 {
-template <class T> class DummyElectric: public MaterialElectric<T>
+template <typename T> class DummyElectric: public MaterialElectric<T>
 {
 public:
 	DummyElectric(const int * const idx, int size, double epsilon_r) :
@@ -36,7 +36,7 @@ protected:
 	double epsilon;
 };
 
-template <class T> class DummyEx: public DummyElectric<T>
+template <typename T> class DummyEx: public DummyElectric<T>
 {
 public:
 	DummyEx(const int * const idx, int size, double epsilon_r = 1) :
@@ -45,7 +45,7 @@ public:
 	}
 };
 
-template <class T> class DummyEy: public DummyElectric<T>
+template <typename T> class DummyEy: public DummyElectric<T>
 {
 public:
 	DummyEy(const int * const idx, int size, double epsilon_r = 1) :
@@ -54,7 +54,7 @@ public:
 	}
 };
 
-template <class T> class DummyEz: public DummyElectric<T>
+template <typename T> class DummyEz: public DummyElectric<T>
 {
 public:
 	DummyEz(const int * const idx, int size, double epsilon_r = 1) :
@@ -63,7 +63,7 @@ public:
 	}
 };
 
-template <class T> class DummyMagnetic: public MaterialMagnetic<T>
+template <typename T> class DummyMagnetic: public MaterialMagnetic<T>
 {
 public:
 	DummyMagnetic(const int * const idx, int size, double mu_r) :
@@ -93,7 +93,7 @@ protected:
 	double mu;
 };
 
-template <class T> class DummyHx: public DummyMagnetic<T>
+template <typename T> class DummyHx: public DummyMagnetic<T>
 {
 public:
 	DummyHx(const int * const idx, int size, double mu_r = 1) :
@@ -102,7 +102,7 @@ public:
 	}
 };
 
-template <class T> class DummyHy: public DummyMagnetic<T>
+template <typename T> class DummyHy: public DummyMagnetic<T>
 {
 public:
 	DummyHy(const int * const idx, int size, double mu_r = 1) :
@@ -111,7 +111,7 @@ public:
 	}
 };
 
-template <class T> class DummyHz: public DummyMagnetic<T>
+template <typename T> class DummyHz: public DummyMagnetic<T>
 {
 public:
 	DummyHz(const int * const idx, int size, double mu_r = 1) :

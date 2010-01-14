@@ -20,7 +20,7 @@
 
 namespace gmes
 {
-template <class T> class UpmlElectric: public MaterialElectric<T>
+template <typename T> class UpmlElectric: public MaterialElectric<T>
 {
 public:
 	UpmlElectric(const int * const idx, int size, double epsilon_r,
@@ -47,7 +47,7 @@ protected:
 	T d;
 };
 
-template <class T> class UpmlEx: public UpmlElectric<T>
+template <typename T> class UpmlEx: public UpmlElectric<T>
 {
 public:
 	UpmlEx(const int * const idx, int size, double epsilon_r, double c1,
@@ -79,7 +79,7 @@ protected:
 	using UpmlElectric<T>::d;
 };
 
-template <class T> class UpmlEy: public UpmlElectric<T>
+template <typename T> class UpmlEy: public UpmlElectric<T>
 {
 public:
 	UpmlEy(const int * const idx, int size, double epsilon_r, double c1,
@@ -111,7 +111,7 @@ protected:
 	using UpmlElectric<T>::d;
 };
 
-template <class T> class UpmlEz: public UpmlElectric<T>
+template <typename T> class UpmlEz: public UpmlElectric<T>
 {
 public:
 	UpmlEz(const int * const idx, int size, double epsilon_r, double c1,
@@ -143,7 +143,7 @@ protected:
 	using UpmlElectric<T>::d;
 };
 
-template <class T> class UpmlMagnetic: public MaterialMagnetic<T>
+template <typename T> class UpmlMagnetic: public MaterialMagnetic<T>
 {
 public:
 	UpmlMagnetic(const int * const idx, int size, double mu_r,
@@ -170,7 +170,7 @@ protected:
 	T b;
 };
 
-template <class T> class UpmlHx: public UpmlMagnetic<T>
+template <typename T> class UpmlHx: public UpmlMagnetic<T>
 {
 public:
 	UpmlHx(const int * const idx, int size, double mu_r, double c1, double c2,
@@ -202,7 +202,7 @@ protected:
 	using UpmlMagnetic<T>::b;
 };
 
-template <class T> class UpmlHy: public UpmlMagnetic<T>
+template <typename T> class UpmlHy: public UpmlMagnetic<T>
 {
 public:
 	UpmlHy(const int * const idx, int size, double mu_r, double c1, double c2,
@@ -234,7 +234,7 @@ protected:
 	using UpmlMagnetic<T>::b;
 };
 
-template <class T> class UpmlHz: public UpmlMagnetic<T>
+template <typename T> class UpmlHz: public UpmlMagnetic<T>
 {
 public:
 	UpmlHz(const int * const idx, int size, double mu_r, double c1, double c2,

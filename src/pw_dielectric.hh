@@ -13,7 +13,7 @@
 
 namespace gmes
 {
-template <class T> class DielectricElectric: public MaterialElectric<T>
+template <typename T> class DielectricElectric: public MaterialElectric<T>
 {
 public:
 	DielectricElectric(const int * const idx, int size, double epsilon_r = 1) :
@@ -35,7 +35,7 @@ protected:
 	double epsilon;
 };
 
-template <class T> class DielectricEx: public DielectricElectric<T>
+template <typename T> class DielectricEx: public DielectricElectric<T>
 {
 public:
 	DielectricEx(const int * const idx, int size, double epsilon_r = 1) :
@@ -56,7 +56,7 @@ protected:
 	using DielectricElectric<T>::epsilon;
 };
 
-template <class T> class DielectricEy: public DielectricElectric<T>
+template <typename T> class DielectricEy: public DielectricElectric<T>
 {
 public:
 	DielectricEy(const int * const idx, int size, double epsilon_r = 1) :
@@ -77,7 +77,7 @@ protected:
 	using DielectricElectric<T>::epsilon;
 };
 
-template <class T> class DielectricEz: public DielectricElectric<T>
+template <typename T> class DielectricEz: public DielectricElectric<T>
 {
 public:
 	DielectricEz(const int * const idx, int size, double epsilon_r = 1) :
@@ -98,7 +98,7 @@ protected:
 	using DielectricElectric<T>::epsilon;
 };
 
-template <class T> class DielectricMagnetic: public MaterialMagnetic<T>
+template <typename T> class DielectricMagnetic: public MaterialMagnetic<T>
 {
 public:
 	DielectricMagnetic(const int * const idx, int size, double mu_r = 1) :
@@ -120,7 +120,7 @@ protected:
 	double mu;
 };
 
-template <class T> class DielectricHx: public DielectricMagnetic<T>
+template <typename T> class DielectricHx: public DielectricMagnetic<T>
 {
 public:
 	DielectricHx(const int * const idx, int size, double mu_r = 1) :
@@ -141,7 +141,7 @@ protected:
 	using DielectricMagnetic<T>::mu;
 };
 
-template <class T> class DielectricHy: public DielectricMagnetic<T>
+template <typename T> class DielectricHy: public DielectricMagnetic<T>
 {
 public:
 	DielectricHy(const int * const idx, int size, double mu_r = 1) :
@@ -162,7 +162,7 @@ protected:
 	using DielectricMagnetic<T>::mu;
 };
 
-template <class T> class DielectricHz: public DielectricMagnetic<T>
+template <typename T> class DielectricHz: public DielectricMagnetic<T>
 {
 public:
 	DielectricHz(const int * const idx, int size, double mu_r = 1) :

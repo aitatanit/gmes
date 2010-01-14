@@ -20,7 +20,7 @@
 
 namespace gmes
 {
-template <class T> class CpmlElectric: public MaterialElectric<T>
+template <typename T> class CpmlElectric: public MaterialElectric<T>
 {
 public:
 	CpmlElectric(const int * const idx, int size, double epsilon_r,
@@ -50,7 +50,7 @@ protected:
 	T psi1, psi2;
 };
 
-template <class T> class CpmlEx: public CpmlElectric<T>
+template <typename T> class CpmlEx: public CpmlElectric<T>
 {
 public:
 	CpmlEx(const int * const idx, int size, double epsilon_r, double by,
@@ -84,7 +84,7 @@ protected:
 	using CpmlElectric<T>::psi2;
 };
 
-template <class T> class CpmlEy: public CpmlElectric<T>
+template <typename T> class CpmlEy: public CpmlElectric<T>
 {
 public:
 	CpmlEy(const int * const idx, int size, double epsilon_r, double bz,
@@ -118,7 +118,7 @@ protected:
 	using CpmlElectric<T>::psi2;
 };
 
-template <class T> class CpmlEz: public CpmlElectric<T>
+template <typename T> class CpmlEz: public CpmlElectric<T>
 {
 public:
 	CpmlEz(const int * const idx, int size, double epsilon_r, double bx,
@@ -152,7 +152,7 @@ protected:
 	using CpmlElectric<T>::psi2;
 };
 
-template <class T> class CpmlMagnetic: public MaterialMagnetic<T>
+template <typename T> class CpmlMagnetic: public MaterialMagnetic<T>
 {
 public:
 	CpmlMagnetic(const int * const idx, int size, double mu_r, double b1_in,
@@ -182,7 +182,7 @@ protected:
 	T psi1, psi2;
 };
 
-template <class T> class CpmlHx: public CpmlMagnetic<T>
+template <typename T> class CpmlHx: public CpmlMagnetic<T>
 {
 public:
 	CpmlHx(const int * const idx, int size, double mu_r, double by, double bz,
@@ -216,7 +216,7 @@ protected:
 	using CpmlMagnetic<T>::psi2;
 };
 
-template <class T> class CpmlHy: public CpmlMagnetic<T>
+template <typename T> class CpmlHy: public CpmlMagnetic<T>
 {
 public:
 	CpmlHy(const int * const idx, int size, double mu_r, double bz, double bx,
@@ -250,7 +250,7 @@ protected:
 	using CpmlMagnetic<T>::psi2;
 };
 
-template <class T> class CpmlHz: public CpmlMagnetic<T>
+template <typename T> class CpmlHz: public CpmlMagnetic<T>
 {
 public:
 	CpmlHz(const int * const idx, int size, double mu_r, double bx, double by,

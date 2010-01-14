@@ -54,7 +54,7 @@ protected:
 	int i, j, k;
 };
 
-template <class T> class MaterialElectric: public PwMaterial<T> {
+template <typename T> class MaterialElectric: public PwMaterial<T> {
 public:
 	MaterialElectric(const int * const idx, int size) :
 		PwMaterial<T>(idx, size) {
@@ -66,7 +66,7 @@ public:
 	virtual void set_epsilon(double epsilon_r) = 0;
 };
 
-template <class T> class MaterialMagnetic: public PwMaterial<T> {
+template <typename T> class MaterialMagnetic: public PwMaterial<T> {
 public:
 	MaterialMagnetic(const int * const idx, int size) :
 		PwMaterial<T>(idx, size) {

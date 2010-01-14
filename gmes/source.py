@@ -78,15 +78,16 @@ class Continuous(SrcTime):
         else:
             env = 1
             
-        return env * exp(2j * pi * self.freq * time - self.phase)
+        return env * exp(-2j * pi * self.freq * time - self.phase)
 
 
 class Bandpass(SrcTime):
     """a pulse source with Gaussian-envelope
     
     """
-    def __init__(self, freq, fwidth):
+    def __init__(self, freq, fwidth, phase=0):
         self.freq = float(freq)
+        self.phase = float(phase)
         self.fwidth = float(fwidth)
         width = 1 / self.fwidth
         s = 5
@@ -111,7 +112,7 @@ class Bandpass(SrcTime):
         tt = time - self.peak
         if (abs(tt) > self.cutoff): return None
 
-        return exp(-.5 * (tt * self.fwidth)**2) * cos(2 * pi * self.freq * time)
+        return exp(-.5 * (tt * self.fwidth)**2) * exp(-2j * pi * self.freq * time - self.phase)
         
         
 class Dipole(Src):

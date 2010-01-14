@@ -395,8 +395,6 @@ class PML(Material, Compound):
         should get from the space instance.
         
         """
-        cmplx = space.cmplx
-        
         self.d = float(thickness)
         
         half_size = []

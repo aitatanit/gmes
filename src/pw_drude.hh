@@ -21,7 +21,7 @@
 
 namespace gmes
 {
-template <class T> class DrudeElectric: public MaterialElectric<T>
+template <typename T> class DrudeElectric: public MaterialElectric<T>
 {
 public:
 	DrudeElectric(const int * const idx, int size, double epsilon_inf,
@@ -53,7 +53,7 @@ protected:
 	std::vector<T > q_old;
 };
 
-template <class T> class DrudeEx: public DrudeElectric<T>
+template <typename T> class DrudeEx: public DrudeElectric<T>
 {
 public:
 	DrudeEx(const int * const idx, int size, double epsilon_inf,
@@ -96,7 +96,7 @@ protected:
 	using DrudeElectric<T>::q_old;
 };
 
-template <class T> class DrudeEy: public DrudeElectric<T>
+template <typename T> class DrudeEy: public DrudeElectric<T>
 {
 public:
 	DrudeEy(const int * const idx, int size, double epsilon_inf,
@@ -139,7 +139,7 @@ protected:
 	using DrudeElectric<T>::q_old;
 };
 
-template <class T> class DrudeEz: public DrudeElectric<T>
+template <typename T> class DrudeEz: public DrudeElectric<T>
 {
 public:
 	DrudeEz(const int * const idx, int size, double epsilon_inf,
@@ -182,7 +182,7 @@ protected:
 	using DrudeElectric<T>::q_old;
 };
 
-template <class T> class DrudeHx: public DielectricHx<T>
+template <typename T> class DrudeHx: public DielectricHx<T>
 {
 public:
 	DrudeHx(const int * const idx, int size, double mu_r = 1) :
@@ -191,7 +191,7 @@ public:
 	}
 };
 
-template <class T> class DrudeHy: public DielectricHy<T>
+template <typename T> class DrudeHy: public DielectricHy<T>
 {
 public:
 	DrudeHy(const int * const idx, int size, double mu_r = 1) :
@@ -200,7 +200,7 @@ public:
 	}
 };
 
-template <class T> class DrudeHz: public DielectricHz<T>
+template <typename T> class DrudeHz: public DielectricHz<T>
 {
 public:
 	DrudeHz(const int * const idx, int size, double mu_r = 1) :

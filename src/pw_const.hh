@@ -8,7 +8,7 @@
 
 namespace gmes
 {
-template <class T> class ConstElectric: public MaterialElectric<T>
+template <typename T> class ConstElectric: public MaterialElectric<T>
 {
 public:
 	ConstElectric(const int * const idx, int size, double epsilon_r, T value) :
@@ -49,7 +49,7 @@ protected:
 	T value;
 };
 
-template <class T> class ConstEx: public ConstElectric<T>
+template <typename T> class ConstEx: public ConstElectric<T>
 {
 public:
 	ConstEx(const int * const idx, int size, double epsilon_r = 1, const T& value = 0.) :
@@ -58,7 +58,7 @@ public:
 	}
 };
 
-template <class T> class ConstEy: public ConstElectric<T>
+template <typename T> class ConstEy: public ConstElectric<T>
 {
 public:
 	ConstEy(const int * const idx, int size, double epsilon_r = 1, const T& value = 0.) :
@@ -67,7 +67,7 @@ public:
 	}
 };
 
-template <class T> class ConstEz: public ConstElectric<T>
+template <typename T> class ConstEz: public ConstElectric<T>
 {
 public:
 	ConstEz(const int * const idx, int size, double epsilon_r = 1, const T& value = 0.) :
@@ -76,7 +76,7 @@ public:
 	}
 };
 
-template <class T> class ConstMagnetic: public MaterialMagnetic<T>
+template <typename T> class ConstMagnetic: public MaterialMagnetic<T>
 {
 public:
 	ConstMagnetic(const int * const idx, int size, double mu_r, T value) :
@@ -118,7 +118,7 @@ protected:
 	T value;
 };
 
-template <class T> class ConstHx: public ConstMagnetic<T>
+template <typename T> class ConstHx: public ConstMagnetic<T>
 {
 public:
 	ConstHx(const int * const idx, int size, double mu_r = 1, const T& value = 0.) :
@@ -127,7 +127,7 @@ public:
 	}
 };
 
-template <class T> class ConstHy: public ConstMagnetic<T>
+template <typename T> class ConstHy: public ConstMagnetic<T>
 {
 public:
 	ConstHy(const int * const idx, int size, double mu_r = 1, const T& value = 0.) :
@@ -136,7 +136,7 @@ public:
 	}
 };
 
-template <class T> class ConstHz: public ConstMagnetic<T>
+template <typename T> class ConstHz: public ConstMagnetic<T>
 {
 public:
 	ConstHz(const int * const idx, int size, double mu_r = 1, const T& value = 0.) :
