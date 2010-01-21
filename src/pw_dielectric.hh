@@ -46,7 +46,7 @@ public:
 	void update(T * const ex, int ex_x_size, int ex_y_size, int ex_z_size,
 			const T * const hz, int hz_x_size, int hz_y_size, int hz_z_size,
 			const T * const hy, int hy_x_size, int hy_y_size, int hy_z_size,
-			double dy, double dz, double dt, double t)
+			double dy, double dz, double dt, double n)
 	{
 		ex(i,j,k) += dt / epsilon * ((hz(i+1,j+1,k) - hz(i+1,j,k)) / dy
 					- (hy(i+1,j,k+1) - hy(i+1,j,k)) / dz);
@@ -67,7 +67,7 @@ public:
 	void update(T * const ey, int ey_x_size, int ey_y_size, int ey_z_size,
 			const T * const hx, int hx_x_size, int hx_y_size, int hx_z_size,
 			const T * const hz, int hz_x_size, int hz_y_size, int hz_z_size,
-			double dz, double dx, double dt, double t)
+			double dz, double dx, double dt, double n)
 	{
 		ey(i,j,k) += dt / epsilon * ((hx(i,j+1,k+1) - hx(i,j+1,k)) / dz
 							- (hz(i+1,j+1,k) - hz(i,j+1,k)) / dx);
@@ -88,7 +88,7 @@ public:
 	void update(T * const ez, int ez_x_size, int ez_y_size, int ez_z_size,
 			const T * const hy, int hy_x_size, int hy_y_size, int hy_z_size,
 			const T * const hx, int hx_x_size, int hx_y_size, int hx_z_size,
-			double dx, double dy, double dt, double t)
+			double dx, double dy, double dt, double n)
 	{
 		ez(i,j,k) += dt / epsilon * ((hy(i+1,j,k+1) - hy(i,j,k+1)) / dx
 					- (hx(i,j+1,k+1) - hx(i,j,k+1)) / dy);
@@ -131,7 +131,7 @@ public:
 	void update(T * const hx, int hx_x_size, int hx_y_size, int hx_z_size,
 			const T * const ez, int ez_x_size, int ez_y_size, int ez_z_size,
 			const T * const ey, int ey_x_size, int ey_y_size, int ey_z_size,
-			double dy, double dz, double dt, double t)
+			double dy, double dz, double dt, double n)
 	{
 		hx(i,j,k) -= dt / mu * ((ez(i,j,k-1) - ez(i,j-1,k-1)) / dy
 					- (ey(i,j-1,k) - ey(i,j-1,k-1)) / dz);
@@ -152,7 +152,7 @@ public:
 	void update(T * const hy, int hy_x_size, int hy_y_size, int hy_z_size,
 			const T * const ex, int ex_x_size, int ex_y_size, int ex_z_size,
 			const T * const ez, int ez_x_size, int ez_y_size, int ez_z_size,
-			double dz, double dx, double dt, double t)
+			double dz, double dx, double dt, double n)
 	{
 		hy(i,j,k) -= dt / mu * ((ex(i-1,j,k) - ex(i-1,j,k-1)) / dz
 					- (ez(i,j,k-1) - ez(i-1,j,k-1)) / dx);
@@ -173,7 +173,7 @@ public:
 	void update(T * const hz, int hz_x_size, int hz_y_size, int hz_z_size,
 			const T * const ey, int ey_x_size, int ey_y_size, int ey_z_size,
 			const T * const ex, int ex_x_size, int ex_y_size, int ex_z_size,
-			double dx, double dy, double dt, double t)
+			double dx, double dy, double dt, double n)
 	{
 		hz(i,j,k) -= dt / mu * ((ey(i,j-1,k) - ey(i-1,j-1,k)) / dx
 					- (ex(i-1,j,k) - ex(i-1,j-1,k)) / dy);

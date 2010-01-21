@@ -22,7 +22,7 @@ class TestSequence(unittest.TestCase):
         self.cmplxC = ones((3,3,3), complex)
         
         self.diff = 1
-        self.t = 0
+        self.n = 0
         self.epsilon = self.mu = 1
         self.c = ones(6)
         
@@ -30,54 +30,54 @@ class TestSequence(unittest.TestCase):
         sampleReal = UpmlExReal(self.idx, self.epsilon, *self.c)
         sampleCmplx = UpmlExCmplx(self.idx, self.epsilon, *self.c)
         sampleReal.update(self.realA, self.realB, self.realC, 
-                          self.diff, self.diff, self.diff, self.t)
+                          self.diff, self.diff, self.diff, self.n)
         sampleCmplx.update(self.cmplxA, self.cmplxB, self.cmplxC, 
-                           self.diff, self.diff, self.diff, self.t)
+                           self.diff, self.diff, self.diff, self.n)
         self.assertEqual((self.realA == self.cmplxA.real).all(), True)
         
     def testEy(self):
         sampleReal = UpmlEyReal(self.idx, self.epsilon, *self.c)
         sampleCmplx = UpmlEyCmplx(self.idx, self.epsilon, *self.c)
         sampleReal.update(self.realA, self.realB, self.realC, 
-                          self.diff, self.diff, self.diff, self.t)
+                          self.diff, self.diff, self.diff, self.n)
         sampleCmplx.update(self.cmplxA, self.cmplxB, self.cmplxC, 
-                           self.diff, self.diff, self.diff, self.t)
+                           self.diff, self.diff, self.diff, self.n)
         self.assertEqual((self.realA == self.cmplxA.real).all(), True)
         
     def testEz(self):
         sampleReal = UpmlEzReal(self.idx, self.epsilon, *self.c)
         sampleCmplx = UpmlEzCmplx(self.idx, self.epsilon, *self.c)
         sampleReal.update(self.realA, self.realB, self.realC, 
-                          self.diff, self.diff, self.diff, self.t)
+                          self.diff, self.diff, self.diff, self.n)
         sampleCmplx.update(self.cmplxA, self.cmplxB, self.cmplxC, 
-                           self.diff, self.diff, self.diff, self.t)
+                           self.diff, self.diff, self.diff, self.n)
         self.assertEqual((self.realA == self.cmplxA.real).all(), True)
         
     def testHx(self):
         sampleReal = UpmlHxReal(self.idx, self.mu, *self.c)
         sampleCmplx = UpmlHxCmplx(self.idx, self.mu, *self.c)
         sampleReal.update(self.realA, self.realB, self.realC, 
-                          self.diff, self.diff, self.diff, self.t)
+                          self.diff, self.diff, self.diff, self.n)
         sampleCmplx.update(self.cmplxA, self.cmplxB, self.cmplxC, 
-                           self.diff, self.diff, self.diff, self.t)
+                           self.diff, self.diff, self.diff, self.n)
         self.assertEqual((self.realA == self.cmplxA.real).all(), True)
         
     def testHy(self):
         sampleReal = UpmlHyReal(self.idx, self.mu, *self.c)
         sampleCmplx = UpmlHyCmplx(self.idx, self.mu, *self.c)
         sampleReal.update(self.realA, self.realB, self.realC, 
-                          self.diff, self.diff, self.diff, self.t)
+                          self.diff, self.diff, self.diff, self.n)
         sampleCmplx.update(self.cmplxA, self.cmplxB, self.cmplxC, 
-                           self.diff, self.diff, self.diff, self.t)
+                           self.diff, self.diff, self.diff, self.n)
         self.assertEqual((self.realA == self.cmplxA.real).all(), True)
         
     def testHz(self):
         sampleReal = UpmlHzReal(self.idx, self.mu, *self.c)
         sampleCmplx = UpmlHzCmplx(self.idx, self.mu, *self.c)
         sampleReal.update(self.realA, self.realB, self.realC, 
-                          self.diff, self.diff, self.diff, self.t)
+                          self.diff, self.diff, self.diff, self.n)
         sampleCmplx.update(self.cmplxA, self.cmplxB, self.cmplxC, 
-                           self.diff, self.diff, self.diff, self.t)
+                           self.diff, self.diff, self.diff, self.n)
         self.assertEqual((self.realA == self.cmplxA.real).all(), True)
         
         

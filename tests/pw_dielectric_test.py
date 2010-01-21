@@ -22,60 +22,60 @@ class TestSequence(unittest.TestCase):
         self.cmplxC = ones((3,3,3), complex)
         
         self.diff = 1
-        self.t = 0
+        self.n = 0
         
     def testEx(self):
         sampleReal = DielectricExReal(self.idx)
         sampleCmplx = DielectricExCmplx(self.idx)
         sampleReal.update(self.realA, self.realB, self.realC, 
-                          self.diff, self.diff, self.diff, self.t)
+                          self.diff, self.diff, self.diff, self.n)
         sampleCmplx.update(self.cmplxA, self.cmplxB, self.cmplxC, 
-                           self.diff, self.diff, self.diff, self.t)
+                           self.diff, self.diff, self.diff, self.n)
         self.assertEqual((self.realA == self.cmplxA.real).all(), True)
         
     def testEy(self):
         sampleReal = DielectricEyReal(self.idx)
         sampleCmplx = DielectricEyCmplx(self.idx)
         sampleReal.update(self.realA, self.realB, self.realC, 
-                          self.diff, self.diff, self.diff, self.t)
+                          self.diff, self.diff, self.diff, self.n)
         sampleCmplx.update(self.cmplxA, self.cmplxB, self.cmplxC, 
-                           self.diff, self.diff, self.diff, self.t)
+                           self.diff, self.diff, self.diff, self.n)
         self.assertEqual((self.realA == self.cmplxA.real).all(), True)
         
     def testEz(self):
         sampleReal = DielectricEzReal(self.idx)
         sampleCmplx = DielectricEzCmplx(self.idx)
         sampleReal.update(self.realA, self.realB, self.realC, 
-                          self.diff, self.diff, self.diff, self.t)
+                          self.diff, self.diff, self.diff, self.n)
         sampleCmplx.update(self.cmplxA, self.cmplxB, self.cmplxC, 
-                           self.diff, self.diff, self.diff, self.t)
+                           self.diff, self.diff, self.diff, self.n)
         self.assertEqual((self.realA == self.cmplxA.real).all(), True)
         
     def testHx(self):
         sampleReal = DielectricHxReal(self.idx)
         sampleCmplx = DielectricHxCmplx(self.idx)
         sampleReal.update(self.realA, self.realB, self.realC, 
-                          self.diff, self.diff, self.diff, self.t)
+                          self.diff, self.diff, self.diff, self.n)
         sampleCmplx.update(self.cmplxA, self.cmplxB, self.cmplxC, 
-                           self.diff, self.diff, self.diff, self.t)
+                           self.diff, self.diff, self.diff, self.n)
         self.assertEqual((self.realA == self.cmplxA.real).all(), True)
         
     def testHy(self):
         sampleReal = DielectricHyReal(self.idx)
         sampleCmplx = DielectricHyCmplx(self.idx)
         sampleReal.update(self.realA, self.realB, self.realC, 
-                          self.diff, self.diff, self.diff, self.t)
+                          self.diff, self.diff, self.diff, self.n)
         sampleCmplx.update(self.cmplxA, self.cmplxB, self.cmplxC, 
-                           self.diff, self.diff, self.diff, self.t)
+                           self.diff, self.diff, self.diff, self.n)
         self.assertEqual((self.realA == self.cmplxA.real).all(), True)
         
     def testHz(self):
         sampleReal = DielectricHzReal(self.idx)
         sampleCmplx = DielectricHzCmplx(self.idx)
         sampleReal.update(self.realA, self.realB, self.realC, 
-                          self.diff, self.diff, self.diff, self.t)
+                          self.diff, self.diff, self.diff, self.n)
         sampleCmplx.update(self.cmplxA, self.cmplxB, self.cmplxC, 
-                           self.diff, self.diff, self.diff, self.t)
+                           self.diff, self.diff, self.diff, self.n)
         self.assertEqual((self.realA == self.cmplxA.real).all(), True)
         
         

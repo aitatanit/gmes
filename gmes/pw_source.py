@@ -12,7 +12,7 @@ from constants import *
 
 
 class DipoleElectric(object):
-    def __init__(self, pw_material, src_time=None, dt=None, amp=1):
+    def __init__(self, pw_material, src_time=None, amp=1, filename=None):
         self.pw_material = pw_material
         self.i = pw_material.i
         self.j = pw_material.j
@@ -20,16 +20,21 @@ class DipoleElectric(object):
         self.epsilon = pw_material.epsilon
         self.src_time = src_time
         self.amp = float(amp)
-        
-    def update(self, efield, hfield1, hfield2, space_diff1, space_diff2, dt, t):
-        src_t = self.src_time.dipole(t)
-        
-        if src_t is None:
-            self.pw_material.update(efield, hfield1, hfield2, space_diff1, space_diff2, dt, t)
+        if filename:
+            self.file = open(filename, 'w')
         else:
-            efield[self.i, self.j, self.k] = self.amp * src_t
-
-
+            self.file = None
+        
+    def __del__(self):
+        if self.file:
+            self.file.close()
+        
+    def update(self, efield, hfield1, hfield2, space_diff1, space_diff2, dt, n):
+        src_t = self.amp * self.src_time.dipole(dt*n)
+        efield[self.i, self.j, self.k] = src_t
+        self.file.write(str(n) + ' ' + str(src_t)+'\n')
+        
+        
 class DipoleEx(DipoleElectric): pass
     
     
@@ -40,7 +45,7 @@ class DipoleEz(DipoleElectric): pass
     
     
 class DipoleMagnetic(object):
-    def __init__(self, pw_material, src_time=None, dt=None, amp=1):
+    def __init__(self, pw_material, src_time=None,amp=1, filename=None):
         self.pw_material = pw_material
         self.i = pw_material.i
         self.j = pw_material.j
@@ -48,15 +53,20 @@ class DipoleMagnetic(object):
         self.mu = pw_material.mu
         self.src_time = src_time
         self.amp = float(amp)
-        
-    def update(self, hfield, efield1, efield2, space_diff1, space_diff2, dt, t):
-        src_t = self.src_time.dipole(t)
-        
-        if src_t is None:
-            self.pw_material.update(hfield, efield1, efield2, space_diff1, space_diff2, dt, t)
+        if filename:
+            self.file = open(filename, 'w')
         else:
-            hfield[self.i, self.j, self.k] = self.amp * src_t
-
+            self.file = None
+    
+    def __del__(self):
+        if self.file:
+            self.file.close()
+        
+    def update(self, hfield, efield1, efield2, space_diff1, space_diff2, dt, n):
+        src_t = self.amp * self.src_time.dipole(dt*n)
+        hfield[self.i, self.j, self.k] = src_t
+        self.file.write(str(n) + ' ' + str(src_t)+'\n')
+        
         
 class DipoleHx(DipoleMagnetic): pass
 
@@ -183,8 +193,8 @@ class TransparentEx(TransparentElectric):
         print " " * indent, "TransparentEx"
         TransparentElectric.display_info(self, indent)
          
-    def update(self, ex, hz, hy, dy, dz, dt, t):
-        self.pw_material.update(ex, hz, hy, dy, dz, dt, t)
+    def update(self, ex, hz, hy, dy, dz, dt, n):
+        self.pw_material.update(ex, hz, hy, dy, dz, dt, n)
         
         for face in self.face_list:
             self._consist_cond[face](ex, hz, hy, dy, dz, dt, face)
@@ -235,8 +245,8 @@ class TransparentEy(TransparentElectric):
         print " " * indent, "TransparentEy"
         TransparentElectric.display_info(self, indent)
         
-    def update(self, ey, hx, hz, dz, dx, dt, t):
-        self.pw_material.update(ey, hx, hz, dz, dx, dt, t)
+    def update(self, ey, hx, hz, dz, dx, dt, n):
+        self.pw_material.update(ey, hx, hz, dz, dx, dt, n)
         
         for face in self.face_list:
             self._consist_cond[face](ey, hx, hz, dz, dx, dt, face)
@@ -287,8 +297,8 @@ class TransparentEz(TransparentElectric):
         print " " * indent, "TransparentEz"
         TransparentElectric.display_info(self, indent)
                 
-    def update(self, ez, hy, hx, dx, dy, dt, t):
-        self.pw_material.update(ez, hy, hx, dx, dy, dt, t)
+    def update(self, ez, hy, hx, dx, dy, dt, n):
+        self.pw_material.update(ez, hy, hx, dx, dy, dt, n)
         
         for face in self.face_list:
             self._consist_cond[face](ez, hy, hx, dx, dy, dt, face)
@@ -395,8 +405,8 @@ class TransparentHx(TransparentMagnetic):
         print " " * indent, "TransparentHx"
         TransparentMagnetic.display_info(self, indent)
         
-    def update(self, hx, ez, ey, dy, dz, dt, t):
-        self.pw_material.update(hx, ez, ey, dy, dz, dt, t)
+    def update(self, hx, ez, ey, dy, dz, dt, n):
+        self.pw_material.update(hx, ez, ey, dy, dz, dt, n)
         
         for face in self.face_list:
             self._consist_cond[face](hx, ez, ey, dy, dz, dt, face)
@@ -447,8 +457,8 @@ class TransparentHy(TransparentMagnetic):
         print " " * indent, "TransparentHy"
         TransparentMagnetic.display_info(self, indent)
         
-    def update(self, hy, ex, ez, dz, dx, dt, t):
-        self.pw_material.update(hy, ex, ez, dz, dx, dt, t)
+    def update(self, hy, ex, ez, dz, dx, dt, n):
+        self.pw_material.update(hy, ex, ez, dz, dx, dt, n)
         
         for face in self.face_list:
             self._consist_cond[face](hy, ex, ez, dz, dx, dt, face)
@@ -500,8 +510,8 @@ class TransparentHz(TransparentMagnetic):
         print " " * indent, "TransparentHz"
         TransparentMagnetic.display_info(self, indent)
                 
-    def update(self, hz, ey, ex, dx, dy, dt, t):
-        self.pw_material.update(hz, ey, ex, dx, dy, dt, t)
+    def update(self, hz, ey, ex, dx, dy, dt, n):
+        self.pw_material.update(hz, ey, ex, dx, dy, dt, n)
         
         for face in self.face_list:
             self._consist_cond[face](hz, ey, ex, dx, dy, dt, face)

@@ -20,7 +20,7 @@ class TestSequence(unittest.TestCase):
         self.epsilon = random.random()
         self.value = random.random()
         self.diff = 1
-        self.t = 0
+        self.n = 0
         
         self.copyA = array(self.realA)
         self.copyA[self.idx] = self.value
@@ -59,42 +59,42 @@ class TestSequence(unittest.TestCase):
     def testEx(self):
         ConstReal = ConstExReal(self.idx, self.epsilon, self.value)
         ConstReal.update(self.realA, self.realB, self.realC, 
-                          self.diff, self.diff, self.diff, self.t)
+                          self.diff, self.diff, self.diff, self.n)
         
         self.assertEqual((self.realA == self.copyA).all(), True)
         
     def testEy(self):
         ConstReal = ConstEyReal(self.idx, self.epsilon, self.value)
         ConstReal.update(self.realA, self.realB, self.realC, 
-                          self.diff, self.diff, self.diff, self.t)
+                          self.diff, self.diff, self.diff, self.n)
         
         self.assertEqual((self.realA == self.copyA).all(), True)
         
     def testEz(self):
         ConstReal = ConstEzReal(self.idx, self.epsilon, self.value)
         ConstReal.update(self.realA, self.realB, self.realC, 
-                          self.diff, self.diff, self.diff, self.t)
+                          self.diff, self.diff, self.diff, self.n)
         
         self.assertEqual((self.realA == self.copyA).all(), True)
         
     def testHx(self):
         ConstReal = ConstHxReal(self.idx, self.epsilon, self.value)
         ConstReal.update(self.realA, self.realB, self.realC, 
-                          self.diff, self.diff, self.diff, self.t)
+                          self.diff, self.diff, self.diff, self.n)
         
         self.assertEqual((self.realA == self.copyA).all(), True)
         
     def testHy(self):
         ConstReal = ConstHyReal(self.idx, self.epsilon, self.value)
         ConstReal.update(self.realA, self.realB, self.realC, 
-                          self.diff, self.diff, self.diff, self.t)
+                          self.diff, self.diff, self.diff, self.n)
         
         self.assertEqual((self.realA == self.copyA).all(), True)
         
     def testHz(self):
         ConstReal = ConstHzReal(self.idx, self.epsilon, self.value)
         ConstReal.update(self.realA, self.realB, self.realC, 
-                          self.diff, self.diff, self.diff, self.t)
+                          self.diff, self.diff, self.diff, self.n)
         
         self.assertEqual((self.realA == self.copyA).all(), True)
         

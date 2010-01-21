@@ -20,47 +20,47 @@ class TestSequence(unittest.TestCase):
         self.copyA = array(self.realA)
         
         self.diff = 1
-        self.t = 0
+        self.n = 0
         
     def testEx(self):
         sampleReal = DummyExReal(self.idx)
         sampleReal.update(self.realA, self.realB, self.realC, 
-                          self.diff, self.diff, self.diff, self.t)
+                          self.diff, self.diff, self.diff, self.n)
         
         self.assertEqual((self.realA == self.copyA).all(), True)
                          
     def testEy(self):
         sampleReal = DummyEyReal(self.idx)
         sampleReal.update(self.realA, self.realB, self.realC, 
-                          self.diff, self.diff, self.diff, self.t)
+                          self.diff, self.diff, self.diff, self.n)
         
         self.assertEqual((self.realA == self.copyA).all(), True)
         
     def testEz(self):
         sampleReal = DummyEzReal(self.idx)
         sampleReal.update(self.realA, self.realB, self.realC, 
-                          self.diff, self.diff, self.diff, self.t)
+                          self.diff, self.diff, self.diff, self.n)
         
         self.assertEqual((self.realA == self.copyA).all(), True)
         
     def testHx(self):
         sampleReal = DummyHxReal(self.idx)
         sampleReal.update(self.realA, self.realB, self.realC, 
-                          self.diff, self.diff, self.diff, self.t)
+                          self.diff, self.diff, self.diff, self.n)
         
         self.assertEqual((self.realA == self.copyA).all(), True)
         
     def testHy(self):
         sampleReal = DummyHyReal(self.idx)
         sampleReal.update(self.realA, self.realB, self.realC, 
-                          self.diff, self.diff, self.diff, self.t)
+                          self.diff, self.diff, self.diff, self.n)
         
         self.assertEqual((self.realA == self.copyA).all(), True)
         
     def testHz(self):
         sampleReal = DummyHzReal(self.idx)
         sampleReal.update(self.realA, self.realB, self.realC, 
-                          self.diff, self.diff, self.diff, self.t)
+                          self.diff, self.diff, self.diff, self.n)
         
         self.assertEqual((self.realA == self.copyA).all(), True)
         

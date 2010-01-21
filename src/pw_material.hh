@@ -48,7 +48,7 @@ public:
 	update(T * const inplace_field, int inplace_dim1, int inplace_dim2, int inplace_dim3,
 			const T * const in_field1, int in1_dim1, int in1_dim2, int in1_dim3,
 			const T * const in_field2, int in2_dim1, int in2_dim2, int in2_dim3,
-			double d1, double d2, double dt, double t) = 0;
+			double d1, double d2, double dt, double n) = 0;
 
 protected:
 	int i, j, k;

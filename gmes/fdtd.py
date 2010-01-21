@@ -12,6 +12,7 @@ from threading import Thread, Lock
 from numpy import *
 
 from geometry import GeomBoxTree, in_range
+from file_io import Probe
 #from file_io import write_hdf5, snapshot
 from show import ShowLine, ShowPlane, Snapshot
 from material import Dummy
@@ -204,7 +205,7 @@ class FDTD(object):
         
         shape = self.ex.shape
         for idx in ndindex(shape):
-            coords = self.space.ex_index_to_space(idx)
+            coords = self.space.ex_index_to_space(*idx)
             mat_obj, underneath = self.geom_tree.material_of_point(coords)
             if idx[1] == shape[1] - 1 or idx[2] == shape[2] - 1:
                 mat_obj = Dummy(mat_obj.epsilon_r, mat_obj.mu_r)
@@ -224,7 +225,7 @@ class FDTD(object):
         
         shape = self.ey.shape
         for idx in ndindex(shape):
-            coords = self.space.ey_index_to_space(idx)
+            coords = self.space.ey_index_to_space(*idx)
             mat_obj, underneath = self.geom_tree.material_of_point(coords)
             if idx[2] == shape[2] - 1 or idx[0] == shape[0] - 1:
                 mat_obj = Dummy(mat_obj.epsilon_r, mat_obj.mu_r)
@@ -244,7 +245,7 @@ class FDTD(object):
         
         shape = self.ez.shape
         for idx in ndindex(shape):
-            coords = self.space.ez_index_to_space(idx)
+            coords = self.space.ez_index_to_space(*idx)
             mat_obj, underneath = self.geom_tree.material_of_point(coords)
             if idx[0] == shape[0] - 1 or idx[1] == shape[1] - 1:
                 mat_obj = Dummy(mat_obj.epsilon_r, mat_obj.mu_r)
@@ -264,7 +265,7 @@ class FDTD(object):
         
         shape = self.hx.shape
         for idx in ndindex(shape):
-            coords = self.space.hx_index_to_space(idx)
+            coords = self.space.hx_index_to_space(*idx)
             mat_obj, underneath = self.geom_tree.material_of_point(coords)
             if idx[1] == 0 or idx[2] == 0:
                 mat_obj = Dummy(mat_obj.epsilon_r, mat_obj.mu_r)
@@ -284,7 +285,7 @@ class FDTD(object):
         
         shape = self.hy.shape
         for idx in ndindex(shape):
-            coords = self.space.hy_index_to_space(idx)
+            coords = self.space.hy_index_to_space(*idx)
             mat_obj, underneath = self.geom_tree.material_of_point(coords)
             if idx[2] == 0 or idx[0] == 0:
                 mat_obj = Dummy(mat_obj.epsilon_r, mat_obj.mu_r)
@@ -304,7 +305,7 @@ class FDTD(object):
         
         shape = self.hz.shape
         for idx in ndindex(shape):
-            coords = self.space.hz_index_to_space(idx)
+            coords = self.space.hz_index_to_space(*idx)
             mat_obj, underneath = self.geom_tree.material_of_point(coords)
             if idx[0] == 0 or idx[1] == 0:
                 mat_obj = Dummy(mat_obj.epsilon_r, mat_obj.mu_r)
@@ -353,40 +354,83 @@ class FDTD(object):
         self.init_source_hy()
         self.init_source_hz()
 	
+    def set_probe(self, x, y, z, prefix):
+        idx = self.space.space_to_ex_index(x, y, z)
+        if in_range(idx, self.material_ex, const.Ex):
+            self.material_ex[idx] = Probe(prefix + '_ex.dat', self.material_ex[idx])
+            loc = self.space.ex_index_to_space(*idx)
+            self.material_ex[idx].f.write('# location=' + str(loc) + '\n')
+            self.material_ex[idx].f.write('# t=' + str(self.dt) + '\n')
+            
+        idx = self.space.space_to_ey_index(x, y, z)
+        if in_range(idx, self.material_ey, const.Ey):
+            self.material_ey[idx] = Probe(prefix + '_ey.dat', self.material_ey[idx])
+            loc = self.space.ey_index_to_space(*idx)
+            self.material_ey[idx].f.write('# location=' + str(loc) + '\n')
+            self.material_ey[idx].f.write('# t=' + str(self.dt) + '\n')
+              
+        idx = self.space.space_to_ez_index(x, y, z)
+        if in_range(idx, self.material_ez, const.Ez):
+            self.material_ez[idx] = Probe(prefix + '_ez.dat', self.material_ez[idx])
+            loc = self.space.ez_index_to_space(*idx)
+            self.material_ez[idx].f.write('# location=' + str(loc) + '\n')
+            self.material_ez[idx].f.write('# t=' + str(self.dt) + '\n')
+            
+        idx = self.space.space_to_hx_index(x, y, z)
+        if in_range(idx, self.material_hx, const.Hx):
+            self.material_hx[idx] = Probe(prefix + '_hx.dat', self.material_hx[idx])
+            loc = self.space.hx_index_to_space(*idx)
+            self.material_hx[idx].f.write('# location=' + str(loc) + '\n')
+            self.material_hx[idx].f.write('# t=' + str(self.dt) + '\n')
+            
+        idx = self.space.space_to_hy_index(x, y, z)
+        if in_range(idx, self.material_hy, const.Hy):
+            self.material_hy[idx] = Probe(prefix + '_hy.dat', self.material_hy[idx])
+            loc = self.space.hy_index_to_space(*idx)
+            self.material_hy[idx].f.write('# location=' + str(loc) + '\n')
+            self.material_hy[idx].f.write('# t=' + str(self.dt) + '\n')
+            
+        idx = self.space.space_to_hz_index(x, y, z)
+        if in_range(idx, self.material_hz, const.Hz):
+            self.material_hz[idx] = Probe(prefix + '_hz.dat', self.material_hz[idx])
+            loc = self.space.hz_index_to_space(*idx)
+            self.material_hz[idx].f.write('# location=' + str(loc) + '\n')
+            self.material_hz[idx].f.write('# t=' + str(self.dt) + '\n')
+            
     def update_ex(self):
         self.lock_ex.acquire()
         for mo in self.material_ex.flat:
-            mo.update(self.ex, self.hz, self.hy, self.dy, self.dz, self.dt, self.time_step.t)
+            mo.update(self.ex, self.hz, self.hy, self.dy, self.dz, self.dt, self.time_step.n)
         self.lock_ex.release()
 
     def update_ey(self):
         self.lock_ey.acquire()
         for mo in self.material_ey.flat:
-            mo.update(self.ey, self.hx, self.hz, self.dz, self.dx, self.dt, self.time_step.t)
+            mo.update(self.ey, self.hx, self.hz, self.dz, self.dx, self.dt, self.time_step.n)
         self.lock_ey.release()
 		
     def update_ez(self):
         self.lock_ez.acquire()
         for mo in self.material_ez.flat:
-            mo.update(self.ez, self.hy, self.hx, self.dx, self.dy, self.dt, self.time_step.t)
+            mo.update(self.ez, self.hy, self.hx, self.dx, self.dy, self.dt, self.time_step.n)
         self.lock_ez.release()
 		
     def update_hx(self):
         self.lock_hx.acquire()
         for mo in self.material_hx.flat:
-            mo.update(self.hx, self.ez, self.ey, self.dy, self.dz, self.dt, self.time_step.t)
+            mo.update(self.hx, self.ez, self.ey, self.dy, self.dz, self.dt, self.time_step.n)
         self.lock_hx.release()
 		
     def update_hy(self):
         self.lock_hy.acquire()
         for mo in self.material_hy.flat:
-            mo.update(self.hy, self.ex, self.ez, self.dz, self.dx, self.dt, self.time_step.t)
+            mo.update(self.hy, self.ex, self.ez, self.dz, self.dx, self.dt, self.time_step.n)
         self.lock_hy.release()
 		
     def update_hz(self):
         self.lock_hz.acquire()
         for mo in self.material_hz.flat:
-            mo.update(self.hz, self.ey, self.ex, self.dx, self.dy, self.dt, self.time_step.t)
+            mo.update(self.hz, self.ey, self.ex, self.dx, self.dy, self.dt, self.time_step.n)
         self.lock_hz.release()
 
     def talk_with_ex_neighbors(self):
@@ -406,13 +450,14 @@ class FDTD(object):
                                                     None, src, const.Ex.tag) 
         
             phase_shift = exp(1j * self.k[1] * (dest_spc - src_spc))
+            
         else:
-            phase_shift = 1   
+            phase_shift = 1
         
         self.ex[:, -1, :-1] = phase_shift * \
         self.space.cart_comm.sendrecv(self.ex[:, 0, :-1], dest, const.Ex.tag,
                                       None, src, const.Ex.tag)
-            
+        
         # send ex field data to -z direction and receive from +z direction.    
         src, dest = self.space.cart_comm.Shift(2, -1)
         
@@ -424,6 +469,7 @@ class FDTD(object):
                                                     None, src, const.Ex.tag) 
         
             phase_shift = exp(1j * self.k[2] * (dest_spc - src_spc))
+            
         else:
             phase_shift = 1
             
@@ -914,7 +960,7 @@ class FDTD(object):
             
         if axis is const.X:
             high_idx = [i - 1 for i in field.shape]
-            high = idx_to_spc(high_idx)
+            high = idx_to_spc(*high_idx)
             extent = (low[2], high[2], high[1], low[1])
             
             cut_idx = spc_to_idx(cut, tmp_cut_coords[1], tmp_cut_coords[2])
@@ -927,7 +973,7 @@ class FDTD(object):
         elif axis is const.Y:
             low = idx_to_spc(0, 0, 0)
             high_idx = [i - 1 for i in field.shape]
-            high = idx_to_spc(high_idx)
+            high = idx_to_spc(*high_idx)
             extent = (low[2], high[2], high[0], low[0])
             
             cut_idx = spc_to_idx(tmp_cut_coords[0], cut, tmp_cut_coords[2])
@@ -940,7 +986,7 @@ class FDTD(object):
         elif axis is const.Z:
             low = idx_to_spc(0, 0, 0)
             high_idx = [i - 1 for i in field.shape]
-            high = idx_to_spc(high_idx)
+            high = idx_to_spc(*high_idx)
             extent = (low[1], high[1], high[0], low[0])
             
             cut_idx = spc_to_idx(tmp_cut_coords[0], tmp_cut_coords[1], cut)
@@ -1040,7 +1086,7 @@ class FDTD(object):
             
         if axis is const.X:
             high_idx = [i - 1 for i in material.shape]
-            high = idx_to_spc(high_idx)
+            high = idx_to_spc(*high_idx)
             extent = (low[2], high[2], high[1], low[1])
             
             cut_idx = spc_to_idx(cut, tmp_cut_coords[1], tmp_cut_coords[2])
@@ -1062,7 +1108,7 @@ class FDTD(object):
         elif axis is const.Y:
             low = idx_to_spc(0, 0, 0)
             high_idx = [i - 1 for i in material.shape]
-            high = idx_to_spc(high_idx)
+            high = idx_to_spc(*high_idx)
             extent = (low[2], high[2], high[0], low[0])
             
             cut_idx = spc_to_idx(tmp_cut_coords[0], cut, tmp_cut_coords[2])
@@ -1084,7 +1130,7 @@ class FDTD(object):
         elif axis is const.Z:
             low = idx_to_spc(0, 0, 0)
             high_idx = [i - 1 for i in material.shape]
-            high = idx_to_spc(high_idx)
+            high = idx_to_spc(*high_idx)
             extent = (low[1], high[1], high[0], low[0])
             
             cut_idx = spc_to_idx(tmp_cut_coords[0], tmp_cut_coords[1], cut)

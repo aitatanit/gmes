@@ -59,7 +59,7 @@ public:
 	void update(T * const ex, int ex_x_size, int ex_y_size, int ex_z_size,
 			const T * const hz, int hz_x_size, int hz_y_size, int hz_z_size,
 			const T * const hy, int hy_x_size, int hy_y_size, int hy_z_size,
-			double dy, double dz, double dt, double t)
+			double dy, double dz, double dt, double n)
 	{
 		const T dstore(d);
 
@@ -91,7 +91,7 @@ public:
 	void update(T * const ey, int ey_x_size, int ey_y_size, int ey_z_size,
 			const T * const hx, int hx_x_size, int hx_y_size, int hx_z_size,
 			const T * const hz, int hz_x_size, int hz_y_size, int hz_z_size,
-			double dz, double dx, double dt, double t)
+			double dz, double dx, double dt, double n)
 	{
 		const T dstore(d);
 
@@ -123,7 +123,7 @@ public:
 	void update(T * const ez, int ez_x_size, int ez_y_size, int ez_z_size,
 			const T * const hy, int hy_x_size, int hy_y_size, int hy_z_size,
 			const T * const hx, int hx_x_size, int hx_y_size, int hx_z_size,
-			double dx, double dy, double dt, double t)
+			double dx, double dy, double dt, double n)
 	{
 		const T dstore(d);
 
@@ -182,7 +182,7 @@ public:
 	void update(T * const hx, int hx_x_size, int hx_y_size, int hx_z_size,
 			const T * const ez, int ez_x_size, int ez_y_size, int ez_z_size,
 			const T * const ey, int ey_x_size, int ey_y_size, int ey_z_size,
-			double dy, double dz, double dt, double t)
+			double dy, double dz, double dt, double n)
 	{
 		const T bstore(b);
 
@@ -214,7 +214,7 @@ public:
 	void update(T * const hy, int hy_x_size, int hy_y_size, int hy_z_size,
 			const T * const ex, int ex_x_size, int ex_y_size, int ex_z_size,
 			const T * const ez, int ez_x_size, int ez_y_size, int ez_z_size,
-			double dz, double dx, double dt, double t)
+			double dz, double dx, double dt, double n)
 	{
 		const T bstore(b);
 
@@ -246,7 +246,7 @@ public:
 	void update(T * const hz, int hz_x_size, int hz_y_size, int hz_z_size,
 			const T * const ey, int ey_x_size, int ey_y_size, int ey_z_size,
 			const T * const ex, int ex_x_size, int ex_y_size, int ex_z_size,
-			double dx, double dy, double dt, double t)
+			double dx, double dy, double dt, double n)
 	{
 		const T bstore(b);
 
