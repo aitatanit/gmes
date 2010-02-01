@@ -133,8 +133,8 @@ public:
 			const T * const ey, int ey_x_size, int ey_y_size, int ey_z_size,
 			double dy, double dz, double dt, double n)
 	{
-		hx(i,j,k) -= dt / mu * ((ez(i,j,k-1) - ez(i,j-1,k-1)) / dy
-					- (ey(i,j-1,k) - ey(i,j-1,k-1)) / dz);
+		hx(i,j,k) += dt / mu * ((ey(i,j-1,k) - ey(i,j-1,k-1)) / dz
+				- (ez(i,j,k-1) - ez(i,j-1,k-1)) / dy);
 	}
 
 protected:
@@ -154,8 +154,8 @@ public:
 			const T * const ez, int ez_x_size, int ez_y_size, int ez_z_size,
 			double dz, double dx, double dt, double n)
 	{
-		hy(i,j,k) -= dt / mu * ((ex(i-1,j,k) - ex(i-1,j,k-1)) / dz
-					- (ez(i,j,k-1) - ez(i-1,j,k-1)) / dx);
+		hy(i,j,k) += dt / mu * ((ez(i,j,k-1) - ez(i-1,j,k-1)) / dx
+				- (ex(i-1,j,k) - ex(i-1,j,k-1)) / dz);
 	}
 
 protected:
@@ -175,8 +175,8 @@ public:
 			const T * const ex, int ex_x_size, int ex_y_size, int ex_z_size,
 			double dx, double dy, double dt, double n)
 	{
-		hz(i,j,k) -= dt / mu * ((ey(i,j-1,k) - ey(i-1,j-1,k)) / dx
-					- (ex(i-1,j,k) - ex(i-1,j-1,k)) / dy);
+		hz(i,j,k) += dt / mu * ((ex(i-1,j,k) - ex(i-1,j-1,k)) / dy
+				- (ey(i,j-1,k) - ey(i-1,j-1,k)) / dx);
 	}
 
 protected:

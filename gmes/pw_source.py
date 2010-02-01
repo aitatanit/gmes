@@ -32,7 +32,8 @@ class DipoleElectric(object):
     def update(self, efield, hfield1, hfield2, space_diff1, space_diff2, dt, n):
         src_t = self.amp * self.src_time.dipole(dt*n)
         efield[self.i, self.j, self.k] = src_t
-        self.file.write(str(n) + ' ' + str(src_t)+'\n')
+        if self.file is not None:
+            self.file.write(str(n) + ' ' + str(src_t)+'\n')
         
         
 class DipoleEx(DipoleElectric): pass
@@ -65,7 +66,8 @@ class DipoleMagnetic(object):
     def update(self, hfield, efield1, efield2, space_diff1, space_diff2, dt, n):
         src_t = self.amp * self.src_time.dipole(dt*n)
         hfield[self.i, self.j, self.k] = src_t
-        self.file.write(str(n) + ' ' + str(src_t)+'\n')
+        if self.file is not None:
+            self.file.write(str(n) + ' ' + str(src_t)+'\n')
         
         
 class DipoleHx(DipoleMagnetic): pass

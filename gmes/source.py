@@ -136,12 +136,7 @@ class Dipole(Src):
         print " " * indent, "center:", self.pos
         print " " * indent, "polarization direction:", self.comp
         print " " * indent, "maximum amp.:", self.amp
-        
-        print " " * indent, "source recording: "
-        if self.filename is None: 
-            print "disabled"
-        else: 
-            print self.filename
+        print " " * indent, "source recording: ", self.filename
         
         self.src_time.display_info(4)
         
@@ -152,7 +147,7 @@ class Dipole(Src):
                 material_ex[idx] = DipoleEx(material_ex[idx], self.src_time, self.amp, self.filename)
                 if self.filename is not None:
                     loc = space.ex_index_to_space(*idx)
-                    material_ex[idx].f.write('# location=' + str(loc) + '\n')
+                    material_ex[idx].file.write('# location=' + str(loc) + '\n')
                     
     def set_pointwise_source_ey(self, material_ey, space):
         if self.comp is const.Ey:
@@ -161,7 +156,7 @@ class Dipole(Src):
                 material_ey[idx] = DipoleEy(material_ey[idx], self.src_time, self.amp, self.filename)
                 if self.filename is not None:
                     loc = space.ey_index_to_space(*idx)
-                    material_ey[idx].f.write('# location=' + str(loc) + '\n')
+                    material_ey[idx].file.write('# location=' + str(loc) + '\n')
                     
     def set_pointwise_source_ez(self, material_ez, space):
         if self.comp is const.Ez:
@@ -170,7 +165,7 @@ class Dipole(Src):
                 material_ez[idx] = DipoleEz(material_ez[idx], self.src_time, self.amp, self.filename)
                 if self.filename is not None:
                     loc = space.ez_index_to_space(*idx)
-                    material_ez[idx].f.write('# location=' + str(loc) + '\n')
+                    material_ez[idx].file.write('# location=' + str(loc) + '\n')
                     
     def set_pointwise_source_hx(self, material_hx, space):
         if self.comp is const.Hx:
@@ -179,7 +174,7 @@ class Dipole(Src):
                 material_hx[idx] = DipoleHx(material_hx[idx], self.src_time, self.amp, self.filename)
                 if self.filename is not None:
                     loc = space.hx_index_to_space(*idx)
-                    material_hx[idx].f.write('# location=' + str(loc) + '\n')
+                    material_hx[idx].file.write('# location=' + str(loc) + '\n')
                     
     def set_pointwise_source_hy(self, material_hy, space):
         if self.comp is const.Hy:
@@ -188,7 +183,7 @@ class Dipole(Src):
                 material_hy[idx] = DipoleHy(material_hy[idx], self.src_time, self.amp, self.filename)
                 if self.filename is not None:
                     loc = space.hy_index_to_space(*idx)
-                    material_hy[idx].f.write('# location=' + str(loc) + '\n')
+                    material_hy[idx].file.write('# location=' + str(loc) + '\n')
                     
     def set_pointwise_source_hz(self, material_hz, space):
         if self.comp is const.Hz:
@@ -197,7 +192,7 @@ class Dipole(Src):
                 material_hz[idx] = DipoleHz(material_hz[idx], self.src_time, self.amp, self.filename)
                 if self.filename is not None:
                     loc = space.hz_index_to_space(*idx)
-                    material_hz[idx].f.write('# location=' + str(loc) + '\n')
+                    material_hz[idx].file.write('# location=' + str(loc) + '\n')
 
 class TotalFieldScatteredField(Src):
     """Set a total and scattered field zone to launch a plane wave.

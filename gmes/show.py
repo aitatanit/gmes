@@ -10,8 +10,10 @@ except:
 from threading import Thread
 from numpy import array
 
-import matplotlib 
-matplotlib.use('TkAgg')
+from sys import modules
+if not 'matplotlib.backends' in modules:
+    import matplotlib 
+    matplotlib.use('TkAgg')
 
 from pylab import get_current_fig_manager, new_figure_manager
 from pylab import figure, show, cm
