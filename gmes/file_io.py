@@ -7,8 +7,10 @@ try:
 except:
     pass
 
-import matplotlib 
-matplotlib.use('TkAgg')
+from sys import modules
+if not 'matplotlib.backends' in modules:
+    import matplotlib 
+    matplotlib.use('TkAgg')
 import pylab
 
 #from tables import openFile
@@ -37,3 +39,4 @@ def snapshot(data, filename, title):
     pylab.title(title)
     pylab.imshow(data, origin="lower")
     pylab.savefig(filename)
+    
