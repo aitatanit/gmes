@@ -52,7 +52,7 @@ except ImportError:
 
 # List here only the objects we want to be publicly available
 __all__ = ['fdtd', 'geometry', 'show', 'constants', 'source', \
-           'pointwise_source', 'material', 'pointwise_material']
+           'pw_source', 'material', 'pw_material']
 
 import fdtd, geometry, show, constants, source, material
-import pointwise_material, pointwise_source
+import pw_material, pw_source

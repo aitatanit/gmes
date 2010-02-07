@@ -31,10 +31,10 @@ class AuxiCartComm(object):
         ndims -- dimensionality of this Cartesian topology
         
     """
-    def __init__(self, dims=(1,1,1), periods=(0,0,0), reorder=(0,0,0)):
+    def __init__(self, dims=(1,1,1), periods=(1,1,1), reorder=(0,0,0)):
         self.rank = 0
         self.dim = 3
-        cyclic = tuple(map(int,periods))
+        cyclic = tuple(map(int, periods))
         self.topo = ((1,1,1), cyclic, (0,0,0))
         
     def Get_cart_rank(self, coords):
@@ -68,7 +68,7 @@ class AuxiCartComm(object):
         else:
             return -1, -1
     
-    def Sendrecv(self, sendbuf, dest=0, sendtag=0, 
+    def sendrecv(self, sendbuf, dest=0, sendtag=0,
                  recvbuf=None, source=0, recvtag=0, status=None):
         """Mimic Sendrecv method.
         
@@ -104,20 +104,19 @@ class Cartesian(object):
             the electromagnetic field of this node except the communication buffers
             
     """
-    def __init__(self, size, resolution=15, courant_ratio=.99, dt=None, 
-                 cyclic=(False,False,False), parallel=False):
+    def __init__(self, size, resolution=15, courant_ratio=.99, dt=None, parallel=False):
         """
         Arguments:
             size -- a length three sequence consists of non-negative numbers
-            resolution -- number of sections of one unit (scalar or length 3 sequence)
+            resolution -- number of sections of one unit (scalar or length 3 
+                sequence)
                 default: 15
             courant_ratio -- the ratio of dt to Courant stability bound
                 default: 0.99
             dt -- the time differential
-                If None is given, dt is calculated using space differentials and courant_ratio.
+                If None is given, dt is calculated using space differentials 
+                and courant_ratio.
                 default: None
-            cyclic --  length 3 tuple specifying whether the grid is periodic (True) or not (False) 
-                in each dimension  
             parallel -- whether space be divided into segments.
             
         """
@@ -130,7 +129,7 @@ class Cartesian(object):
         self.dx, self.dy, self.dz = 1 / self.res
 
         # local spatial differentials to calculate dt
-        dx, dy, dz = 1 / self.res
+        dx, dy, dz = self.dx, self.dy, self.dz
         
         self.half_size = 0.5 * array(size, float)
         
@@ -157,23 +156,17 @@ class Cartesian(object):
             self.dt = float(dt)
             courant_ratio = self.dt / courant_limit
 
-        # the size of the whole field set 
-        whole_field_size = []
-        for size in (round(x) for x in 2 * self.half_size * self.res):
-            if size == 1:
-                whole_field_size.append(1)
-            else:
-                whole_field_size.append(size + 1)
-        self.whole_field_size = array(whole_field_size, int)
+        # the size of the whole field arrays 
+        self.whole_field_size = array((2 * self.half_size * self.res).round(), int)
         
         try:
             if not parallel:
                 raise StandardError
             
-            self.my_id = MPI.WORLD.rank
-            self.numprocs = MPI.WORLD.size
+            self.my_id = MPI.COMM_WORLD.rank
+            self.numprocs = MPI.COMM_WORLD.size
             self.cart_comm = \
-            MPI.WORLD.Create_cart(self.find_best_deploy(), cyclic)
+            MPI.COMM_WORLD.Create_cart(self.find_best_deploy(), (1, 1, 1))
         except StandardError:
             self.my_id = 0
             self.numprocs = 1
@@ -188,7 +181,7 @@ class Cartesian(object):
         
         # my_field_size may be different than general_field_size at the last 
         # node in each dimension.
-        self.my_field_size = self.get_my_field_size()   
+        self.my_field_size = self.get_my_field_size()
         
     def get_my_field_size(self):
         """Return the field size of this node.
@@ -203,6 +196,7 @@ class Cartesian(object):
         dims = self.cart_comm.topo[0]
         
         for i in xrange(3):
+            # At the last node of that dimension.
             if self.my_cart_idx[i] == dims[i] - 1:
                 field_size[i] = \
                 self.whole_field_size[i] - (self.my_cart_idx[i] * 
@@ -254,80 +248,104 @@ class Cartesian(object):
         cpu_load = (self.whole_field_size[0] * self.whole_field_size[1] * 
                     self.whole_field_size[2]) / (l * m * n)
         net_load = 4 * R * (self.whole_field_size[0] / l * self.whole_field_size[1] / m + 
-                            self.whole_field_size[1] / m * self.whole_field_size[2] / n +
+                            self.whole_field_size[1] / m * self.whole_field_size[2] / n + 
                             self.whole_field_size[2] / n * self.whole_field_size[0] / l)
         
         return cpu_load + net_load
         
-    def get_ex_storage(self):
+    def get_ex_storage(self, cmplx=False):
         """Return an initialized array for Ex field component.
         
         """
-        ex_shape = (self.my_field_size[0], self.my_field_size[1] + 1, 
+        ex_shape = (self.my_field_size[0], self.my_field_size[1] + 1,
                     self.my_field_size[2] + 1)
-        return zeros(ex_shape, float)
-    
-    def get_ey_storage(self):
+        
+        if cmplx:
+            return zeros(ex_shape, complex)
+        else:
+            return zeros(ex_shape, float)
+        
+    def get_ey_storage(self, cmplx=False):
         """Return an initialized array for Ey field component.
         
         """
-        ey_shape = (self.my_field_size[0] + 1, self.my_field_size[1], 
+        ey_shape = (self.my_field_size[0] + 1, self.my_field_size[1],
                     self.my_field_size[2] + 1)
-        return zeros(ey_shape, float)
-    
-    def get_ez_storage(self):
+        
+        if cmplx:
+            return zeros(ey_shape, complex)
+        else:
+            return zeros(ey_shape, float)
+        
+    def get_ez_storage(self, cmplx=False):
         """Return an initialized array for Ez field component.
         
         """
-        ez_shape = (self.my_field_size[0] + 1, self.my_field_size[1] + 1, 
+        ez_shape = (self.my_field_size[0] + 1, self.my_field_size[1] + 1,
                     self.my_field_size[2])
-        return zeros(ez_shape, float)
-    
-    def get_hx_storage(self):
+        
+        if cmplx:
+            return zeros(ez_shape, complex)
+        else:
+            return zeros(ez_shape, float)
+        
+    def get_hx_storage(self, cmplx=False):
         """Return an initialized array for Hx field component.
         
         """
-        hx_shape = (self.my_field_size[0], self.my_field_size[1] + 1, 
+        hx_shape = (self.my_field_size[0], self.my_field_size[1] + 1,
                     self.my_field_size[2] + 1)
-        return zeros(hx_shape, float)
-    
-    def get_hy_storage(self):    
+        
+        if cmplx:
+            return zeros(hx_shape, complex)
+        else:
+            return zeros(hx_shape, float)
+        
+    def get_hy_storage(self, cmplx=False):  
         """Return an initialized array for Hy field component.
         
         """
-        hy_shape = (self.my_field_size[0] + 1, self.my_field_size[1], 
+        hy_shape = (self.my_field_size[0] + 1, self.my_field_size[1],
                     self.my_field_size[2] + 1)
-        return zeros(hy_shape, float)
-    
-    def get_hz_storage(self):
+        
+        if cmplx:
+            return zeros(hy_shape, complex)
+        else:
+            return zeros(hy_shape, float)
+        
+    def get_hz_storage(self, cmplx=False):
         """Return an initialized array for Hz field component.
         
         """
-        hz_shape = (self.my_field_size[0] + 1, self.my_field_size[1] + 1, 
+        hz_shape = (self.my_field_size[0] + 1, self.my_field_size[1] + 1,
                     self.my_field_size[2])
-        return zeros(hz_shape, float)
-
+        
+        if cmplx:
+            return zeros(hz_shape, complex)
+        else:
+            return zeros(hz_shape, float)
+        
     def get_material_ex_storage(self):
         """Return an array for Ex pointwise materials.
         
         """
-        ex_shape = (self.my_field_size[0], self.my_field_size[1] + 1, 
+        ex_shape = (self.my_field_size[0], self.my_field_size[1] + 1,
                     self.my_field_size[2] + 1)
         return empty(ex_shape, object)
-    
+        
     def get_material_ey_storage(self):
         """Return an array for Ey pointwise materials.
         
         """
-        ey_shape = (self.my_field_size[0] + 1, self.my_field_size[1], 
+        ey_shape = (self.my_field_size[0] + 1, self.my_field_size[1],
                     self.my_field_size[2] + 1)
         return empty(ey_shape, object)
-    
+        
     def get_material_ez_storage(self):
         """Return an array for Ez pointwise materials.
         
         """
-        ez_shape = (self.my_field_size[0] + 1, self.my_field_size[1] + 1, 
+        ez_shape = (self.my_field_size[0] + 1, self.my_field_size[1] + 1,
                     self.my_field_size[2])
         return empty(ez_shape, object)
     
@@ -335,55 +353,46 @@ class Cartesian(object):
         """Return an array for Hx pointwise materials.
         
         """
-        hx_shape = (self.my_field_size[0], self.my_field_size[1] + 1, 
+        hx_shape = (self.my_field_size[0], self.my_field_size[1] + 1,
                     self.my_field_size[2] + 1)
         return empty(hx_shape, object)
-    
+        
     def get_material_hy_storage(self):
         """Return an array for Hy pointwise materials.
         
         """
-        hy_shape = (self.my_field_size[0] + 1, self.my_field_size[1], 
+        hy_shape = (self.my_field_size[0] + 1, self.my_field_size[1],
                     self.my_field_size[2] + 1)
         return empty(hy_shape, object)
-    
+        
     def get_material_hz_storage(self):
         """Return an array for Hz pointwise materials.
         
         """
-        hz_shape = (self.my_field_size[0] + 1, self.my_field_size[1] + 1, 
+        hz_shape = (self.my_field_size[0] + 1, self.my_field_size[1] + 1,
                     self.my_field_size[2])
         return empty(hz_shape, object)
-
-    def ex_index_to_space(self, *index):
+    
+    def ex_index_to_space(self, i, j, k):
         """Return space coordinate of the given index.
         
         This method returns the (global) space coordinates corresponding to 
         the given (local) index of Ex mesh point.
         
         Arguments:
-            index -- array index
+            i, j, k -- array index
         
         """
-        try:
-            if len(index) == 1:
-                idx = array(index[0], int)
-            elif len(index) == 3:
-                idx = array(index, int)
-            else:
-                raise TypeError, 'argument length is not 1 or 3.'
-        except ValueError:
-            raise ValueError, 'non-numerical type in argument.'
-            
+        idx = array((i, j, k), int)  
         global_idx = idx + self.general_field_size * self.my_cart_idx
         
-        coords_0 = (global_idx[0] + .5) * self.dx - self.half_size[0]
-        coords_1 = global_idx[1] * self.dy - self.half_size[1]
-        coords_2 = global_idx[2] * self.dz - self.half_size[2]
+        spc_0 = (global_idx[0] + .5) * self.dx - self.half_size[0]
+        spc_1 = global_idx[1] * self.dy - self.half_size[1]
+        spc_2 = global_idx[2] * self.dz - self.half_size[2]
         
-        return coords_0, coords_1, coords_2
+        return spc_0, spc_1, spc_2
 
-    def spc_to_exact_ex_idx(self, *coords):
+    def spc_to_exact_ex_idx(self, x, y, z):
         """Return the exact mesh point of the given space coordinate.
         
         This method returns the (local) position, in index dimension, 
@@ -391,23 +400,15 @@ class Cartesian(object):
         coordinate. The return index could be out-of-range.
         
         Arguments:
-            coords -- (global) space coordinate
+            x, y, z -- (global) space coordinate
         
         """
-        try:
-            if len(coords) == 1:
-                spc_coords = array(coords[0], float)
-            elif len(coords) == 3:
-                spc_coords = array(coords, float)
-            else:
-                raise TypeError, 'argument length is not 1 or 3.'
-        except ValueError:
-            raise ValueError, 'non-numerical type in argument.'
+        coords = array((x,y,z), float)
 
         global_idx = empty(3, float)
-        global_idx[0] = (spc_coords[0] + self.half_size[0]) / self.dx - .5
-        global_idx[1] = (spc_coords[1] + self.half_size[1]) / self.dy
-        global_idx[2] = (spc_coords[2] + self.half_size[2]) / self.dz
+        global_idx[0] = (coords[0] + self.half_size[0]) / self.dx - .5
+        global_idx[1] = (coords[1] + self.half_size[1]) / self.dy
+        global_idx[2] = (coords[2] + self.half_size[2]) / self.dz
         
         idx = empty(3, float)
         for i in xrange(3):
@@ -419,30 +420,22 @@ class Cartesian(object):
                   
         return tuple(idx)
     
-    def space_to_ex_index(self, *coords):
+    def space_to_ex_index(self, x, y, z):
         """Return the nearest mesh point of the given space coordinate.
         
         This method returns the (local) index of the nearest Ex mesh point of the
         given (global) space coordinate. The return index could be out-of-range.
         
         Arguments:
-            coords -- (global) space coordinate
+            x, y, z -- (global) space coordinate
         
         """
-        try:
-            if len(coords) == 1:
-                spc_coords = array(coords[0], float)
-            elif len(coords) == 3:
-                spc_coords = array(coords, float)
-            else:
-                raise TypeError, 'argument length is not 1 or 3.'
-        except ValueError:
-            raise ValueError, 'non-numerical type in argument.'
+        spc = array((x,y,z), float)
 
         global_idx = empty(3, int)
-        global_idx[0] = (spc_coords[0] + self.half_size[0]) / self.dx
-        global_idx[1] = (spc_coords[1] + self.half_size[1]) / self.dy + .5
-        global_idx[2] = (spc_coords[2] + self.half_size[2]) / self.dz + .5
+        global_idx[0] = (spc[0] + self.half_size[0]) / self.dx
+        global_idx[1] = (spc[1] + self.half_size[1]) / self.dy + .5
+        global_idx[2] = (spc[2] + self.half_size[2]) / self.dz + .5
 
         idx = empty(3, int)
         for i in xrange(3):
@@ -454,25 +447,17 @@ class Cartesian(object):
                   
         return tuple(idx)
     
-    def ey_index_to_space(self, *index):
+    def ey_index_to_space(self, i, j, k):
         """Return space coordinate of the given index.
         
         This method returns the (global) space coordinates corresponding to 
         the given (local) index of Ey mesh point.
         
         Arguments:
-            index -- array index
+            i, j, k -- array index
         
         """
-        try:
-            if len(index) == 1:
-                idx = array(index[0], int)
-            elif len(index) == 3:
-                idx = array(index, int)
-            else:
-                raise TypeError, 'argument length is not 1 or 3.'
-        except ValueError:
-            raise ValueError, 'non-numerical type in argument.'
+        idx = array((i,j,k), int)
             
         global_idx = idx + self.general_field_size * self.my_cart_idx
         
@@ -482,7 +467,7 @@ class Cartesian(object):
         
         return coords_0, coords_1, coords_2
 
-    def spc_to_exact_ey_idx(self, *coords):
+    def spc_to_exact_ey_idx(self, x, y, z):
         """Return the exact mesh point of the given space coordinate.
         
         This method returns the (local) position, in index dimension, 
@@ -490,23 +475,15 @@ class Cartesian(object):
         coordinate. The return index could be out-of-range.
         
         Arguments:
-            coords -- (global) space coordinate
+            x, y, z -- (global) space coordinate
         
         """
-        try:
-            if len(coords) == 1:
-                spc_coords = array(coords[0], float)
-            elif len(coords) == 3:
-                spc_coords = array(coords, float)
-            else:
-                raise TypeError, 'argument length is not 1 or 3.'
-        except ValueError:
-            raise ValueError, 'non-numerical type in argument.'
+        coords = array((x,y,z), float)
             
         global_idx = empty(3, float)
-        global_idx[0] = (spc_coords[0] + self.half_size[0]) / self.dx
-        global_idx[1] = (spc_coords[1] + self.half_size[1]) / self.dy - .5
-        global_idx[2] = (spc_coords[2] + self.half_size[2]) / self.dz
+        global_idx[0] = (coords[0] + self.half_size[0]) / self.dx
+        global_idx[1] = (coords[1] + self.half_size[1]) / self.dy - .5
+        global_idx[2] = (coords[2] + self.half_size[2]) / self.dz
     
         idx = empty(3, float)
         for i in xrange(3):
@@ -518,30 +495,22 @@ class Cartesian(object):
                   
         return tuple(idx)
         
-    def space_to_ey_index(self, *coords):
+    def space_to_ey_index(self, x, y, z):
         """Return the nearest mesh point of the given space coordinate.
         
         This method returns the (local) index of the nearest Ey mesh point of the
         given (global) space coordinate. The return index could be out-of-range.
         
         Arguments:
-            coords -- (global) space coordinate
+            x, y, z -- (global) space coordinate
         
         """
-        try:
-            if len(coords) == 1:
-                spc_coords = array(coords[0], float)
-            elif len(coords) == 3:
-                spc_coords = array(coords, float)
-            else:
-                raise TypeError, 'argument length is not 1 or 3.'
-        except ValueError:
-            raise ValueError, 'non-numerical type in argument.'
+        coords = array((x,y,z), float)
             
         global_idx = empty(3, int)
-        global_idx[0] = (spc_coords[0] + self.half_size[0]) / self.dx + .5
-        global_idx[1] = (spc_coords[1] + self.half_size[1]) / self.dy
-        global_idx[2] = (spc_coords[2] + self.half_size[2]) / self.dz + .5
+        global_idx[0] = (coords[0] + self.half_size[0]) / self.dx + .5
+        global_idx[1] = (coords[1] + self.half_size[1]) / self.dy
+        global_idx[2] = (coords[2] + self.half_size[2]) / self.dz + .5
     
         idx = empty(3, int)
         for i in xrange(3):
@@ -553,25 +522,17 @@ class Cartesian(object):
                   
         return tuple(idx)
     
-    def ez_index_to_space(self, *index):
+    def ez_index_to_space(self, i, j, k):
         """Return space coordinate of the given index.
         
         This method returns the (global) space coordinates corresponding to 
         the given (local) index of Ez mesh point.
         
         Arguments
-            index -- array index
+            i, j, k -- array index
         
         """
-        try:
-            if len(index) == 1:
-                idx = array(index[0], int)
-            elif len(index) == 3:
-                idx = array(index, int)
-            else:
-                raise TypeError, 'argument length is not 1 or 3.'
-        except ValueError:
-            raise ValueError, 'non-numerical type in argument.'
+        idx = array((i, j, k), int)
             
         global_idx = idx + self.general_field_size * self.my_cart_idx
         
@@ -581,7 +542,7 @@ class Cartesian(object):
         
         return coords_0, coords_1, coords_2
 
-    def spc_to_exact_ez_idx(self, *coords):
+    def spc_to_exact_ez_idx(self, x, y, z):
         """Return the exact mesh point of the given space coordinate.
         
         This method returns the (local) position, in index dimension, 
@@ -589,23 +550,15 @@ class Cartesian(object):
         coordinate. The return index could be out-of-range.
         
         Arguments:
-            coords -- (global) space coordinate
+            x, y, z -- (global) space coordinate
         
         """
-        try:
-            if len(coords) == 1:
-                spc_coords = array(coords[0], float)
-            elif len(coords) == 3:
-                spc_coords = array(coords, float)
-            else:
-                raise TypeError, 'argument length is not 1 or 3.'
-        except ValueError:
-            raise ValueError, 'non-numerical type in argument.'
+        coords = array((x, y, z), float)
             
         global_idx = empty(3, float)
-        global_idx[0] = (spc_coords[0] + self.half_size[0]) / self.dx
-        global_idx[1] = (spc_coords[1] + self.half_size[1]) / self.dy
-        global_idx[2] = (spc_coords[2] + self.half_size[2]) / self.dz - .5
+        global_idx[0] = (coords[0] + self.half_size[0]) / self.dx
+        global_idx[1] = (coords[1] + self.half_size[1]) / self.dy
+        global_idx[2] = (coords[2] + self.half_size[2]) / self.dz - .5
         
         idx = empty(3, float)
         for i in xrange(3):
@@ -617,30 +570,22 @@ class Cartesian(object):
                     
         return tuple(idx)
         
-    def space_to_ez_index(self, *coords):
+    def space_to_ez_index(self, x, y, z):
         """Return the nearest mesh point of the given space coordinate.
         
         This method returns the (local) index of the nearest Ez mesh point of the
         given (global) space coordinate. The return index could be out-of-range.
         
         Arguments:
-            coords -- (global) space coordinate
+            x, y, z -- (global) space coordinate
         
         """
-        try:
-            if len(coords) == 1:
-                spc_coords = array(coords[0], float)
-            elif len(coords) == 3:
-                spc_coords = array(coords, float)
-            else:
-                raise TypeError, 'argument length is not 1 or 3.'
-        except ValueError:
-            raise ValueError, 'non-numerical type in argument.'
+        coords = array((x,y,z), float)
             
         global_idx = empty(3, int)
-        global_idx[0] = (spc_coords[0] + self.half_size[0]) / self.dx + .5
-        global_idx[1] = (spc_coords[1] + self.half_size[1]) / self.dy + .5
-        global_idx[2] = (spc_coords[2] + self.half_size[2]) / self.dz
+        global_idx[0] = (coords[0] + self.half_size[0]) / self.dx + .5
+        global_idx[1] = (coords[1] + self.half_size[1]) / self.dy + .5
+        global_idx[2] = (coords[2] + self.half_size[2]) / self.dz
         
         idx = empty(3, int)
         for i in xrange(3):
@@ -652,25 +597,17 @@ class Cartesian(object):
                     
         return tuple(idx)
 
-    def hx_index_to_space(self, *index):
+    def hx_index_to_space(self, i, j, k):
         """Return space coordinate of the given index.
         
         This method returns the (global) space coordinates corresponding to 
         the given (local) index of Hx mesh point.
         
         Arguments:
-            index -- array index
+            i, j, k -- array index
         
         """
-        try:
-            if len(index) == 1:
-                idx = array(index[0], int)
-            elif len(index) == 3:
-                idx = array(index, int)
-            else:
-                raise TypeError, 'argument length is not 1 or 3.'
-        except ValueError:
-            raise ValueError, 'non-numerical type in argument.'
+        idx = array((i, j, k), int)
             
         global_idx = idx + self.general_field_size * self.my_cart_idx
         
@@ -680,7 +617,7 @@ class Cartesian(object):
         
         return coords_0, coords_1, coords_2
 
-    def spc_to_exact_hx_idx(self, *coords):
+    def spc_to_exact_hx_idx(self, x, y, z):
         """Return the exact mesh point of the given space coordinate.
         
         This method returns the (local) position, in index dimension, 
@@ -688,23 +625,15 @@ class Cartesian(object):
         coordinate. The return index could be out-of-range.
         
         Arguments:
-            coords -- (global) space coordinate
+            x, y, z -- (global) space coordinate
         
         """
-        try:
-            if len(coords) == 1:
-                spc_coords = array(coords[0], float)
-            elif len(coords) == 3:
-                spc_coords = array(coords, float)
-            else:
-                raise TypeError, 'argument length is not 1 or 3.'
-        except ValueError:
-            raise ValueError, 'non-numerical type in argument.'
+        coords = array((x,y,z), float)
             
         global_idx = empty(3, float)
-        global_idx[0] = (spc_coords[0] + self.half_size[0]) / self.dx
-        global_idx[1] = (spc_coords[1] + self.half_size[1]) / self.dy + .5
-        global_idx[2] = (spc_coords[2] + self.half_size[2]) / self.dz + .5
+        global_idx[0] = (coords[0] + self.half_size[0]) / self.dx
+        global_idx[1] = (coords[1] + self.half_size[1]) / self.dy + .5
+        global_idx[2] = (coords[2] + self.half_size[2]) / self.dz + .5
 
         idx = global_idx - self.my_cart_idx * self.general_field_size
         if self.whole_field_size[0] == 1:
@@ -716,30 +645,22 @@ class Cartesian(object):
             
         return tuple(idx)
     
-    def space_to_hx_index(self, *coords):
+    def space_to_hx_index(self, x, y, z):
         """Return the nearest mesh point of the given space coordinate.
         
         This method returns the (local) index of the nearest Hx mesh point of the
         given (global) space coordinate. The return index could be out-of-range.
         
         Arguments:
-            coords -- (global) space coordinate
+            x, y, z -- (global) space coordinate
         
         """
-        try:
-            if len(coords) == 1:
-                spc_coords = array(coords[0], float)
-            elif len(coords) == 3:
-                spc_coords = array(coords, float)
-            else:
-                raise TypeError, 'argument length is not 1 or 3.'
-        except ValueError:
-            raise ValueError, 'non-numerical type in argument.'
+        coords = array((x,y,z), float)
             
         global_idx = empty(3, int)
-        global_idx[0] = (spc_coords[0] + self.half_size[0]) / self.dx + .5
-        global_idx[1] = (spc_coords[1] + self.half_size[1]) / self.dy + 1
-        global_idx[2] = (spc_coords[2] + self.half_size[2]) / self.dz + 1
+        global_idx[0] = (coords[0] + self.half_size[0]) / self.dx + .5
+        global_idx[1] = (coords[1] + self.half_size[1]) / self.dy + 1
+        global_idx[2] = (coords[2] + self.half_size[2]) / self.dz + 1
 
         idx = global_idx - self.my_cart_idx * self.general_field_size
         if self.whole_field_size[0] == 1:
@@ -751,25 +672,17 @@ class Cartesian(object):
             
         return tuple(idx)
 
-    def hy_index_to_space(self, *index):
+    def hy_index_to_space(self, i, j, k):
         """Return space coordinate of the given index.
         
         This method returns the (global) space coordinates corresponding to 
         the given (local) index of Hy mesh point.
         
         Arguments
-            index -- array index
+            i, j, k -- array index
         
         """
-        try:
-            if len(index) == 1:
-                idx = array(index[0], int)
-            elif len(index) == 3:
-                idx = array(index, int)
-            else:
-                raise TypeError, 'argument length is not 1 or 3.'
-        except ValueError:
-            raise ValueError, 'non-numerical type in argument.'
+        idx = array((i,j,k), int)
             
         global_idx = idx + self.general_field_size * self.my_cart_idx
         
@@ -778,8 +691,8 @@ class Cartesian(object):
         coords_2 = (global_idx[2] - .5) * self.dz - self.half_size[2]
         
         return coords_0, coords_1, coords_2
-
-    def spc_to_exact_hy_idx(self, *coords):
+        
+    def spc_to_exact_hy_idx(self, x, y, z):
         """Return the exact mesh point of the given space coordinate.
         
         This method returns the (local) position, in index dimension, 
@@ -787,23 +700,15 @@ class Cartesian(object):
         coordinate. The return index could be out-of-range.
         
         Arguments:
-            coords -- (global) space coordinate
+            x, y, z -- (global) space coordinate
         
         """
-        try:
-            if len(coords) == 1:
-                spc_coords = array(coords[0], float)
-            elif len(coords) == 3:
-                spc_coords = array(coords, float)
-            else:
-                raise TypeError, 'argument length is not 1 or 3.'
-        except ValueError:
-            raise ValueError, 'non-numerical type in argument.'
+        coords = array((x,y,z), float)
             
         global_idx = empty(3, float)
-        global_idx[0] = (spc_coords[0] + self.half_size[0]) / self.dx + .5
-        global_idx[1] = (spc_coords[1] + self.half_size[1]) / self.dy
-        global_idx[2] = (spc_coords[2] + self.half_size[2]) / self.dz + .5
+        global_idx[0] = (coords[0] + self.half_size[0]) / self.dx + .5
+        global_idx[1] = (coords[1] + self.half_size[1]) / self.dy
+        global_idx[2] = (coords[2] + self.half_size[2]) / self.dz + .5
 
         idx = global_idx - self.my_cart_idx * self.general_field_size
         if self.whole_field_size[0] == 1:
@@ -815,30 +720,22 @@ class Cartesian(object):
         
         return tuple(idx)
             
-    def space_to_hy_index(self, *coords):
+    def space_to_hy_index(self, x, y, z):
         """Return the nearest mesh point of the given space coordinate.
         
         This method returns the (local) index of the nearest Hy mesh point of the
         given (global) space coordinate. The return index could be out-of-range.
         
         Arguments:
-            coords -- (global) space coordinate
+            x, y, z -- (global) space coordinate
         
         """
-        try:
-            if len(coords) == 1:
-                spc_coords = array(coords[0], float)
-            elif len(coords) == 3:
-                spc_coords = array(coords, float)
-            else:
-                raise TypeError, 'argument length is not 1 or 3.'
-        except ValueError:
-            raise ValueError, 'non-numerical type in argument.'
+        coords = array((x,y,z), float)
             
         global_idx = empty(3, int)
-        global_idx[0] = (spc_coords[0] + self.half_size[0]) / self.dx + 1
-        global_idx[1] = (spc_coords[1] + self.half_size[1]) / self.dy + .5
-        global_idx[2] = (spc_coords[2] + self.half_size[2]) / self.dz + 1
+        global_idx[0] = (coords[0] + self.half_size[0]) / self.dx + 1
+        global_idx[1] = (coords[1] + self.half_size[1]) / self.dy + .5
+        global_idx[2] = (coords[2] + self.half_size[2]) / self.dz + 1
 
         idx = global_idx - self.my_cart_idx * self.general_field_size
         if self.whole_field_size[0] == 1:
@@ -850,25 +747,17 @@ class Cartesian(object):
         
         return tuple(idx)
     
-    def hz_index_to_space(self, *index):
+    def hz_index_to_space(self, i, j, k):
         """Return space coordinate of the given index.
         
         This method returns the (global) space coordinates corresponding to 
         the given (local) index of Hz mesh point.
         
         Arguments:
-            index -- array index
+            i, j, k -- array index
         
         """
-        try:
-            if len(index) == 1:
-                idx = array(index[0], int)
-            elif len(index) == 3:
-                idx = array(index, int)
-            else:
-                raise TypeError, 'argument length is not 1 or 3.'
-        except ValueError:
-            raise ValueError, 'non-numerical type in argument.'
+        idx = array((i,j,k), int)
             
         global_idx = idx + self.general_field_size * self.my_cart_idx
         
@@ -878,7 +767,7 @@ class Cartesian(object):
         
         return coords_0, coords_1, coords_2
 
-    def spc_to_exact_hz_idx(self, *coords):
+    def spc_to_exact_hz_idx(self, x, y, z):
         """Return the exact mesh point of the given space coordinate.
         
         This method returns the (local) position, in index dimension, 
@@ -886,23 +775,15 @@ class Cartesian(object):
         coordinate. The return index could be out-of-range.
         
         Arguments:
-            coords -- (global) space coordinate
+            x, y, z -- (global) space coordinate
         
         """
-        try:
-            if len(coords) == 1:
-                spc_coords = array(coords[0], float)
-            elif len(coords) == 3:
-                spc_coords = array(coords, float)
-            else:
-                raise TypeError, 'argument length is not 1 or 3.'
-        except ValueError:
-            raise ValueError, 'non-numerical type in argument.'
+        coords = array((x,y,z), float)
             
         global_idx = empty(3, float)
-        global_idx[0] = (spc_coords[0] + self.half_size[0]) / self.dx + .5
-        global_idx[1] = (spc_coords[1] + self.half_size[1]) / self.dy + .5
-        global_idx[2] = (spc_coords[2] + self.half_size[2]) / self.dz
+        global_idx[0] = (coords[0] + self.half_size[0]) / self.dx + .5
+        global_idx[1] = (coords[1] + self.half_size[1]) / self.dy + .5
+        global_idx[2] = (coords[2] + self.half_size[2]) / self.dz
 
         idx = global_idx - self.my_cart_idx * self.general_field_size
         if self.whole_field_size[0] == 1:
@@ -914,30 +795,22 @@ class Cartesian(object):
         
         return tuple(idx)
             
-    def space_to_hz_index(self, *coords):
+    def space_to_hz_index(self, x, y, z):
         """Return the nearest mesh point of the given space coordinate.
         
         This method returns the (local) index of the nearest Hy mesh point of the
         given (global) space coordinate. The return index could be out-of-range.
         
         Arguments:
-            coords -- (global) space coordinate
+             x, y, z -- (global) space coordinate
         
         """
-        try:
-            if len(coords) == 1:
-                spc_coords = array(coords[0], float)
-            elif len(coords) == 3:
-                spc_coords = array(coords, float)
-            else:
-                raise TypeError, 'argument length is not 1 or 3.'
-        except ValueError:
-            raise ValueError, 'non-numerical type in argument.'
+        coords = array((x,y,z), float)
             
         global_idx = empty(3, int)
-        global_idx[0] = (spc_coords[0] + self.half_size[0]) / self.dx + 1
-        global_idx[1] = (spc_coords[1] + self.half_size[1]) / self.dy + 1
-        global_idx[2] = (spc_coords[2] + self.half_size[2]) / self.dz + .5
+        global_idx[0] = (coords[0] + self.half_size[0]) / self.dx + 1
+        global_idx[1] = (coords[1] + self.half_size[1]) / self.dy + 1
+        global_idx[2] = (coords[2] + self.half_size[2]) / self.dz + .5
 
         idx = global_idx - self.my_cart_idx * self.general_field_size
         if self.whole_field_size[0] == 1:
@@ -1168,7 +1041,7 @@ class GeomBoxTree(object):
             if box2.intersect(i.box):
                 b2GeomList.append(i)
         
-        return GeomBoxNode(box1, b1GeomList, node.depth+1), GeomBoxNode(box2, b2GeomList, node.depth+1)
+        return GeomBoxNode(box1, b1GeomList, node.depth + 1), GeomBoxNode(box2, b2GeomList, node.depth + 1)
     
     @staticmethod
     def branch_out(node):
@@ -1272,7 +1145,7 @@ class GeometricObject(object):
         self.box = self.geom_box()
         
     def init(self, space):
-        pass
+        self.material.init(space)
         
     def geom_box(self):
         """Return a bounding box enclosing this geometric object.
@@ -1323,7 +1196,7 @@ class DefaultMaterial(GeometricObject):
         Override GeometriObject.geom_box.
         
         """
-        return GeomBox((-inf,-inf,-inf), (inf,inf,inf))
+        return GeomBox((-inf, -inf, -inf), (inf, inf, inf))
 
     def display_info(self, indent=0):
         """
@@ -1345,7 +1218,7 @@ class Cone(GeometricObject):
         box -- bounding box
         
     """
-    def __init__(self, material, radius2=0, axis=(1,0,0), radius=1, height=1, center=(0,0,0)):
+    def __init__(self, material, radius2=0, axis=(1, 0, 0), radius=1, height=1, center=(0, 0, 0)):
         """
         
         Arguments:
@@ -1435,7 +1308,7 @@ class Cylinder(Cone):
     """Form a cylinder.
     
     """
-    def __init__(self, material, axis=(0,0,1), radius=1, height=1, center=(0,0,0)):
+    def __init__(self, material, axis=(0, 0, 1), radius=1, height=1, center=(0, 0, 0)):
         """
         Arguments:
             axis -- Direction of the cylinder's axis; the length of 
@@ -1448,7 +1321,7 @@ class Cylinder(Cone):
             center -- Center point of the object. Default is (0,0,0). 
         
         """
-        Cone.__init__(self, radius, axis, radius, height, material, center)
+        Cone.__init__(self, material, radius, axis, radius, height, center)
         
     def display_info(self, indent=0):
         """
@@ -1456,7 +1329,7 @@ class Cylinder(Cone):
         
         """
         print " " * indent, "cylinder"
-        print " " * indent, 
+        print " " * indent,
         print "center", self.center,
         print "radius", self.radius,
         print "height", self.height,
@@ -1469,7 +1342,7 @@ class _Block(GeometricObject):
     """Base class for Block and Ellipsoid class.
     
     """
-    def __init__(self, material, e1=(1,0,0), e2=(0,1,0), e3=(0,0,1), size=(0,0,0), center=(0,0,0)):
+    def __init__(self, material, e1=(1, 0, 0), e2=(0, 1, 0), e3=(0, 0, 1), size=(0, 0, 0), center=(0, 0, 0)):
         self.center = array(center, float)
         
         self.e1 = array(e1, float) / norm(e1)
@@ -1521,7 +1394,7 @@ class Block(_Block):
     """Form a parallelpiped (i.e., a brick, possibly with non-orthogonal axes).
     
     """
-    def __init__(self, material, e1=(1,0,0), e2=(0,1,0), e3=(0,0,1), size=(1,1,1), center=(0,0,0)):
+    def __init__(self, material, e1=(1, 0, 0), e2=(0, 1, 0), e3=(0, 0, 1), size=(1, 1, 1), center=(0, 0, 0)):
         """
         
         Arguments:
@@ -1548,7 +1421,7 @@ class Ellipsoid(_Block):
     """Form an ellipsoid.
     
     """
-    def __init__(self, material, e1=(1,0,0), e2=(0,1,0), e3=(0,0,1), size=(1,1,1), center=(0,0,0)):
+    def __init__(self, material, e1=(1, 0, 0), e2=(0, 1, 0), e3=(0, 0, 1), size=(1, 1, 1), center=(0, 0, 0)):
         _Block.__init__(self, material, e1, e2, e3, size, center)
 
         self.inverse_semi_axes = 2 / array(size, float)
@@ -1577,7 +1450,7 @@ class Sphere(Ellipsoid):
         radius -- Radius of the sphere.
     
     """
-    def __init__(self, material, radius=1, center=(0,0,0)):
+    def __init__(self, material, radius=1, center=(0, 0, 0)):
         """
         
         Arguments:
@@ -1592,7 +1465,7 @@ class Sphere(Ellipsoid):
         else:
             self.radius = radius
             
-        Ellipsoid.__init__(self, material, (1,0,0), (0,1,0), (0,0,1), (2*radius,2*radius,2*radius), center)
+        Ellipsoid.__init__(self, material, (1, 0, 0), (0, 1, 0), (0, 0, 1), (2 * radius, 2 * radius, 2 * radius), center)
 
     def display_info(self, indent=0):
         print " " * indent, "sphere"
@@ -1688,7 +1561,7 @@ class Boundary(GeometricObject):
                 high = (self.half_size[0], self.half_size[1], -self.half_size[2] + self.d)
                 self.box_list.append(GeomBox(low, high))
         
-        self.material.init(self.d, space)
+        self.material.init(space, self.d)
         
     def in_object(self, point):
         for box in self.box_list:
@@ -1789,18 +1662,20 @@ def in_range(idx, numpy_array, component):
 if __name__ == '__main__':
     from material import *
     
-    geom_list = [DefaultMaterial(material=Dielectric()), Cone(0, (1,0,0), 1, 1, Dielectric(), (0,0,2)), Cone(0, (1,0,0), 1, 1, Dielectric(), (0,0,-2))]
+    geom_list = [DefaultMaterial(material=Dielectric()),
+                 Cone(0, (1, 0, 0), 1, 1, Dielectric(), (0, 0, 2)),
+                 Cone(0, (1, 0, 0), 1, 1, Dielectric(), (0, 0, -2))]
     t = GeomBoxTree(geom_list)
     t.display_info()
-    space = Cartesian(size=(5,5,5))
+    space = Cartesian(size=(5, 5, 5))
     ex = space.get_ex_storage()
     print "ex shape:", ex.shape
-    print "ex:", space.ex_index_to_space(0,0,0)
-    print "ex:", space.ex_index_to_space(74,75,75)
-    print "ex:", space.space_to_ex_index(0,0,0)
-    print "ey:", space.space_to_ey_index(0,0,0)
-    print "ez:", space.space_to_ez_index(0,0,0)
-    print "hx:", space.space_to_hx_index(0,0,0)
-    print "hy:", space.space_to_hy_index(0,0,0)
-    print "hz:", space.space_to_hz_index(0,0,0)
+    print "ex:", space.ex_index_to_space(0, 0, 0)
+    print "ex:", space.ex_index_to_space(74, 75, 75)
+    print "ex:", space.space_to_ex_index(0, 0, 0)
+    print "ey:", space.space_to_ey_index(0, 0, 0)
+    print "ez:", space.space_to_ez_index(0, 0, 0)
+    print "hx:", space.space_to_hx_index(0, 0, 0)
+    print "hy:", space.space_to_hy_index(0, 0, 0)
+    print "hz:", space.space_to_hz_index(0, 0, 0)
     

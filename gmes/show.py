@@ -7,17 +7,16 @@ try:
 except:
     pass
 
-from sys import modules
 from threading import Thread
-
 from numpy import array
-from pylab import get_current_fig_manager, new_figure_manager
-from pylab import figure, show, cm
 
+from sys import modules
 if not 'matplotlib.backends' in modules:
     import matplotlib 
     matplotlib.use('TkAgg')
 
+from pylab import get_current_fig_manager, new_figure_manager
+from pylab import figure, show, cm
 
 class ShowLine(Thread):
     """Animated 1-D on-time display. 

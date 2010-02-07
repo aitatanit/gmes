@@ -11,7 +11,7 @@ from copy import deepcopy
 from numpy import *
 from numpy.linalg import norm
 
-from pointwise_source import *
+from pw_source import *
 import constants as const
 
 from geometry import Cartesian, DefaultMaterial, Boundary, in_range
@@ -69,7 +69,7 @@ class Continuous(SrcTime):
         te = self.end - time
         
         if ts < 0 or te < 0:
-            return 0.0
+            return 0j
         
         if ts < self.width:
             env = sin(.5 * pi * ts / self.width)**2
@@ -78,49 +78,53 @@ class Continuous(SrcTime):
         else:
             env = 1
             
-        return env * cos(2 * pi * self.freq * time - self.phase)
+        return env * exp(-2j * pi * self.freq * time - self.phase)
 
 
 class Bandpass(SrcTime):
     """a pulse source with Gaussian-envelope
     
     """
-    def __init__(self, freq, fwidth):
+    def __init__(self, freq, fwidth, s=5, phase=0):
         self.freq = float(freq)
+        self.phase = float(phase)
         self.fwidth = float(fwidth)
-        width = 1 / self.fwidth
-        s = 5
-        self.peak = width * s
-        self.cutoff = 2 * width * s
+        self.width = 1 / self.fwidth
+        self.peak_time = self.width * s
+        self.cutoff = 2 * self.width * s
         
-        while exp(-.5 * self.cutoff * self.cutoff / width / width) == 0:
+        # this is to make last_source_time as small as possible
+        while exp(-.5 * (self.cutoff/self.width)**2) == 0:
             self.cutoff *= .9
-        
-        if self.peak - self.cutoff < 0:
-            self.peak += self.cutoff - self.peak
     
     def display_info(self, indent=0):
         print " " * indent, "bandpass source"
         print " " * indent,
         print "center frequency:", self.freq,
         print "bandwidth:", self.fwidth,
-        print "peak time:", self.peak
+        print "peak time:", self.peak_time,
         print "cutoff:", self.cutoff
-            
+        
     def dipole(self, time):
-        tt = time - self.peak
-        if (abs(tt) > self.cutoff): return 0.0
+        tt = time - self.peak_time
+        if (abs(tt) > self.cutoff): 
+            return 0j
 
-        return exp(-.5 * (tt * self.fwidth)**2) * cos(2 * pi * self.freq * time)
+        # correction factor so that current amplitude (= d(dipole)/dt) is
+        # ~ 1 near the peak of the Gaussian.
+        cfactor = 1.0 / (-2j*pi*self.freq)
+        
+        return cfactor * exp(-.5*(tt/self.width)**2) * exp(-2j*pi*self.freq*time-self.phase)
         
         
 class Dipole(Src):
-    def __init__(self, src_time, pos, component, amp=1):
+    def __init__(self, src_time, pos, component, amp=1, filename=None):
         self.pos = array(pos, float)
         self.comp = component
         self.src_time = src_time
         self.amp = float(amp)
-    
+        self.filename = filename
+        
     def init(self, geom_tree, space):
         pass
     
@@ -132,51 +136,63 @@ class Dipole(Src):
         print " " * indent, "center:", self.pos
         print " " * indent, "polarization direction:", self.comp
         print " " * indent, "maximum amp.:", self.amp
+        print " " * indent, "source recording: ", self.filename
         
         self.src_time.display_info(4)
         
     def set_pointwise_source_ex(self, material_ex, space):
         if self.comp is const.Ex:
-            idx = space.space_to_ex_index(self.pos)
+            idx = space.space_to_ex_index(*self.pos)
             if in_range(idx, material_ex, const.Ex):
-                material_ex[idx] = DipoleEx(material_ex[idx], self.src_time, 
-                                            space.dt, self.amp)
-            
+                material_ex[idx] = DipoleEx(material_ex[idx], self.src_time, self.amp, self.filename)
+                if self.filename is not None:
+                    loc = space.ex_index_to_space(*idx)
+                    material_ex[idx].file.write('# location=' + str(loc) + '\n')
+                    
     def set_pointwise_source_ey(self, material_ey, space):
         if self.comp is const.Ey:
-            idx = space.space_to_ey_index(self.pos)
+            idx = space.space_to_ey_index(*self.pos)
             if in_range(idx, material_ey, const.Ey):
-                material_ey[idx] = DipoleEy(material_ey[idx], self.src_time, 
-                                            space.dt, self.amp)
-   
+                material_ey[idx] = DipoleEy(material_ey[idx], self.src_time, self.amp, self.filename)
+                if self.filename is not None:
+                    loc = space.ey_index_to_space(*idx)
+                    material_ey[idx].file.write('# location=' + str(loc) + '\n')
+                    
     def set_pointwise_source_ez(self, material_ez, space):
         if self.comp is const.Ez:
-            idx = space.space_to_ez_index(self.pos)
+            idx = space.space_to_ez_index(*self.pos)
             if in_range(idx, material_ez, const.Ez):
-                material_ez[idx] = DipoleEz(material_ez[idx], self.src_time, 
-                                            space.dt, self.amp)
-   
+                material_ez[idx] = DipoleEz(material_ez[idx], self.src_time, self.amp, self.filename)
+                if self.filename is not None:
+                    loc = space.ez_index_to_space(*idx)
+                    material_ez[idx].file.write('# location=' + str(loc) + '\n')
+                    
     def set_pointwise_source_hx(self, material_hx, space):
         if self.comp is const.Hx:
-            idx = space.space_to_hx_index(self.pos)
+            idx = space.space_to_hx_index(*self.pos)
             if in_range(idx, material_hx, const.Hx):
-                material_hx[idx] = DipoleHx(material_hx[idx], self.src_time, 
-                                            space.dt, self.amp)
-   
+                material_hx[idx] = DipoleHx(material_hx[idx], self.src_time, self.amp, self.filename)
+                if self.filename is not None:
+                    loc = space.hx_index_to_space(*idx)
+                    material_hx[idx].file.write('# location=' + str(loc) + '\n')
+                    
     def set_pointwise_source_hy(self, material_hy, space):
         if self.comp is const.Hy:
-            idx = space.space_to_hy_index(self.pos)
+            idx = space.space_to_hy_index(*self.pos)
             if in_range(idx, material_hy, const.Hy):
-                material_hy[idx] = DipoleHy(material_hy[idx], self.src_time, 
-                                            space.dt, self.amp)
-            
+                material_hy[idx] = DipoleHy(material_hy[idx], self.src_time, self.amp, self.filename)
+                if self.filename is not None:
+                    loc = space.hy_index_to_space(*idx)
+                    material_hy[idx].file.write('# location=' + str(loc) + '\n')
+                    
     def set_pointwise_source_hz(self, material_hz, space):
         if self.comp is const.Hz:
-            idx = space.space_to_hz_index(self.pos)
+            idx = space.space_to_hz_index(*self.pos)
             if in_range(idx, material_hz, const.Hz):
-                material_hz[idx] = DipoleHz(material_hz[idx], self.src_time, 
-                                            space.dt, self.amp)
-
+                material_hz[idx] = DipoleHz(material_hz[idx], self.src_time, self.amp, self.filename)
+                if self.filename is not None:
+                    loc = space.hz_index_to_space(*idx)
+                    material_hz[idx].file.write('# location=' + str(loc) + '\n')
 
 class TotalFieldScatteredField(Src):
     """Set a total and scattered field zone to launch a plane wave.
@@ -430,8 +446,8 @@ class TotalFieldScatteredField(Src):
             low = self.center - self.half_size
             high = self.center + self.half_size * (1, -1, 1)
             
-            low_idx = space.space_to_ex_index(low)  
-            high_idx = map(lambda x: x + 1, space.space_to_ex_index(high))
+            low_idx = space.space_to_ex_index(*low)  
+            high_idx = map(lambda x: x + 1, space.space_to_ex_index(*high))
     
             hz_i2s = lambda i, j, k: space.hz_index_to_space(i + 1, j, k)
             
@@ -444,8 +460,8 @@ class TotalFieldScatteredField(Src):
             low = self.center - self.half_size * (1, -1, 1)
             high = self.center + self.half_size
             
-            low_idx = space.space_to_ex_index(low)  
-            high_idx = map(lambda x: x + 1, space.space_to_ex_index(high))
+            low_idx = space.space_to_ex_index(*low)  
+            high_idx = map(lambda x: x + 1, space.space_to_ex_index(*high))
     
             hz_i2s = lambda i, j, k: space.hz_index_to_space(i + 1, j + 1, k)
             
@@ -458,8 +474,8 @@ class TotalFieldScatteredField(Src):
             low = self.center - self.half_size
             high = self.center + self.half_size * (1, 1, -1)
             
-            low_idx = space.space_to_ex_index(low)  
-            high_idx = map(lambda x: x + 1, space.space_to_ex_index(high))
+            low_idx = space.space_to_ex_index(*low)  
+            high_idx = map(lambda x: x + 1, space.space_to_ex_index(*high))
     
             hy_i2s = lambda i, j, k: space.hy_index_to_space(i + 1, j, k)
             
@@ -472,8 +488,8 @@ class TotalFieldScatteredField(Src):
             low = self.center - self.half_size * (1, 1, -1)
             high = self.center + self.half_size
             
-            low_idx = space.space_to_ex_index(low)  
-            high_idx = map(lambda x: x + 1, space.space_to_ex_index(high))
+            low_idx = space.space_to_ex_index(*low)  
+            high_idx = map(lambda x: x + 1, space.space_to_ex_index(*high))
             
             i2s = lambda i, j, k: space.hy_index_to_space(i + 1, j, k + 1)
             
@@ -497,8 +513,8 @@ class TotalFieldScatteredField(Src):
             low = self.center - self.half_size
             high = self.center + self.half_size * (1, 1, -1)
             
-            low_idx = space.space_to_ey_index(low)  
-            high_idx = map(lambda x: x + 1, space.space_to_ey_index(high))
+            low_idx = space.space_to_ey_index(*low)  
+            high_idx = map(lambda x: x + 1, space.space_to_ey_index(*high))
     
             hx_i2s = lambda i, j, k: space.hx_index_to_space(i, j + 1, k)
             
@@ -511,8 +527,8 @@ class TotalFieldScatteredField(Src):
             low = self.center - self.half_size * (1, 1, -1)
             high = self.center + self.half_size
             
-            low_idx = space.space_to_ey_index(low)  
-            high_idx = map(lambda x: x + 1, space.space_to_ey_index(high))
+            low_idx = space.space_to_ey_index(*low)  
+            high_idx = map(lambda x: x + 1, space.space_to_ey_index(*high))
     
             hx_i2s = lambda i, j, k: space.hx_index_to_space(i, j + 1, k + 1)
             
@@ -525,8 +541,8 @@ class TotalFieldScatteredField(Src):
             low = self.center - self.half_size
             high = self.center + self.half_size * (-1, 1, 1)
             
-            low_idx = space.space_to_ey_index(low)  
-            high_idx = map(lambda x: x + 1, space.space_to_ey_index(high))
+            low_idx = space.space_to_ey_index(*low)  
+            high_idx = map(lambda x: x + 1, space.space_to_ey_index(*high))
     
             hz_i2s = lambda i, j, k: space.hz_index_to_space(i, j + 1, k)
             
@@ -539,8 +555,8 @@ class TotalFieldScatteredField(Src):
             low = self.center - self.half_size * (-1, 1, 1)
             high = self.center + self.half_size
             
-            low_idx = space.space_to_ey_index(low)  
-            high_idx = map(lambda x: x + 1, space.space_to_ey_index(high))
+            low_idx = space.space_to_ey_index(*low)  
+            high_idx = map(lambda x: x + 1, space.space_to_ey_index(*high))
     
             hz_i2s = lambda i, j, k: space.hz_index_to_space(i + 1, j + 1, k)
             
@@ -564,8 +580,8 @@ class TotalFieldScatteredField(Src):
             low = self.center - self.half_size
             high = self.center + self.half_size * (-1, 1, 1)
             
-            low_idx = space.space_to_ez_index(low)  
-            high_idx = map(lambda x: x + 1, space.space_to_ez_index(high))
+            low_idx = space.space_to_ez_index(*low)  
+            high_idx = map(lambda x: x + 1, space.space_to_ez_index(*high))
     
             hy_i2s = lambda i, j, k: space.hy_index_to_space(i, j, k + 1)
             
@@ -578,8 +594,8 @@ class TotalFieldScatteredField(Src):
             low = self.center - self.half_size * (-1, 1, 1)
             high = self.center + self.half_size
             
-            low_idx = space.space_to_ez_index(low)  
-            high_idx = map(lambda x: x + 1, space.space_to_ez_index(high))
+            low_idx = space.space_to_ez_index(*low)  
+            high_idx = map(lambda x: x + 1, space.space_to_ez_index(*high))
     
             hy_i2s = lambda i, j, k: space.hy_index_to_space(i + 1, j, k + 1)
             
@@ -592,8 +608,8 @@ class TotalFieldScatteredField(Src):
             low = self.center - self.half_size
             high = self.center + self.half_size * (1, -1, 1)
             
-            low_idx = space.space_to_ez_index(low)  
-            high_idx = map(lambda x: x + 1, space.space_to_ez_index(high))
+            low_idx = space.space_to_ez_index(*low)  
+            high_idx = map(lambda x: x + 1, space.space_to_ez_index(*high))
     
             hx_i2s = lambda i, j, k: space.hx_index_to_space(i, j, k + 1)
             
@@ -606,8 +622,8 @@ class TotalFieldScatteredField(Src):
             low = self.center - self.half_size * (1, -1, 1)
             high = self.center + self.half_size
             
-            low_idx = space.space_to_ez_index(low)  
-            high_idx = map(lambda x: x + 1, space.space_to_ez_index(high))
+            low_idx = space.space_to_ez_index(*low)  
+            high_idx = map(lambda x: x + 1, space.space_to_ez_index(*high))
     
             hx_i2s = lambda i, j, k: space.hx_index_to_space(i, j + 1, k + 1)
             
@@ -631,8 +647,8 @@ class TotalFieldScatteredField(Src):
             low = self.center - self.half_size
             high = self.center + self.half_size * (1, -1, 1)
             
-            low_idx = space.space_to_ez_index(low)
-            high_idx = map(lambda x: x + 1, space.space_to_ez_index(high))
+            low_idx = space.space_to_ez_index(*low)
+            high_idx = map(lambda x: x + 1, space.space_to_ez_index(*high))
             
             low_idx = (low_idx[0], low_idx[1], low_idx[2] + 1)    
             high_idx = (high_idx[0], high_idx[1], high_idx[2] + 1)
@@ -648,8 +664,8 @@ class TotalFieldScatteredField(Src):
             low = self.center - self.half_size * (1, -1, 1)
             high = self.center + self.half_size
             
-            low_idx = space.space_to_ez_index(low)
-            high_idx = map(lambda x: x + 1, space.space_to_ez_index(high))
+            low_idx = space.space_to_ez_index(*low)
+            high_idx = map(lambda x: x + 1, space.space_to_ez_index(*high))
             
             low_idx = (low_idx[0], low_idx[1] + 1, low_idx[2] + 1)
             high_idx = (high_idx[0], high_idx[1] + 1, high_idx[2] + 1)    
@@ -665,8 +681,8 @@ class TotalFieldScatteredField(Src):
             low = self.center - self.half_size
             high = self.center + self.half_size * (1, 1, -1)
             
-            low_idx = space.space_to_ey_index(low)
-            high_idx = map(lambda x: x + 1, space.space_to_ey_index(high))
+            low_idx = space.space_to_ey_index(*low)
+            high_idx = map(lambda x: x + 1, space.space_to_ey_index(*high))
             
             low_idx = (low_idx[0], low_idx[1] + 1, low_idx[2])
             high_idx = (high_idx[0], high_idx[1] + 1, high_idx[2])
@@ -682,8 +698,8 @@ class TotalFieldScatteredField(Src):
             low = self.center - self.half_size * (1, 1, -1)
             high = self.center + self.half_size
             
-            ey_low_idx = space.space_to_ey_index(low)
-            ey_high_idx = map(lambda x: x + 1, space.space_to_ey_index(high))
+            ey_low_idx = space.space_to_ey_index(*low)
+            ey_high_idx = map(lambda x: x + 1, space.space_to_ey_index(*high))
             
             low_idx = (ey_low_idx[0], ey_low_idx[1] + 1, ey_low_idx[2] + 1)
             high_idx = (ey_high_idx[0], ey_high_idx[1] + 1, ey_high_idx[2] + 1)
@@ -710,8 +726,8 @@ class TotalFieldScatteredField(Src):
             low = self.center - self.half_size
             high = self.center + self.half_size * (1, 1, -1)
             
-            low_idx = space.space_to_ex_index(low)
-            high_idx = map(lambda x: x + 1, space.space_to_ex_index(high))
+            low_idx = space.space_to_ex_index(*low)
+            high_idx = map(lambda x: x + 1, space.space_to_ex_index(*high))
                 
             low_idx = (low_idx[0] + 1, low_idx[1], low_idx[2])
             high_idx = (high_idx[0] + 1, high_idx[1], high_idx[2])
@@ -727,8 +743,8 @@ class TotalFieldScatteredField(Src):
             low = self.center - self.half_size * (1, 1, -1)
             high = self.center + self.half_size
             
-            low_idx = space.space_to_ex_index(low)
-            high_idx = map(lambda x: x + 1, space.space_to_ex_index(high))
+            low_idx = space.space_to_ex_index(*low)
+            high_idx = map(lambda x: x + 1, space.space_to_ex_index(*high))
                 
             low_idx = (low_idx[0] + 1, low_idx[1], low_idx[2] + 1)
             high_idx = (high_idx[0] + 1, high_idx[1], high_idx[2] + 1)
@@ -744,8 +760,8 @@ class TotalFieldScatteredField(Src):
             low = self.center - self.half_size
             high = self.center + self.half_size * (-1, 1, 1)
             
-            ez_low_idx = space.space_to_ez_index(low)
-            ez_high_idx = map(lambda x: x + 1, space.space_to_ez_index(high))
+            ez_low_idx = space.space_to_ez_index(*low)
+            ez_high_idx = map(lambda x: x + 1, space.space_to_ez_index(*high))
                 
             low_idx = (ez_low_idx[0], ez_low_idx[1], ez_low_idx[2] + 1)
             high_idx = (ez_high_idx[0], ez_high_idx[1], ez_high_idx[2] + 1)
@@ -761,8 +777,8 @@ class TotalFieldScatteredField(Src):
             low = self.center - self.half_size * (-1, 1, 1)
             high = self.center + self.half_size
             
-            ez_low_idx = space.space_to_ez_index(low)
-            ez_high_idx = map(lambda x: x + 1, space.space_to_ez_index(high))
+            ez_low_idx = space.space_to_ez_index(*low)
+            ez_high_idx = map(lambda x: x + 1, space.space_to_ez_index(*high))
                 
             low_idx = (ez_low_idx[0] + 1, ez_low_idx[1], ez_low_idx[2] + 1)
             high_idx = (ez_high_idx[0] + 1, ez_high_idx[1], ez_high_idx[2] + 1)
@@ -789,8 +805,8 @@ class TotalFieldScatteredField(Src):
             low = self.center - self.half_size
             high = self.center + self.half_size * (-1, 1, 1)
             
-            low_idx = space.space_to_ey_index(low)
-            high_idx = map(lambda x: x + 1, space.space_to_ey_index(high))
+            low_idx = space.space_to_ey_index(*low)
+            high_idx = map(lambda x: x + 1, space.space_to_ey_index(*high))
                 
             low_idx = (low_idx[0], low_idx[1] + 1, low_idx[2])
             high_idx = (high_idx[0], high_idx[1] + 1, high_idx[2])
@@ -806,8 +822,8 @@ class TotalFieldScatteredField(Src):
             low = self.center - self.half_size * (-1, 1, 1)
             high = self.center + self.half_size
             
-            low_idx = space.space_to_ey_index(low)
-            high_idx = map(lambda x: x + 1, space.space_to_ey_index(high))
+            low_idx = space.space_to_ey_index(*low)
+            high_idx = map(lambda x: x + 1, space.space_to_ey_index(*high))
                 
             low_idx = (low_idx[0] + 1, low_idx[1] + 1, low_idx[2])
             high_idx = (high_idx[0] + 1, high_idx[1] + 1, high_idx[2])
@@ -823,8 +839,8 @@ class TotalFieldScatteredField(Src):
             low = self.center - self.half_size
             high = self.center + self.half_size * (1, -1, 1)
             
-            low_idx = space.space_to_ex_index(low)
-            high_idx = map(lambda x: x + 1, space.space_to_ex_index(high))
+            low_idx = space.space_to_ex_index(*low)
+            high_idx = map(lambda x: x + 1, space.space_to_ex_index(*high))
                 
             low_idx = (low_idx[0] + 1, low_idx[1], low_idx[2])
             high_idx = (high_idx[0] + 1, high_idx[1], high_idx[2])
@@ -840,8 +856,8 @@ class TotalFieldScatteredField(Src):
             low = self.center - self.half_size * (1, -1, 1)
             high = self.center + self.half_size
             
-            low_idx = space.space_to_ex_index(low)
-            high_idx = map(lambda x: x + 1, space.space_to_ex_index(high))
+            low_idx = space.space_to_ex_index(*low)
+            high_idx = map(lambda x: x + 1, space.space_to_ex_index(*high))
                 
             low_idx = (low_idx[0] + 1, low_idx[1] + 1, low_idx[2])
             high_idx = (high_idx[0] + 1, high_idx[1] + 1, high_idx[2])
@@ -850,7 +866,7 @@ class TotalFieldScatteredField(Src):
             
             self._set_pw_source(space, const.Hz, cosine, material_hz,
                                 low_idx, high_idx, TransparentHz,
-                                ex_i2s, const.PlusY)    
+                                ex_i2s, const.PlusY)
         
         
 class GaussianBeam(TotalFieldScatteredField):
