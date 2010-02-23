@@ -23,8 +23,8 @@ class TestSequence(unittest.TestCase):
         
         self.diff = 1
         self.n = 0
-        self.epsilon_r = 1
-        self.mu_r = 1
+        self.epsilon = 1
+        self.mu = 1
         self.b1 = 1
         self.b2 = 1
         self.c1 = 1
@@ -33,9 +33,9 @@ class TestSequence(unittest.TestCase):
         self.kappa2 = 1
         
     def testEx(self):
-        sampleReal = CpmlExReal(self.idx, self.epsilon_r, self.b1, self.b2, 
+        sampleReal = CpmlExReal(self.idx, self.epsilon, self.b1, self.b2, 
                              self.c1, self.c2, self.kappa1, self.kappa2)
-        sampleCmplx = CpmlExCmplx(self.idx, self.epsilon_r, self.b1, self.b2, 
+        sampleCmplx = CpmlExCmplx(self.idx, self.epsilon, self.b1, self.b2, 
                              self.c1, self.c2, self.kappa1, self.kappa2)
         sampleReal.update(self.realA, self.realB, self.realC, 
                           self.diff, self.diff, self.diff, self.n)
@@ -44,9 +44,9 @@ class TestSequence(unittest.TestCase):
         self.assertEqual((self.realA == self.cmplxA.real).all(), True)
         
     def testEy(self):
-        sampleReal = CpmlEyReal(self.idx, self.epsilon_r, self.b1, self.b2, 
+        sampleReal = CpmlEyReal(self.idx, self.epsilon, self.b1, self.b2, 
                              self.c1, self.c2, self.kappa1, self.kappa2)
-        sampleCmplx = CpmlEyCmplx(self.idx, self.epsilon_r, self.b1, self.b2, 
+        sampleCmplx = CpmlEyCmplx(self.idx, self.epsilon, self.b1, self.b2, 
                              self.c1, self.c2, self.kappa1, self.kappa2)
         sampleReal.update(self.realA, self.realB, self.realC, 
                           self.diff, self.diff, self.diff, self.n)
@@ -55,9 +55,9 @@ class TestSequence(unittest.TestCase):
         self.assertEqual((self.realA == self.cmplxA.real).all(), True)
         
     def testEz(self):
-        sampleReal = CpmlEzReal(self.idx, self.epsilon_r, self.b1, self.b2, 
+        sampleReal = CpmlEzReal(self.idx, self.epsilon, self.b1, self.b2, 
                              self.c1, self.c2, self.kappa1, self.kappa2)
-        sampleCmplx = CpmlEzCmplx(self.idx, self.epsilon_r, self.b1, self.b2, 
+        sampleCmplx = CpmlEzCmplx(self.idx, self.epsilon, self.b1, self.b2, 
                              self.c1, self.c2, self.kappa1, self.kappa2)
         sampleReal.update(self.realA, self.realB, self.realC, 
                           self.diff, self.diff, self.diff, self.n)
@@ -66,9 +66,9 @@ class TestSequence(unittest.TestCase):
         self.assertEqual((self.realA == self.cmplxA.real).all(), True)
         
     def testHx(self):
-        sampleReal = CpmlHxReal(self.idx, self.epsilon_r, self.b1, self.b2, 
+        sampleReal = CpmlHxReal(self.idx, self.epsilon, self.b1, self.b2, 
                              self.c1, self.c2, self.kappa1, self.kappa2)
-        sampleCmplx = CpmlHxCmplx(self.idx, self.epsilon_r, self.b1, self.b2, 
+        sampleCmplx = CpmlHxCmplx(self.idx, self.epsilon, self.b1, self.b2, 
                              self.c1, self.c2, self.kappa1, self.kappa2)
         sampleReal.update(self.realA, self.realB, self.realC, 
                           self.diff, self.diff, self.diff, self.n)
@@ -77,9 +77,9 @@ class TestSequence(unittest.TestCase):
         self.assertEqual((self.realA == self.cmplxA.real).all(), True)
         
     def testHy(self):
-        sampleReal = CpmlHyReal(self.idx, self.epsilon_r, self.b1, self.b2, 
+        sampleReal = CpmlHyReal(self.idx, self.epsilon, self.b1, self.b2, 
                              self.c1, self.c2, self.kappa1, self.kappa2)
-        sampleCmplx = CpmlHyCmplx(self.idx, self.epsilon_r, self.b1, self.b2, 
+        sampleCmplx = CpmlHyCmplx(self.idx, self.epsilon, self.b1, self.b2, 
                              self.c1, self.c2, self.kappa1, self.kappa2)
         sampleReal.update(self.realA, self.realB, self.realC, 
                           self.diff, self.diff, self.diff, self.n)
@@ -88,9 +88,9 @@ class TestSequence(unittest.TestCase):
         self.assertEqual((self.realA == self.cmplxA.real).all(), True)
         
     def testHz(self):
-        sampleReal = CpmlHzReal(self.idx, self.epsilon_r, self.b1, self.b2, 
+        sampleReal = CpmlHzReal(self.idx, self.epsilon, self.b1, self.b2, 
                              self.c1, self.c2, self.kappa1, self.kappa2)
-        sampleCmplx = CpmlHzCmplx(self.idx, self.epsilon_r, self.b1, self.b2, 
+        sampleCmplx = CpmlHzCmplx(self.idx, self.epsilon, self.b1, self.b2, 
                              self.c1, self.c2, self.kappa1, self.kappa2)
         sampleReal.update(self.realA, self.realB, self.realC, 
                           self.diff, self.diff, self.diff, self.n)

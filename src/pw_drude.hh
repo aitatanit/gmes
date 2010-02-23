@@ -27,7 +27,7 @@ public:
 	DrudeElectric(const int * const idx, int size, double epsilon_inf,
 			const double * const omega_p, int omega_p_size,
 			const double * const gamma_p, int gamma_p_size) :
-		MaterialElectric<T>(idx, size), epsilon(epsilon_inf * epsilon0),
+		MaterialElectric<T>(idx, size), epsilon(epsilon_inf),
 		omega_p(omega_p, omega_p + omega_p_size),
 		gamma_p(gamma_p, gamma_p + gamma_p_size),
 		q_new(omega_p_size, static_cast<T>(0.)),
@@ -40,9 +40,9 @@ public:
 			return epsilon;
 		}
 
-	void set_epsilon(double epsilon_r)
+	void set_epsilon(double epsilon)
 		{
-			epsilon = epsilon_r * epsilon0;
+			epsilon = epsilon;
 		}
 
 protected:
@@ -74,7 +74,7 @@ public:
 		for (unsigned int u = 0; u != q_tmp.size(); ++u)
 		{
 			q_tmp[u] = (4. * q_new[u] + (gamma_p[u] * dt - 2.) * q_old[u] - (2.
-					* dt * dt * epsilon0 * omega_p[u] * omega_p[u]) * ex(i,j,k))
+					* dt * dt * omega_p[u] * omega_p[u]) * ex(i,j,k))
 					/ (gamma_p[u] * dt + 2.);
 		}
 
@@ -117,7 +117,7 @@ public:
 		for (unsigned int u = 0; u != q_tmp.size(); ++u)
 		{
 			q_tmp[u] = (4. * q_new[u] + (gamma_p[u] * dt - 2.) * q_old[u] - (2.
-					* dt * dt * epsilon0 * omega_p[u] * omega_p[u]) * ey(i,j,k))
+					* dt * dt * omega_p[u] * omega_p[u]) * ey(i,j,k))
 					/ (gamma_p[u] * dt + 2.);
 		}
 
@@ -160,7 +160,7 @@ public:
 		for (unsigned int u = 0; u != q_tmp.size(); ++u)
 		{
 			q_tmp[u] = (4. * q_new[u] + (gamma_p[u] * dt - 2.) * q_old[u] - (2.
-					* dt * dt * epsilon0 * omega_p[u] * omega_p[u]) * ez(i,j,k))
+					* dt * dt * omega_p[u] * omega_p[u]) * ez(i,j,k))
 					/ (gamma_p[u] * dt + 2.);
 		}
 
@@ -185,8 +185,8 @@ protected:
 template <typename T> class DrudeHx: public DielectricHx<T>
 {
 public:
-	DrudeHx(const int * const idx, int size, double mu_r = 1) :
-		DielectricHx<T>(idx, size, mu_r)
+	DrudeHx(const int * const idx, int size, double mu = 1) :
+		DielectricHx<T>(idx, size, mu)
 	{
 	}
 };
@@ -194,8 +194,8 @@ public:
 template <typename T> class DrudeHy: public DielectricHy<T>
 {
 public:
-	DrudeHy(const int * const idx, int size, double mu_r = 1) :
-		DielectricHy<T>(idx, size, mu_r)
+	DrudeHy(const int * const idx, int size, double mu = 1) :
+		DielectricHy<T>(idx, size, mu)
 	{
 	}
 };
@@ -203,8 +203,8 @@ public:
 template <typename T> class DrudeHz: public DielectricHz<T>
 {
 public:
-	DrudeHz(const int * const idx, int size, double mu_r = 1) :
-		DielectricHz<T>(idx, size, mu_r)
+	DrudeHz(const int * const idx, int size, double mu = 1) :
+		DielectricHz<T>(idx, size, mu)
 	{
 	}
 };

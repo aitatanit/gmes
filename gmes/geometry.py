@@ -104,19 +104,13 @@ class Cartesian(object):
             the electromagnetic field of this node except the communication buffers
             
     """
-    def __init__(self, size, resolution=15, courant_ratio=.99, dt=None, parallel=False):
+    def __init__(self, size, resolution=15, parallel=False):
         """
         Arguments:
             size -- a length three sequence consists of non-negative numbers
             resolution -- number of sections of one unit (scalar or length 3 
                 sequence)
                 default: 15
-            courant_ratio -- the ratio of dt to Courant stability bound
-                default: 0.99
-            dt -- the time differential
-                If None is given, dt is calculated using space differentials 
-                and courant_ratio.
-                default: None
             parallel -- whether space be divided into segments.
             
         """
@@ -135,27 +129,13 @@ class Cartesian(object):
         
         if self.half_size[0] == 0:
             self.half_size[0] = .5 * self.dx
-            dx = inf
             
         if self.half_size[1] == 0:
             self.half_size[1] = .5 * self.dy
-            dy = inf
             
         if self.half_size[2] == 0:
             self.half_size[2] = .5 * self.dz
-            dz = inf
             
-        # Courant stability bound
-        courant_limit = 1 / (const.c0 * sqrt(dx**-2 + dy**-2 + dz**-2))
-        
-        # courant_ratio: the ratio of dt to Courant stability bound
-        if dt is None:
-            courant_ratio = float(courant_ratio)
-            self.dt = courant_ratio * courant_limit
-        else:
-            self.dt = float(dt)
-            courant_ratio = self.dt / courant_limit
-
         # the size of the whole field arrays 
         self.whole_field_size = array((2 * self.half_size * self.res).round(), int)
         
@@ -830,8 +810,7 @@ class Cartesian(object):
         print "resolution:", self.res
         
         print " " * indent,
-        print "dx:", self.dx, "dy:", self.dy, "dz:", self.dz,
-        print "dt:", self.dt
+        print "dx:", self.dx, "dy:", self.dy, "dz:", self.dz
         
         print " " * indent,
         print "number of nodes participating:", self.numprocs
@@ -1071,7 +1050,7 @@ class GeomBoxTree(object):
         leaf = self.tree_search(self.root, point)
         geom_obj, idx = find_object(point, leaf.geom_list)
         
-        # epsilon_r and mu_r of compound material
+        # epsilon and mu of compound material
         # refer to the underneath material.
         if isinstance(geom_obj.material, Compound):
             aux_geom_list = leaf.geom_list[:idx]
@@ -1079,8 +1058,8 @@ class GeomBoxTree(object):
         else:
             underneath_obj = None
             
-#            geom_obj.material.epsilon_r = geom_obj2.material.epsilon_r
-#            geom_obj.material.mu_r = geom_obj2.material.mu_r
+#            geom_obj.material.epsilon = geom_obj2.material.epsilon
+#            geom_obj.material.mu = geom_obj2.material.mu
         
         return geom_obj, underneath_obj
         

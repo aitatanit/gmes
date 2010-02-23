@@ -33,7 +33,7 @@ class DipoleElectric(object):
         src_t = self.amp * self.src_time.dipole(dt*n)
         efield[self.i, self.j, self.k] = src_t
         if self.file is not None:
-            self.file.write(str(n) + ' ' + str(src_t)+'\n')
+            self.file.write(str(n) + ' ' + str(src_t) + '\n')
         
         
 class DipoleEx(DipoleElectric): pass
@@ -127,11 +127,11 @@ class _Continuous(_SrcTime):
         
         
 class TransparentElectric(object):
-    def __init__(self, pw_material, epsilon_r, amp, aux_fdtd, samp_pnt, corrective, directional):
+    def __init__(self, pw_material, epsilon, amp, aux_fdtd, samp_pnt, corrective, directional):
         self.i = pw_material.i
         self.j = pw_material.j
         self.k = pw_material.k
-        self.epsilon = epsilon_r * epsilon0
+        self.epsilon = epsilon
         
         self.aux_fdtd = aux_fdtd
             
@@ -183,8 +183,8 @@ class TransparentElectric(object):
         
         
 class TransparentEx(TransparentElectric):
-    def __init__(self, pw_material, epsilon_r, amp, aux_fdtd, samp_pnt, corrective, directional):
-        TransparentElectric.__init__(self, pw_material, epsilon_r, amp, aux_fdtd, samp_pnt, corrective, directional)
+    def __init__(self, pw_material, epsilon, amp, aux_fdtd, samp_pnt, corrective, directional):
+        TransparentElectric.__init__(self, pw_material, epsilon, amp, aux_fdtd, samp_pnt, corrective, directional)
         
         self._consist_cond = {MinusY: self._consistency_minus_y,
                               MinusZ: self._consistency_minus_z,
@@ -235,8 +235,8 @@ class TransparentEx(TransparentElectric):
         
         
 class TransparentEy(TransparentElectric):
-    def __init__(self, pw_material, epsilon_r, amp, aux_fdtd, samp_pnt, corrective, directional):
-        TransparentElectric.__init__(self, pw_material, epsilon_r, amp, aux_fdtd, samp_pnt, corrective, directional)
+    def __init__(self, pw_material, epsilon, amp, aux_fdtd, samp_pnt, corrective, directional):
+        TransparentElectric.__init__(self, pw_material, epsilon, amp, aux_fdtd, samp_pnt, corrective, directional)
         
         self._consist_cond = {MinusZ: self._consistency_minus_z,
                               MinusX: self._consistency_minus_x,
@@ -287,8 +287,8 @@ class TransparentEy(TransparentElectric):
         
 
 class TransparentEz(TransparentElectric):
-    def __init__(self, pw_material, epsilon_r, amp, aux_fdtd, samp_pnt, corrective, directional):
-        TransparentElectric.__init__(self, pw_material, epsilon_r, amp, aux_fdtd, samp_pnt, corrective, directional)
+    def __init__(self, pw_material, epsilon, amp, aux_fdtd, samp_pnt, corrective, directional):
+        TransparentElectric.__init__(self, pw_material, epsilon, amp, aux_fdtd, samp_pnt, corrective, directional)
         
         self._consist_cond = {MinusX: self._consistency_minus_x,
                               MinusY: self._consistency_minus_y,
@@ -339,11 +339,11 @@ class TransparentEz(TransparentElectric):
 
 
 class TransparentMagnetic(object):
-    def __init__(self, pw_material, mu_r, amp, aux_fdtd, samp_pnt, corrective, directional):
+    def __init__(self, pw_material, mu, amp, aux_fdtd, samp_pnt, corrective, directional):
         self.i = pw_material.i
         self.j = pw_material.j
         self.k = pw_material.k
-        self.mu = mu_r * epsilon0
+        self.mu = mu
         
         self.aux_fdtd = aux_fdtd
         
@@ -395,8 +395,8 @@ class TransparentMagnetic(object):
    
 
 class TransparentHx(TransparentMagnetic):
-    def __init__(self, pw_material, mu_r, amp, aux_fdtd, samp_pnt, corrective, directional):
-        TransparentMagnetic.__init__(self, pw_material, mu_r, amp, aux_fdtd, samp_pnt, corrective, directional)
+    def __init__(self, pw_material, mu, amp, aux_fdtd, samp_pnt, corrective, directional):
+        TransparentMagnetic.__init__(self, pw_material, mu, amp, aux_fdtd, samp_pnt, corrective, directional)
         
         self._consist_cond = {MinusY: self._consistency_minus_y,
                               MinusZ: self._consistency_minus_z,
@@ -447,8 +447,8 @@ class TransparentHx(TransparentMagnetic):
         
 
 class TransparentHy(TransparentMagnetic):
-    def __init__(self, pw_material, mu_r, amp, aux_fdtd, samp_pnt, corrective, directional):
-        TransparentMagnetic.__init__(self, pw_material, mu_r, amp, aux_fdtd, samp_pnt, corrective, directional)
+    def __init__(self, pw_material, mu, amp, aux_fdtd, samp_pnt, corrective, directional):
+        TransparentMagnetic.__init__(self, pw_material, mu, amp, aux_fdtd, samp_pnt, corrective, directional)
         
         self._consist_cond = {MinusZ: self._consistency_minus_z,
                               MinusX: self._consistency_minus_x,
@@ -500,8 +500,8 @@ class TransparentHy(TransparentMagnetic):
         
         
 class TransparentHz(TransparentMagnetic):
-    def __init__(self, pw_material, mu_r, amp, aux_fdtd, samp_pnt, corrective, directional):
-        TransparentMagnetic.__init__(self, pw_material, mu_r, amp, aux_fdtd, samp_pnt, corrective, directional)
+    def __init__(self, pw_material, mu, amp, aux_fdtd, samp_pnt, corrective, directional):
+        TransparentMagnetic.__init__(self, pw_material, mu, amp, aux_fdtd, samp_pnt, corrective, directional)
         
         self._consist_cond = {MinusX: self._consistency_minus_x,
                               MinusY: self._consistency_minus_y,

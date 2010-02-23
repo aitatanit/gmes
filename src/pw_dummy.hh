@@ -9,8 +9,8 @@ namespace gmes
 template <typename T> class DummyElectric: public MaterialElectric<T>
 {
 public:
-	DummyElectric(const int * const idx, int size, double epsilon_r) :
-		MaterialElectric<T>(idx, size), epsilon(epsilon_r * epsilon0)
+	DummyElectric(const int * const idx, int size, double epsilon) :
+		MaterialElectric<T>(idx, size), epsilon(epsilon)
 	{
 	}
 
@@ -19,9 +19,9 @@ public:
 		return epsilon;
 	}
 
-	void set_epsilon(double epsilon_r)
+	void set_epsilon(double epsilon)
 	{
-		epsilon = epsilon_r * epsilon0;
+		epsilon = epsilon;
 	}
 
 	void update(T * const inplace_field, int inplace_dim1, int inplace_dim2, int inplace_dim3,
@@ -39,8 +39,8 @@ protected:
 template <typename T> class DummyEx: public DummyElectric<T>
 {
 public:
-	DummyEx(const int * const idx, int size, double epsilon_r = 1) :
-		DummyElectric<T>(idx, size, epsilon_r)
+	DummyEx(const int * const idx, int size, double epsilon = 1) :
+		DummyElectric<T>(idx, size, epsilon)
 	{
 	}
 };
@@ -48,8 +48,8 @@ public:
 template <typename T> class DummyEy: public DummyElectric<T>
 {
 public:
-	DummyEy(const int * const idx, int size, double epsilon_r = 1) :
-		DummyElectric<T>(idx, size, epsilon_r)
+	DummyEy(const int * const idx, int size, double epsilon = 1) :
+		DummyElectric<T>(idx, size, epsilon)
 	{
 	}
 };
@@ -57,8 +57,8 @@ public:
 template <typename T> class DummyEz: public DummyElectric<T>
 {
 public:
-	DummyEz(const int * const idx, int size, double epsilon_r = 1) :
-		DummyElectric<T>(idx, size, epsilon_r)
+	DummyEz(const int * const idx, int size, double epsilon = 1) :
+		DummyElectric<T>(idx, size, epsilon)
 	{
 	}
 };
@@ -66,8 +66,8 @@ public:
 template <typename T> class DummyMagnetic: public MaterialMagnetic<T>
 {
 public:
-	DummyMagnetic(const int * const idx, int size, double mu_r) :
-		MaterialMagnetic<T>(idx, size), mu(mu_r * mu0)
+	DummyMagnetic(const int * const idx, int size, double mu) :
+		MaterialMagnetic<T>(idx, size), mu(mu)
 	{
 	}
 
@@ -76,9 +76,9 @@ public:
 		return mu;
 	}
 
-	void set_mu(double mu_r)
+	void set_mu(double mu)
 	{
-		mu = mu_r * mu0;
+		mu = mu;
 	}
 
 	void update(T * const inplace_field, int inplace_dim1, int inplace_dim2, int inplace_dim3,
@@ -96,8 +96,8 @@ protected:
 template <typename T> class DummyHx: public DummyMagnetic<T>
 {
 public:
-	DummyHx(const int * const idx, int size, double mu_r = 1) :
-		DummyMagnetic<T>(idx, size, mu_r)
+	DummyHx(const int * const idx, int size, double mu = 1) :
+		DummyMagnetic<T>(idx, size, mu)
 	{
 	}
 };
@@ -105,8 +105,8 @@ public:
 template <typename T> class DummyHy: public DummyMagnetic<T>
 {
 public:
-	DummyHy(const int * const idx, int size, double mu_r = 1) :
-		DummyMagnetic<T>(idx, size, mu_r)
+	DummyHy(const int * const idx, int size, double mu = 1) :
+		DummyMagnetic<T>(idx, size, mu)
 	{
 	}
 };
@@ -114,8 +114,8 @@ public:
 template <typename T> class DummyHz: public DummyMagnetic<T>
 {
 public:
-	DummyHz(const int * const idx, int size, double mu_r = 1) :
-		DummyMagnetic<T>(idx, size, mu_r)
+	DummyHz(const int * const idx, int size, double mu = 1) :
+		DummyMagnetic<T>(idx, size, mu)
 	{
 	}
 };

@@ -63,7 +63,7 @@ public:
 	}
 
 	virtual double get_epsilon() = 0;
-	virtual void set_epsilon(double epsilon_r) = 0;
+	virtual void set_epsilon(double epsilon) = 0;
 };
 
 template <typename T> class MaterialMagnetic: public PwMaterial<T> {
@@ -75,7 +75,7 @@ public:
 	}
 
 	virtual double get_mu() = 0;
-	virtual void set_mu(double mu_r) = 0;
+	virtual void set_mu(double mu) = 0;
 };
 
 }

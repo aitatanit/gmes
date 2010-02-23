@@ -7,13 +7,11 @@ namespace gmes
 {
 // physical constants
 
-// Vaccum permittivity
-// const double epsilon0 = 8.854187817e-12; // in SI unit (Ampere Second / Meter / Vol)
-const double epsilon0 = 1.0; // normalized
+// Vacuum permittivity
+const double epsilon0 = 8.854187817e-12; // in Farad/Meter
 
 // Vacuum permeability
-// const double mu0 = 1.2566370614359173e-6; // in SI unit (Second Volt / Ampere / Meter)
-const double mu0 = 1.0; //  Normalized
+const double mu0 = 16 * atan(1) * 1e-7; // in Henry/Meter
 
 // speed of light in vacuum
 const double c0 = 1 / sqrt(epsilon0 * mu0);

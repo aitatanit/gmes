@@ -11,8 +11,8 @@ namespace gmes
 template <typename T> class ConstElectric: public MaterialElectric<T>
 {
 public:
-	ConstElectric(const int * const idx, int size, double epsilon_r, T value) :
-		MaterialElectric<T>(idx, size), epsilon(epsilon_r * epsilon0), value(value)
+	ConstElectric(const int * const idx, int size, double epsilon, T value) :
+		MaterialElectric<T>(idx, size), epsilon(epsilon), value(value)
 	{
 	}
 
@@ -21,9 +21,9 @@ public:
 		return epsilon;
 	}
 
-	void set_epsilon(double epsilon_r)
+	void set_epsilon(double epsilon)
 	{
-		epsilon = epsilon_r * epsilon0;
+		epsilon = epsilon;
 	}
 
 	T get_value()
@@ -52,8 +52,8 @@ protected:
 template <typename T> class ConstEx: public ConstElectric<T>
 {
 public:
-	ConstEx(const int * const idx, int size, double epsilon_r = 1, const T& value = 0.) :
-			ConstElectric<T>(idx, size, epsilon_r, value)
+	ConstEx(const int * const idx, int size, double epsilon = 1, const T& value = 0.) :
+			ConstElectric<T>(idx, size, epsilon, value)
 	{
 	}
 };
@@ -61,8 +61,8 @@ public:
 template <typename T> class ConstEy: public ConstElectric<T>
 {
 public:
-	ConstEy(const int * const idx, int size, double epsilon_r = 1, const T& value = 0.) :
-			ConstElectric<T>(idx, size, epsilon_r, value)
+	ConstEy(const int * const idx, int size, double epsilon = 1, const T& value = 0.) :
+			ConstElectric<T>(idx, size, epsilon, value)
 	{
 	}
 };
@@ -70,8 +70,8 @@ public:
 template <typename T> class ConstEz: public ConstElectric<T>
 {
 public:
-	ConstEz(const int * const idx, int size, double epsilon_r = 1, const T& value = 0.) :
-			ConstElectric<T>(idx, size, epsilon_r, value)
+	ConstEz(const int * const idx, int size, double epsilon = 1, const T& value = 0.) :
+			ConstElectric<T>(idx, size, epsilon, value)
 	{
 	}
 };
@@ -79,8 +79,8 @@ public:
 template <typename T> class ConstMagnetic: public MaterialMagnetic<T>
 {
 public:
-	ConstMagnetic(const int * const idx, int size, double mu_r, T value) :
-		MaterialMagnetic<T>(idx, size), mu(mu_r * mu0), value(value)
+	ConstMagnetic(const int * const idx, int size, double mu, T value) :
+		MaterialMagnetic<T>(idx, size), mu(mu), value(value)
 	{
 	}
 
@@ -89,9 +89,9 @@ public:
 		return mu;
 	}
 
-	void set_mu(double mu_r)
+	void set_mu(double mu)
 	{
-		mu = mu_r * mu0;
+		mu = mu;
 	}
 
 	T get_value()
@@ -121,8 +121,8 @@ protected:
 template <typename T> class ConstHx: public ConstMagnetic<T>
 {
 public:
-	ConstHx(const int * const idx, int size, double mu_r = 1, const T& value = 0.) :
-			ConstMagnetic<T>(idx, size, mu_r, value)
+	ConstHx(const int * const idx, int size, double mu = 1, const T& value = 0.) :
+			ConstMagnetic<T>(idx, size, mu, value)
 	{
 	}
 };
@@ -130,8 +130,8 @@ public:
 template <typename T> class ConstHy: public ConstMagnetic<T>
 {
 public:
-	ConstHy(const int * const idx, int size, double mu_r = 1, const T& value = 0.) :
-			ConstMagnetic<T>(idx, size, mu_r, value)
+	ConstHy(const int * const idx, int size, double mu = 1, const T& value = 0.) :
+			ConstMagnetic<T>(idx, size, mu, value)
 	{
 	}
 };
@@ -139,8 +139,8 @@ public:
 template <typename T> class ConstHz: public ConstMagnetic<T>
 {
 public:
-	ConstHz(const int * const idx, int size, double mu_r = 1, const T& value = 0.) :
-			ConstMagnetic<T>(idx, size, mu_r, value)
+	ConstHz(const int * const idx, int size, double mu = 1, const T& value = 0.) :
+			ConstMagnetic<T>(idx, size, mu, value)
 	{
 	}
 };

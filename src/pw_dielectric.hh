@@ -16,8 +16,8 @@ namespace gmes
 template <typename T> class DielectricElectric: public MaterialElectric<T>
 {
 public:
-	DielectricElectric(const int * const idx, int size, double epsilon_r = 1) :
-		MaterialElectric<T>(idx, size), epsilon(epsilon_r * epsilon0)
+	DielectricElectric(const int * const idx, int size, double epsilon = 1) :
+		MaterialElectric<T>(idx, size), epsilon(epsilon)
 		{
 		}
 
@@ -26,9 +26,9 @@ public:
 			return epsilon;
 		}
 
-	void set_epsilon(double epsilon_r)
+	void set_epsilon(double epsilon)
 		{
-			epsilon = epsilon_r * epsilon0;
+			epsilon = epsilon;
 		}
 
 protected:
@@ -38,8 +38,8 @@ protected:
 template <typename T> class DielectricEx: public DielectricElectric<T>
 {
 public:
-	DielectricEx(const int * const idx, int size, double epsilon_r = 1) :
-			DielectricElectric<T>(idx, size, epsilon_r)
+	DielectricEx(const int * const idx, int size, double epsilon = 1) :
+			DielectricElectric<T>(idx, size, epsilon)
 	{
 	}
 
@@ -59,8 +59,8 @@ protected:
 template <typename T> class DielectricEy: public DielectricElectric<T>
 {
 public:
-	DielectricEy(const int * const idx, int size, double epsilon_r = 1) :
-			DielectricElectric<T>(idx, size, epsilon_r)
+	DielectricEy(const int * const idx, int size, double epsilon = 1) :
+			DielectricElectric<T>(idx, size, epsilon)
 	{
 	}
 
@@ -80,8 +80,8 @@ protected:
 template <typename T> class DielectricEz: public DielectricElectric<T>
 {
 public:
-	DielectricEz(const int * const idx, int size, double epsilon_r = 1) :
-			DielectricElectric<T>(idx, size, epsilon_r)
+	DielectricEz(const int * const idx, int size, double epsilon = 1) :
+			DielectricElectric<T>(idx, size, epsilon)
 	{
 	}
 
@@ -101,8 +101,8 @@ protected:
 template <typename T> class DielectricMagnetic: public MaterialMagnetic<T>
 {
 public:
-	DielectricMagnetic(const int * const idx, int size, double mu_r = 1) :
-			MaterialMagnetic<T>(idx, size), mu(mu_r * mu0)
+	DielectricMagnetic(const int * const idx, int size, double mu = 1) :
+			MaterialMagnetic<T>(idx, size), mu(mu)
 		{
 		}
 
@@ -111,9 +111,9 @@ public:
 			return mu;
 		}
 
-	void set_mu(double mu_r)
+	void set_mu(double mu)
 		{
-			mu = mu_r * mu0;
+			mu = mu;
 		}
 
 protected:
@@ -123,8 +123,8 @@ protected:
 template <typename T> class DielectricHx: public DielectricMagnetic<T>
 {
 public:
-	DielectricHx(const int * const idx, int size, double mu_r = 1) :
-			DielectricMagnetic<T>(idx, size, mu_r)
+	DielectricHx(const int * const idx, int size, double mu = 1) :
+			DielectricMagnetic<T>(idx, size, mu)
 	{
 	}
 
@@ -144,8 +144,8 @@ protected:
 template <typename T> class DielectricHy: public DielectricMagnetic<T>
 {
 public:
-	DielectricHy(const int * const idx, int size, double mu_r = 1) :
-			DielectricMagnetic<T>(idx, size, mu_r)
+	DielectricHy(const int * const idx, int size, double mu = 1) :
+			DielectricMagnetic<T>(idx, size, mu)
 	{
 	}
 
@@ -165,8 +165,8 @@ protected:
 template <typename T> class DielectricHz: public DielectricMagnetic<T>
 {
 public:
-	DielectricHz(const int * const idx, int size, double mu_r = 1) :
-			DielectricMagnetic<T>(idx, size, mu_r)
+	DielectricHz(const int * const idx, int size, double mu = 1) :
+			DielectricMagnetic<T>(idx, size, mu)
 	{
 	}
 

@@ -23,10 +23,10 @@ namespace gmes
 template <typename T> class CpmlElectric: public MaterialElectric<T>
 {
 public:
-	CpmlElectric(const int * const idx, int size, double epsilon_r,
+	CpmlElectric(const int * const idx, int size, double epsilon,
 			double b1_in, double b2_in, double c1_in, double c2_in,
 			double kappa1_in, double kappa2_in) :
-		MaterialElectric<T>(idx, size), epsilon(epsilon_r * epsilon0),
+		MaterialElectric<T>(idx, size), epsilon(epsilon),
 		b1(b1_in), b2(b2_in), c1(c1_in), c2(c2_in),
 		kappa1(kappa1_in), kappa2(kappa2_in), psi1(0), psi2(0)
 	{
@@ -37,9 +37,9 @@ public:
 		return epsilon;
 	}
 
-	void set_epsilon(double epsilon_r)
+	void set_epsilon(double epsilon)
 	{
-		epsilon = epsilon_r * epsilon0;
+		epsilon = epsilon;
 	}
 
 protected:
@@ -53,9 +53,9 @@ protected:
 template <typename T> class CpmlEx: public CpmlElectric<T>
 {
 public:
-	CpmlEx(const int * const idx, int size, double epsilon_r, double by,
+	CpmlEx(const int * const idx, int size, double epsilon, double by,
 			double bz, double cy, double cz, double kappay, double kappaz) :
-		CpmlElectric<T>(idx, size, epsilon_r, by, bz, cy, cz, kappay, kappaz)
+		CpmlElectric<T>(idx, size, epsilon, by, bz, cy, cz, kappay, kappaz)
 	{
 	}
 
@@ -87,9 +87,9 @@ protected:
 template <typename T> class CpmlEy: public CpmlElectric<T>
 {
 public:
-	CpmlEy(const int * const idx, int size, double epsilon_r, double bz,
+	CpmlEy(const int * const idx, int size, double epsilon, double bz,
 			double bx, double cz, double cx, double kappaz, double kappax) :
-		CpmlElectric<T>(idx, size, epsilon_r, bz, bx, cz, cx, kappaz, kappax)
+		CpmlElectric<T>(idx, size, epsilon, bz, bx, cz, cx, kappaz, kappax)
 	{
 	}
 
@@ -121,9 +121,9 @@ protected:
 template <typename T> class CpmlEz: public CpmlElectric<T>
 {
 public:
-	CpmlEz(const int * const idx, int size, double epsilon_r, double bx,
+	CpmlEz(const int * const idx, int size, double epsilon, double bx,
 			double by, double cx, double cy, double kappax, double kappay) :
-		CpmlElectric<T>(idx, size, epsilon_r, bx, by, cx, cy, kappax, kappay)
+		CpmlElectric<T>(idx, size, epsilon, bx, by, cx, cy, kappax, kappay)
 	{
 	}
 
@@ -155,10 +155,10 @@ protected:
 template <typename T> class CpmlMagnetic: public MaterialMagnetic<T>
 {
 public:
-	CpmlMagnetic(const int * const idx, int size, double mu_r, double b1_in,
+	CpmlMagnetic(const int * const idx, int size, double mu, double b1_in,
 			double b2_in, double c1_in, double c2_in, double kappa1_in,
 			double kappa2_in) :
-		MaterialMagnetic<T>(idx, size), mu(mu_r * mu0),
+		MaterialMagnetic<T>(idx, size), mu(mu),
 		b1(b1_in), b2(b2_in), c1(c1_in), c2(c2_in),
 		kappa1(kappa1_in), kappa2(kappa2_in), psi1(0), psi2(0)
 	{
@@ -169,9 +169,9 @@ public:
 		return mu;
 	}
 
-	void set_mu(double mu_r)
+	void set_mu(double mu)
 	{
-		mu = mu_r * mu0;
+		mu = mu;
 	}
 
 protected:
@@ -185,9 +185,9 @@ protected:
 template <typename T> class CpmlHx: public CpmlMagnetic<T>
 {
 public:
-	CpmlHx(const int * const idx, int size, double mu_r, double by, double bz,
+	CpmlHx(const int * const idx, int size, double mu, double by, double bz,
 			double cy, double cz, double kappay, double kappaz) :
-		CpmlMagnetic<T>(idx, size, mu_r, by, bz, cy, cz, kappay, kappaz)
+		CpmlMagnetic<T>(idx, size, mu, by, bz, cy, cz, kappay, kappaz)
 	{
 	}
 
@@ -219,9 +219,9 @@ protected:
 template <typename T> class CpmlHy: public CpmlMagnetic<T>
 {
 public:
-	CpmlHy(const int * const idx, int size, double mu_r, double bz, double bx,
+	CpmlHy(const int * const idx, int size, double mu, double bz, double bx,
 			double cz, double cx, double kappaz, double kappax) :
-		CpmlMagnetic<T>(idx, size, mu_r, bz, bx, cz, cx, kappaz, kappax)
+		CpmlMagnetic<T>(idx, size, mu, bz, bx, cz, cx, kappaz, kappax)
 	{
 	}
 
@@ -253,9 +253,9 @@ protected:
 template <typename T> class CpmlHz: public CpmlMagnetic<T>
 {
 public:
-	CpmlHz(const int * const idx, int size, double mu_r, double bx, double by,
+	CpmlHz(const int * const idx, int size, double mu, double bx, double by,
 			double cx, double cy, double kappax, double kappay) :
-		CpmlMagnetic<T>(idx, size, mu_r, bx, by, cx, cy, kappax, kappay)
+		CpmlMagnetic<T>(idx, size, mu, bx, by, cx, cy, kappax, kappay)
 	{
 	}
 

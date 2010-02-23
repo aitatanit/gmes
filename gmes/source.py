@@ -230,10 +230,10 @@ class TotalFieldScatteredField(Src):
         
         self.on_axis_k = self._axis_in_k()
         
-    def init(self, geom_tree, space):
+    def init(self, geom_tree, space, dt):
         self.geom_tree = geom_tree
         
-        self.aux_fdtd = self._get_aux_fdtd(space)
+        self.aux_fdtd = self._get_aux_fdtd(space, dt)
         
     def step(self):
         self.aux_fdtd.step()
@@ -264,7 +264,7 @@ class TotalFieldScatteredField(Src):
         """Calculate projected distance from center along the beam axis.
         
         This method returns positive value when the point is located in
-        the k direction relative to the center.
+        the k direction to the center.
         
         Arguments:
             point -- location iin the space coordinate
@@ -296,13 +296,13 @@ class TotalFieldScatteredField(Src):
         
         return dot_with_axis[max(dot_with_axis)]
         
-    def _get_wave_number(self, k, epsilon_r, mu_r, space, error=1.e-3):
+    def _get_wave_number(self, k, epsilon, mu, space, error=1.e-3):
         """Return the numerical wave number for auxiliary fdtd.
         
         Arguments:
             k -- normalized wave vector
-            epsilon_r -- relative permittivity which fills the auxiliary fdtd
-            mu_r -- relative permeability which fills the auxiliary fdtd
+            epsilon -- permittivity which fills the auxiliary fdtd
+            mu -- permeability which fills the auxiliary fdtd
             space -- Cartesian instance
             
         """
@@ -315,8 +315,8 @@ class TotalFieldScatteredField(Src):
             k1_scalar = k2_scalar
             
             f = (sum(((sin(.5 * k1_scalar * k * ds) / ds)**2)) - 
-                         sqrt(epsilon_r * mu_r) * 
-                         (sin(pi * self.src_time.freq * dt) / dt / const.c0)**2)
+                         sqrt(epsilon * mu) * 
+                         (sin(pi * self.src_time.freq * dt) / dt)**2)
             f_prime = .5 * sum(k * sin(k1_scalar * k * ds) / ds)
             
             k2_scalar = k1_scalar - f / f_prime
@@ -353,8 +353,7 @@ class TotalFieldScatteredField(Src):
         mat_objs =  self.geom_tree.material_of_point((inf, inf, inf))
         
         aux_space = Cartesian(size=aux_size, 
-                              resolution=1./dz, 
-                              dt=space.dt, 
+                              resolution=1/dz, 
                               cyclic=(False,False,False),
                               parallel=False)
         aux_geom_list = (DefaultMaterial(material=mat_objs[0]),
@@ -367,7 +366,7 @@ class TotalFieldScatteredField(Src):
                                component=const.Ex, 
                                pos=src_pnt),)
         aux_fdtd = TEMzFDTD(aux_space, aux_geom_list, 
-                            aux_src_list, 
+                            aux_src_list, dt=space.dt,
                             verbose=False)
         
         return aux_fdtd
@@ -408,8 +407,8 @@ class TotalFieldScatteredField(Src):
                 point = idx_to_spc[component](i, j, k)
                 
                 mat_objs = self.geom_tree.material_of_point(point)
-                epsilon_r = mat_objs[0].epsilon_r
-                mu_r = mat_objs[0].mu_r
+                epsilon = mat_objs[0].epsilon
+                mu = mat_objs[0].mu
 
                 amp = cosine * self.amp * self.mode_function(*point)
 
@@ -418,15 +417,15 @@ class TotalFieldScatteredField(Src):
                 
                 # v_in_axis / v_in_k
                 v_ratio = \
-                self._get_wave_number(self.k, epsilon_r, mu_r, space) / \
-                self._get_wave_number(self.on_axis_k.vector, epsilon_r, mu_r, space)
+                self._get_wave_number(self.k, epsilon, mu, space) / \
+                self._get_wave_number(self.on_axis_k.vector, epsilon, mu, space)
                 
                 if issubclass(source, TransparentElectric):
-                    material[i, j, k] = source(material[i, j, k], epsilon_r,
+                    material[i, j, k] = source(material[i, j, k], epsilon,
                                                amp, self.aux_fdtd, samp_pnt,
                                                v_ratio, face)
                 if issubclass(source, TransparentMagnetic):
-                    material[i, j, k] = source(material[i, j, k], mu_r, 
+                    material[i, j, k] = source(material[i, j, k], mu, 
                                                amp, self.aux_fdtd, samp_pnt, 
                                                v_ratio, face)
         
@@ -910,7 +909,7 @@ class GaussianBeam(TotalFieldScatteredField):
         print " " * indent, "beam waist:", self.waist
         print " " * indent, "maximum amp.:", self.amp
         
-        self.src_time.display_info(4)
+        self.src_time.display_info(indent + 4)
     
     def mode_function(self, x, y, z):
         r = self._dist_from_beam_axis(x, y, z)

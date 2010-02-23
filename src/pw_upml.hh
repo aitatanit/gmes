@@ -23,10 +23,10 @@ namespace gmes
 template <typename T> class UpmlElectric: public MaterialElectric<T>
 {
 public:
-	UpmlElectric(const int * const idx, int size, double epsilon_r,
+	UpmlElectric(const int * const idx, int size, double epsilon,
 			double c1_in, double c2_in, double c3_in, double c4_in,
 			double c5_in, double c6_in) :
-		MaterialElectric<T>(idx, size), epsilon(epsilon_r * epsilon0),
+		MaterialElectric<T>(idx, size), epsilon(epsilon),
 		c1(c1_in), c2(c2_in), c3(c3_in), c4(c4_in), c5(c5_in), c6(c6_in), d(0)
 	{
 	}
@@ -36,9 +36,9 @@ public:
 		return epsilon;
 	}
 
-	void set_epsilon(double epsilon_r)
+	void set_epsilon(double epsilon)
 	{
-		epsilon = epsilon_r * epsilon0;
+		epsilon = epsilon;
 	}
 
 protected:
@@ -50,9 +50,9 @@ protected:
 template <typename T> class UpmlEx: public UpmlElectric<T>
 {
 public:
-	UpmlEx(const int * const idx, int size, double epsilon_r, double c1,
+	UpmlEx(const int * const idx, int size, double epsilon, double c1,
 			double c2, double c3, double c4, double c5, double c6) :
-		UpmlElectric<T>(idx, size, epsilon_r, c1, c2, c3, c4, c5, c6)
+		UpmlElectric<T>(idx, size, epsilon, c1, c2, c3, c4, c5, c6)
 	{
 	}
 
@@ -82,9 +82,9 @@ protected:
 template <typename T> class UpmlEy: public UpmlElectric<T>
 {
 public:
-	UpmlEy(const int * const idx, int size, double epsilon_r, double c1,
+	UpmlEy(const int * const idx, int size, double epsilon, double c1,
 			double c2, double c3, double c4, double c5, double c6) :
-		UpmlElectric<T>(idx, size, epsilon_r, c1, c2, c3, c4, c5, c6)
+		UpmlElectric<T>(idx, size, epsilon, c1, c2, c3, c4, c5, c6)
 	{
 	}
 
@@ -114,9 +114,9 @@ protected:
 template <typename T> class UpmlEz: public UpmlElectric<T>
 {
 public:
-	UpmlEz(const int * const idx, int size, double epsilon_r, double c1,
+	UpmlEz(const int * const idx, int size, double epsilon, double c1,
 			double c2, double c3, double c4, double c5, double c6) :
-		UpmlElectric<T>(idx, size, epsilon_r, c1, c2, c3, c4, c5, c6)
+		UpmlElectric<T>(idx, size, epsilon, c1, c2, c3, c4, c5, c6)
 	{
 	}
 
@@ -146,10 +146,10 @@ protected:
 template <typename T> class UpmlMagnetic: public MaterialMagnetic<T>
 {
 public:
-	UpmlMagnetic(const int * const idx, int size, double mu_r,
+	UpmlMagnetic(const int * const idx, int size, double mu,
 			double c1_in, double c2_in, double c3_in, double c4_in,
 			double c5_in, double c6_in) :
-		MaterialMagnetic<T>(idx, size), mu(mu_r * mu0),
+		MaterialMagnetic<T>(idx, size), mu(mu),
 		c1(c1_in), c2(c2_in), c3(c3_in), c4(c4_in), c5(c5_in), c6(c6_in), b(0)
 	{
 	}
@@ -159,9 +159,9 @@ public:
 		return mu;
 	}
 
-	void set_mu(double mu_r)
+	void set_mu(double mu)
 	{
-		mu = mu_r * mu0;
+		mu = mu;
 	}
 
 protected:
@@ -173,9 +173,9 @@ protected:
 template <typename T> class UpmlHx: public UpmlMagnetic<T>
 {
 public:
-	UpmlHx(const int * const idx, int size, double mu_r, double c1, double c2,
+	UpmlHx(const int * const idx, int size, double mu, double c1, double c2,
 			double c3, double c4, double c5, double c6) :
-		UpmlMagnetic<T>(idx, size, mu_r, c1, c2, c3, c4, c5, c6)
+		UpmlMagnetic<T>(idx, size, mu, c1, c2, c3, c4, c5, c6)
 	{
 	}
 
@@ -205,9 +205,9 @@ protected:
 template <typename T> class UpmlHy: public UpmlMagnetic<T>
 {
 public:
-	UpmlHy(const int * const idx, int size, double mu_r, double c1, double c2,
+	UpmlHy(const int * const idx, int size, double mu, double c1, double c2,
 			double c3, double c4, double c5, double c6) :
-		UpmlMagnetic<T>(idx, size, mu_r, c1, c2, c3, c4, c5, c6)
+		UpmlMagnetic<T>(idx, size, mu, c1, c2, c3, c4, c5, c6)
 	{
 	}
 
@@ -237,9 +237,9 @@ protected:
 template <typename T> class UpmlHz: public UpmlMagnetic<T>
 {
 public:
-	UpmlHz(const int * const idx, int size, double mu_r, double c1, double c2,
+	UpmlHz(const int * const idx, int size, double mu, double c1, double c2,
 			double c3, double c4, double c5, double c6) :
-		UpmlMagnetic<T>(idx, size, mu_r, c1, c2, c3, c4, c5, c6)
+		UpmlMagnetic<T>(idx, size, mu, c1, c2, c3, c4, c5, c6)
 	{
 	}
 

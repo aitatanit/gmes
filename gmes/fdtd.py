@@ -41,12 +41,18 @@ class FDTD(object):
             space.period.
         
     """
-    def __init__(self, space=None, geom_list=None, src_list=None, wavevector=False, verbose=True):
+    def __init__(self, space=None, geom_list=None, src_list=None, courant_ratio=.99, dt=None, wavevector=False, verbose=True):
         """
         Argumetns:
         space -- an instance which represents the coordinate system.
         geom_list -- a list which represents the geometric structure.
         src_list -- a list of source instances.
+        courant_ratio -- the ratio of dt to Courant stability bound
+                         default: 0.99
+        dt -- the time differential
+              If None is given, dt is calculated using space differentials 
+              and courant_ratio.
+              default: None
         wavevector -- Bloch wave vector.
         verbose --
         
@@ -61,12 +67,27 @@ class FDTD(object):
         self.fig_id = self.space.my_id
             
         self.dx, self.dy, self.dz = space.dx, space.dy, space.dz
-        self.dt = space.dt
+        
+        stable_limit = self.stable_limit(space)
+        # courant_ratio is the ratio of dt to Courant stability bound
+        if dt is None:
+            self.courant_ratio = float(courant_ratio)
+            self.dt = self.courant_ratio * stable_limit
+        else:
+            self.dt = float(dt)
+            self.courant_ratio = self.dt / stable_limit
+        # Some codes in geometry.py and source.py use space.dt.
+        self.space.dt = self.dt
+
         self.time_step = TimeStep()
         
         if verbose:
             self.space.display_info()
         
+        if verbose:
+            print 'dt:', self.dt
+            print 'courant ratio:', self.courant_ratio
+            
         if verbose:
             print "Initializing the geometry list...",
             
@@ -183,6 +204,10 @@ class FDTD(object):
 
         if verbose:
             print "done."
+    
+    def stable_limit(self, space):
+        # Courant stability bound
+        return 1 / sqrt(space.dx**-2 + space.dy**-2 + space.dz**-2)
             
     def _step_aux_fdtd(self):
         for src in self.src_list:
@@ -219,7 +244,7 @@ class FDTD(object):
             coords = self.space.ex_index_to_space(*idx)
             mat_obj, underneath = self.geom_tree.material_of_point(coords)
             if idx[1] == shape[1] - 1 or idx[2] == shape[2] - 1:
-                mat_obj = Dummy(mat_obj.epsilon_r, mat_obj.mu_r)
+                mat_obj = Dummy(mat_obj.epsilon, mat_obj.mu)
             self.material_ex[idx] = \
             mat_obj.get_pw_material_ex(idx, coords, underneath, self.cmplx)
         
@@ -240,7 +265,7 @@ class FDTD(object):
             coords = self.space.ey_index_to_space(*idx)
             mat_obj, underneath = self.geom_tree.material_of_point(coords)
             if idx[2] == shape[2] - 1 or idx[0] == shape[0] - 1:
-                mat_obj = Dummy(mat_obj.epsilon_r, mat_obj.mu_r)
+                mat_obj = Dummy(mat_obj.epsilon, mat_obj.mu)
             self.material_ey[idx] = \
             mat_obj.get_pw_material_ey(idx, coords, underneath, self.cmplx)
             
@@ -261,7 +286,7 @@ class FDTD(object):
             coords = self.space.ez_index_to_space(*idx)
             mat_obj, underneath = self.geom_tree.material_of_point(coords)
             if idx[0] == shape[0] - 1 or idx[1] == shape[1] - 1:
-                mat_obj = Dummy(mat_obj.epsilon_r, mat_obj.mu_r)
+                mat_obj = Dummy(mat_obj.epsilon, mat_obj.mu)
             self.material_ez[idx] = \
             mat_obj.get_pw_material_ez(idx, coords, underneath, self.cmplx)
             
@@ -282,7 +307,7 @@ class FDTD(object):
             coords = self.space.hx_index_to_space(*idx)
             mat_obj, underneath = self.geom_tree.material_of_point(coords)
             if idx[1] == 0 or idx[2] == 0:
-                mat_obj = Dummy(mat_obj.epsilon_r, mat_obj.mu_r)
+                mat_obj = Dummy(mat_obj.epsilon, mat_obj.mu)
             self.material_hx[idx] = \
             mat_obj.get_pw_material_hx(idx, coords, underneath, self.cmplx)
                 
@@ -303,7 +328,7 @@ class FDTD(object):
             coords = self.space.hy_index_to_space(*idx)
             mat_obj, underneath = self.geom_tree.material_of_point(coords)
             if idx[2] == 0 or idx[0] == 0:
-                mat_obj = Dummy(mat_obj.epsilon_r, mat_obj.mu_r)
+                mat_obj = Dummy(mat_obj.epsilon, mat_obj.mu)
             self.material_hy[idx] = \
             mat_obj.get_pw_material_hy(idx, coords, underneath, self.cmplx)
             
@@ -324,7 +349,7 @@ class FDTD(object):
             coords = self.space.hz_index_to_space(*idx)
             mat_obj, underneath = self.geom_tree.material_of_point(coords)
             if idx[0] == 0 or idx[1] == 0:
-                mat_obj = Dummy(mat_obj.epsilon_r, mat_obj.mu_r)
+                mat_obj = Dummy(mat_obj.epsilon, mat_obj.mu)
             self.material_hz[idx] = \
             mat_obj.get_pw_material_hz(idx, coords, underneath, self.cmplx)
             
@@ -1272,6 +1297,10 @@ class TExFDTD(FDTD):
     direction. TExFDTD updates only Ey, Ez, and Hx field components.
     
     """
+    def stable_limit(self, space):
+        # Courant stability bound
+        return 1 / sqrt(space.dy**-2 + space.dz**-2)
+    
     def init_material(self):
         """Override FDTD.init_material().
         
@@ -1368,6 +1397,10 @@ class TEyFDTD(FDTD):
     TEyFDTD updates only Ez, Ex, and Hy field components.
     
     """
+    def stable_limit(self, space):
+        # Courant stability bound
+        return 1 / sqrt(space.dx**-2 + space.dz**-2)
+    
     def init_material(self):
         """Override FDTD.init_source().
         
@@ -1464,6 +1497,10 @@ class TEzFDTD(FDTD):
     TEzFDTD updates only Ex, Ey, and Hz field components.
     
     """
+    def stable_limit(self, space):
+        # Courant stability bound
+        return 1 / sqrt(space.dx**-2 + space.dy**-2)
+    
     def init_material(self):
         """Override FDTD.init_material().
         
@@ -1559,6 +1596,10 @@ class TMxFDTD(FDTD):
     TMxFDTD updates only Hy, Hz, and Ex field components.
     
     """
+    def stable_limit(self, space):
+        # Courant stability bound
+        return 1 / sqrt(space.dy**-2 + space.dz**-2)
+    
     def init_material(self):
         """Override FDTD.init_material().
         
@@ -1653,6 +1694,10 @@ class TMyFDTD(FDTD):
     TMyFDTD updates only Hz, Hx, and Ey field components.
     
     """
+    def stable_limit(self, space):
+        # Courant stability bound
+        return 1 / sqrt(space.dx**-2 + space.dz**-2)
+    
     def init_material(self):
         """Override FDTD.init_material().
         
@@ -1748,6 +1793,10 @@ class TMzFDTD(FDTD):
     TMzFDTD updates only Hx, Hy, and Ez field components.
     
     """
+    def stable_limit(self, space):
+        # Courant stability bound
+        return 1 / sqrt(space.dx**-2 + space.dy**-2)
+    
     def init_material(self):
         """Override FDTD.init_material().
         
@@ -1843,6 +1892,10 @@ class TEMxFDTD(FDTD):
     TEMxFDTD updates only Ey and Hz field components.
     
     """
+    def stable_limit(self, space):
+        # Courant stability bound
+        return space.dx
+    
     def init_material(self):
         """Override FDTD.init_material().
         
@@ -1910,6 +1963,10 @@ class TEMyFDTD(FDTD):
     TEMyFDTD updates only Ez and Hx field components.
     
     """
+    def stable_limit(self, space):
+        # Courant stability bound
+        return space.dy
+    
     def init_material(self):
         """Override FDTD.init_material().
         
@@ -1977,6 +2034,10 @@ class TEMzFDTD(FDTD):
     TEMzFDTD updates only Ex and Hy field components.
     
     """
+    def stable_limit(self, space):
+        # Courant stability bound
+        return space.dz
+    
     def init_material(self):
         """Override FDTD.init_material().
         
@@ -2047,7 +2108,7 @@ if __name__ == '__main__':
     
     low = Dielectric(index=1)
     hi = Dielectric(index=3)
-    width_hi = low.epsilon_r / (low.epsilon_r + hi.epsilon_r)
+    width_hi = low.epsilon / (low.epsilon + hi.epsilon)
     space = Cartesian(size=[1, 1, 1])
     geom_list = [DefaultMaterial(material=low), Cylinder(material=hi, axis=[1, 0, 0], radius=inf, height=width_hi)]
     

@@ -1,8 +1,9 @@
 #!/usr/bin/env python
 
 # System imports
+from os import getcwd
+from glob import glob
 from distutils.core import setup, Extension
-import os
 
 # Third-party modules - we depend on numpy for everything
 import numpy
@@ -15,26 +16,16 @@ except AttributeError:
 
 PACKAGE = 'gmes'
 VERSION = open('VERSION').read().strip()
-base = os.getcwd() + '/'
+base = getcwd() + '/'
+
+pw_src_lst = glob('src/pw_*.cc')
+pw_src_lst.extend(glob('src/pw_*.i'))
+pw_dep_lst = glob('src/pw_*.hh')
 
 # _pw_material module
 _pw_material = Extension(name = 'gmes._pw_material',
-                              sources = ['src/pw_material.i',
-                                         'src/pw_material.cc',
-                                         'src/pw_cpml.cc',
-                                         'src/pw_dielectric.cc',
-                                         'src/pw_dummy.cc',
-                                         'src/pw_const.cc',
-                                         'src/pw_upml.cc',
-                                         'src/pw_drude.cc'],
-                              depends = ['src/pw_material.hh',
-                                         'src/pw_cpml.hh',
-                                         'src/pw_dielectric.hh',
-                                         'src/pw_dummy.hh',
-                                         'src/pw_const.hh',
-                                         'src/pw_upml.hh',
-                                         'src/pw_drude.hh',
-                                         'src/constants.hh'],
+                              sources = pw_src_lst,
+                              depends = pw_dep_lst,
                               include_dirs = [numpy_include],
                               swig_opts = ['-c++', '-outdir', 'gmes'],
                               #language = 'c++',
