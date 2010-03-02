@@ -760,7 +760,169 @@ class CPML(PML):
             
         return pw_obj
         
+
+class DrudePole(object):
+    def __init__(self, omega, gamma):
+        """
+        DrudePole() -> a new Drude pole
+        omega: a plasma frequency
+        gamma: a relaxation frequency
         
+        """
+        self.omega = float(omega)
+        self.gamma = float(gamma)
+        
+    def display_info(self, indent=0):
+        """Display the parameter values.
+        
+        """
+        print " " * indent, "Drude pole"
+        print " " * indent,
+        print "plasma frequency:", self.omega,
+        print "relaxation frequency:", self.gamma
+        
+        
+class CriticalPoint(object):
+    def __init__(self, amp, phi, omega, gamma):
+        """
+        CriticalPoint() -> a new critical point
+        amp: amplitude 
+        phi: phase
+        omega: energy of the gap
+        gamma: broadening
+         
+        """
+        self.amp = float(amp)
+        self.phi = float(phi)
+        self.omega = float(omega)
+        self.gamma = float(gamma)
+    
+    def display_info(self, indent=0):
+        """Display the parameter values.
+        
+        """
+        print " " * indent, "critical point"
+        print " " * indent,
+        print "amplitude:", self.amp,
+        print "phase:", self.phi,
+        print "energy of the gap:", self.omega,
+        print "broadening:", self.gamma,
+        
+        
+class DCP(Dielectric):
+    """
+    The implementation of Drude-critical points model based on the following article.
+    * P. G. Etchegoin, E. C. Le Ru, and M. Meyer, "An analytic model for the
+      optical properties of gold," J. Chem. Phys. 125, 164705, 2001.
+
+    """
+    def __init__(self, epsilon=1, mu=1, sigma=0, dps=(), cps=()):
+        """
+        epsilon: The (frequency-independent) isotropic relative permittivity. Default is 1.
+        mu: The (frequency-independent) isotropic relative permeability. Default is 1.
+        dps: list of Drude poles. Default is ().
+        cps: list of critical points. Default is ().
+        
+        """
+        self.epsilon = float(epsilon) # instant permittivity
+        self.mu = float(mu) # instant permeability
+        self.sigma = float(sigma) # instant conductivity
+        self.dps = tuple(dps) # tuple of Drude poles
+        self.cps = tuple(cps) # tuple of critical points
+        
+    def init(self, space, param=None):
+        self.dt = space.dt
+        
+        # parameters for the ADE of Drude model
+        self.a = empty((len(self.dps),3), float)
+        for i in xrange(len(self.dps)):
+            pole = self.dps[i]
+            denom = self.dt * pole.gamma + 2.
+            self.a[i,0] = (self.dt * pole.gamma - 2) / denom
+            self.a[i,1] = 4 / denom
+            self.a[i,2] = 2 * (self.dt * pole.omega)**2 / denom
+        
+        # parameters for the ADE of critical points model
+        self.b = empty((len(self.cps),4), float)
+        for i in xrange(len(self.cps)):
+            pnt = self.cps[i]
+            denom = self.dt * pnt.gamma + 1.
+            self.b[i,0] = (self.dt * pnt.gamma - 1) / denom
+            self.b[i,1] = (2 - self.dt**2 * (pnt.gamma**2 + pnt.omega**2)) / denom
+            self.b[i,2] = 2 * self.dt**2 * pnt.amp * pnt.omega * \
+            (cos(self.cps[i].phi) * pnt.omega - sin(pnt.phi) * pnt.gamma) / denom
+            self.b[i,3] = self.dt * sin(pnt.phi) * pnt.amp * pnt.omega / denom
+            
+        # parameters for the electric field update equations.
+        self.c = empty(4, float)
+        denom = self.dt * self.sigma + 2 * (self.epsilon - sum(self.b[:,2]))
+        self.c[0] = 2 * self.dt / denom
+        self.c[1] = 2 / denom
+        self.c[2] = 2 * sum(self.b[:,2]) / denom
+        self.c[3] = (2 * (self.epsilon + sum(self.a[:,2] - self.b[:,3])) - self.dt * self.sigma) / denom
+        
+    def display_info(self, indent=0):
+        print " " * indent, "Drude-critical point model for a dispersive media"
+        print " " * indent,
+        print "permittivity:", self.epsilon,
+        print "permeability:", self.mu
+        
+        print " " * indent, "Drude pole(s):"
+        for i in dps:
+            i.display_info(indent+4)
+        print " " * indent, "critical point(s):"
+        for i in cps:
+            i.display_info(indent+4)
+        
+    def get_pw_material_ex(self, idx, coords, underneath=None, cmplx=False):
+        if cmplx:
+            pw_obj = DCPExCmplx(idx, self.epsilon, self.a, self.b, self.c)
+        else:
+            pw_obj = DCPExReal(idx, self.epsilon, self.a, self.b, self.c)
+            
+        return pw_obj
+    
+    def get_pw_material_ey(self, idx, coords, underneath=None, cmplx=False):
+        if cmplx:
+            pw_obj = DCPEyCmplx(idx, self.epsilon, self.a, self.b, self.c)
+        else:
+            pw_obj = DCPEyReal(idx, self.epsilon, self.a, self.b, self.c)
+            
+        return pw_obj
+    
+    def get_pw_material_ez(self, idx, coords, underneath=None, cmplx=False):
+        if cmplx:
+            pw_obj = DCPEzCmplx(idx, self.epsilon, self.a, self.b, self.c)
+        else:
+            pw_obj = DCPEzReal(idx, self.epsilon, self.a, self.b, self.c)
+            
+        return pw_obj
+    
+    def get_pw_material_hx(self, idx, coords, underneath=None, cmplx=False):
+        if cmplx:
+            pw_obj = DCPHxCmplx(idx, self.mu)
+        else:
+            pw_obj = DCPHxReal(idx, self.mu)
+            
+        return pw_obj
+    
+    def get_pw_material_hy(self, idx, coords, underneath=None, cmplx=False):
+        if cmplx:
+            pw_obj = DCPHyCmplx(idx, self.mu)
+        else:
+            pw_obj = DCPHyReal(idx, self.mu)
+            
+        return pw_obj
+    
+    def get_pw_material_hz(self, idx, coords, underneath=None, cmplx=False):
+        if cmplx:
+            pw_obj = DCPHzCmplx(idx, self.mu)
+        else:
+            pw_obj = DCPHzReal(idx, self.mu)
+            
+        return pw_obj
+    
+    
 class Drude(Dielectric):
     """
     
@@ -772,6 +934,7 @@ class Drude(Dielectric):
             omega_p: the pole resonant frequency 
             gamma_p: the inverse of the pole relaxation time
             mu: magnetic permeability
+            
         """
         Dielectric.__init__(self, epsilon=epsilon_inf, mu=mu)
         self.omega_p = array(omega_p, float)
@@ -835,4 +998,55 @@ class Drude(Dielectric):
             pw_obj = DrudeHzReal(idx, self.mu, self.omega_p, self.gamma_p)
             
         return pw_obj
+        
+        
+class Gold(DCP):
+    """
+    The parameters are from the following article.
+    * A. Vial and T. Laroche, "Comparison of gold and silver dispersion laws
+      suitable for FDTD simulations," Appl. Phys. B, 93, 139-143, 2008.
+    
+    """
+    def __init__(self, a):
+        """
+        a: lattice constant in meters.
+        
+        """
+        dp1 = DrudePole(omega=1.3202e16 * a / const.c0, 
+                        gamma=1.0805e14 * a / const.c0)
+        cp1 = CriticalPoint(amp=0.26698, 
+                            phi=-1.2371, 
+                            omega=3.8711e15 * a / const.c0, 
+                            gamma=4.4642e14 * a / const.c0)
+        cp2 = CriticalPoint(amp=3.0834, 
+                            phi=-1.0968, 
+                            omega=4.1684e15 * a / const.c0, 
+                            gamma=2.3555e15 * a / const.c0)
+        DCP.__init__(epsilon=1.1431, mu=1, sigma=0, dps=(dp1,), cps=(cp1,cp2))
+        
+        
+class Silver(DCP):
+    """
+    The parameters are from the following article.
+    * A. Vial and T. Laroche, "Comparison of gold and silver dispersion laws
+      suitable for FDTD simulations," Appl. Phys. B, 93, 139-143, 2008.
+    
+    """
+    def __init__(self, a):
+        """
+        a: lattice constant in meters.
+        
+        """
+        dp1 = DrudePole(omega=1.3861e16 * a / const.c0, 
+                        gamma=4.5841e13 * a / const.c0)
+        cp1 = CriticalPoint(amp=1.0171, 
+                            phi=-0.93935, 
+                            omega=6.6327e15 * a / const.c0, 
+                            gamma=1.6666e15 * a / const.c0)
+        cp2 = CriticalPoint(amp=15.797, 
+                            phi=1.8087, 
+                            omega=9.2726e17 * a / const.c0, 
+                            gamma=2.3716e17 * a / const.c0)
+        DCP.__init__(epsilon=15.833, mu=1, sigma=0, dps=(dp1,), cps=(cp1,cp2))
+        
         

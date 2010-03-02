@@ -9,6 +9,7 @@
 #include "pw_upml.hh"
 #include "pw_cpml.hh"
 #include "pw_drude.hh"
+#include "pw_dcp.hh"
 %}
 
 %include "complex.i"
@@ -58,9 +59,15 @@ import_array();
 %apply_numpy_typemaps(double)
 %apply_numpy_typemaps(std::complex<double>)
 
+// Drude model
 %apply (int* IN_ARRAY1, int DIM1) {(const int* const idx, int size)};
-%apply (double* IN_ARRAY1, int DIM1) {(const double * const omega_p, int omega_p_size)};
-%apply (double* IN_ARRAY1, int DIM1) {(const double * const gamma_p, int gamma_p_size)};
+%apply (double* IN_ARRAY1, int DIM1) {(const double* const omega_p, int omega_p_size)};
+%apply (double* IN_ARRAY1, int DIM1) {(const double* const gamma_p, int gamma_p_size)};
+
+// Drude-critical points model
+%apply (double* IN_ARRAY2, int DIM1, int DIM2) {(const double* const a, int a_i_size, int a_j_size)};
+%apply (double* IN_ARRAY2, int DIM1, int DIM2) {(const double* const b, int b_i_size, int b_j_size)};
+%apply (double* IN_ARRAY1, int DIM1) {(const double* const c, int c_size)};
 
 // Declare the Pythonic interfaces.
 %define %property(py, cpp, prop, get, set)
@@ -100,6 +107,7 @@ if _newclass:prop = property(eval("_"+__name__.split('.')[-1]).##py##_##get, eva
 %include "pw_upml.hh"
 %include "pw_cpml.hh"
 %include "pw_drude.hh"
+%include "pw_dcp.hh"
 
 // Instantiate template classes
 %define %template_wrap(T, postfix) 
@@ -125,6 +133,7 @@ if _newclass:prop = property(eval("_"+__name__.split('.')[-1]).##py##_##get, eva
 %template(ConstHy ## postfix) gmes::ConstHy<T >;
 %template(ConstHz ## postfix) gmes::ConstHz<T >;
 
+// Non-dispersive linear dielectrics
 %template(DielectricElectric ## postfix) gmes::DielectricElectric<T >;
 %template(DielectricMagnetic ## postfix) gmes::DielectricMagnetic<T >;
 %template(DielectricEx ## postfix) gmes::DielectricEx<T >;
@@ -134,6 +143,7 @@ if _newclass:prop = property(eval("_"+__name__.split('.')[-1]).##py##_##get, eva
 %template(DielectricHy ## postfix) gmes::DielectricHy<T >;
 %template(DielectricHz ## postfix) gmes::DielectricHz<T >;
 
+// UPML
 %template(UpmlElectric ## postfix) gmes::UpmlElectric<T >;
 %template(UpmlMagnetic ## postfix) gmes::UpmlMagnetic<T >;
 %template(UpmlEx ## postfix) gmes::UpmlEx<T >;
@@ -143,6 +153,7 @@ if _newclass:prop = property(eval("_"+__name__.split('.')[-1]).##py##_##get, eva
 %template(UpmlHy ## postfix) gmes::UpmlHy<T >;
 %template(UpmlHz ## postfix) gmes::UpmlHz<T >;
 
+// CPML
 %template(CpmlElectric ## postfix) gmes::CpmlElectric<T >;
 %template(CpmlMagnetic ## postfix) gmes::CpmlMagnetic<T >;
 %template(CpmlEx ## postfix) gmes::CpmlEx<T >;
@@ -152,6 +163,7 @@ if _newclass:prop = property(eval("_"+__name__.split('.')[-1]).##py##_##get, eva
 %template(CpmlHy ## postfix) gmes::CpmlHy<T >;
 %template(CpmlHz ## postfix) gmes::CpmlHz<T >;
 
+// Drude model
 %template(DrudeElectric ## postfix) gmes::DrudeElectric<T >;
 %template(DrudeEx ## postfix) gmes::DrudeEx<T >;
 %template(DrudeEy ## postfix) gmes::DrudeEy<T >;
@@ -159,6 +171,16 @@ if _newclass:prop = property(eval("_"+__name__.split('.')[-1]).##py##_##get, eva
 %template(DrudeHx ## postfix) gmes::DrudeHx<T >;
 %template(DrudeHy ## postfix) gmes::DrudeHy<T >;
 %template(DrudeHz ## postfix) gmes::DrudeHz<T >;
+
+// Drude-critical points model
+%template(DCPElectric ## postfix) gmes::DCPElectric<T >;
+%template(DCPEx ## postfix) gmes::DCPEx<T >;
+%template(DCPEy ## postfix) gmes::DCPEy<T >;
+%template(DCPEz ## postfix) gmes::DCPEz<T >;
+%template(DCPHx ## postfix) gmes::DCPHx<T >;
+%template(DCPHy ## postfix) gmes::DCPHy<T >;
+%template(DCPHz ## postfix) gmes::DCPHz<T >;
+
 %enddef    /* template_wrap() macro */
 
 %template_wrap(double, Real)
