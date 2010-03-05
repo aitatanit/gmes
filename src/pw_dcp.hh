@@ -107,18 +107,18 @@ public:
 		std::vector<T > q_new(a.size());
 		for (unsigned int i = 0; i < q_new.size(); ++i)
 		{
-			q_new[i] = a[i][0] * q_old[i] + a[i][0] * q_now[i] + a[i][3] * e_now;
+			q_new[i] = a[i][0] * q_old[i] + a[i][1] * q_now[i] - a[i][2] * e_now;
 		}
-		copy(q_now.begin(), q_now.end(), q_old.begin());
-		copy(q_new.begin(), q_new.end(), q_now.begin());
+		std::copy(q_now.begin(), q_now.end(), q_old.begin());
+		std::copy(q_new.begin(), q_new.end(), q_now.begin());
 
 		std::vector<T > p_new(b.size());
 		for (unsigned int i = 0; i < p_new.size(); ++i)
 		{
 			p_new[i] = b[i][0] * p_old[i] + b[i][1] * p_now[i] + b[i][2] * (e_old - e_new) + b[i][3] * e_now;
 		}
-		copy(p_now.begin(), p_now.end(), p_old.begin());
-		copy(p_new.begin(), p_new.end(), p_now.begin());
+		std::copy(p_now.begin(), p_now.end(), p_old.begin());
+		std::copy(p_new.begin(), p_new.end(), p_now.begin());
 
 		e_old = e_now;
 		ex(i,j,k) = e_new;
@@ -171,18 +171,18 @@ public:
 		std::vector<T > q_new(a.size());
 		for (unsigned int i = 0; i < q_new.size(); ++i)
 		{
-			q_new[i] = a[i][0] * q_old[i] + a[i][0] * q_now[i] + a[i][3] * e_now;
+			q_new[i] = a[i][0] * q_old[i] + a[i][1] * q_now[i] - a[i][2] * e_now;
 		}
-		copy(q_now.begin(), q_now.end(), q_old.begin());
-		copy(q_new.begin(), q_new.end(), q_now.begin());
+		std::copy(q_now.begin(), q_now.end(), q_old.begin());
+		std::copy(q_new.begin(), q_new.end(), q_now.begin());
 
 		std::vector<T > p_new(b.size());
 		for (unsigned int i = 0; i < p_new.size(); ++i)
 		{
 			p_new[i] = b[i][0] * p_old[i] + b[i][1] * p_now[i] + b[i][2] * (e_old - e_new) + b[i][3] * e_now;
 		}
-		copy(p_now.begin(), p_now.end(), p_old.begin());
-		copy(p_new.begin(), p_new.end(), p_now.begin());
+		std::copy(p_now.begin(), p_now.end(), p_old.begin());
+		std::copy(p_new.begin(), p_new.end(), p_now.begin());
 
 		e_old = e_now;
 		ey(i,j,k) = e_new;
@@ -233,20 +233,20 @@ public:
 				+ c[1] * (dps_sum - cps_sum) - c[2] * e_old + c[3] * e_now;
 
 		std::vector<T > q_new(a.size());
-		for (unsigned int i = 0; i < q_new.size(); ++i)
+		for (unsigned int i = 0; i < a.size(); ++i)
 		{
-			q_new[i] = a[i][0] * q_old[i] + a[i][0] * q_now[i] + a[i][3] * e_now;
+			q_new[i] = a[i][0] * q_old[i] + a[i][1] * q_now[i] - a[i][2] * e_now;
 		}
-		copy(q_now.begin(), q_now.end(), q_old.begin());
-		copy(q_new.begin(), q_new.end(), q_now.begin());
+		std::copy(q_now.begin(), q_now.end(), q_old.begin());
+		std::copy(q_new.begin(), q_new.end(), q_now.begin());
 
 		std::vector<T > p_new(b.size());
-		for (unsigned int i = 0; i < p_new.size(); ++i)
+		for (unsigned int i = 0; i < b.size(); ++i)
 		{
 			p_new[i] = b[i][0] * p_old[i] + b[i][1] * p_now[i] + b[i][2] * (e_old - e_new) + b[i][3] * e_now;
 		}
-		copy(p_now.begin(), p_now.end(), p_old.begin());
-		copy(p_new.begin(), p_new.end(), p_now.begin());
+		std::copy(p_now.begin(), p_now.end(), p_old.begin());
+		std::copy(p_new.begin(), p_new.end(), p_now.begin());
 
 		e_old = e_now;
 		ez(i,j,k) = e_new;

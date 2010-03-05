@@ -806,7 +806,7 @@ class CriticalPoint(object):
         print "amplitude:", self.amp,
         print "phase:", self.phi,
         print "energy of the gap:", self.omega,
-        print "broadening:", self.gamma,
+        print "broadening:", self.gamma
         
         
 class DCP(Dielectric):
@@ -849,9 +849,9 @@ class DCP(Dielectric):
             denom = self.dt * pnt.gamma + 1.
             self.b[i,0] = (self.dt * pnt.gamma - 1) / denom
             self.b[i,1] = (2 - self.dt**2 * (pnt.gamma**2 + pnt.omega**2)) / denom
-            self.b[i,2] = 2 * self.dt**2 * pnt.amp * pnt.omega * \
+            self.b[i,2] = self.dt * sin(pnt.phi) * pnt.amp * pnt.omega / denom
+            self.b[i,3] = 2 * self.dt**2 * pnt.amp * pnt.omega * \
             (cos(self.cps[i].phi) * pnt.omega - sin(pnt.phi) * pnt.gamma) / denom
-            self.b[i,3] = self.dt * sin(pnt.phi) * pnt.amp * pnt.omega / denom
             
         # parameters for the electric field update equations.
         self.c = empty(4, float)
@@ -859,19 +859,20 @@ class DCP(Dielectric):
         self.c[0] = 2 * self.dt / denom
         self.c[1] = 2 / denom
         self.c[2] = 2 * sum(self.b[:,2]) / denom
-        self.c[3] = (2 * (self.epsilon + sum(self.a[:,2] - self.b[:,3])) - self.dt * self.sigma) / denom
+        self.c[3] = (2 * (self.epsilon + sum(self.a[:,2]) - sum(self.b[:,3])) - self.dt * self.sigma) / denom
         
     def display_info(self, indent=0):
         print " " * indent, "Drude-critical point model for a dispersive media"
         print " " * indent,
         print "permittivity:", self.epsilon,
-        print "permeability:", self.mu
+        print "permeability:", self.mu,
+        print "conductivity:", self.sigma
         
         print " " * indent, "Drude pole(s):"
-        for i in dps:
+        for i in self.dps:
             i.display_info(indent+4)
         print " " * indent, "critical point(s):"
-        for i in cps:
+        for i in self.cps:
             i.display_info(indent+4)
         
     def get_pw_material_ex(self, idx, coords, underneath=None, cmplx=False):
@@ -1006,6 +1007,8 @@ class Gold(DCP):
     * A. Vial and T. Laroche, "Comparison of gold and silver dispersion laws
       suitable for FDTD simulations," Appl. Phys. B, 93, 139-143, 2008.
     
+    These parameters represents the permittivity of gold in 200-1,000 nm range.
+    
     """
     def __init__(self, a):
         """
@@ -1022,14 +1025,16 @@ class Gold(DCP):
                             phi=-1.0968, 
                             omega=4.1684e15 * a / const.c0, 
                             gamma=2.3555e15 * a / const.c0)
-        DCP.__init__(epsilon=1.1431, mu=1, sigma=0, dps=(dp1,), cps=(cp1,cp2))
-        
+        DCP.__init__(self, epsilon=1.1431, mu=1, sigma=0, dps=(dp1,), cps=(cp1,cp2))
+
         
 class Silver(DCP):
     """
     The parameters are from the following article.
     * A. Vial and T. Laroche, "Comparison of gold and silver dispersion laws
       suitable for FDTD simulations," Appl. Phys. B, 93, 139-143, 2008.
+    
+    These parameters represents the permittivity of silver in 200-1,000 nm range.
     
     """
     def __init__(self, a):
@@ -1047,6 +1052,6 @@ class Silver(DCP):
                             phi=1.8087, 
                             omega=9.2726e17 * a / const.c0, 
                             gamma=2.3716e17 * a / const.c0)
-        DCP.__init__(epsilon=15.833, mu=1, sigma=0, dps=(dp1,), cps=(cp1,cp2))
+        DCP.__init__(self, epsilon=15.833, mu=1, sigma=0, dps=(dp1,), cps=(cp1,cp2))
         
         

@@ -7,11 +7,14 @@ namespace gmes
 {
 // physical constants
 
+// the ratio of the circumference of a circle to its diameter
+const double pi = 4 * atan(1);
+
 // Vacuum permittivity
 const double epsilon0 = 8.854187817e-12; // in Farad/Meter
 
 // Vacuum permeability
-const double mu0 = 16 * atan(1) * 1e-7; // in Henry/Meter
+const double mu0 = 4 * pi * 1e-7; // in Henry/Meter
 
 // speed of light in vacuum
 const double c0 = 1 / sqrt(epsilon0 * mu0);
