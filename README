@@ -106,7 +106,7 @@ problem.
 
 6.2. numpy.inf
 
-GMES does not treat well the value of numpy.inf. Please use large enough 
+GMES does not treat well the value of numpy.inf. Please use big enough 
 value instead of numpy.inf.
 
 6.3. compile failure on Windows

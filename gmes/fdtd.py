@@ -494,10 +494,9 @@ class FDTD(object):
         
             src_spc = self.space.ex_index_to_space(0, 0, 0)[1]
             src_spc = self.space.cart_comm.sendrecv(src_spc, dest, const.Ex.tag,
-                                                    None, src, const.Ex.tag) 
+                                                    None, src, const.Ex.tag)
         
             phase_shift = exp(1j * self.k[1] * (dest_spc - src_spc))
-            
         else:
             phase_shift = 1
         
@@ -505,7 +504,7 @@ class FDTD(object):
         self.space.cart_comm.sendrecv(self.ex[:, 0, :], dest, const.Ex.tag,
                                       None, src, const.Ex.tag)
         
-        # send ex field data to -z direction and receive from +z direction.    
+        # send ex field data to -z direction and receive from +z direction.
         src, dest = self.space.cart_comm.Shift(2, -1)
         
         if self.cmplx:
@@ -513,10 +512,9 @@ class FDTD(object):
         
             src_spc = self.space.ex_index_to_space(0, 0, 0)[2]
             src_spc = self.space.cart_comm.sendrecv(src_spc, dest, const.Ex.tag,
-                                                    None, src, const.Ex.tag) 
+                                                    None, src, const.Ex.tag)
         
             phase_shift = exp(1j * self.k[2] * (dest_spc - src_spc))
-            
         else:
             phase_shift = 1
         
@@ -666,7 +664,7 @@ class FDTD(object):
             src_spc = self.space.cart_comm.sendrecv(src_spc, dest, const.Hy.tag,
                                                     None, src, const.Hy.tag)
         
-            phase_shift = exp(1j * self.k[1] * (dest_spc - src_spc))
+            phase_shift = exp(1j * self.k[2] * (dest_spc - src_spc))
         else:
             phase_shift = 1
         
