@@ -88,14 +88,16 @@ public:
 			const T * const hy, int hy_x_size, int hy_y_size, int hy_z_size,
 			double dy, double dz, double dt, double n)
 	{
+		typedef typename std::vector<T >::size_type size_type;
+
 		T dps_sum = static_cast<T >(0.);
-		for (unsigned int i = 0; i < a.size(); ++i)
+		for (size_type i = 0; i < a.size(); ++i)
 		{
 			dps_sum += a[i][0] * q_old[i] + (a[i][1] - 1) * q_now[i];
 		}
 
 		T cps_sum = static_cast<T >(0.);
-		for (unsigned int i = 0; i < b.size(); ++i)
+		for (size_type i = 0; i < b.size(); ++i)
 		{
 			cps_sum += b[i][0] * p_old[i] + (b[i][1] - 1) * p_now[i];
 		}
@@ -105,7 +107,7 @@ public:
 				+ c[1] * (dps_sum - cps_sum) - c[2] * e_old + c[3] * e_now;
 
 		std::vector<T > q_new(a.size());
-		for (unsigned int i = 0; i < q_new.size(); ++i)
+		for (size_type i = 0; i < q_new.size(); ++i)
 		{
 			q_new[i] = a[i][0] * q_old[i] + a[i][1] * q_now[i] - a[i][2] * e_now;
 		}
@@ -113,7 +115,7 @@ public:
 		std::copy(q_new.begin(), q_new.end(), q_now.begin());
 
 		std::vector<T > p_new(b.size());
-		for (unsigned int i = 0; i < p_new.size(); ++i)
+		for (size_type i = 0; i < p_new.size(); ++i)
 		{
 			p_new[i] = b[i][0] * p_old[i] + b[i][1] * p_now[i] + b[i][2] * (e_old - e_new) + b[i][3] * e_now;
 		}
@@ -152,14 +154,16 @@ public:
 			const T * const hz, int hz_x_size, int hz_y_size, int hz_z_size,
 			double dz, double dx, double dt, double n)
 	{
+		typedef typename std::vector<T >::size_type size_type;
+
 		T dps_sum = static_cast<T >(0.);
-		for (unsigned int i = 0; i < a.size(); ++i)
+		for (size_type i = 0; i < a.size(); ++i)
 		{
 			dps_sum += a[i][0] * q_old[i] + (a[i][1] - 1) * q_now[i];
 		}
 
 		T cps_sum = static_cast<T >(0.);
-		for (unsigned int i = 0; i < b.size(); ++i)
+		for (size_type i = 0; i < b.size(); ++i)
 		{
 			cps_sum += b[i][0] * p_old[i] + (b[i][1] - 1) * p_now[i];
 		}
@@ -169,7 +173,7 @@ public:
 				+ c[1] * (dps_sum - cps_sum) - c[2] * e_old + c[3] * e_now;
 
 		std::vector<T > q_new(a.size());
-		for (unsigned int i = 0; i < q_new.size(); ++i)
+		for (size_type i = 0; i < q_new.size(); ++i)
 		{
 			q_new[i] = a[i][0] * q_old[i] + a[i][1] * q_now[i] - a[i][2] * e_now;
 		}
@@ -177,7 +181,7 @@ public:
 		std::copy(q_new.begin(), q_new.end(), q_now.begin());
 
 		std::vector<T > p_new(b.size());
-		for (unsigned int i = 0; i < p_new.size(); ++i)
+		for (size_type i = 0; i < p_new.size(); ++i)
 		{
 			p_new[i] = b[i][0] * p_old[i] + b[i][1] * p_now[i] + b[i][2] * (e_old - e_new) + b[i][3] * e_now;
 		}
@@ -216,14 +220,16 @@ public:
 			const T * const hx, int hx_x_size, int hx_y_size, int hx_z_size,
 			double dx, double dy, double dt, double n)
 	{
+		typedef typename std::vector<T >::size_type size_type;
+
 		T dps_sum = static_cast<T >(0.);
-		for (unsigned int i = 0; i < a.size(); ++i)
+		for (size_type i = 0; i < a.size(); ++i)
 		{
 			dps_sum += a[i][0] * q_old[i] + (a[i][1] - 1) * q_now[i];
 		}
 
 		T cps_sum = static_cast<T >(0.);
-		for (unsigned int i = 0; i < b.size(); ++i)
+		for (size_type i = 0; i < b.size(); ++i)
 		{
 			cps_sum += b[i][0] * p_old[i] + (b[i][1] - 1) * p_now[i];
 		}
@@ -233,7 +239,7 @@ public:
 				+ c[1] * (dps_sum - cps_sum) - c[2] * e_old + c[3] * e_now;
 
 		std::vector<T > q_new(a.size());
-		for (unsigned int i = 0; i < a.size(); ++i)
+		for (size_type i = 0; i < a.size(); ++i)
 		{
 			q_new[i] = a[i][0] * q_old[i] + a[i][1] * q_now[i] - a[i][2] * e_now;
 		}
@@ -241,7 +247,7 @@ public:
 		std::copy(q_new.begin(), q_new.end(), q_now.begin());
 
 		std::vector<T > p_new(b.size());
-		for (unsigned int i = 0; i < b.size(); ++i)
+		for (size_type i = 0; i < b.size(); ++i)
 		{
 			p_new[i] = b[i][0] * p_old[i] + b[i][1] * p_now[i] + b[i][2] * (e_old - e_new) + b[i][3] * e_now;
 		}

@@ -25,22 +25,22 @@ public:
 	virtual ~PwMaterial() {
 	}
 
-	int get_i() const {
+	size_t get_i() const {
 		return i;
 	}
-	int get_j() const {
+	size_t get_j() const {
 		return j;
 	}
-	int get_k() const {
+	size_t get_k() const {
 		return k;
 	}
-	void set_i(int i) {
+	void set_i(size_t i) {
 		this->i = i;
 	}
-	void set_j(int j) {
+	void set_j(size_t j) {
 		this->j = j;
 	}
-	void set_k(int k) {
+	void set_k(size_t k) {
 		this->k = k;
 	}
 
@@ -51,7 +51,7 @@ public:
 			double d1, double d2, double dt, double n) = 0;
 
 protected:
-	int i, j, k;
+	size_t i, j, k;
 };
 
 template <typename T> class MaterialElectric: public PwMaterial<T> {

@@ -71,7 +71,7 @@ public:
 	{
 		std::vector<T > q_tmp(omega_p.size());
 
-		for (unsigned int u = 0; u != q_tmp.size(); ++u)
+		for (typename std::vector<T >::size_type u = 0; u != q_tmp.size(); ++u)
 		{
 			q_tmp[u] = (4. * q_new[u] + (gamma_p[u] * dt - 2.) * q_old[u] - (2.
 					* dt * dt * omega_p[u] * omega_p[u]) * ex(i,j,k))
@@ -114,7 +114,7 @@ public:
 	{
 		std::vector<T > q_tmp(omega_p.size());
 
-		for (unsigned int u = 0; u != q_tmp.size(); ++u)
+		for (typename std::vector<T >::size_type u = 0; u != q_tmp.size(); ++u)
 		{
 			q_tmp[u] = (4. * q_new[u] + (gamma_p[u] * dt - 2.) * q_old[u] - (2.
 					* dt * dt * omega_p[u] * omega_p[u]) * ey(i,j,k))
@@ -157,7 +157,7 @@ public:
 	{
 		std::vector<T > q_tmp(omega_p.size());
 
-		for (unsigned int u = 0; u != q_tmp.size(); ++u)
+		for (typename std::vector<T >::size_type u = 0; u != q_tmp.size(); ++u)
 		{
 			q_tmp[u] = (4. * q_new[u] + (gamma_p[u] * dt - 2.) * q_old[u] - (2.
 					* dt * dt * omega_p[u] * omega_p[u]) * ez(i,j,k))
