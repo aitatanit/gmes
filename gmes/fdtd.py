@@ -582,7 +582,7 @@ class FDTD(object):
         
             phase_shift = exp(1j * self.k[0] * (dest_spc - src_spc))
         else:
-            phase_shift = 1    
+            phase_shift = 1
             
         self.ez[-1, :, :] = phase_shift * \
         self.space.cart_comm.sendrecv(self.ez[0, :, :], dest, const.Ez.tag,

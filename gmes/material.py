@@ -811,7 +811,8 @@ class CriticalPoint(object):
         
 class DCP(Dielectric):
     """
-    The implementation of Drude-critical points model based on the following article.
+    The auxiliary differential equation implementation of Drude-critical points model 
+    based on the following article.
     * P. G. Etchegoin, E. C. Le Ru, and M. Meyer, "An analytic model for the
       optical properties of gold," J. Chem. Phys. 125, 164705, 2001.
 
@@ -851,15 +852,15 @@ class DCP(Dielectric):
             self.b[i,1] = (2 - self.dt**2 * (pnt.gamma**2 + pnt.omega**2)) / denom
             self.b[i,2] = self.dt * sin(pnt.phi) * pnt.amp * pnt.omega / denom
             self.b[i,3] = 2 * self.dt**2 * pnt.amp * pnt.omega * \
-            (cos(self.cps[i].phi) * pnt.omega - sin(pnt.phi) * pnt.gamma) / denom
+            (cos(pnt.phi) * pnt.omega - sin(pnt.phi) * pnt.gamma) / denom
             
         # parameters for the electric field update equations.
         self.c = empty(4, float)
-        denom = self.dt * self.sigma + 2 * (self.epsilon - sum(self.b[:,2]))
+        denom = self.dt * self.sigma + 2. * (self.epsilon - sum(self.b[:,2]))
         self.c[0] = 2 * self.dt / denom
-        self.c[1] = 2 / denom
-        self.c[2] = 2 * sum(self.b[:,2]) / denom
-        self.c[3] = (2 * (self.epsilon + sum(self.a[:,2]) - sum(self.b[:,3])) - self.dt * self.sigma) / denom
+        self.c[1] = -2 / denom
+        self.c[2] = -2 * sum(self.b[:,2]) / denom
+        self.c[3] = (2 * (self.epsilon - sum(self.a[:,2]) - sum(self.b[:,3])) - self.dt * self.sigma) / denom
         
     def display_info(self, indent=0):
         print " " * indent, "Drude-critical point model for a dispersive media"
@@ -923,7 +924,7 @@ class DCP(Dielectric):
             
         return pw_obj
     
-    
+
 class Drude(Dielectric):
     """
     
@@ -1054,4 +1055,57 @@ class Silver(DCP):
                             gamma=2.3716e17 * a / const.c0)
         DCP.__init__(self, epsilon=15.833, mu=1, sigma=0, dps=(dp1,), cps=(cp1,cp2))
         
+
+class Aluminum(DCP):
+    """
+    The parameters are from the following article.
+    * A. Vial and T. Laroche, "Comparison of gold and silver dispersion laws
+      suitable for FDTD simulations," Appl. Phys. B, 93, 139-143, 2008.
+    
+    These parameters represents the permittivity of silver in 200-1,000 nm range.
+    
+    """
+    def __init__(self, a):
+        """
+        a: lattice constant in meters.
+        
+        """
+        dp1 = DrudePole(omega=2.0598e16 * a / const.c0, 
+                        gamma=2.2876e14 * a / const.c0)
+        cp1 = CriticalPoint(amp=5.2306, 
+                            phi=-0.51202, 
+                            omega=2.2694e15 * a / const.c0, 
+                            gamma=3.2867e14 * a / const.c0)
+        cp2 = CriticalPoint(amp=5.2704, 
+                            phi=0.42503, 
+                            omega=2.4668e15 * a / const.c0, 
+                            gamma=1.7731e15 * a / const.c0)
+        DCP.__init__(self, epsilon=1.0000, mu=1, sigma=0, dps=(dp1,), cps=(cp1,cp2))
+        
+
+class Chromium(DCP):
+    """
+    The parameters are from the following article.
+    * A. Vial and T. Laroche, "Comparison of gold and silver dispersion laws
+      suitable for FDTD simulations," Appl. Phys. B, 93, 139-143, 2008.
+    
+    These parameters represents the permittivity of silver in 200-1,000 nm range.
+    
+    """
+    def __init__(self, a):
+        """
+        a: lattice constant in meters.
+        
+        """
+        dp1 = DrudePole(omega=8.8128e15 * a / const.c0, 
+                        gamma=3.8828e14 * a / const.c0)
+        cp1 = CriticalPoint(amp=33.086, 
+                            phi=-0.25722, 
+                            omega=1.7398e15 * a / const.c0, 
+                            gamma=1.6329e15 * a / const.c0)
+        cp2 = CriticalPoint(amp=1.6592, 
+                            phi=0.83533, 
+                            omega=3.7925e15 * a / const.c0, 
+                            gamma=7.3567e14 * a / const.c0)
+        DCP.__init__(self, epsilon=1.1297, mu=1, sigma=0, dps=(dp1,), cps=(cp1,cp2))
         

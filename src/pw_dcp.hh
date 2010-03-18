@@ -31,11 +31,11 @@ public:
 			const double * const c, int c_size) :
 		MaterialElectric<T>(idx, size), epsilon(epsilon),
 		c(c, c + c_size),
-		e_old(static_cast<T >(0.)),
-		q_now(a_i_size, static_cast<T >(0.)),
-		q_old(a_i_size, static_cast<T >(0.)),
-		p_now(b_i_size, static_cast<T >(0.)),
-		p_old(b_i_size, static_cast<T >(0.))
+		e_old(static_cast<T>(0.)),
+		q_now(a_i_size, static_cast<T>(0.)),
+		q_old(a_i_size, static_cast<T>(0.)),
+		p_now(b_i_size, static_cast<T>(0.)),
+		p_old(b_i_size, static_cast<T>(0.))
 	{
 		for (int i = 0; i < a_i_size; i++)
 		{
@@ -51,14 +51,58 @@ public:
 	}
 
 	double get_epsilon()
-		{
-			return epsilon;
-		}
+	{
+		return epsilon;
+	}
 
 	void set_epsilon(double epsilon)
+	{
+		this->epsilon = epsilon;
+	}
+
+	T dps_sum(const T& init)
+	{
+		T sum(init);
+		for (typename std::vector<T>::size_type i = 0; i < a.size(); ++i)
 		{
-			this->epsilon = epsilon;
+			sum += a[i][0] * q_old[i] + (a[i][1] - 1) * q_now[i];
 		}
+
+		return sum;
+	}
+
+	T cps_sum(const T& init)
+	{
+		T sum(init);
+		for (typename std::vector<T>::size_type i = 0; i < b.size(); ++i)
+		{
+			sum += b[i][0] * p_old[i] + (b[i][1] - 1) * p_now[i];
+		}
+
+		return sum;
+	}
+
+	void update_q(const T& e_now)
+	{
+		std::vector<T> q_new(a.size());
+		for (typename std::vector<T>::size_type i = 0; i < q_new.size(); ++i)
+		{
+			q_new[i] = a[i][0] * q_old[i] + a[i][1] * q_now[i] + a[i][2] * e_now;
+		}
+		std::copy(q_now.begin(), q_now.end(), q_old.begin());
+		std::copy(q_new.begin(), q_new.end(), q_now.begin());
+	}
+
+	void update_p(const T& e_old, const T& e_now, const T& e_new)
+	{
+		std::vector<T> p_new(b.size());
+		for (typename std::vector<T>::size_type i = 0; i < p_new.size(); ++i)
+		{
+			p_new[i] = b[i][0] * p_old[i] + b[i][1] * p_now[i] + b[i][2] * (e_old - e_new) + b[i][3] * e_now;
+		}
+		std::copy(p_now.begin(), p_now.end(), p_old.begin());
+		std::copy(p_new.begin(), p_new.end(), p_now.begin());
+	}
 
 protected:
 	double epsilon;
@@ -66,10 +110,10 @@ protected:
 	std::vector<std::vector<double> > b;
 	std::vector<double> c;
 	T e_old;
-	std::vector<T > q_now;
-	std::vector<T > q_old;
-	std::vector<T > p_now;
-	std::vector<T > p_old;
+	std::vector<T> q_now;
+	std::vector<T> q_old;
+	std::vector<T> p_now;
+	std::vector<T> p_old;
 };
 
 template <typename T> class DCPEx: public DCPElectric<T>
@@ -88,54 +132,28 @@ public:
 			const T * const hy, int hy_x_size, int hy_y_size, int hy_z_size,
 			double dy, double dz, double dt, double n)
 	{
-		typedef typename std::vector<T >::size_type size_type;
-
-		T dps_sum = static_cast<T >(0.);
-		for (size_type i = 0; i < a.size(); ++i)
-		{
-			dps_sum += a[i][0] * q_old[i] + (a[i][1] - 1) * q_now[i];
-		}
-
-		T cps_sum = static_cast<T >(0.);
-		for (size_type i = 0; i < b.size(); ++i)
-		{
-			cps_sum += b[i][0] * p_old[i] + (b[i][1] - 1) * p_now[i];
-		}
-
 		T e_now = ex(i,j,k);
 		T e_new = c[0] * ((hz(i+1,j+1,k) - hz(i+1,j,k)) / dy - (hy(i+1,j,k+1) - hy(i+1,j,k)) / dz)
-				+ c[1] * (dps_sum - cps_sum) - c[2] * e_old + c[3] * e_now;
+				+ c[1] * (dps_sum(static_cast<T>(0)) + cps_sum(static_cast<T>(0)))
+				+ c[2] * e_old + c[3] * e_now;
 
-		std::vector<T > q_new(a.size());
-		for (size_type i = 0; i < q_new.size(); ++i)
-		{
-			q_new[i] = a[i][0] * q_old[i] + a[i][1] * q_now[i] - a[i][2] * e_now;
-		}
-		std::copy(q_now.begin(), q_now.end(), q_old.begin());
-		std::copy(q_new.begin(), q_new.end(), q_now.begin());
-
-		std::vector<T > p_new(b.size());
-		for (size_type i = 0; i < p_new.size(); ++i)
-		{
-			p_new[i] = b[i][0] * p_old[i] + b[i][1] * p_now[i] + b[i][2] * (e_old - e_new) + b[i][3] * e_now;
-		}
-		std::copy(p_now.begin(), p_now.end(), p_old.begin());
-		std::copy(p_new.begin(), p_new.end(), p_now.begin());
+		update_q(e_now);
+		update_p(e_old, e_now, e_new);
 
 		e_old = e_now;
 		ex(i,j,k) = e_new;
 	}
 
 protected:
-	using DCPElectric<T >::epsilon;
-	using DCPElectric<T >::a;
-	using DCPElectric<T >::b;
-	using DCPElectric<T >::c;
-	using DCPElectric<T >::e_old;
-	using DCPElectric<T >::p_now;
-	using DCPElectric<T >::p_old;
-	using DCPElectric<T >::q_now;
-	using DCPElectric<T >::q_old;
+	using DCPElectric<T>::epsilon;
+	using DCPElectric<T>::a;
+	using DCPElectric<T>::b;
+	using DCPElectric<T>::c;
+	using DCPElectric<T>::e_old;
+	using DCPElectric<T>::p_now;
+	using DCPElectric<T>::p_old;
+	using DCPElectric<T>::q_now;
+	using DCPElectric<T>::q_old;
 };
 
 template <typename T> class DCPEy: public DCPElectric<T>
@@ -154,54 +172,28 @@ public:
 			const T * const hz, int hz_x_size, int hz_y_size, int hz_z_size,
 			double dz, double dx, double dt, double n)
 	{
-		typedef typename std::vector<T >::size_type size_type;
-
-		T dps_sum = static_cast<T >(0.);
-		for (size_type i = 0; i < a.size(); ++i)
-		{
-			dps_sum += a[i][0] * q_old[i] + (a[i][1] - 1) * q_now[i];
-		}
-
-		T cps_sum = static_cast<T >(0.);
-		for (size_type i = 0; i < b.size(); ++i)
-		{
-			cps_sum += b[i][0] * p_old[i] + (b[i][1] - 1) * p_now[i];
-		}
-
 		T e_now = ey(i,j,k);
 		T e_new = c[0] * ((hx(i,j+1,k+1) - hx(i,j+1,k)) / dz - (hz(i+1,j+1,k) - hz(i,j+1,k)) / dx)
-				+ c[1] * (dps_sum - cps_sum) - c[2] * e_old + c[3] * e_now;
+				+ c[1] * (dps_sum(static_cast<T>(0)) + cps_sum(static_cast<T>(0)))
+				+ c[2] * e_old + c[3] * e_now;
 
-		std::vector<T > q_new(a.size());
-		for (size_type i = 0; i < q_new.size(); ++i)
-		{
-			q_new[i] = a[i][0] * q_old[i] + a[i][1] * q_now[i] - a[i][2] * e_now;
-		}
-		std::copy(q_now.begin(), q_now.end(), q_old.begin());
-		std::copy(q_new.begin(), q_new.end(), q_now.begin());
-
-		std::vector<T > p_new(b.size());
-		for (size_type i = 0; i < p_new.size(); ++i)
-		{
-			p_new[i] = b[i][0] * p_old[i] + b[i][1] * p_now[i] + b[i][2] * (e_old - e_new) + b[i][3] * e_now;
-		}
-		std::copy(p_now.begin(), p_now.end(), p_old.begin());
-		std::copy(p_new.begin(), p_new.end(), p_now.begin());
+		update_q(e_now);
+		update_p(e_old, e_now, e_new);
 
 		e_old = e_now;
 		ey(i,j,k) = e_new;
 	}
 
 protected:
-	using DCPElectric<T >::epsilon;
-	using DCPElectric<T >::a;
-	using DCPElectric<T >::b;
-	using DCPElectric<T >::c;
-	using DCPElectric<T >::e_old;
-	using DCPElectric<T >::p_now;
-	using DCPElectric<T >::p_old;
-	using DCPElectric<T >::q_now;
-	using DCPElectric<T >::q_old;
+	using DCPElectric<T>::epsilon;
+	using DCPElectric<T>::a;
+	using DCPElectric<T>::b;
+	using DCPElectric<T>::c;
+	using DCPElectric<T>::e_old;
+	using DCPElectric<T>::p_now;
+	using DCPElectric<T>::p_old;
+	using DCPElectric<T>::q_now;
+	using DCPElectric<T>::q_old;
 };
 
 template <typename T> class DCPEz: public DCPElectric<T>
@@ -220,54 +212,28 @@ public:
 			const T * const hx, int hx_x_size, int hx_y_size, int hx_z_size,
 			double dx, double dy, double dt, double n)
 	{
-		typedef typename std::vector<T >::size_type size_type;
-
-		T dps_sum = static_cast<T >(0.);
-		for (size_type i = 0; i < a.size(); ++i)
-		{
-			dps_sum += a[i][0] * q_old[i] + (a[i][1] - 1) * q_now[i];
-		}
-
-		T cps_sum = static_cast<T >(0.);
-		for (size_type i = 0; i < b.size(); ++i)
-		{
-			cps_sum += b[i][0] * p_old[i] + (b[i][1] - 1) * p_now[i];
-		}
-
 		T e_now = ez(i,j,k);
 		T e_new = c[0] * ((hy(i+1,j,k+1) - hy(i,j,k+1)) / dx - (hx(i,j+1,k+1) - hx(i,j,k+1)) / dy)
-				+ c[1] * (dps_sum - cps_sum) - c[2] * e_old + c[3] * e_now;
+				+ c[1] * (dps_sum(static_cast<T>(0)) + cps_sum(static_cast<T>(0)))
+				+ c[2] * e_old + c[3] * e_now;
 
-		std::vector<T > q_new(a.size());
-		for (size_type i = 0; i < a.size(); ++i)
-		{
-			q_new[i] = a[i][0] * q_old[i] + a[i][1] * q_now[i] - a[i][2] * e_now;
-		}
-		std::copy(q_now.begin(), q_now.end(), q_old.begin());
-		std::copy(q_new.begin(), q_new.end(), q_now.begin());
-
-		std::vector<T > p_new(b.size());
-		for (size_type i = 0; i < b.size(); ++i)
-		{
-			p_new[i] = b[i][0] * p_old[i] + b[i][1] * p_now[i] + b[i][2] * (e_old - e_new) + b[i][3] * e_now;
-		}
-		std::copy(p_now.begin(), p_now.end(), p_old.begin());
-		std::copy(p_new.begin(), p_new.end(), p_now.begin());
+		update_q(e_now);
+		update_p(e_old, e_now, e_new);
 
 		e_old = e_now;
 		ez(i,j,k) = e_new;
 	}
 
 protected:
-	using DCPElectric<T >::epsilon;
-	using DCPElectric<T >::a;
-	using DCPElectric<T >::b;
-	using DCPElectric<T >::c;
-	using DCPElectric<T >::e_old;
-	using DCPElectric<T >::p_now;
-	using DCPElectric<T >::p_old;
-	using DCPElectric<T >::q_now;
-	using DCPElectric<T >::q_old;
+	using DCPElectric<T>::epsilon;
+	using DCPElectric<T>::a;
+	using DCPElectric<T>::b;
+	using DCPElectric<T>::c;
+	using DCPElectric<T>::e_old;
+	using DCPElectric<T>::p_now;
+	using DCPElectric<T>::p_old;
+	using DCPElectric<T>::q_now;
+	using DCPElectric<T>::q_old;
 };
 
 template <typename T> class DCPHx: public DielectricHx<T>
