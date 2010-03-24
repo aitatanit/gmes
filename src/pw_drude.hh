@@ -6,10 +6,7 @@
 #define PW_DRUDE_HH_
 
 #include <vector>
-#include <numeric>
 
-#include "constants.hh"
-#include "pw_material.hh"
 #include "pw_dielectric.hh"
 
 #define ex(i,j,k) ex[((this->i)*ex_y_size+(this->j))*ex_z_size+(this->k)]
@@ -24,15 +21,19 @@ namespace gmes
 template <typename T> class DrudeElectric: public MaterialElectric<T>
 {
 public:
-	DrudeElectric(const int * const idx, int size, double epsilon_inf,
-			const double * const omega_p, int omega_p_size,
-			const double * const gamma_p, int gamma_p_size) :
-		MaterialElectric<T>(idx, size), epsilon(epsilon_inf),
-		omega_p(omega_p, omega_p + omega_p_size),
-		gamma_p(gamma_p, gamma_p + gamma_p_size),
-		q_new(omega_p_size, static_cast<T>(0.)),
-		q_old(omega_p_size, static_cast<T>(0.))
+	DrudeElectric(const int * const idx, int size, double epsilon,
+			const double * const a, int a_i_size, int a_j_size,
+			const double * const c, int c_size) :
+		MaterialElectric<T>(idx, size), epsilon(epsilon),
+		c(c, c + c_size),
+		q_new(a_i_size, static_cast<T>(0)),
+		q_now(a_i_size, static_cast<T>(0))
 	{
+		for (int i = 0; i < a_i_size; i++)
+		{
+			std::vector<double> tmp(a + i * a_j_size, a + (i + 1) * a_j_size);
+			this->a.push_back(tmp);
+		}
 	}
 
 	double get_epsilon()
@@ -45,22 +46,42 @@ public:
 			epsilon = epsilon;
 		}
 
+	T dps_sum(const T& init)
+		{
+			T sum(init);
+			for (typename std::vector<T>::size_type i = 0; i < a.size(); ++i)
+			{
+				sum += q_new[i] - q_now[i];
+			}
+
+			return sum;
+		}
+
+	void update_q(const T& e_now)
+		{
+			std::vector<T> q_old(q_now);
+			std::copy(q_new.begin(), q_new.end(), q_now.begin());
+			for (typename std::vector<T>::size_type i = 0; i < a.size(); ++i)
+			{
+				q_new[i] = a[i][0] * q_old[i] + a[i][1] * q_now[i] + a[i][2] * e_now;
+			}
+		}
+
 protected:
 	double epsilon;
-	std::vector<double> omega_p;
-	std::vector<double> gamma_p;
-	std::vector<T > q_new;
-	std::vector<T > q_old;
+	std::vector<std::vector<double> > a;
+	std::vector<double> c;
+	std::vector<T> q_new;
+	std::vector<T> q_now;
 };
 
 template <typename T> class DrudeEx: public DrudeElectric<T>
 {
 public:
-	DrudeEx(const int * const idx, int size, double epsilon_inf,
-			const double * const omega_p, int omega_p_size,
-			const double * const gamma_p, int gamma_p_size) :
-		DrudeElectric<T>(idx, size, epsilon_inf, omega_p, omega_p_size,
-		gamma_p, gamma_p_size)
+	DrudeEx(const int * const idx, int size, double epsilon,
+			const double * const a, int a_i_size, int a_j_size,
+			const double * const c, int c_size) :
+		DrudeElectric<T>(idx, size, epsilon, a, a_i_size, a_j_size, c, c_size)
 	{
 	}
 
@@ -69,41 +90,27 @@ public:
 			const T * const hy, int hy_x_size, int hy_y_size, int hy_z_size,
 			double dy, double dz, double dt, double n)
 	{
-		std::vector<T > q_tmp(omega_p.size());
-
-		for (typename std::vector<T >::size_type u = 0; u != q_tmp.size(); ++u)
-		{
-			q_tmp[u] = (4. * q_new[u] + (gamma_p[u] * dt - 2.) * q_old[u] - (2.
-					* dt * dt * omega_p[u] * omega_p[u]) * ex(i,j,k))
-					/ (gamma_p[u] * dt + 2.);
-		}
-
-		std::copy(q_new.begin(), q_new.end(), q_old.begin());
-		std::copy(q_tmp.begin(), q_tmp.end(), q_new.begin());
-
-		T q_diff_sum = std::accumulate(q_new.begin(), q_new.end(), static_cast<T >(0.))
-				- std::accumulate(q_old.begin(), q_old.end(), static_cast<T >(0.));
-
-		ex(i,j,k) += (dt * ((hz(i+1,j+1,k) - hz(i+1,j,k)) / dy
-				- (hy(i+1,j,k+1) - hy(i+1,j,k)) / dz) + q_diff_sum) / epsilon;
+		T e_now = ex(i,j,k);
+		update_q(e_now);
+		ex(i,j,k) = c[0] * ((hz(i+1,j+1,k) - hz(i+1,j,k)) / dy - (hy(i+1,j,k+1) - hy(i+1,j,k)) / dz)
+				+ c[1] * dps_sum(static_cast<T>(0)) + c[2] * e_now;
 	}
 
 protected:
 	using DrudeElectric<T>::epsilon;
-	using DrudeElectric<T>::omega_p;
-	using DrudeElectric<T>::gamma_p;
+	using DrudeElectric<T>::a;
+	using DrudeElectric<T>::c;
 	using DrudeElectric<T>::q_new;
-	using DrudeElectric<T>::q_old;
+	using DrudeElectric<T>::q_now;
 };
 
 template <typename T> class DrudeEy: public DrudeElectric<T>
 {
 public:
-	DrudeEy(const int * const idx, int size, double epsilon_inf,
-			const double * const omega_p, int omega_p_size,
-			const double * const gamma_p, int gamma_p_size) :
-		DrudeElectric<T>(idx, size, epsilon_inf, omega_p, omega_p_size, gamma_p,
-				gamma_p_size)
+	DrudeEy(const int * const idx, int size, double epsilon,
+			const double * const a, int a_i_size, int a_j_size,
+			const double * const c, int c_size) :
+		DrudeElectric<T>(idx, size, epsilon, a, a_i_size, a_j_size, c, c_size)
 	{
 	}
 
@@ -112,41 +119,27 @@ public:
 			const T * const hz, int hz_x_size, int hz_y_size, int hz_z_size,
 			double dz, double dx, double dt, double n)
 	{
-		std::vector<T > q_tmp(omega_p.size());
-
-		for (typename std::vector<T >::size_type u = 0; u != q_tmp.size(); ++u)
-		{
-			q_tmp[u] = (4. * q_new[u] + (gamma_p[u] * dt - 2.) * q_old[u] - (2.
-					* dt * dt * omega_p[u] * omega_p[u]) * ey(i,j,k))
-					/ (gamma_p[u] * dt + 2.);
-		}
-
-		std::copy(q_new.begin(), q_new.end(), q_old.begin());
-		std::copy(q_tmp.begin(), q_tmp.end(), q_new.begin());
-
-		T q_diff_sum = std::accumulate(q_new.begin(), q_new.end(), static_cast<T >(0.))
-				- std::accumulate(q_old.begin(), q_old.end(), static_cast<T >(0.));
-
-		ey(i,j,k) += (dt * ((hx(i,j+1,k+1) - hx(i,j+1,k)) / dz
-				- (hz(i+1,j+1,k) - hz(i,j+1,k)) / dx) + q_diff_sum) / epsilon;
+		T e_now = ey(i,j,k);
+		update_q(e_now);
+		ey(i,j,k) = c[0] * ((hx(i,j+1,k+1) - hx(i,j+1,k)) / dz - (hz(i+1,j+1,k) - hz(i,j+1,k)) / dx)
+				+ c[1] * dps_sum(static_cast<T>(0)) + c[2] * e_now;
 	}
 
 protected:
 	using DrudeElectric<T>::epsilon;
-	using DrudeElectric<T>::omega_p;
-	using DrudeElectric<T>::gamma_p;
+	using DrudeElectric<T>::a;
+	using DrudeElectric<T>::c;
 	using DrudeElectric<T>::q_new;
-	using DrudeElectric<T>::q_old;
+	using DrudeElectric<T>::q_now;
 };
 
 template <typename T> class DrudeEz: public DrudeElectric<T>
 {
 public:
-	DrudeEz(const int * const idx, int size, double epsilon_inf,
-			const double * const omega_p, int omega_p_size,
-			const double * const gamma_p, int gamma_p_size) :
-		DrudeElectric<T>(idx, size, epsilon_inf, omega_p, omega_p_size, gamma_p,
-				gamma_p_size)
+	DrudeEz(const int * const idx, int size, double epsilon,
+			const double * const a, int a_i_size, int a_j_size,
+			const double * const c, int c_size) :
+		DrudeElectric<T>(idx, size, epsilon, a, a_i_size, a_j_size, c, c_size)
 	{
 	}
 
@@ -155,31 +148,18 @@ public:
 			const T * const hx, int hx_x_size, int hx_y_size, int hx_z_size,
 			double dx, double dy, double dt, double n)
 	{
-		std::vector<T > q_tmp(omega_p.size());
-
-		for (typename std::vector<T >::size_type u = 0; u != q_tmp.size(); ++u)
-		{
-			q_tmp[u] = (4. * q_new[u] + (gamma_p[u] * dt - 2.) * q_old[u] - (2.
-					* dt * dt * omega_p[u] * omega_p[u]) * ez(i,j,k))
-					/ (gamma_p[u] * dt + 2.);
-		}
-
-		std::copy(q_new.begin(), q_new.end(), q_old.begin());
-		std::copy(q_tmp.begin(), q_tmp.end(), q_new.begin());
-
-		T q_diff_sum = std::accumulate(q_new.begin(), q_new.end(), static_cast<T >(0.))
-				- std::accumulate(q_old.begin(), q_old.end(), static_cast<T >(0.));
-
-		ez(i,j,k) += (dt * ((hy(i+1,j,k+1) - hy(i,j,k+1)) / dx
-				- (hx(i,j+1,k+1) - hx(i,j,k+1)) / dy) + q_diff_sum) / epsilon;
+		T e_now = ez(i,j,k);
+		update_q(e_now);
+		ez(i,j,k) = c[0] * ((hy(i+1,j,k+1) - hy(i,j,k+1)) / dx - (hx(i,j+1,k+1) - hx(i,j,k+1)) / dy)
+				+ c[1] * dps_sum(static_cast<T>(0)) + c[2] * e_now;
 	}
 
 protected:
 	using DrudeElectric<T>::epsilon;
-	using DrudeElectric<T>::omega_p;
-	using DrudeElectric<T>::gamma_p;
+	using DrudeElectric<T>::a;
+	using DrudeElectric<T>::c;
 	using DrudeElectric<T>::q_new;
-	using DrudeElectric<T>::q_old;
+	using DrudeElectric<T>::q_now;
 };
 
 template <typename T> class DrudeHx: public DielectricHx<T>

@@ -2,7 +2,6 @@
 #define PW_DIELECTRIC_HH_
 
 #include "pw_material.hh"
-#include "constants.hh"
 
 #define ex(i,j,k) ex[((this->i)*ex_y_size+(this->j))*ex_z_size+(this->k)]
 #define ey(i,j,k) ey[((this->i)*ey_y_size+(this->j))*ey_z_size+(this->k)]

@@ -7,10 +7,7 @@
 #define PW_DCP_HH_
 
 #include <vector>
-#include <numeric>
-#include <iostream>
 
-#include "pw_material.hh"
 #include "pw_dielectric.hh"
 
 #define ex(i,j,k) ex[((this->i)*ex_y_size+(this->j))*ex_z_size+(this->k)]
@@ -31,11 +28,11 @@ public:
 			const double * const c, int c_size) :
 		MaterialElectric<T>(idx, size), epsilon(epsilon),
 		c(c, c + c_size),
-		e_old(static_cast<T>(0.)),
-		q_now(a_i_size, static_cast<T>(0.)),
-		q_old(a_i_size, static_cast<T>(0.)),
-		p_now(b_i_size, static_cast<T>(0.)),
-		p_old(b_i_size, static_cast<T>(0.))
+		e_old(static_cast<T>(0)),
+		q_now(a_i_size, static_cast<T>(0)),
+		q_old(a_i_size, static_cast<T>(0)),
+		p_now(b_i_size, static_cast<T>(0)),
+		p_old(b_i_size, static_cast<T>(0))
 	{
 		for (int i = 0; i < a_i_size; i++)
 		{

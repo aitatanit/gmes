@@ -59,12 +59,7 @@ import_array();
 %apply_numpy_typemaps(double)
 %apply_numpy_typemaps(std::complex<double>)
 
-// Drude model
 %apply (int* IN_ARRAY1, int DIM1) {(const int* const idx, int size)};
-%apply (double* IN_ARRAY1, int DIM1) {(const double* const omega_p, int omega_p_size)};
-%apply (double* IN_ARRAY1, int DIM1) {(const double* const gamma_p, int gamma_p_size)};
-
-// Drude-critical points model
 %apply (double* IN_ARRAY2, int DIM1, int DIM2) {(const double* const a, int a_i_size, int a_j_size)};
 %apply (double* IN_ARRAY2, int DIM1, int DIM2) {(const double* const b, int b_i_size, int b_j_size)};
 %apply (double* IN_ARRAY1, int DIM1) {(const double* const c, int c_size)};

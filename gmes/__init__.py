@@ -24,7 +24,7 @@
 
 GMES is a Python implementation of the explicit finite-difference
 time-domain (FDTD) method. It is designed to simulate the photonic
-device in 1-d, 2-d, and 3-d Cartesian coordinates.
+device in 1, 2, and 3-d Cartesian coordinates.
 
 Modules:
     fdtd --- Provide various simulation classes suitable for 1, 2, and 3-d cases.
@@ -32,9 +32,9 @@ Modules:
     show --- Real-time display classes
     constants --- Physical and simulation constants
     source --- Define the input sources
-    pointwise_source --- Source update mechanism
+    pw_source --- Source update mechanism
     material --- Define the propagating medium
-    pointwise_material --- Provide the update mechanism 
+    pw_material --- Provide the update mechanism 
 
 """
 

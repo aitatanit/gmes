@@ -16,7 +16,7 @@ http://gmes.svn.sf.net/svnroot/gmes/trunk
 2.1. GNU/Linux
 
 GMES has been tested on Leny (stable) version of Debian GNU/Linux. Also, GMES
-works on Intrepid Ibex version of Ubuntu.
+works on Ubuntu 9.10 (Karmic Koala).
 
 2.2. Windows
 
@@ -31,13 +31,13 @@ GMES uses various Python and non-Python programs. You will need following
 programs to install and execute GMES. The following programs are provided as 
 packages on Debian and Ubuntu distributions, except the MPICH2 and MPI4Python.
 
-* python >= 2.4 (tested with 2.4 and 2.5)
+* python >= 2.5 (tested with 2.5.2, and 2.6.4)
 * numpy (Debian package: python-numpy)
 * scipy (Debian package: python-scipy)
 * pytables (optional) (Debian package: python-tables)
 * matplotlib: (Debian package: python-matplotlib)
-* MPI4Python >= 0.6.0 (optional) (with MPICH2 >= 1.0.8)
-* swig >= 1.3 (for compile) (Debian package: swig)
+* MPI4Python >= 1.1.0 (optional) (with MPICH2 >= 1.2)
+* swig >= 1.3.36 (for compile) (Debian package: swig)
 * g++ (to compile) (Debian package: g++)
 
 3.2. Windows
@@ -46,7 +46,7 @@ Enthought Python distribution provides all programs except MPICH2 and
 MPI4Python on which GMES depends. We didn't tested the MPI environment on 
 Windows.
 
-* Enthought Python Distribution (EPD) >= 4.2.30201
+* Enthought Python Distribution (EPD) >= 6.0.0
 
 4. Compile and Install
 
@@ -59,7 +59,7 @@ should be executed as the root privilege.
 
 4.1.1. compile for the inplace test
 
-$ python setup.py build_ext --inplace
+$ python setup.py build_ext -i
 
 4.1.2. compile
 
@@ -73,7 +73,7 @@ $ python setup.py build_ext --swig-opts="-c++"
 
 4.2.1. compile for the inplace test
 
-$ python setup.py build_ext --inplace -c mingw32
+$ python setup.py build_ext -i -c mingw32
 
 4.2.2. compile
 

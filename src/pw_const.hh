@@ -2,7 +2,6 @@
 #define PW_CONST_HH_
 
 #include "pw_material.hh"
-#include "constants.hh"
 
 #define inplace_field(i,j,k) inplace_field[((this->i)*inplace_dim2+(this->j))*inplace_dim3+(this->k)]
 

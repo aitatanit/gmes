@@ -306,8 +306,8 @@ class Dielectric(Material):
             mu -- permeability
         
         """
-        self.epsilon = epsilon
-        self.mu = mu
+        self.epsilon = float(epsilon)
+        self.mu = float(mu)
 
     def display_info(self, indent=0):
         """Display the parameter values.
@@ -821,12 +821,12 @@ class DCP(Dielectric):
         """
         epsilon: The (frequency-independent) isotropic relative permittivity. Default is 1.
         mu: The (frequency-independent) isotropic relative permeability. Default is 1.
+        sigma: The (frequency-independent) isotropic conductivity. Default is 0.
         dps: list of Drude poles. Default is ().
         cps: list of critical points. Default is ().
         
         """
-        self.epsilon = float(epsilon) # instant permittivity
-        self.mu = float(mu) # instant permeability
+        Dielectric.__init__(self, epsilon=epsilon, mu=mu)
         self.sigma = float(sigma) # instant conductivity
         self.dps = tuple(dps) # tuple of Drude poles
         self.cps = tuple(cps) # tuple of critical points
@@ -834,7 +834,7 @@ class DCP(Dielectric):
     def init(self, space, param=None):
         self.dt = space.dt
         
-        # parameters for the ADE of Drude model
+        # parameters for the ADE of the Drude model
         self.a = empty((len(self.dps),3), float)
         for i in xrange(len(self.dps)):
             pole = self.dps[i]
@@ -863,7 +863,10 @@ class DCP(Dielectric):
         self.c[3] = (2 * (self.epsilon - sum(self.a[:,2]) - sum(self.b[:,3])) - self.dt * self.sigma) / denom
         
     def display_info(self, indent=0):
-        print " " * indent, "Drude-critical point model for a dispersive media"
+        """Display the parameter values.
+        
+        """
+        print " " * indent, "Drude-critical points dispersive media"
         print " " * indent,
         print "permittivity:", self.epsilon,
         print "permeability:", self.mu,
@@ -927,77 +930,103 @@ class DCP(Dielectric):
 
 class Drude(Dielectric):
     """
+    The auxiliary differential equation implementation of the Drude model based on the 
+    following article.
+    * M. Okoniewski and E. Okoniewska, "Drude dispersion in ADE FDTD revisited,"
+    Electron. Lett., vol. 42, no. 9, pp. 503-504, 2006.
     
     """
-    def __init__(self, epsilon_inf, omega_p, gamma_p, mu=1):
+    def __init__(self, epsilon=1, mu=1, sigma=0, dps=()):
         """
         Arguments:
-            epsilon_inf: permittivity at infinite frequency
-            omega_p: the pole resonant frequency 
-            gamma_p: the inverse of the pole relaxation time
-            mu: magnetic permeability
+            epsilon: The (frequency-independent) isotropic relative permittivity. Default is 1.
+            mu: The (frequency-independent) isotropic relative permeability. Default is 1. 
+            sigma: The (frequency-independent) isotropic conductivity. Default is 0.
+            dps: list of Drude poles. Default is().
             
         """
-        Dielectric.__init__(self, epsilon=epsilon_inf, mu=mu)
-        self.omega_p = array(omega_p, float)
-        self.gamma_p = array(gamma_p, float)
-    
+        Dielectric.__init__(self, epsilon=epsilon, mu=mu)
+        self.sigma = float(sigma)
+        self.dps = tuple(dps)
+        
+    def init(self, space, param=None):
+        self.dt = space.dt
+        
+        # parameters for the ADE of the Drude model.
+        self.a = empty((len(self.dps),3), float)
+        for i in xrange(len(self.dps)):
+            pole = self.dps[i]
+            denom = self.dt * pole.gamma + 2.
+            self.a[i,0] = (self.dt * pole.gamma - 2) / denom
+            self.a[i,1] = 4 / denom
+            self.a[i,2] = 2 * (self.dt * pole.omega)**2 / denom
+        
+        # parameters for the electric field update equations.
+        self.c = empty(3, float)
+        denom = 2. * self.epsilon + self.dt * self.sigma 
+        self.c[0] = 2 * self.dt / denom
+        self.c[1] = -2 / denom
+        self.c[2] = (2 * self.epsilon - self.dt * self.sigma) / denom
+        
     def display_info(self, indent=0):
         """Display the parameter values.
         
         """
         print " " * indent, "Drude dispersion media"
         print " " * indent, 
-        print "infinite permittivity:", self.epsilon,
-        print "plasma frequency:", self.omega_p
-        print "relaxation frequency:", self.gamma_p
-        print "permeability:", self.mu
+        print "permittivity:", self.epsilon,
+        print "permeability:", self.mu,
+        print "conductivity:", self.sigma
+        
+        print " "* indent, "Drude pole(s):"
+        for p in self.dps:
+            p.display_info(indent+4)
         
     def get_pw_material_ex(self, idx, coords, underneath=None, cmplx=False):
         if cmplx:
-            pw_obj = DrudeExCmplx(idx, self.epsilon, self.omega_p, self.gamma_p)
+            pw_obj = DrudeExCmplx(idx, self.epsilon, self.a, self.c)
         else:
-            pw_obj = DrudeExReal(idx, self.epsilon, self.omega_p, self.gamma_p)
+            pw_obj = DrudeExReal(idx, self.epsilon, self.a, self.c)
             
         return pw_obj
     
     def get_pw_material_ey(self, idx, coords, underneath=None, cmplx=False):
         if cmplx:
-            pw_obj = DrudeEyCmplx(idx, self.epsilon, self.omega_p, self.gamma_p)
+            pw_obj = DrudeEyCmplx(idx, self.epsilon, self.a, self.c)
         else:
-            pw_obj = DrudeEyReal(idx, self.epsilon, self.omega_p, self.gamma_p)
+            pw_obj = DrudeEyReal(idx, self.epsilon, self.a, self.c)
             
         return pw_obj
     
     def get_pw_material_ez(self, idx, coords, underneath=None, cmplx=False):
         if cmplx:
-            pw_obj = DrudeEzCmplx(idx, self.epsilon, self.omega_p, self.gamma_p)
+            pw_obj = DrudeEzCmplx(idx, self.epsilon, self.a, self.c)
         else:
-            pw_obj = DrudeEzReal(idx, self.epsilon, self.omega_p, self.gamma_p)
+            pw_obj = DrudeEzReal(idx, self.epsilon, self.a, self.c)
             
         return pw_obj
     
     def get_pw_material_hx(self, idx, coords, underneath=None, cmplx=False):
         if cmplx:
-            pw_obj = DrudeHxCmplx(idx, self.mu, self.omega_p, self.gamma_p)
+            pw_obj = DrudeHxCmplx(idx, self.mu)
         else:
-            pw_obj = DrudeHxReal(idx, self.mu, self.omega_p, self.gamma_p)
+            pw_obj = DrudeHxReal(idx, self.mu)
             
         return pw_obj
     
     def get_pw_material_hy(self, idx, coords, underneath=None, cmplx=False):
         if cmplx:
-            pw_obj = DrudeHyCmplx(idx, self.mu, self.omega_p, self.gamma_p)
+            pw_obj = DrudeHyCmplx(idx, self.mu)
         else:
-            pw_obj = DrudeHyReal(idx, self.mu, self.omega_p, self.gamma_p)
+            pw_obj = DrudeHyReal(idx, self.mu)
             
         return pw_obj
     
     def get_pw_material_hz(self, idx, coords, underneath=None, cmplx=False):
         if cmplx:
-            pw_obj = DrudeHzCmplx(idx, self.mu, self.omega_p, self.gamma_p)
+            pw_obj = DrudeHzCmplx(idx, self.mu)
         else:
-            pw_obj = DrudeHzReal(idx, self.mu, self.omega_p, self.gamma_p)
+            pw_obj = DrudeHzReal(idx, self.mu)
             
         return pw_obj
         
@@ -1027,8 +1056,25 @@ class Gold(DCP):
                             omega=4.1684e15 * a / const.c0, 
                             gamma=2.3555e15 * a / const.c0)
         DCP.__init__(self, epsilon=1.1431, mu=1, sigma=0, dps=(dp1,), cps=(cp1,cp2))
-
         
+
+class Gold2(Drude):
+    """
+    The parameters are from the following article.
+    * M. Okoniewski and E. Okoniewska, "Drude dispersion in ADE FDTD revisited,"
+    Electron. Lett., vol. 42, no. 9, pp. 503-504, 2006.
+
+    """
+    def __init__(self, a):
+        """
+        a: lattice constant in meters.
+        
+        """
+        dp1 = DrudePole(omega=1.196e16 * a / const.c0, 
+                        gamma=8.052e13 * a / const.c0)
+        Drude.__init__(self, epsilon=1, mu=1, sigma=0, dps=(dp1,))
+        
+                
 class Silver(DCP):
     """
     The parameters are from the following article.

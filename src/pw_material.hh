@@ -2,7 +2,6 @@
 #define PW_MATERIAL_HH_
 
 #include <stdexcept>
-#include "constants.hh"
 
 namespace gmes {
 template<class T> class PwMaterial {

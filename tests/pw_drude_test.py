@@ -6,9 +6,9 @@ sys.path.append(new_path)
 
 import unittest
 from numpy import *
-from gmes.pw_material import * 
+from gmes.material import *
+from gmes.geometry import *
 
-    
 class TestSequence(unittest.TestCase):
     def setUp(self):
         self.idx = (1,1,1)
@@ -23,12 +23,16 @@ class TestSequence(unittest.TestCase):
         
         self.diff = 1
         self.n = 0
-        self.epsilon_inf = 1
-        self.omega_p = self.gamma_p = (1,)
+        
+        self.spc = Cartesian((0,0,0))
+        self.spc.dt = 1
+        
+        self.drude = Drude(dps=(DrudePole(omega=1,gamma=1),))
+        self.drude.init(self.spc)
         
     def testEx(self):
-        sampleReal = DrudeExReal(self.idx, self.epsilon_inf, self.omega_p, self.gamma_p)
-        sampleCmplx = DrudeExCmplx(self.idx, self.epsilon_inf, self.omega_p, self.gamma_p)
+        sampleReal = self.drude.get_pw_material_ex(self.idx, (0,0,0), cmplx=False)
+        sampleCmplx = self.drude.get_pw_material_ex(self.idx, (0,0,0), cmplx=True)
         sampleReal.update(self.realA, self.realB, self.realC, 
                           self.diff, self.diff, self.diff, self.n)
         sampleCmplx.update(self.cmplxA, self.cmplxB, self.cmplxC, 
@@ -36,8 +40,8 @@ class TestSequence(unittest.TestCase):
         self.assertEqual((self.realA == self.cmplxA.real).all(), True)
         
     def testEy(self):
-        sampleReal = DrudeEyReal(self.idx, self.epsilon_inf, self.omega_p, self.gamma_p)
-        sampleCmplx = DrudeEyCmplx(self.idx, self.epsilon_inf, self.omega_p, self.gamma_p)
+        sampleReal = self.drude.get_pw_material_ey(self.idx, (0,0,0), cmplx=False)
+        sampleCmplx = self.drude.get_pw_material_ey(self.idx, (0,0,0), cmplx=True)
         sampleReal.update(self.realA, self.realB, self.realC, 
                           self.diff, self.diff, self.diff, self.n)
         sampleCmplx.update(self.cmplxA, self.cmplxB, self.cmplxC, 
@@ -45,8 +49,8 @@ class TestSequence(unittest.TestCase):
         self.assertEqual((self.realA == self.cmplxA.real).all(), True)
         
     def testEz(self):
-        sampleReal = DrudeEzReal(self.idx, self.epsilon_inf, self.omega_p, self.gamma_p)
-        sampleCmplx = DrudeEzCmplx(self.idx, self.epsilon_inf, self.omega_p, self.gamma_p)
+        sampleReal = self.drude.get_pw_material_ez(self.idx, (0,0,0), cmplx=False)
+        sampleCmplx = self.drude.get_pw_material_ez(self.idx, (0,0,0), cmplx=True)
         sampleReal.update(self.realA, self.realB, self.realC, 
                           self.diff, self.diff, self.diff, self.n)
         sampleCmplx.update(self.cmplxA, self.cmplxB, self.cmplxC, 
@@ -54,8 +58,8 @@ class TestSequence(unittest.TestCase):
         self.assertEqual((self.realA == self.cmplxA.real).all(), True)
         
     def testHx(self):
-        sampleReal = DrudeHxReal(self.idx, self.epsilon_inf)
-        sampleCmplx = DrudeHxCmplx(self.idx, self.epsilon_inf)
+        sampleReal = self.drude.get_pw_material_hx(self.idx, (0,0,0), cmplx=False)
+        sampleCmplx = self.drude.get_pw_material_hx(self.idx, (0,0,0), cmplx=True)
         sampleReal.update(self.realA, self.realB, self.realC, 
                           self.diff, self.diff, self.diff, self.n)
         sampleCmplx.update(self.cmplxA, self.cmplxB, self.cmplxC, 
@@ -63,8 +67,8 @@ class TestSequence(unittest.TestCase):
         self.assertEqual((self.realA == self.cmplxA.real).all(), True)
         
     def testHy(self):
-        sampleReal = DrudeHyReal(self.idx, self.epsilon_inf)
-        sampleCmplx = DrudeHyCmplx(self.idx, self.epsilon_inf)
+        sampleReal = self.drude.get_pw_material_hy(self.idx, (0,0,0), cmplx=False)
+        sampleCmplx = self.drude.get_pw_material_hy(self.idx, (0,0,0), cmplx=True)
         sampleReal.update(self.realA, self.realB, self.realC, 
                           self.diff, self.diff, self.diff, self.n)
         sampleCmplx.update(self.cmplxA, self.cmplxB, self.cmplxC, 
@@ -72,8 +76,8 @@ class TestSequence(unittest.TestCase):
         self.assertEqual((self.realA == self.cmplxA.real).all(), True)
         
     def testHz(self):
-        sampleReal = DrudeHzReal(self.idx, self.epsilon_inf)
-        sampleCmplx = DrudeHzCmplx(self.idx, self.epsilon_inf)
+        sampleReal = self.drude.get_pw_material_hz(self.idx, (0,0,0), cmplx=False)
+        sampleCmplx = self.drude.get_pw_material_hz(self.idx, (0,0,0), cmplx=True)
         sampleReal.update(self.realA, self.realB, self.realC, 
                           self.diff, self.diff, self.diff, self.n)
         sampleCmplx.update(self.cmplxA, self.cmplxB, self.cmplxC, 

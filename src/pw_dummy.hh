@@ -2,7 +2,6 @@
 #define PW_DUMMY_HH_
 
 #include "pw_material.hh"
-#include "constants.hh"
 
 namespace gmes
 {
