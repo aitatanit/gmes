@@ -10,14 +10,14 @@ namespace gmes
 // the ratio of the circumference of a circle to its diameter
 const double pi = 4 * atan(1);
 
-// Vacuum permittivity
-const double epsilon0 = 8.854187817e-12; // in Farad/Meter
+// speed of light in vacuum
+const double c0 = 299792458; // in Meter/Second
 
 // Vacuum permeability
 const double mu0 = 4 * pi * 1e-7; // in Henry/Meter
 
-// speed of light in vacuum
-const double c0 = 1 / sqrt(epsilon0 * mu0);
+// Vacuum permittivity
+const double epsilon0 = 1 / (c0 * c0 * mu0); // in Farad/Meter
 
 // vacuum impedance
 const double Z0 = sqrt(mu0 / epsilon0);
