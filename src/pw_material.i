@@ -10,6 +10,7 @@
 #include "pw_cpml.hh"
 #include "pw_drude.hh"
 #include "pw_dcp.hh"
+#include "pw_lorentz.hh"
 %}
 
 %include "complex.i"
@@ -103,6 +104,7 @@ if _newclass:prop = property(eval("_"+__name__.split('.')[-1]).##py##_##get, eva
 %include "pw_cpml.hh"
 %include "pw_drude.hh"
 %include "pw_dcp.hh"
+%include "pw_lorentz.hh"
 
 // Instantiate template classes
 %define %template_wrap(T, postfix) 
@@ -166,6 +168,15 @@ if _newclass:prop = property(eval("_"+__name__.split('.')[-1]).##py##_##get, eva
 %template(DrudeHx ## postfix) gmes::DrudeHx<T >;
 %template(DrudeHy ## postfix) gmes::DrudeHy<T >;
 %template(DrudeHz ## postfix) gmes::DrudeHz<T >;
+
+// Lerentz model
+%template(LorentzElectric ## postfix) gmes::LorentzElectric<T >;
+%template(LorentzEx ## postfix) gmes::LorentzEx<T >;
+%template(LorentzEy ## postfix) gmes::LorentzEy<T >;
+%template(LorentzEz ## postfix) gmes::LorentzEz<T >;
+%template(LorentzHx ## postfix) gmes::LorentzHx<T >;
+%template(LorentzHy ## postfix) gmes::LorentzHy<T >;
+%template(LorentzHz ## postfix) gmes::LorentzHz<T >;
 
 // Drude-critical points model
 %template(DCPElectric ## postfix) gmes::DCPElectric<T >;

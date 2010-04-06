@@ -109,21 +109,6 @@ class FDTD(object):
         if verbose:
             print "The geometric tree follows..."
             self.geom_tree.display_info()
-            
-        if verbose:
-            print "Initializing source...",
-            
-        self.src_list = deepcopy(src_list)
-        for so in self.src_list:
-            so.init(self.geom_tree, self.space)
-            
-        if verbose:
-            print "done."
-            
-        if verbose:
-            print "The source list information follows..."
-            for so in self.src_list:
-                so.display_info()
                 
         if wavevector is None or wavevector is False:
             self.cmplx = False
@@ -135,6 +120,21 @@ class FDTD(object):
         if verbose:
             print "wave vector is", self.k
             
+        if verbose:
+            print "Initializing source...",
+            
+        self.src_list = deepcopy(src_list)
+        for so in self.src_list:
+            so.init(self.geom_tree, self.space, self.cmplx)
+            
+        if verbose:
+            print "done."
+            
+        if verbose:
+            print "The source list information follows..."
+            for so in self.src_list:
+                so.display_info()
+                
         if verbose:
             print "Allocating memory for the electric & magnetic fields...",
             
@@ -1890,6 +1890,9 @@ class TEMxFDTD(FDTD):
     TEMxFDTD updates only Ey and Hz field components.
     
     """
+    def __init__(self, space=None, geom_list=None, src_list=None, courant_ratio=1, dt=None, wavevector=False, verbose=True):
+        FDTD.__init__(self, space, geom_list, src_list, courant_ratio, dt, wavevector, verbose)
+        
     def stable_limit(self, space):
         # Courant stability bound
         return space.dx
@@ -1961,6 +1964,9 @@ class TEMyFDTD(FDTD):
     TEMyFDTD updates only Ez and Hx field components.
     
     """
+    def __init__(self, space=None, geom_list=None, src_list=None, courant_ratio=1, dt=None, wavevector=False, verbose=True):
+        FDTD.__init__(self, space, geom_list, src_list, courant_ratio, dt, wavevector, verbose)
+        
     def stable_limit(self, space):
         # Courant stability bound
         return space.dy
@@ -2032,6 +2038,9 @@ class TEMzFDTD(FDTD):
     TEMzFDTD updates only Ex and Hy field components.
     
     """
+    def __init__(self, space=None, geom_list=None, src_list=None, courant_ratio=1, dt=None, wavevector=False, verbose=True):
+        FDTD.__init__(self, space, geom_list, src_list, courant_ratio, dt, wavevector, verbose)
+        
     def stable_limit(self, space):
         # Courant stability bound
         return space.dz

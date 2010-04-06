@@ -55,6 +55,9 @@ class Continuous(SrcTime):
         else:
             self.width = float(width)
 
+    def init(self, cmplx):
+        self.cmplx = cmplx
+        
     def display_info(self, indent=0):
         print " " * indent, "continuous source"
         print " " * indent,
@@ -69,7 +72,7 @@ class Continuous(SrcTime):
         te = self.end - time
         
         if ts < 0 or te < 0:
-            return 0j
+            return 0
         
         if ts < self.width:
             env = sin(.5 * pi * ts / self.width)**2
@@ -77,8 +80,12 @@ class Continuous(SrcTime):
             env = sin(.5 * pi * te / self.width)**2
         else:
             env = 1
-            
-        return env * exp(-2j * pi * self.freq * time - self.phase)
+        
+        osc = env * exp(-2j * pi * self.freq * time - self.phase)
+        if self.cmplx:
+            return osc
+        else:
+            return osc.real
 
 
 class Bandpass(SrcTime):
@@ -97,6 +104,9 @@ class Bandpass(SrcTime):
         while exp(-.5 * (self.cutoff/self.width)**2) == 0:
             self.cutoff *= .9
     
+    def init(self, cmplx):
+        self.cmplx = cmplx
+        
     def display_info(self, indent=0):
         print " " * indent, "bandpass source"
         print " " * indent,
@@ -108,13 +118,17 @@ class Bandpass(SrcTime):
     def dipole(self, time):
         tt = time - self.peak_time
         if (abs(tt) > self.cutoff): 
-            return 0j
+            return 0
 
         # correction factor so that current amplitude (= d(dipole)/dt) is
         # ~ 1 near the peak of the Gaussian.
         cfactor = 1.0 / (-2j*pi*self.freq)
         
-        return cfactor * exp(-.5*(tt/self.width)**2) * exp(-2j*pi*self.freq*time-self.phase)
+        osc = cfactor * exp(-.5*(tt/self.width)**2) * exp(-2j*pi*self.freq*time-self.phase)
+        if self.cmplx:
+            return osc
+        else:
+            return osc.real
         
         
 class Dipole(Src):
@@ -125,8 +139,8 @@ class Dipole(Src):
         self.amp = float(amp)
         self.filename = filename
         
-    def init(self, geom_tree, space):
-        pass
+    def init(self, geom_tree, space, cmplx):
+        self.src_time.init(cmplx)
     
     def step(self):
         pass
@@ -194,6 +208,7 @@ class Dipole(Src):
                     loc = space.hz_index_to_space(*idx)
                     material_hz[idx].file.write('# location=' + str(loc) + '\n')
 
+
 class TotalFieldScatteredField(Src):
     """Set a total and scattered field zone to launch a plane wave.
     
@@ -230,10 +245,11 @@ class TotalFieldScatteredField(Src):
         
         self.on_axis_k = self._axis_in_k()
         
-    def init(self, geom_tree, space, dt):
+    def init(self, geom_tree, space, cmplx):
         self.geom_tree = geom_tree
+        self.src_time.init(cmplx)
         
-        self.aux_fdtd = self._get_aux_fdtd(space, dt)
+        self.aux_fdtd = self._get_aux_fdtd(space)
         
     def step(self):
         self.aux_fdtd.step()
@@ -286,18 +302,18 @@ class TotalFieldScatteredField(Src):
         
         """
         dot_with_axis = {}
-                
+        
         dot_with_axis[dot(const.PlusX.vector, self.k)] = const.PlusX 
         dot_with_axis[dot(const.PlusY.vector, self.k)] = const.PlusY 
-        dot_with_axis[dot(const.PlusY.vector, self.k)] = const.PlusY 
+        dot_with_axis[dot(const.PlusZ.vector, self.k)] = const.PlusZ 
         dot_with_axis[dot(const.MinusX.vector, self.k)] = const.MinusX 
         dot_with_axis[dot(const.MinusY.vector, self.k)] = const.MinusY 
         dot_with_axis[dot(const.MinusZ.vector, self.k)] = const.MinusZ 
         
         return dot_with_axis[max(dot_with_axis)]
         
-    def _get_wave_number(self, k, epsilon, mu, space, error=1.e-3):
-        """Return the numerical wave number for auxiliary fdtd.
+    def _get_wave_number(self, k, epsilon, mu, space, error=1e-3):
+        """Calculate the wave number for auxiliary fdtd using the Newton's method.
         
         Arguments:
             k -- normalized wave vector
@@ -308,20 +324,23 @@ class TotalFieldScatteredField(Src):
         """
         ds = array((space.dx, space.dy, space.dz))
         dt = space.dt
-        k1_scalar = inf
-        k2_scalar = 2 * pi * self.src_time.freq
+        k_scalar_old = inf
+        k_scalar_new = 2 * pi * self.src_time.freq
+        error_old = inf
         
-        while abs(k2_scalar - k1_scalar) > error:
-            k1_scalar = k2_scalar
-            
-            f = (sum(((sin(.5 * k1_scalar * k * ds) / ds)**2)) - 
+        while error_old > error:
+            k_scalar_old = k_scalar_new
+            f = (sum(((sin(.5 * k_scalar_old * k * ds) / ds)**2)) - 
                          sqrt(epsilon * mu) * 
                          (sin(pi * self.src_time.freq * dt) / dt)**2)
-            f_prime = .5 * sum(k * sin(k1_scalar * k * ds) / ds)
+            f_prime = .5 * sum(k * sin(k_scalar_old * k * ds) / ds)
+            k_scalar_new = k_scalar_old - f / f_prime
             
-            k2_scalar = k1_scalar - f / f_prime
+            # If Newton's method fails to converge, just stop now. 
+            if error_old == abs(k_scalar_new - k_scalar_old): break
+            else: error_old = abs(k_scalar_new - k_scalar_old)
             
-        return k2_scalar
+        return k_scalar_new
 
     def _get_aux_fdtd(self, space):
         """Returns a TEMz FDTD for a reference of a plane wave. 
@@ -353,8 +372,7 @@ class TotalFieldScatteredField(Src):
         mat_objs =  self.geom_tree.material_of_point((inf, inf, inf))
         
         aux_space = Cartesian(size=aux_size, 
-                              resolution=1/dz, 
-                              cyclic=(False,False,False),
+                              resolution=1/dz,
                               parallel=False)
         aux_geom_list = (DefaultMaterial(material=mat_objs[0]),
                          Boundary(material=CPML(kappa_max=2.0, sigma_max_ratio=2.0),
@@ -402,7 +420,6 @@ class TotalFieldScatteredField(Src):
         
         for i, j, k in ndindex(*(high_idx_array - low_idx_array)):
             i, j, k = (i, j, k) + low_idx_array
-            
             if in_range((i, j, k), material, component):
                 point = idx_to_spc[component](i, j, k)
                 
@@ -473,9 +490,9 @@ class TotalFieldScatteredField(Src):
             low = self.center - self.half_size
             high = self.center + self.half_size * (1, 1, -1)
             
-            low_idx = space.space_to_ex_index(*low)  
+            low_idx = space.space_to_ex_index(*low)
             high_idx = map(lambda x: x + 1, space.space_to_ex_index(*high))
-    
+            
             hy_i2s = lambda i, j, k: space.hy_index_to_space(i + 1, j, k)
             
             self._set_pw_source(space, const.Ex, cosine, material_ex,

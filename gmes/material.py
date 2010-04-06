@@ -781,7 +781,31 @@ class DrudePole(object):
         print "plasma frequency:", self.omega,
         print "relaxation frequency:", self.gamma
         
+
+class LorentzPole(object):
+    def __init__(self, amp, omega, gamma):
+        """
+        LorentzPole() -> a new Lorentz pole
+        amp: amplitude
+        omega: energy of the gap
+        gamma: broadening
         
+        """
+        self.amp = float(amp)
+        self.omega = float(omega)
+        self.gamma = float(gamma)
+        
+    def display_info(self, indent=0):
+        """Display the parameter values.
+        
+        """
+        print " " * indent, "Lorentz pole"
+        print " " * indent,
+        print "amplitude:", self.amp,
+        print "energy of the gap:", self.omega,
+        print "broadening:", self.gamma
+        
+                
 class CriticalPoint(object):
     def __init__(self, amp, phi, omega, gamma):
         """
@@ -940,7 +964,7 @@ class Drude(Dielectric):
         """
         Arguments:
             epsilon: The (frequency-independent) isotropic relative permittivity. Default is 1.
-            mu: The (frequency-independent) isotropic relative permeability. Default is 1. 
+            mu: The (frequency-independent) isotropic relative permeability. Default is 1.
             sigma: The (frequency-independent) isotropic conductivity. Default is 0.
             dps: list of Drude poles. Default is().
             
@@ -1030,7 +1054,107 @@ class Drude(Dielectric):
             
         return pw_obj
         
+
+class Lorentz(Dielectric):
+    """
+    The auxiliary differential equation implementation of the Lorentz model.
+    
+    """
+    def __init__(self, epsilon=1, mu=1, sigma=0, lps=()):
+        """
+        Arguments:
+            epsilon: The (frequency-independent) isotropic relative permittivity. Default is 1.
+            mu: The (frequency-independent) isotropic relative permeability. Default is 1.
+            sigma: The (frequency-independent) isotropic conductivity. Default is 0.
+            lps: list of Lorentz poles. Default is().
+            
+        """
+        Dielectric.__init__(self, epsilon=epsilon, mu=mu)
+        self.sigma = float(sigma)
+        self.lps = tuple(lps)
         
+    def init(self, space, param=None):
+        self.dt = space.dt
+        
+        # parameters for the ADE of the Drude model.
+        self.a = empty((len(self.lps),3), float)
+        for i in xrange(len(self.lps)):
+            pole = self.lps[i]
+            denom = self.dt * pole.gamma + 2.
+            self.a[i,0] = (self.dt * pole.gamma - 2) / denom
+            self.a[i,1] = (4 - 2 * (self.dt * pole.omega)**2) / denom
+            self.a[i,2] = 2 * pole.amp * (self.dt * pole.omega)**2 / denom
+        
+        # parameters for the electric field update equations.
+        self.c = empty(3, float)
+        denom = 2. * self.epsilon + self.dt * self.sigma 
+        self.c[0] = 2 * self.dt / denom
+        self.c[1] = -2 / denom
+        self.c[2] = (2 * self.epsilon - self.dt * self.sigma) / denom
+        
+    def display_info(self, indent=0):
+        """Display the parameter values.
+        
+        """
+        print " " * indent, "Lorentz dispersion media"
+        print " " * indent, 
+        print "permittivity:", self.epsilon,
+        print "permeability:", self.mu,
+        print "conductivity:", self.sigma
+        
+        print " "* indent, "Lorentz pole(s):"
+        for p in self.lps:
+            p.display_info(indent+4)
+        
+    def get_pw_material_ex(self, idx, coords, underneath=None, cmplx=False):
+        if cmplx:
+            pw_obj = LorentzExCmplx(idx, self.epsilon, self.a, self.c)
+        else:
+            pw_obj = LorentzExReal(idx, self.epsilon, self.a, self.c)
+            
+        return pw_obj
+    
+    def get_pw_material_ey(self, idx, coords, underneath=None, cmplx=False):
+        if cmplx:
+            pw_obj = LorentzEyCmplx(idx, self.epsilon, self.a, self.c)
+        else:
+            pw_obj = LorentzEyReal(idx, self.epsilon, self.a, self.c)
+            
+        return pw_obj
+    
+    def get_pw_material_ez(self, idx, coords, underneath=None, cmplx=False):
+        if cmplx:
+            pw_obj = LorentzEzCmplx(idx, self.epsilon, self.a, self.c)
+        else:
+            pw_obj = LorentzEzReal(idx, self.epsilon, self.a, self.c)
+            
+        return pw_obj
+    
+    def get_pw_material_hx(self, idx, coords, underneath=None, cmplx=False):
+        if cmplx:
+            pw_obj = LorentzHxCmplx(idx, self.mu)
+        else:
+            pw_obj = LorentzHxReal(idx, self.mu)
+            
+        return pw_obj
+    
+    def get_pw_material_hy(self, idx, coords, underneath=None, cmplx=False):
+        if cmplx:
+            pw_obj = LorentzHyCmplx(idx, self.mu)
+        else:
+            pw_obj = LorentzHyReal(idx, self.mu)
+            
+        return pw_obj
+    
+    def get_pw_material_hz(self, idx, coords, underneath=None, cmplx=False):
+        if cmplx:
+            pw_obj = LorentzHzCmplx(idx, self.mu)
+        else:
+            pw_obj = LorentzHzReal(idx, self.mu)
+            
+        return pw_obj
+    
+            
 class Gold(DCP):
     """
     The parameters are from the following article.
@@ -1057,7 +1181,7 @@ class Gold(DCP):
                             gamma=2.3555e15 * a / const.c0)
         DCP.__init__(self, epsilon=1.1431, mu=1, sigma=0, dps=(dp1,), cps=(cp1,cp2))
         
-
+        
 class Gold2(Drude):
     """
     The parameters are from the following article.
@@ -1074,7 +1198,25 @@ class Gold2(Drude):
                         gamma=8.052e13 * a / const.c0)
         Drude.__init__(self, epsilon=1, mu=1, sigma=0, dps=(dp1,))
         
-                
+
+class Meep(Lorentz):
+    """
+    The parameters are from the 'Meep Tutorial/Material dispersion'.
+
+    """
+    def __init__(self):
+        """
+        
+        """
+        lp1 = LorentzPole(omega=1.1,
+                          gamma=1e-5,
+                          amp=0.5)
+        lp2 = LorentzPole(omega=0.5,
+                          gamma=0.1,
+                          amp=2e-5)
+        Lorentz.__init__(self, epsilon=2.25, mu=1, sigma=0, lps=(lp1,lp2))
+        
+        
 class Silver(DCP):
     """
     The parameters are from the following article.

@@ -138,7 +138,7 @@ class TransparentElectric(object):
         self.face_list = [directional]
         self.amp = {directional: amp}
         
-        samp_idx = aux_fdtd.space.spc_to_exact_hy_idx(samp_pnt)
+        samp_idx = aux_fdtd.space.spc_to_exact_hy_idx(*samp_pnt)
         self.samp_idx0 = {directional: tuple(floor(samp_idx))}
         self.samp_idx1 = {directional: tuple(floor(samp_idx) + (0, 0, 1))}
         
@@ -350,7 +350,7 @@ class TransparentMagnetic(object):
         self.face_list = [directional]
         self.amp = {directional: amp}
         
-        samp_idx = aux_fdtd.space.spc_to_exact_ex_idx(samp_pnt)
+        samp_idx = aux_fdtd.space.spc_to_exact_ex_idx(*samp_pnt)
         self.samp_idx0 = {directional: tuple(floor(samp_idx))}
         self.samp_idx1 = {directional: tuple(floor(samp_idx) + (0, 0, 1))}
         
