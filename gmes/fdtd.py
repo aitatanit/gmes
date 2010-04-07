@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-from Image import NONE
 
 try:
     import psyco
