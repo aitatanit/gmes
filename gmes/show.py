@@ -15,8 +15,7 @@ if not 'matplotlib.backends' in modules:
     import matplotlib 
     matplotlib.use('TkAgg')
 
-from pylab import get_current_fig_manager, new_figure_manager
-from pylab import figure, show, cm
+from matplotlib.pyplot import new_figure_manager, cm, show
 
 class ShowLine(Thread):
     """Animated 1-D on-time display. 
@@ -36,37 +35,27 @@ class ShowLine(Thread):
             self.id = 0
         else:
             self.id = fig_id
-        
+                  
     def animate(self):
-        #self.manager.canvas.restore_region(self.background)
-        self.plt.set_ydata(self.ydata)
+        self.line.set_ydata(self.ydata)
+        self.line.recache()
         self.time_note.set_text(self.note_form % self.time_step.t)
         self.manager.canvas.draw()
-        #self.ax.draw()
-        #self.ax.draw_artist(self.plt)
-        #self.manager.canvas.figure.draw_animated()
-        #self.manager.canvas.blit(self.ax.bbox)
         if self.manager.window is not None:
             self.manager.window.after(self.msecs, self.animate)
 
     def run(self):
         self.manager = new_figure_manager(self.id)
         self.ax = self.manager.canvas.figure.add_subplot(111)
-        self.plt, = self.ax.plot(self.xdata, self.ydata)#, animated=True)
+        self.line, = self.ax.plot(self.xdata, self.ydata)
         self.ax.set_xlabel(self.xlabel)
         self.ax.set_ylabel(self.ylabel)
-        #self.ax.set_xlim(self.xdata[0], self.xdata[1])
-        #self.ax.set_ylim(self.yrange[0], self.yrange[1])
-        #self.ax.autoscale_view(tight=False, scalex=False, scaley=True) 
-        self.ax.axis((self.xdata[0], self.xdata[-1], self.yrange[0], self.yrange[1]))
+        self.ax.set_xlim(self.xdata[0], self.xdata[-1])
+        self.ax.set_ylim(self.yrange[0], self.yrange[1])
         self.ax.grid(True)
         self.ax.set_title(self.title)
-        #self.manager.canvas.figure.colorbar(self.plt)
-        self.time_note = self.manager.canvas.figure.text(.6, .92, self.note_form % self.time_step.t, animated=True)
+        self.time_note = self.manager.canvas.figure.text(.6, .92, self.note_form % self.time_step.t)
         self.manager.window.title(self.window_title)
-        
-        #self.manager.canvas.draw()
-        #self.background = self.manager.canvas.copy_from_bbox(self.ax.bbox)
         
         self.animate()
         self.manager.show()
@@ -78,7 +67,6 @@ class Snapshot(Thread):
     In this moment, Snapshot is only used to show the structures. 
     """
     def __init__(self, data, extent, range, xlabel='', ylabel='', title='', window_title='GMES', fig_id=None):
-#    def __init__(self, data, extent, range, time_step, xlabel='', ylabel='', title='', window_title='GMES', fig_id=None):
         Thread.__init__(self)
         self.data = data
         self.range = array(range, float)
@@ -86,8 +74,7 @@ class Snapshot(Thread):
         self.xlabel, self.ylabel = xlabel, ylabel
         self.title = title
         self.window_title = window_title
-#        self.time_step = time_step
-#        self.note_form = 'time: %f'
+
         if fig_id == None:
             self.id = 0
         else:

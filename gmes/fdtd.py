@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+from Image import NONE
 
 try:
     import psyco
@@ -801,7 +802,6 @@ class FDTD(object):
         self.update_hy()
         self.update_hz()
         
-        
     def _show_line(self, component, start, end, y_range, msecs, title):
         """Wrapper method of show.ShowLine.
 		
@@ -837,47 +837,46 @@ class FDTD(object):
             spc_to_idx = self.space.space_to_hx_index
             idx_to_spc = self.space.hx_index_to_space
             tmp_start_idx = idx_to_spc(0, 1, 1)
-            tmp_end_idx = field.shape[0] - 1, field.shape[1] - 1, field.shape[2] - 1
+            tmp_end_idx = [i - 1 for i in field.shape]
         elif component is const.Hy:
             field = self.hy.real
             spc_to_idx = self.space.space_to_hy_index
             idx_to_spc = self.space.hy_index_to_space
             tmp_start_idx = idx_to_spc(1, 0, 1)
-            tmp_end_idx = field.shape[0] - 1, field.shape[1] - 1, field.shape[2] - 1
+            tmp_end_idx = [i - 1 for i in field.shape]
         elif component is const.Hz:
             field = self.hz.real
             spc_to_idx = self.space.space_to_hz_index
             idx_to_spc = self.space.hz_index_to_space
             tmp_start_idx = idx_to_spc(1, 1, 0)
-            tmp_end_idx = field.shape[0] - 1, field.shape[1] - 1, field.shape[2] - 1
-		
-        global_start_idx = spc_to_idx(start)
-        global_end_idx = [i + 1 for i in spc_to_idx(end)]
-		
+            tmp_end_idx = [i - 1 for i in field.shape]
+            
+        global_start_idx = spc_to_idx(*start)
+        global_end_idx = [i + 1 for i in spc_to_idx(*end)]
+        
         if global_end_idx[0] - global_start_idx[0] > 1:
             start_idx = tmp_start_idx[0], global_start_idx[1], global_start_idx[2] 
             end_idx = tmp_end_idx[0], global_end_idx[1], global_end_idx[2]
             if in_range(start_idx, field, component) is False:
                 return None
-
             y_data = field[start_idx[0]:end_idx[0], start_idx[1], start_idx[2]]
+            
         elif global_end_idx[1] - global_start_idx[1] > 1:
             start_idx = global_start_idx[0], tmp_start_idx[1], global_start_idx[2] 
             end_idx = global_end_idx[0], tmp_end_idx[1], global_end_idx[2]
             if in_range(start_idx, field, component) is False:
                 return None
-				
             y_data = field[start_idx[0], start_idx[1]:end_idx[1], start_idx[2]]
+            
         elif global_end_idx[2] - global_start_idx[2] > 1:
             start_idx = global_start_idx[0], global_start_idx[1], tmp_start_idx[2] 
             end_idx = global_end_idx[0], global_end_idx[1], tmp_end_idx[2]
             if in_range(start_idx, field, component) is False:
                 return None
-		
             y_data = field[start_idx[0], start_idx[1], start_idx[2]:end_idx[2]]
-			
-        start2 = idx_to_spc(start_idx)
-        end2 = idx_to_spc(end_idx)
+        
+        start2 = idx_to_spc(*start_idx)
+        end2 = idx_to_spc(*end_idx)
         domain_idx = map(lambda x, y: x - y, end_idx, start_idx)
         for i in xrange(3):
             if domain_idx[i] != 1 and i == 0:
@@ -894,9 +893,9 @@ class FDTD(object):
                     break
 				
         x_data = arange(start2[i], end2[i], step)
-		
+        
         if len(x_data) > len(y_data):
-            x_data.pop()
+            x_data = x_data[:-1]
 			
         ylabel = 'displacement'        
         window_title = 'GMES' + ' ' + str(self.space.cart_comm.topo[2])
