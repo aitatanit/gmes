@@ -1888,9 +1888,6 @@ class TEMxFDTD(FDTD):
     TEMxFDTD updates only Ey and Hz field components.
     
     """
-    def __init__(self, space=None, geom_list=None, src_list=None, courant_ratio=1, dt=None, wavevector=False, verbose=True):
-        FDTD.__init__(self, space, geom_list, src_list, courant_ratio, dt, wavevector, verbose)
-        
     def stable_limit(self, space):
         # Courant stability bound
         return space.dx
@@ -1962,9 +1959,6 @@ class TEMyFDTD(FDTD):
     TEMyFDTD updates only Ez and Hx field components.
     
     """
-    def __init__(self, space=None, geom_list=None, src_list=None, courant_ratio=1, dt=None, wavevector=False, verbose=True):
-        FDTD.__init__(self, space, geom_list, src_list, courant_ratio, dt, wavevector, verbose)
-        
     def stable_limit(self, space):
         # Courant stability bound
         return space.dy
@@ -2036,9 +2030,6 @@ class TEMzFDTD(FDTD):
     TEMzFDTD updates only Ex and Hy field components.
     
     """
-    def __init__(self, space=None, geom_list=None, src_list=None, courant_ratio=1, dt=None, wavevector=False, verbose=True):
-        FDTD.__init__(self, space, geom_list, src_list, courant_ratio, dt, wavevector, verbose)
-        
     def stable_limit(self, space):
         # Courant stability bound
         return space.dz
