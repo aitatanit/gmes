@@ -6,8 +6,10 @@
 #ifndef PW_DCP_HH_
 #define PW_DCP_HH_
 
+#include <complex>
+#include <numeric>
 #include <vector>
-
+#include <iostream> // DEBUG
 #include "pw_dielectric.hh"
 
 #define ex(i,j,k) ex[((this->i)*ex_y_size+(this->j))*ex_z_size+(this->k)]
@@ -19,6 +21,10 @@
 
 namespace gmes
 {
+/**************************************************/
+/* Auxiliary Differential Equation Implementation */
+/**************************************************/
+
 template <typename T> class DCPElectric: public MaterialElectric<T>
 {
 public:
@@ -47,7 +53,7 @@ public:
 		}
 	}
 
-	double get_epsilon()
+	double get_epsilon() const
 	{
 		return epsilon;
 	}
@@ -259,6 +265,306 @@ public:
 	{
 	}
 };
+
+/*********************************************************/
+/* Piecewise-Linear Recursive Convolution Implementation */
+/*********************************************************/
+
+template <typename T> class DCPPLRCElectric: public MaterialElectric<T>
+{
+public:
+	DCPPLRCElectric(const int * const idx, int size, double epsilon,
+			const double * const a, int a_i_size, int a_j_size,
+			const std::complex<double> * const b_c, int b_c_i_size, int b_c_j_size,
+			const double * const c, int c_size) :
+		MaterialElectric<T>(idx, size), epsilon(epsilon),
+		c(c, c + c_size),
+		psi_dp_re(a_i_size, .0),
+		psi_dp_im(a_i_size, .0),
+		psi_cp_re(b_c_i_size, std::complex<double>(0)),
+		psi_cp_im(b_c_i_size, std::complex<double>(0))
+	{
+		for (int i = 0; i < a_i_size; i++)
+		{
+			std::vector<double> tmp(a + i * a_j_size, a + (i + 1) * a_j_size);
+			this->a.push_back(tmp);
+		}
+
+		for (int i = 0; i < b_c_i_size; i++)
+		{
+			std::vector<std::complex<double> > tmp(b_c + i * b_c_j_size, b_c + (i + 1) * b_c_j_size);
+			this->b.push_back(tmp);
+		}
+
+		// DEBUG
+		std::cout << "array a:" << std::endl;
+		for (std::vector<std::vector<double> >::const_iterator it1 = this->a.begin(); it1 != this->a.end(); ++it1)
+		{
+			for (std::vector<double>::const_iterator it2 = it1->begin(); it2 != it1->end(); ++it2)
+			{
+				std::cout << *it2 << " ";
+			}
+			std::cout << std::endl;
+		}
+
+		std::cout << "array b:" << std::endl;
+		for (std::vector<std::vector<std::complex<double> > >::const_iterator it1 = this->b.begin(); it1 != this->b.end(); ++it1)
+		{
+			for (std::vector<std::complex<double> >::const_iterator it2 = it1->begin(); it2 != it1->end(); ++it2)
+			{
+				std::cout << *it2 << " ";
+			}
+			std::cout << std::endl;
+		}
+
+		std::cout << "array c:" << std::endl;
+		for (std::vector<double>::const_iterator it1 = this->c.begin(); it1 != this->c.end(); ++it1)
+		{
+			std::cout << *it1 << " ";
+		}
+		std::cout << std::endl;
+	}
+
+	double get_epsilon() const
+	{
+		return epsilon;
+	}
+
+	void set_epsilon(double epsilon)
+	{
+		this->epsilon = epsilon;
+	}
+
+	void update_psi_dp(const std::complex<double>& e_now, const std::complex<double>& e_new)
+	{
+		for (typename std::vector<T>::size_type i = 0; i < a.size(); ++i)
+		{
+			psi_dp_re[i] = a[i][0] * e_new.real() + a[i][1] * e_now.real() + a[i][2] * psi_dp_re[i];
+			psi_dp_im[i] = a[i][0] * e_new.imag() + a[i][1] * e_now.imag() + a[i][2] * psi_dp_im[i];
+		}
+	}
+
+	void update_psi_cp(const std::complex<double>& e_now, const std::complex<double>& e_new)
+	{
+		for (typename std::vector<std::complex<double> >::size_type i = 0; i < b.size(); ++i)
+		{
+			psi_cp_re[i] = b[i][0] * e_new.real() + b[i][1] * e_now.real()
+					+ b[i][2] * psi_cp_re[i];
+			psi_cp_im[i] = b[i][0] * e_new.imag() + b[i][1] * e_now.imag()
+					+ b[i][2] * psi_cp_im[i];
+		}
+	}
+
+	std::complex<double> psi_total()
+	{
+		double psi_re = std::accumulate(psi_dp_re.begin(), psi_dp_re.end(), double(0))
+				+ std::accumulate(psi_cp_re.begin(), psi_cp_re.end(), std::complex<double>(0)).real();
+		double psi_im = std::accumulate(psi_dp_im.begin(), psi_dp_im.end(), double(0))
+				+ std::accumulate(psi_cp_im.begin(), psi_cp_im.end(), std::complex<double>(0)).real();
+		return std::complex<double>(psi_re, psi_im);
+	}
+
+protected:
+	double epsilon;
+	std::vector<std::vector<double> > a;
+	std::vector<std::vector<std::complex<double> > > b;
+	std::vector<double> c;
+	// *_re and *_im are for the real and imaginary part of the e-field, respectively.
+	std::vector<double> psi_dp_re, psi_dp_im;
+	std::vector<std::complex<double> > psi_cp_re, psi_cp_im;
+};
+
+template <typename S, typename T>
+static inline T& assign(const std::complex<S>& in, T& out)
+{
+	return out = static_cast<T>(in.real());
+}
+
+template <typename S, typename T>
+static inline std::complex<T>& assign(const std::complex<S>& in, std::complex<T>& out)
+{
+	out.real() = static_cast<T>(in.real());
+	out.imag() = static_cast<T>(in.imag());
+	return out;
+}
+
+template <typename T> class DCPPLRCEx: public DCPPLRCElectric<T>
+{
+public:
+	DCPPLRCEx(const int * const idx, int size, double epsilon,
+			const double * const a, int a_i_size, int a_j_size,
+			const std::complex<double> * const b_c, int b_c_i_size, int b_c_j_size,
+			const double * const c, int c_size) :
+				DCPPLRCElectric<T>(idx, size, epsilon, a, a_i_size, a_j_size, b_c, b_c_i_size, b_c_j_size, c, c_size)
+	{
+	}
+
+	void update(T * const ex, int ex_x_size, int ex_y_size, int ex_z_size,
+			const T * const hz, int hz_x_size, int hz_y_size, int hz_z_size,
+			const T * const hy, int hy_x_size, int hy_y_size, int hy_z_size,
+			double dy, double dz, double dt, double n)
+	{
+//		std::cout << "e_now: " << ex(i,j,k) << std::endl; // DEBUG
+//		std::cout << "psi_total: " << psi_total() << std::endl; // DEBUG
+		std::complex<double> e_now = ex(i,j,k);
+		std::complex<double> e_new = c[0] * e_now
+				+ c[1] * ((hz(i+1,j+1,k) - hz(i+1,j,k)) / dy - (hy(i+1,j,k+1) - hy(i+1,j,k)) / dz)
+				+ c[2] * psi_total();
+
+		update_psi_dp(e_now, e_new);
+		update_psi_cp(e_now, e_new);
+//		std::cout << "e_new: " << e_new << std::endl; // DEBUG
+//		std::cout << "psi_dp_re: ";// DEBUG
+//		for (std::vector<double>::const_iterator it = psi_dp_re.begin(); it != psi_dp_re.end(); ++it)
+//		{
+//			std::cout << *it << " ";
+//		}
+//		std::cout << std::endl;
+//		std::cout << "psi_dp_im: ";// DEBUG
+//		for (std::vector<double>::const_iterator it = psi_dp_im.begin(); it != psi_dp_im.end(); ++it)
+//		{
+//			std::cout << *it << " ";
+//		}
+//		std::cout << std::endl;
+//		std::cout << "psi_cp_re: ";// DEBUG
+//		for (std::vector<std::complex<double> >::const_iterator it = psi_cp_re.begin(); it != psi_cp_re.end(); ++it)
+//		{
+//			std::cout << *it << " ";
+//		}
+//		std::cout << std::endl;
+//		std::cout << "psi_cp_im: ";// DEBUG
+//		for (std::vector<std::complex<double> >::const_iterator it = psi_cp_im.begin(); it != psi_cp_im.end(); ++it)
+//		{
+//			std::cout << *it << " ";
+//		}
+//		std::cout << std::endl;
+//		std::cout << "psi_total: " << psi_total() << std::endl; // DEBUG
+		assign(e_new, ex(i,j,k));
+	}
+
+protected:
+	using DCPPLRCElectric<T>::epsilon;
+	using DCPPLRCElectric<T>::a;
+	using DCPPLRCElectric<T>::b;
+	using DCPPLRCElectric<T>::c;
+	using DCPPLRCElectric<T>::psi_dp_re;
+	using DCPPLRCElectric<T>::psi_dp_im;
+	using DCPPLRCElectric<T>::psi_cp_re;
+	using DCPPLRCElectric<T>::psi_cp_im;
+	using DCPPLRCElectric<T>::update_psi_dp;
+	using DCPPLRCElectric<T>::update_psi_cp;
+	using DCPPLRCElectric<T>::psi_total;
+};
+
+template <typename T> class DCPPLRCEy: public DCPPLRCElectric<T>
+{
+public:
+	DCPPLRCEy(const int * const idx, int size, double epsilon,
+			const double * const a, int a_i_size, int a_j_size,
+			const std::complex<double> * const b_c, int b_c_i_size, int b_c_j_size,
+			const double * const c, int c_size) :
+				DCPPLRCElectric<T>(idx, size, epsilon, a, a_i_size, a_j_size, b_c, b_c_i_size, b_c_j_size, c, c_size)
+	{
+	}
+
+	void update(T * const ey, int ey_x_size, int ey_y_size, int ey_z_size,
+			const T * const hx, int hx_x_size, int hx_y_size, int hx_z_size,
+			const T * const hz, int hz_x_size, int hz_y_size, int hz_z_size,
+			double dz, double dx, double dt, double n)
+	{
+		std::complex<double> e_now = ey(i,j,k);
+		std::complex<double> e_new = c[0] * e_now
+				+ c[1] * ((hx(i,j+1,k+1) - hx(i,j+1,k)) / dz - (hz(i+1,j+1,k) - hz(i,j+1,k)) / dx)
+				+ c[2] * psi_total();
+
+		update_psi_dp(e_now, e_new);
+		update_psi_cp(e_now, e_new);
+
+		assign(e_new, ey(i,j,k));
+	}
+
+protected:
+	using DCPPLRCElectric<T>::epsilon;
+	using DCPPLRCElectric<T>::a;
+	using DCPPLRCElectric<T>::b;
+	using DCPPLRCElectric<T>::c;
+	using DCPPLRCElectric<T>::psi_dp_re;
+	using DCPPLRCElectric<T>::psi_dp_im;
+	using DCPPLRCElectric<T>::psi_cp_re;
+	using DCPPLRCElectric<T>::psi_cp_im;
+	using DCPPLRCElectric<T>::update_psi_dp;
+	using DCPPLRCElectric<T>::update_psi_cp;
+	using DCPPLRCElectric<T>::psi_total;
+};
+
+template <typename T> class DCPPLRCEz: public DCPPLRCElectric<T>
+{
+public:
+	DCPPLRCEz(const int * const idx, int size, double epsilon,
+			const double * const a, int a_i_size, int a_j_size,
+			const std::complex<double> * const b_c, int b_c_i_size, int b_c_j_size,
+			const double * const c, int c_size) :
+				DCPPLRCElectric<T>(idx, size, epsilon, a, a_i_size, a_j_size, b_c, b_c_i_size, b_c_j_size, c, c_size)
+	{
+	}
+
+	void update(T * const ez, int ez_x_size, int ez_y_size, int ez_z_size,
+			const T * const hy, int hy_x_size, int hy_y_size, int hy_z_size,
+			const T * const hx, int hx_x_size, int hx_y_size, int hx_z_size,
+			double dx, double dy, double dt, double n)
+	{
+		std::complex<double> e_now = ez(i,j,k);
+		std::complex<double> e_new = c[0] * e_now
+				+ c[1] * ((hy(i+1,j,k+1) - hy(i,j,k+1)) / dx - (hx(i,j+1,k+1) - hx(i,j,k+1)) / dy)
+				+ c[2] * psi_total();
+
+		update_psi_dp(e_now, e_new);
+		update_psi_cp(e_now, e_new);
+
+		assign(e_new, ez(i,j,k));
+	}
+
+protected:
+	using DCPPLRCElectric<T>::epsilon;
+	using DCPPLRCElectric<T>::a;
+	using DCPPLRCElectric<T>::b;
+	using DCPPLRCElectric<T>::c;
+	using DCPPLRCElectric<T>::psi_dp_re;
+	using DCPPLRCElectric<T>::psi_dp_im;
+	using DCPPLRCElectric<T>::psi_cp_re;
+	using DCPPLRCElectric<T>::psi_cp_im;
+	using DCPPLRCElectric<T>::update_psi_dp;
+	using DCPPLRCElectric<T>::update_psi_cp;
+	using DCPPLRCElectric<T>::psi_total;
+};
+
+template <typename T> class DCPPLRCHx: public DielectricHx<T>
+{
+public:
+	DCPPLRCHx(const int * const idx, int size, double mu = 1) :
+		DielectricHx<T>(idx, size, mu)
+	{
+	}
+};
+
+template <typename T> class DCPPLRCHy: public DielectricHy<T>
+{
+public:
+	DCPPLRCHy(const int * const idx, int size, double mu = 1) :
+		DielectricHy<T>(idx, size, mu)
+	{
+	}
+};
+
+template <typename T> class DCPPLRCHz: public DielectricHz<T>
+{
+public:
+	DCPPLRCHz(const int * const idx, int size, double mu = 1) :
+		DielectricHz<T>(idx, size, mu)
+	{
+	}
+};
+
 }
 
 #undef ex

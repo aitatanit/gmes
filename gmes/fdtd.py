@@ -498,7 +498,7 @@ class FDTD(object):
             
             phase_shift = exp(1j * self.k[1] * (dest_spc - src_spc))
         else:
-            phase_shift = 1
+            phase_shift = 0
         
         self.ex[:, -1, :] = phase_shift * \
         self.space.cart_comm.sendrecv(self.ex[:, 0, :], dest, const.Ex.tag,
@@ -516,7 +516,7 @@ class FDTD(object):
         
             phase_shift = exp(1j * self.k[2] * (dest_spc - src_spc))
         else:
-            phase_shift = 1
+            phase_shift = 0
         
         self.ex[:, :, -1] = phase_shift * \
         self.space.cart_comm.sendrecv(self.ex[:, :, 0], dest, const.Ex.tag,
@@ -540,7 +540,7 @@ class FDTD(object):
         
             phase_shift = exp(1j * self.k[2] * (dest_spc - src_spc))
         else:
-            phase_shift = 1
+            phase_shift = 0
             
         self.ey[:, :, -1] = phase_shift * \
         self.space.cart_comm.sendrecv(self.ey[:, :, 0], dest, const.Ey.tag,
@@ -558,7 +558,7 @@ class FDTD(object):
             
             phase_shift = exp(1j * self.k[0] * (dest_spc - src_spc))
         else:
-            phase_shift = 1
+            phase_shift = 0
             
         self.ey[-1, :, :] = phase_shift * \
         self.space.cart_comm.sendrecv(self.ey[0, :, :], dest, const.Ey.tag,
@@ -582,7 +582,7 @@ class FDTD(object):
         
             phase_shift = exp(1j * self.k[0] * (dest_spc - src_spc))
         else:
-            phase_shift = 1
+            phase_shift = 0
             
         self.ez[-1, :, :] = phase_shift * \
         self.space.cart_comm.sendrecv(self.ez[0, :, :], dest, const.Ez.tag,
@@ -600,7 +600,7 @@ class FDTD(object):
             
             phase_shift = exp(1j * self.k[1] * (dest_spc - src_spc))
         else:
-            phase_shift = 1
+            phase_shift = 0
           
         self.ez[:, -1, :] = phase_shift * \
         self.space.cart_comm.sendrecv(self.ez[:, 0, :], dest, const.Ez.tag,
@@ -624,7 +624,7 @@ class FDTD(object):
         
             phase_shift = exp(1j * self.k[1] * (dest_spc - src_spc))
         else:
-            phase_shift = 1
+            phase_shift = 0
         
         self.hx[:, 0, :] = phase_shift * \
         self.space.cart_comm.sendrecv(self.hx[:, -1, :], dest, const.Hx.tag,
@@ -642,7 +642,7 @@ class FDTD(object):
         
             phase_shift = exp(1j * self.k[2] * (dest_spc - src_spc))
         else:
-            phase_shift = 1
+            phase_shift = 0
         
         self.hx[:, :, 0] = phase_shift * \
         self.space.cart_comm.sendrecv(self.hx[:, :, -1], dest, const.Hx.tag,
@@ -666,7 +666,7 @@ class FDTD(object):
         
             phase_shift = exp(1j * self.k[2] * (dest_spc - src_spc))
         else:
-            phase_shift = 1
+            phase_shift = 0
         
         self.hy[:, :, 0] = phase_shift * \
         self.space.cart_comm.sendrecv(self.hy[:, :, -1], dest, const.Hy.tag,
@@ -684,7 +684,7 @@ class FDTD(object):
         
             phase_shift = exp(1j * self.k[0] * (dest_spc - src_spc))
         else:
-            phase_shift = 1
+            phase_shift = 0
         
         self.hy[0, :, :] = phase_shift * \
         self.space.cart_comm.sendrecv(self.hy[-1, :, :], dest, const.Hy.tag,
@@ -708,7 +708,7 @@ class FDTD(object):
         
             phase_shift = exp(1j * self.k[0] * (dest_spc - src_spc))
         else:
-            phase_shift = 1
+            phase_shift = 0
         
         self.hz[0, :, :] = phase_shift * \
         self.space.cart_comm.sendrecv(self.hz[-1, :, :], dest, const.Hz.tag,
@@ -726,7 +726,7 @@ class FDTD(object):
         
             phase_shift = exp(1j * self.k[1] * (dest_spc - src_spc))
         else:
-            phase_shift = 1
+            phase_shift = 0
         
         self.hz[:, 0, :] = phase_shift * \
         self.space.cart_comm.sendrecv(self.hz[:, -1, :], dest, const.Hz.tag,

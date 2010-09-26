@@ -32,7 +32,7 @@ public:
 		}
 	}
 
-	double get_epsilon()
+	double get_epsilon() const
 		{
 			return epsilon;
 		}

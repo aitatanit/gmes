@@ -61,7 +61,7 @@ public:
 	virtual ~MaterialElectric() {
 	}
 
-	virtual double get_epsilon() = 0;
+	virtual double get_epsilon() const = 0;
 	virtual void set_epsilon(double epsilon) = 0;
 };
 
@@ -73,7 +73,7 @@ public:
 	virtual ~MaterialMagnetic() {
 	}
 
-	virtual double get_mu() = 0;
+	virtual double get_mu() const = 0;
 	virtual void set_mu(double mu) = 0;
 };
 

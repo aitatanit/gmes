@@ -30,6 +30,9 @@ class TestSequence(unittest.TestCase):
         self.dcp = DCP(dps=(DrudePole(omega=1,gamma=1),), cps=(CriticalPoint(amp=1,phi=1,omega=1,gamma=1),))
         self.dcp.init(self.spc)
         
+        self.dcp_plrc = DCPPLRC(dps=(DrudePole(omega=1,gamma=1),), cps=(CriticalPoint(amp=1,phi=1,omega=1,gamma=1),))
+        self.dcp_plrc.init(self.spc)
+        
     def testEx(self):
         sampleReal = self.dcp.get_pw_material_ex(self.idx, (0,0,0), cmplx=False)
         sampleCmplx = self.dcp.get_pw_material_ex(self.idx, (0,0,0), cmplx=True)
@@ -38,6 +41,15 @@ class TestSequence(unittest.TestCase):
         sampleCmplx.update(self.cmplxA, self.cmplxB, self.cmplxC, 
                            self.diff, self.diff, self.diff, self.n)
         self.assertEqual((self.realA == self.cmplxA.real).all(), True)
+        
+        sampleReal = self.dcp_plrc.get_pw_material_ex(self.idx, (0,0,0), cmplx=False)
+        sampleCmplx = self.dcp_plrc.get_pw_material_ex(self.idx, (0,0,0), cmplx=True)
+        sampleReal.update(self.realA, self.realB, self.realC, 
+                          self.diff, self.diff, self.diff, self.n)
+        sampleCmplx.update(self.cmplxA, self.cmplxB, self.cmplxC, 
+                           self.diff, self.diff, self.diff, self.n)
+        self.assertEqual((self.realA == self.cmplxA.real).all(), True)
+        
         
     def testEy(self):
         sampleReal = self.dcp.get_pw_material_ey(self.idx, (0,0,0), cmplx=False)
@@ -69,6 +81,14 @@ class TestSequence(unittest.TestCase):
     def testHy(self):
         sampleReal = self.dcp.get_pw_material_hy(self.idx, (0,0,0), cmplx=False)
         sampleCmplx = self.dcp.get_pw_material_hy(self.idx, (0,0,0), cmplx=True)
+        sampleReal.update(self.realA, self.realB, self.realC, 
+                          self.diff, self.diff, self.diff, self.n)
+        sampleCmplx.update(self.cmplxA, self.cmplxB, self.cmplxC, 
+                           self.diff, self.diff, self.diff, self.n)
+        self.assertEqual((self.realA == self.cmplxA.real).all(), True)
+        
+        sampleReal = self.dcp_plrc.get_pw_material_hy(self.idx, (0,0,0), cmplx=False)
+        sampleCmplx = self.dcp_plrc.get_pw_material_hy(self.idx, (0,0,0), cmplx=True)
         sampleReal.update(self.realA, self.realB, self.realC, 
                           self.diff, self.diff, self.diff, self.n)
         sampleCmplx.update(self.cmplxA, self.cmplxB, self.cmplxC, 

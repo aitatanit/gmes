@@ -63,6 +63,7 @@ import_array();
 %apply (int* IN_ARRAY1, int DIM1) {(const int* const idx, int size)};
 %apply (double* IN_ARRAY2, int DIM1, int DIM2) {(const double* const a, int a_i_size, int a_j_size)};
 %apply (double* IN_ARRAY2, int DIM1, int DIM2) {(const double* const b, int b_i_size, int b_j_size)};
+%apply (std::complex<double>* IN_ARRAY2, int DIM1, int DIM2) {(const std::complex<double>* const b_c, int b_c_i_size, int b_c_j_size)};
 %apply (double* IN_ARRAY1, int DIM1) {(const double* const c, int c_size)};
 
 // Declare the Pythonic interfaces.
@@ -186,6 +187,15 @@ if _newclass:prop = property(eval("_"+__name__.split('.')[-1]).##py##_##get, eva
 %template(DCPHx ## postfix) gmes::DCPHx<T >;
 %template(DCPHy ## postfix) gmes::DCPHy<T >;
 %template(DCPHz ## postfix) gmes::DCPHz<T >;
+
+// Drude-critical points model
+%template(DCPPLRCElectric ## postfix) gmes::DCPPLRCElectric<T >;
+%template(DCPPLRCEx ## postfix) gmes::DCPPLRCEx<T >;
+%template(DCPPLRCEy ## postfix) gmes::DCPPLRCEy<T >;
+%template(DCPPLRCEz ## postfix) gmes::DCPPLRCEz<T >;
+%template(DCPPLRCHx ## postfix) gmes::DCPPLRCHx<T >;
+%template(DCPPLRCHy ## postfix) gmes::DCPPLRCHy<T >;
+%template(DCPPLRCHz ## postfix) gmes::DCPPLRCHz<T >;
 
 %enddef    /* template_wrap() macro */
 

@@ -908,7 +908,7 @@ class DCP(Dielectric):
             pw_obj = DCPExCmplx(idx, self.epsilon, self.a, self.b, self.c)
         else:
             pw_obj = DCPExReal(idx, self.epsilon, self.a, self.b, self.c)
-            
+                
         return pw_obj
     
     def get_pw_material_ey(self, idx, coords, underneath=None, cmplx=False):
@@ -916,7 +916,7 @@ class DCP(Dielectric):
             pw_obj = DCPEyCmplx(idx, self.epsilon, self.a, self.b, self.c)
         else:
             pw_obj = DCPEyReal(idx, self.epsilon, self.a, self.b, self.c)
-            
+                
         return pw_obj
     
     def get_pw_material_ez(self, idx, coords, underneath=None, cmplx=False):
@@ -924,7 +924,7 @@ class DCP(Dielectric):
             pw_obj = DCPEzCmplx(idx, self.epsilon, self.a, self.b, self.c)
         else:
             pw_obj = DCPEzReal(idx, self.epsilon, self.a, self.b, self.c)
-            
+        
         return pw_obj
     
     def get_pw_material_hx(self, idx, coords, underneath=None, cmplx=False):
@@ -952,6 +952,192 @@ class DCP(Dielectric):
         return pw_obj
     
 
+class DCPPLRC(Dielectric):
+    """
+    The piecewise-linear recursive-convolution implementation of 
+    Drude-critical points model based on the following article.
+    * To be published...
+
+    """
+    def __init__(self, epsilon=1, mu=1, sigma=0, dps=(), cps=()):
+        """
+        epsilon: The (frequency-independent) isotropic relative permittivity. Default is 1.
+        mu: The (frequency-independent) isotropic relative permeability. Default is 1.
+        sigma: The (frequency-independent) isotropic conductivity. Default is 0.
+        dps: list of Drude poles. Default is ().
+        cps: list of critical points. Default is ().
+        
+        """
+        Dielectric.__init__(self, epsilon=epsilon, mu=mu)
+        self.sigma = float(sigma) # instant conductivity
+        self.dps = tuple(dps) # tuple of Drude poles
+        self.cps = tuple(cps) # tuple of critical points
+        
+    def init(self, space, param=None):
+        self.dt = space.dt
+
+        # parameters of the recursion relation for the Drude pole recursive accumulator.
+        self.a = empty((len(self.dps),3), float)
+        for i in xrange(len(self.dps)):
+            pole = self.dps[i]
+            self.a[i,0] = self.delta_chi_dp_0(pole) - self.delta_xi_dp_0(pole)
+            self.a[i,1] = self.delta_xi_dp_0(pole)
+            self.a[i,2] = exp(-pole.gamma * self.dt)
+        
+        # parameters of the recursion relation for the critical point recursive accumulator.
+        self.b = empty((len(self.cps),3), complex)
+        for i in xrange(len(self.cps)):
+            pnt = self.cps[i]
+            self.b[i,0] = self.delta_chi_cp_0(pnt) - self.delta_xi_cp_0(pnt)
+            self.b[i,1] = self.delta_xi_cp_0(pnt)
+            self.b[i,2] = exp(-self.dt * (pnt.gamma + 1j * pnt.omega))
+            
+        # parameters for the electric field update equations.
+        chi_0 = sum(map(self.chi_dp_0, self.dps) + map(self.chi_cp_0, self.cps)).real
+        xi_0 = sum(map(self.xi_dp_0, self.dps) + map(self.xi_cp_0, self.cps)).real
+        
+        self.c = empty(3, float)
+        denom = self.epsilon - xi_0 + chi_0
+        self.c[0] = (self.epsilon - xi_0) / denom
+        self.c[1] = self.dt / denom
+        self.c[2] = 1 / denom
+        
+    def chi_dp_0(self, dp):
+        omega = dp.omega
+        gamma = dp.gamma
+        gdt = dp.gamma * self.dt
+        
+        return (omega / gamma)**2 * (gdt + exp(-gdt) - 1)
+
+    def xi_dp_0(self, dp):
+        omega = dp.omega
+        gamma = dp.gamma
+        gdt = dp.gamma * self.dt
+        
+        return (omega / gamma)**2 * (gdt / 2 - (1 - (1 + gdt) * exp(-gdt)) / gdt)
+    
+    def delta_chi_dp_0(self, dp):
+        omega = dp.omega
+        gamma = dp.gamma
+        gdt = dp.gamma * self.dt
+        
+        return -(omega / gamma * (1 - exp(-gdt)))**2
+    
+    def delta_xi_dp_0(self, dp):
+        gdt = dp.gamma * self.dt
+        delta_chi_dp_0 = self.delta_chi_dp_0(dp)
+        
+        return delta_chi_dp_0 * (1 / (1 - exp(gdt)) + 1 / gdt) 
+    
+    def chi_cp_0(self, cp):
+        go = cp.gamma + 1j * cp.omega
+        return 2j * cp.amp * cp.omega * exp(1j * cp.phi) * (1 - exp(-self.dt * go)) / go
+    
+    def xi_cp_0(self, cp):
+        dtgo = self.dt * (cp.gamma + 1j * cp.omega)
+        chi_cp_0 = self.chi_cp_0(cp)
+        
+        return chi_cp_0 * (1 / (1 - exp(dtgo)) + 1 / dtgo)
+    
+    def delta_chi_cp_0(self, cp):
+        go = cp.gamma + 1j * cp.omega
+        return 2j * cp.amp * cp.omega * exp(1j * cp.phi) * (1 - exp(-self.dt * go))**2 / go
+    
+    def delta_xi_cp_0(self, cp):
+        dtgo = self.dt * (cp.gamma + 1j * cp.omega)
+        delta_chi_cp_0 = self.delta_chi_cp_0(cp)
+        
+        return delta_chi_cp_0 * (1 / (1 - exp(dtgo)) + 1 / dtgo)
+    
+    def display_info(self, indent=0):
+        """Display the parameter values.
+        
+        """
+        print " " * indent, "Drude-critical points dispersive media"
+        print " " * indent,
+        print "permittivity:", self.epsilon,
+        print "permeability:", self.mu,
+        print "conductivity:", self.sigma
+        
+        print " " * indent, "Drude pole(s):"
+        for i in self.dps:
+            i.display_info(indent+4)
+        print " " * indent, "critical point(s):"
+        for i in self.cps:
+            i.display_info(indent+4)
+        
+    def get_pw_material_ex(self, idx, coords, underneath=None, cmplx=False):
+        if cmplx:
+            pw_obj = DCPPLRCExCmplx(idx, self.epsilon, self.a, self.b, self.c)
+        else:
+            pw_obj = DCPPLRCExReal(idx, self.epsilon, self.a, self.b, self.c)
+                
+        return pw_obj
+    
+    def get_pw_material_ey(self, idx, coords, underneath=None, cmplx=False):
+        if cmplx:
+            pw_obj = DCPPLRCEyCmplx(idx, self.epsilon, self.a, self.b, self.c)
+        else:
+            pw_obj = DCPPLRCEyReal(idx, self.epsilon, self.a, self.b, self.c)
+                
+        return pw_obj
+    
+    def get_pw_material_ez(self, idx, coords, underneath=None, cmplx=False):
+        if cmplx:
+            pw_obj = DCPPLRCEzCmplx(idx, self.epsilon, self.a, self.b, self.c)
+        else:
+            pw_obj = DCPPLRCEzReal(idx, self.epsilon, self.a, self.b, self.c)
+        
+        return pw_obj
+    
+    def get_pw_material_hx(self, idx, coords, underneath=None, cmplx=False):
+        if cmplx:
+            pw_obj = DCPPLRCHxCmplx(idx, self.mu)
+        else:
+            pw_obj = DCPPLRCHxReal(idx, self.mu)
+            
+        return pw_obj
+    
+    def get_pw_material_hy(self, idx, coords, underneath=None, cmplx=False):
+        if cmplx:
+            pw_obj = DCPPLRCHyCmplx(idx, self.mu)
+        else:
+            pw_obj = DCPPLRCHyReal(idx, self.mu)
+            
+        return pw_obj
+    
+    def get_pw_material_hz(self, idx, coords, underneath=None, cmplx=False):
+        if cmplx:
+            pw_obj = DCPPLRCHzCmplx(idx, self.mu)
+        else:
+            pw_obj = DCPPLRCHzReal(idx, self.mu)
+            
+        return pw_obj
+    
+    
+class DCPRC(DCPPLRC):
+    """
+    The recursive convolution implementation of Drude-critical points model
+    based on the following article.
+    * A. Vial, "Implementation of the critical points model in the recursive 
+    convolution method for modelling dispersive media with the finite-difference 
+    time domain method," Journal of Optics A: Pure and Applied Optics, vol. 9, 
+    Jul. 2007, pp. 745-748.
+      
+    """
+    def chi_dp_0(self, dp):
+        return .0
+    
+    def chi_cp_0(self, cp):
+        return .0
+
+    def delta_chi_dp_0(self, dp):
+        return .0
+    
+    def delta_chi_cp_0(self, cp):
+        return .0
+        
+        
 class Drude(Dielectric):
     """
     The auxiliary differential equation implementation of the Drude model based on the 
@@ -1181,7 +1367,34 @@ class Gold(DCP):
                             gamma=2.3555e15 * a / const.c0)
         DCP.__init__(self, epsilon=1.1431, mu=1, sigma=0, dps=(dp1,), cps=(cp1,cp2))
         
+
+class GoldPLRC(DCPPLRC):
+    """
+    The parameters are from the following article.
+    * A. Vial and T. Laroche, "Comparison of gold and silver dispersion laws
+      suitable for FDTD simulations," Appl. Phys. B, 93, 139-143, 2008.
+    
+    These parameters represents the permittivity of gold in 200-1,000 nm range.
+    
+    """
+    def __init__(self, a):
+        """
+        a: lattice constant in meters.
         
+        """
+        dp1 = DrudePole(omega=1.3202e16 * a / const.c0, 
+                        gamma=1.0805e14 * a / const.c0)
+        cp1 = CriticalPoint(amp=0.26698, 
+                            phi=-1.2371, 
+                            omega=3.8711e15 * a / const.c0, 
+                            gamma=4.4642e14 * a / const.c0)
+        cp2 = CriticalPoint(amp=3.0834, 
+                            phi=-1.0968, 
+                            omega=4.1684e15 * a / const.c0, 
+                            gamma=2.3555e15 * a / const.c0)
+        DCPPLRC.__init__(self, epsilon=1.1431, mu=1, sigma=0, dps=(dp1,), cps=(cp1,cp2))
+        
+                
 class Gold2(Drude):
     """
     The parameters are from the following article.

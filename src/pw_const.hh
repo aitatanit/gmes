@@ -15,7 +15,7 @@ public:
 	{
 	}
 
-	double get_epsilon()
+	double get_epsilon() const
 	{
 		return epsilon;
 	}
@@ -25,7 +25,7 @@ public:
 		epsilon = epsilon;
 	}
 
-	T get_value()
+	T get_value() const
 	{
 		return value;
 	}
@@ -83,7 +83,7 @@ public:
 	{
 	}
 
-	double get_mu()
+	double get_mu() const
 	{
 		return mu;
 	}
@@ -93,7 +93,7 @@ public:
 		mu = mu;
 	}
 
-	T get_value()
+	T get_value() const
 	{
 		return value;
 	}
