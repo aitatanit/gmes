@@ -218,12 +218,18 @@ class TotalFieldScatteredField(Src):
         
         Arguments:
             center -- center of the incidence interface. The beam axis crosses this point.
+               type: a tuple with three real numbers.
             size --  size of the incidence interface plane.
+               type: a tuple with three real numbers.
             direction -- propagation direction of the beam.
+               type: a tuple with three real numbers.
             freq -- oscillating frequency of the beam.
-            polarization -- electric field direction of the beam.
+               type: a real number
+            polarization -- electric field direction of the beam. 
+               type: a tuple with three real numbers.
             amp -- amplitude of the plane wave. The default is 1.
-            
+               type: a real number
+
         """
         if isinstance(src_time, SrcTime):
             self.src_time = src_time
@@ -356,19 +362,22 @@ class TotalFieldScatteredField(Src):
         
         # find the furthest distance, max_abs_dist from the 
         # longitudinal axis of the incomming wave
+        #
+        # FIXME: When self.size contains numpy.inf vertices contains nan
+        #        and the following algorithm does not work.
         vertices = []
         for x in (.5 * self.size[0], -.5 * self.size[0]):
             for y in (.5 * self.size[1], -.5 * self.size[1]):
                 for z in (.5 * self.size[2], -.5 * self.size[2]):
                     vertices.append(self.center + (x, y, z))
-                    
+
         dist = map(self._dist_from_center_along_beam_axis, vertices)
         abs_dist = map(abs, dist)
         max_abs_dist = max(abs_dist)
-        
+
         longitudinal_size = 2 * (max_abs_dist + pml_thickness + dz)
         aux_size = (0, 0, longitudinal_size)
-        
+
         mat_objs =  self.geom_tree.material_of_point((inf, inf, inf))
         
         aux_space = Cartesian(size=aux_size, 
@@ -383,7 +392,7 @@ class TotalFieldScatteredField(Src):
         aux_src_list = (Dipole(src_time=deepcopy(self.src_time), 
                                component=const.Ex, 
                                pos=src_pnt),)
-        aux_fdtd = TEMzFDTD(aux_space, aux_geom_list, 
+        aux_fdtd = TEMzFDTD(aux_space, aux_geom_list,
                             aux_src_list, dt=space.dt,
                             verbose=False)
         
@@ -898,14 +907,22 @@ class GaussianBeam(TotalFieldScatteredField):
         
         Arguments:
             directivity -- directivity of the incidence interface.
+               type: a child class of constants.Directional.
             center -- center of the incidence interface. The beam axis crosses this point.
+               type: a tuple with three real numbers.
             size --  size of the incidence interface plane.
+               type: a tuple with three real numbers.
             direction -- propagation direction of the beam.
+               type: a tuple with three real numbers.
             freq -- oscillating frequency of the beam.
+               type: a real number
             polarization -- electric field direction of the beam.
+               type: a tuple with three real numbers.
             waist -- the Gaussian beam radius. The default is inf.
+               type: a tuple with three real numbers.
             amp -- amplitude of the plane wave. The default is 1.
-            
+               type: a tuple with three real numbers.
+
         """
         TotalFieldScatteredField.__init__(self, src_time, center, size, direction, polarization, amp)
         

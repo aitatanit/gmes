@@ -836,10 +836,16 @@ class CriticalPoint(object):
 class DCP(Dielectric):
     """
     The auxiliary differential equation implementation of Drude-critical points model 
-    based on the following article.
+    based on the following references.
+    * P. G. Etchegoin, E. C. Le Ru, and M. Meyer, "An analytic model for the optical 
+      properties of gold," The Journal of Chemical Physics, vol. 125, no. 16, 
+      pp. 164705-3, Oct. 2006.
+    * A. Taflove and S. C. Hagness, Computational Electrodynamics: The Finite-
+      Difference Time-Domain Method, Third Edition, 3rd ed. Artech House Publishers, 
+      2005.
     * P. G. Etchegoin, E. C. Le Ru, and M. Meyer, "An analytic model for the
       optical properties of gold," J. Chem. Phys. 125, 164705, 2001.
-
+      
     """
     def __init__(self, epsilon=1, mu=1, sigma=0, dps=(), cps=()):
         """
@@ -955,8 +961,13 @@ class DCP(Dielectric):
 class DCPPLRC(Dielectric):
     """
     The piecewise-linear recursive-convolution implementation of 
-    Drude-critical points model based on the following article.
-    * To be published...
+    Drude-critical points model based on the following references.
+    * P. G. Etchegoin, E. C. Le Ru, and M. Meyer, "An analytic model for the optical 
+      properties of gold," The Journal of Chemical Physics, vol. 125, no. 16, 
+      pp. 164705-3, Oct. 2006.
+    * A. Taflove and S. C. Hagness, Computational Electrodynamics: The Finite-
+      Difference Time-Domain Method, Third Edition, 3rd ed. Artech House Publishers, 
+      2005.
 
     """
     def __init__(self, epsilon=1, mu=1, sigma=0, dps=(), cps=()):
@@ -1118,23 +1129,26 @@ class DCPPLRC(Dielectric):
 class DCPRC(DCPPLRC):
     """
     The recursive convolution implementation of Drude-critical points model
-    based on the following article.
+    based on the following articles.
+    * P. G. Etchegoin, E. C. Le Ru, and M. Meyer, "An analytic model for the optical 
+      properties of gold," The Journal of Chemical Physics, vol. 125, no. 16, 
+      pp. 164705-3, Oct. 2006.
     * A. Vial, "Implementation of the critical points model in the recursive 
-    convolution method for modelling dispersive media with the finite-difference 
-    time domain method," Journal of Optics A: Pure and Applied Optics, vol. 9, 
-    Jul. 2007, pp. 745-748.
-      
+      convolution method for modelling dispersive media with the finite-difference 
+      time domain method," Journal of Optics A: Pure and Applied Optics, vol. 9, 
+      Jul. 2007, pp. 745-748.
+    
     """
-    def chi_dp_0(self, dp):
+    def xi_dp_0(self, dp):
         return .0
     
-    def chi_cp_0(self, cp):
+    def xi_cp_0(self, cp):
         return .0
 
-    def delta_chi_dp_0(self, dp):
+    def delta_xi_dp_0(self, dp):
         return .0
     
-    def delta_chi_cp_0(self, cp):
+    def delta_xi_cp_0(self, cp):
         return .0
         
         
@@ -1394,7 +1408,33 @@ class GoldPLRC(DCPPLRC):
                             gamma=2.3555e15 * a / const.c0)
         DCPPLRC.__init__(self, epsilon=1.1431, mu=1, sigma=0, dps=(dp1,), cps=(cp1,cp2))
         
-                
+
+class GoldRC(DCPRC):
+    """
+    The parameters are from the following article.
+    * A. Vial and T. Laroche, "Comparison of gold and silver dispersion laws
+      suitable for FDTD simulations," Appl. Phys. B, 93, 139-143, 2008.
+    
+    These parameters represents the permittivity of gold in 200-1,000 nm range.
+    
+    """
+    def __init__(self, a):
+        """
+        a: lattice constant in meters.
+        
+        """
+        dp1 = DrudePole(omega=1.3202e16 * a / const.c0, 
+                        gamma=1.0805e14 * a / const.c0)
+        cp1 = CriticalPoint(amp=0.26698, 
+                            phi=-1.2371, 
+                            omega=3.8711e15 * a / const.c0, 
+                            gamma=4.4642e14 * a / const.c0)
+        cp2 = CriticalPoint(amp=3.0834, 
+                            phi=-1.0968, 
+                            omega=4.1684e15 * a / const.c0, 
+                            gamma=2.3555e15 * a / const.c0)
+        DCPRC.__init__(self, epsilon=1.1431, mu=1, sigma=0, dps=(dp1,), cps=(cp1,cp2))
+                        
 class Gold2(Drude):
     """
     The parameters are from the following article.
