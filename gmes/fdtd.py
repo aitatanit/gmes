@@ -41,7 +41,7 @@ class FDTD(object):
             space.period.
         
     """
-    def __init__(self, space=None, geom_list=None, src_list=None, courant_ratio=.99, dt=None, wavevector=False, verbose=True):
+    def __init__(self, space=None, geom_list=None, src_list=None, courant_ratio=.99, dt=None, wavevector=None, verbose=True):
         """
         Argumetns:
         space -- an instance which represents the coordinate system.
@@ -110,7 +110,7 @@ class FDTD(object):
             print "The geometric tree follows..."
             self.geom_tree.display_info()
                 
-        if wavevector is None or wavevector is False:
+        if wavevector is None:
             self.cmplx = False
             self.k = None
         else:
@@ -583,7 +583,7 @@ class FDTD(object):
             phase_shift = exp(1j * self.k[0] * (dest_spc - src_spc))
         else:
             phase_shift = 0
-            
+        
         self.ez[-1, :, :] = phase_shift * \
         self.space.cart_comm.sendrecv(self.ez[0, :, :], dest, const.Ez.tag,
                                       None, src, const.Ez.tag)

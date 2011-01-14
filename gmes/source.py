@@ -255,7 +255,7 @@ class TotalFieldScatteredField(Src):
         self.geom_tree = geom_tree
         self.src_time.init(cmplx)
         
-        self.aux_fdtd = self._get_aux_fdtd(space)
+        self.aux_fdtd = self._get_aux_fdtd(space, cmplx)
         
     def step(self):
         self.aux_fdtd.step()
@@ -348,7 +348,7 @@ class TotalFieldScatteredField(Src):
             
         return k_scalar_new
 
-    def _get_aux_fdtd(self, space):
+    def _get_aux_fdtd(self, space, cmplx):
         """Returns a TEMz FDTD for a reference of a plane wave. 
         
         """
@@ -392,10 +392,16 @@ class TotalFieldScatteredField(Src):
         aux_src_list = (Dipole(src_time=deepcopy(self.src_time), 
                                component=const.Ex, 
                                pos=src_pnt),)
-        aux_fdtd = TEMzFDTD(aux_space, aux_geom_list,
-                            aux_src_list, dt=space.dt,
-                            verbose=False)
         
+        if cmplx:
+            aux_fdtd = TEMzFDTD(aux_space, aux_geom_list,
+                                aux_src_list, dt=space.dt,
+                                wavevector=(0,0,0),
+                                verbose=False)
+        else:
+            aux_fdtd = TEMzFDTD(aux_space, aux_geom_list,
+                                aux_src_list, dt=space.dt,
+                                verbose=False)
         return aux_fdtd
     
     def _set_pw_source(self, space, component, cosine, material, 
