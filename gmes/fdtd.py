@@ -67,7 +67,7 @@ class FDTD(object):
         self.fig_id = self.space.my_id
             
         self.dx, self.dy, self.dz = space.dx, space.dy, space.dz
-        
+
         stable_limit = self.stable_limit(space)
         # courant_ratio is the ratio of dt to Courant stability bound
         if dt is None:
@@ -83,7 +83,7 @@ class FDTD(object):
         
         if verbose:
             self.space.display_info()
-        
+
         if verbose:
             print 'dt:', self.dt
             print 'courant ratio:', self.courant_ratio
@@ -115,8 +115,16 @@ class FDTD(object):
             self.k = None
         else:
             self.cmplx = True
+
+#             # Calculate more accurate k for PBC.
+#             from numpy import arcsin
+#             ds = array((self.dx, self.dy, self.dz))
+#             S = self.courant_ratio
+#             self.k = array(wavevector, float)
+#             self.k = 2 / ds * arcsin(sin(self.k * S * ds / 2) / S)
+
             self.k = array(wavevector, float)
-            
+
         if verbose:
             print "wave vector is", self.k
             
@@ -579,7 +587,7 @@ class FDTD(object):
             src_spc = self.space.ez_index_to_space(0, 0, 0)[0]
             src_spc = self.space.cart_comm.sendrecv(src_spc, dest, const.Ez.tag,
                                                     None, src, const.Ez.tag) 
-        
+            
             phase_shift = exp(1j * self.k[0] * (dest_spc - src_spc))
         else:
             phase_shift = 0
@@ -601,7 +609,7 @@ class FDTD(object):
             phase_shift = exp(1j * self.k[1] * (dest_spc - src_spc))
         else:
             phase_shift = 0
-          
+
         self.ez[:, -1, :] = phase_shift * \
         self.space.cart_comm.sendrecv(self.ez[:, 0, :], dest, const.Ez.tag,
                                       None, src, const.Ez.tag)

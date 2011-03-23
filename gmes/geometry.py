@@ -1529,7 +1529,7 @@ class Boundary(GeometricObject):
                 low = -self.half_size[:]
                 high = (self.half_size[0], -self.half_size[1] + self.d, self.half_size[2])
                 self.box_list.append(GeomBox(low, high))
-                
+
         if 2 * self.half_size[2] > space.dz:
             if self.plus_z:
                 low = (-self.half_size[0], -self.half_size[1], self.half_size[2] - self.d)

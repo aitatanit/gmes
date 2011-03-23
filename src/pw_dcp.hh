@@ -9,7 +9,6 @@
 #include <complex>
 #include <numeric>
 #include <vector>
-#include <iostream> // DEBUG
 #include "pw_dielectric.hh"
 
 #define ex(i,j,k) ex[((this->i)*ex_y_size+(this->j))*ex_z_size+(this->k)]
@@ -295,34 +294,6 @@ public:
 			std::vector<std::complex<double> > tmp(b_c + i * b_c_j_size, b_c + (i + 1) * b_c_j_size);
 			this->b.push_back(tmp);
 		}
-
-		// DEBUG
-		std::cout << "array a:" << std::endl;
-		for (std::vector<std::vector<double> >::const_iterator it1 = this->a.begin(); it1 != this->a.end(); ++it1)
-		{
-			for (std::vector<double>::const_iterator it2 = it1->begin(); it2 != it1->end(); ++it2)
-			{
-				std::cout << *it2 << " ";
-			}
-			std::cout << std::endl;
-		}
-
-		std::cout << "array b:" << std::endl;
-		for (std::vector<std::vector<std::complex<double> > >::const_iterator it1 = this->b.begin(); it1 != this->b.end(); ++it1)
-		{
-			for (std::vector<std::complex<double> >::const_iterator it2 = it1->begin(); it2 != it1->end(); ++it2)
-			{
-				std::cout << *it2 << " ";
-			}
-			std::cout << std::endl;
-		}
-
-		std::cout << "array c:" << std::endl;
-		for (std::vector<double>::const_iterator it1 = this->c.begin(); it1 != this->c.end(); ++it1)
-		{
-			std::cout << *it1 << " ";
-		}
-		std::cout << std::endl;
 	}
 
 	double get_epsilon() const
@@ -404,8 +375,6 @@ public:
 			const T * const hy, int hy_x_size, int hy_y_size, int hy_z_size,
 			double dy, double dz, double dt, double n)
 	{
-//		std::cout << "e_now: " << ex(i,j,k) << std::endl; // DEBUG
-//		std::cout << "psi_total: " << psi_total() << std::endl; // DEBUG
 		std::complex<double> e_now = ex(i,j,k);
 		std::complex<double> e_new = c[0] * e_now
 				+ c[1] * ((hz(i+1,j+1,k) - hz(i+1,j,k)) / dy - (hy(i+1,j,k+1) - hy(i+1,j,k)) / dz)
@@ -413,32 +382,6 @@ public:
 
 		update_psi_dp(e_now, e_new);
 		update_psi_cp(e_now, e_new);
-//		std::cout << "e_new: " << e_new << std::endl; // DEBUG
-//		std::cout << "psi_dp_re: ";// DEBUG
-//		for (std::vector<double>::const_iterator it = psi_dp_re.begin(); it != psi_dp_re.end(); ++it)
-//		{
-//			std::cout << *it << " ";
-//		}
-//		std::cout << std::endl;
-//		std::cout << "psi_dp_im: ";// DEBUG
-//		for (std::vector<double>::const_iterator it = psi_dp_im.begin(); it != psi_dp_im.end(); ++it)
-//		{
-//			std::cout << *it << " ";
-//		}
-//		std::cout << std::endl;
-//		std::cout << "psi_cp_re: ";// DEBUG
-//		for (std::vector<std::complex<double> >::const_iterator it = psi_cp_re.begin(); it != psi_cp_re.end(); ++it)
-//		{
-//			std::cout << *it << " ";
-//		}
-//		std::cout << std::endl;
-//		std::cout << "psi_cp_im: ";// DEBUG
-//		for (std::vector<std::complex<double> >::const_iterator it = psi_cp_im.begin(); it != psi_cp_im.end(); ++it)
-//		{
-//			std::cout << *it << " ";
-//		}
-//		std::cout << std::endl;
-//		std::cout << "psi_total: " << psi_total() << std::endl; // DEBUG
 		assign(e_new, ex(i,j,k));
 	}
 

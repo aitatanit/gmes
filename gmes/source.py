@@ -8,10 +8,11 @@ except:
     pass
 
 from copy import deepcopy
-from numpy import *
+from math import sqrt
+from numpy import sin, cos, pi
+from numpy import inf, array, cross, dot, exp, ndindex
 from numpy.linalg import norm
 
-from pw_source import *
 import constants as const
 
 from geometry import Cartesian, DefaultMaterial, Boundary, in_range
@@ -20,7 +21,7 @@ from material import Dielectric, CPML
 
 #
 # SrcTime: Continuous, Bandpass
-# Src: Dipole, GaussianBeam
+# Src: Dipole, GaussianBeam, TotalFieldScatteredField
 #
 
 
@@ -130,6 +131,10 @@ class Bandpass(SrcTime):
         else:
             return osc.real
         
+
+from pw_source import DipoleEx, DipoleEy, DipoleEz
+from pw_source import DipoleHx, DipoleHy, DipoleHz
+
         
 class Dipole(Src):
     def __init__(self, src_time, pos, component, amp=1, filename=None):
@@ -208,6 +213,10 @@ class Dipole(Src):
                     loc = space.hz_index_to_space(*idx)
                     material_hz[idx].file.write('# location=' + str(loc) + '\n')
 
+
+from pw_source import TransparentElectric, TransparentMagnetic
+from pw_source import TransparentEx, TransparentEy, TransparentEz
+from pw_source import TransparentHx, TransparentHy, TransparentHz
 
 class TotalFieldScatteredField(Src):
     """Set a total and scattered field zone to launch a plane wave.
@@ -330,29 +339,29 @@ class TotalFieldScatteredField(Src):
         """
         ds = array((space.dx, space.dy, space.dz))
         dt = space.dt
-        k_scalar_old = inf
-        k_scalar_new = 2 * pi * self.src_time.freq
+        k_number_old = inf
+        k_number_new = 2 * pi * self.src_time.freq
         error_old = inf
         
         while error_old > error:
-            k_scalar_old = k_scalar_new
-            f = (sum(((sin(.5 * k_scalar_old * k * ds) / ds)**2)) - 
-                         sqrt(epsilon * mu) * 
+            k_number_old = k_number_new
+            f = (sum(((sin(.5 * k_number_old * k * ds) / ds)**2)) -
+                         sqrt(epsilon * mu) *
                          (sin(pi * self.src_time.freq * dt) / dt)**2)
-            f_prime = .5 * sum(k * sin(k_scalar_old * k * ds) / ds)
-            k_scalar_new = k_scalar_old - f / f_prime
+            f_prime = .5 * sum(k * sin(k_number_old * k * ds) / ds)
+            k_number_new = k_number_old - f / f_prime
             
-            # If Newton's method fails to converge, just stop now. 
-            if error_old == abs(k_scalar_new - k_scalar_old): break
-            else: error_old = abs(k_scalar_new - k_scalar_old)
-            
-        return k_scalar_new
+            # If Newton's method fails to converge, just stop now.
+            if error_old == abs(k_number_new - k_number_old): break
+            else: error_old = abs(k_number_new - k_number_old)
+
+        return k_number_new
 
     def _get_aux_fdtd(self, space, cmplx):
-        """Returns a TEMz FDTD for a reference of a plane wave. 
+        """Returns a TEMz FDTD for a reference of a plane wave.
         
         """
-        aux_ds = {const.PlusX: space.dx, const.MinusX: space.dx,  
+        aux_ds = {const.PlusX: space.dx, const.MinusX: space.dx,
                   const.PlusY: space.dy, const.MinusY: space.dy,
                   const.PlusZ: space.dz, const.MinusZ: space.dz}
         
@@ -380,17 +389,17 @@ class TotalFieldScatteredField(Src):
 
         mat_objs =  self.geom_tree.material_of_point((inf, inf, inf))
         
-        aux_space = Cartesian(size=aux_size, 
+        aux_space = Cartesian(size=aux_size,
                               resolution=1/dz,
                               parallel=False)
         aux_geom_list = (DefaultMaterial(material=mat_objs[0]),
                          Boundary(material=CPML(kappa_max=2.0, sigma_max_ratio=2.0),
-                                  thickness=pml_thickness, 
+                                  thickness=pml_thickness,
                                   size=aux_size,
                                   minus_z=False))
         src_pnt = aux_space.ex_index_to_space(0, 0, 0)
-        aux_src_list = (Dipole(src_time=deepcopy(self.src_time), 
-                               component=const.Ex, 
+        aux_src_list = (Dipole(src_time=deepcopy(self.src_time),
+                               component=const.Ex,
                                pos=src_pnt),)
         
         if cmplx:
@@ -417,7 +426,7 @@ class TotalFieldScatteredField(Src):
             source - the pointwise source class
             samp_i2s - the corresponding index_to_space function
             face - which side of the interface
-        
+            
         """
         aux_ds = {const.PlusX: space.dx, const.MinusX: space.dx,  
                   const.PlusY: space.dy, const.MinusY: space.dy,
@@ -444,23 +453,23 @@ class TotalFieldScatteredField(Src):
 
                 amp = cosine * self.amp * self.mode_function(*point)
 
-                samp_pnt = (0, 0, 
+                samp_pnt = (0, 0,
                             self._dist_from_center_along_beam_axis(samp_i2s(i, j, k)))
                 
                 # v_in_axis / v_in_k
                 v_ratio = \
                 self._get_wave_number(self.k, epsilon, mu, space) / \
                 self._get_wave_number(self.on_axis_k.vector, epsilon, mu, space)
-                
+
                 if issubclass(source, TransparentElectric):
                     material[i, j, k] = source(material[i, j, k], epsilon,
                                                amp, self.aux_fdtd, samp_pnt,
                                                v_ratio, face)
                 if issubclass(source, TransparentMagnetic):
                     material[i, j, k] = source(material[i, j, k], mu, 
-                                               amp, self.aux_fdtd, samp_pnt, 
+                                               amp, self.aux_fdtd, samp_pnt,
                                                v_ratio, face)
-        
+
     def set_pointwise_source_ex(self, material_ex, space):
         cosine = dot(self.h_direction, (0, 0, 1))
         if cosine != 0:
@@ -519,7 +528,7 @@ class TotalFieldScatteredField(Src):
             low = self.center - self.half_size * (1, 1, -1)
             high = self.center + self.half_size
             
-            low_idx = space.space_to_ex_index(*low)  
+            low_idx = space.space_to_ex_index(*low)
             high_idx = map(lambda x: x + 1, space.space_to_ex_index(*high))
             
             i2s = lambda i, j, k: space.hy_index_to_space(i + 1, j, k + 1)
@@ -605,21 +614,21 @@ class TotalFieldScatteredField(Src):
         if cosine != 0:
             self._set_pw_source_ez_minus_y(material_ez, space, cosine)
             self._set_pw_source_ez_plus_y(material_ez, space, cosine)
-                
+        
     def _set_pw_source_ez_minus_x(self, material_ez, space, cosine):
         if 2 * space.half_size[0] > space.dx:
             low = self.center - self.half_size
             high = self.center + self.half_size * (-1, 1, 1)
             
-            low_idx = space.space_to_ez_index(*low)  
+            low_idx = space.space_to_ez_index(*low)
             high_idx = map(lambda x: x + 1, space.space_to_ez_index(*high))
-    
+
             hy_i2s = lambda i, j, k: space.hy_index_to_space(i, j, k + 1)
             
             self._set_pw_source(space, const.Ez, cosine, material_ez,  
                                 low_idx, high_idx, TransparentEz, 
                                 hy_i2s, const.MinusX)
-    
+
     def _set_pw_source_ez_plus_x(self, material_ez, space, cosine):
         if 2 * space.half_size[0] > space.dx:
             low = self.center - self.half_size * (-1, 1, 1)
@@ -627,7 +636,7 @@ class TotalFieldScatteredField(Src):
             
             low_idx = space.space_to_ez_index(*low)  
             high_idx = map(lambda x: x + 1, space.space_to_ez_index(*high))
-    
+
             hy_i2s = lambda i, j, k: space.hy_index_to_space(i + 1, j, k + 1)
             
             self._set_pw_source(space, const.Ez, cosine, material_ez,
@@ -641,9 +650,9 @@ class TotalFieldScatteredField(Src):
             
             low_idx = space.space_to_ez_index(*low)  
             high_idx = map(lambda x: x + 1, space.space_to_ez_index(*high))
-    
+
             hx_i2s = lambda i, j, k: space.hx_index_to_space(i, j, k + 1)
-            
+
             self._set_pw_source(space, const.Ez, cosine, material_ez,
                                 low_idx, high_idx, TransparentEz, 
                                 hx_i2s, const.MinusY)
@@ -655,9 +664,9 @@ class TotalFieldScatteredField(Src):
             
             low_idx = space.space_to_ez_index(*low)  
             high_idx = map(lambda x: x + 1, space.space_to_ez_index(*high))
-    
+
             hx_i2s = lambda i, j, k: space.hx_index_to_space(i, j + 1, k + 1)
-            
+
             self._set_pw_source(space, const.Ez, cosine, material_ez,  
                                 low_idx, high_idx, TransparentEz, 
                                 hx_i2s, const.PlusY)
@@ -939,6 +948,12 @@ class GaussianBeam(TotalFieldScatteredField):
         
         # spot size of Gaussian beam
         self.waist = float(waist)
+
+    def init(self, geom_tree, space, cmplx):
+        self.geom_tree = geom_tree
+        self.src_time.init(cmplx)
+        
+        self.aux_fdtd = self._get_aux_fdtd(space, cmplx)
         
     def display_info(self, indent=0):
         print " " * indent, "Gaussian beam source:"

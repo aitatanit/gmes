@@ -604,8 +604,8 @@ class CPML(PML):
     """Form Complex Frequency Shifted (CFS) Perfectly Matched Layer (PML).
     
     This class implements CFS PML represented in
-    S. Gedney, "Perfectly Matched Layer Absorbing Boundary Conditions,"
-    Computational Electrodynamics: The Finite-Difference Time-Domain Method, 
+    S. Gedney, "Perfectly Matched Layer Absorbing Boundary Conditions,
+    Computational Electrodynamics: The Finite-Difference Time-Domain Method," 
     Third Edition, A. Taflove and S.C. Hagness, eds., Artech House Publishers,
     2005, pp. 273-328.
     
