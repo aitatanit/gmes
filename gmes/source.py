@@ -8,22 +8,23 @@ except:
     pass
 
 from copy import deepcopy
-from math import sqrt
-from numpy import sin, cos, pi
-from numpy import inf, array, cross, dot, exp, ndindex
+from math import sqrt, pi, sin
+from cmath import exp
+
+import numpy as np
+from numpy import inf, cross, dot, ndindex
 from numpy.linalg import norm
 
 import constants as const
-
 from geometry import Cartesian, DefaultMaterial, Boundary, in_range
 from fdtd import TEMzFDTD
 from material import Dielectric, CPML
+
 
 #
 # SrcTime: Continuous, Bandpass
 # Src: Dipole, GaussianBeam, TotalFieldScatteredField
 #
-
 
 class SrcTime(object):
     """Time-dependent part of a source.
@@ -76,9 +77,9 @@ class Continuous(SrcTime):
             return 0
         
         if ts < self.width:
-            env = sin(.5 * pi * ts / self.width)**2
+            env = sin(0.5 * pi * ts / self.width)**2
         elif te < self.width:
-            env = sin(.5 * pi * te / self.width)**2
+            env = sin(0.5 * pi * te / self.width)**2
         else:
             env = 1
         
@@ -101,9 +102,9 @@ class Bandpass(SrcTime):
         self.peak_time = self.width * s
         self.cutoff = 2 * self.width * s
         
-        # this is to make last_source_time as small as possible
-        while exp(-.5 * (self.cutoff/self.width)**2) == 0:
-            self.cutoff *= .9
+        # Makes the last_source_time as small as possible.
+        while exp(-0.5 * (self.cutoff / self.width)**2) == 0:
+            self.cutoff *= 0.9
     
     def init(self, cmplx):
         self.cmplx = cmplx
@@ -123,9 +124,10 @@ class Bandpass(SrcTime):
 
         # correction factor so that current amplitude (= d(dipole)/dt) is
         # ~ 1 near the peak of the Gaussian.
-        cfactor = 1.0 / (-2j*pi*self.freq)
+        cfactor = 1.0 / (-2j * pi * self.freq)
         
-        osc = cfactor * exp(-.5*(tt/self.width)**2) * exp(-2j*pi*self.freq*time-self.phase)
+        osc = cfactor * exp(-0.5 * (tt / self.width)**2) \
+            * exp(-2j * pi * self.freq * time - self.phase)
         if self.cmplx:
             return osc
         else:
@@ -138,7 +140,7 @@ from pw_source import DipoleHx, DipoleHy, DipoleHz
         
 class Dipole(Src):
     def __init__(self, src_time, pos, component, amp=1, filename=None):
-        self.pos = array(pos, float)
+        self.pos = np.array(pos, float)
         self.comp = component
         self.src_time = src_time
         self.amp = float(amp)
@@ -163,7 +165,8 @@ class Dipole(Src):
         if self.comp is const.Ex:
             idx = space.space_to_ex_index(*self.pos)
             if in_range(idx, material_ex, const.Ex):
-                material_ex[idx] = DipoleEx(material_ex[idx], self.src_time, self.amp, self.filename)
+                material_ex[idx] = DipoleEx(material_ex[idx], self.src_time, 
+                                            self.amp, self.filename)
                 if self.filename is not None:
                     loc = space.ex_index_to_space(*idx)
                     material_ex[idx].file.write('# location=' + str(loc) + '\n')
@@ -172,7 +175,8 @@ class Dipole(Src):
         if self.comp is const.Ey:
             idx = space.space_to_ey_index(*self.pos)
             if in_range(idx, material_ey, const.Ey):
-                material_ey[idx] = DipoleEy(material_ey[idx], self.src_time, self.amp, self.filename)
+                material_ey[idx] = DipoleEy(material_ey[idx], self.src_time, 
+                                            self.amp, self.filename)
                 if self.filename is not None:
                     loc = space.ey_index_to_space(*idx)
                     material_ey[idx].file.write('# location=' + str(loc) + '\n')
@@ -181,7 +185,8 @@ class Dipole(Src):
         if self.comp is const.Ez:
             idx = space.space_to_ez_index(*self.pos)
             if in_range(idx, material_ez, const.Ez):
-                material_ez[idx] = DipoleEz(material_ez[idx], self.src_time, self.amp, self.filename)
+                material_ez[idx] = DipoleEz(material_ez[idx], self.src_time, 
+                                            self.amp, self.filename)
                 if self.filename is not None:
                     loc = space.ez_index_to_space(*idx)
                     material_ez[idx].file.write('# location=' + str(loc) + '\n')
@@ -190,7 +195,8 @@ class Dipole(Src):
         if self.comp is const.Hx:
             idx = space.space_to_hx_index(*self.pos)
             if in_range(idx, material_hx, const.Hx):
-                material_hx[idx] = DipoleHx(material_hx[idx], self.src_time, self.amp, self.filename)
+                material_hx[idx] = DipoleHx(material_hx[idx], self.src_time, 
+                                            self.amp, self.filename)
                 if self.filename is not None:
                     loc = space.hx_index_to_space(*idx)
                     material_hx[idx].file.write('# location=' + str(loc) + '\n')
@@ -199,7 +205,8 @@ class Dipole(Src):
         if self.comp is const.Hy:
             idx = space.space_to_hy_index(*self.pos)
             if in_range(idx, material_hy, const.Hy):
-                material_hy[idx] = DipoleHy(material_hy[idx], self.src_time, self.amp, self.filename)
+                material_hy[idx] = DipoleHy(material_hy[idx], self.src_time, 
+                                            self.amp, self.filename)
                 if self.filename is not None:
                     loc = space.hy_index_to_space(*idx)
                     material_hy[idx].file.write('# location=' + str(loc) + '\n')
@@ -208,7 +215,8 @@ class Dipole(Src):
         if self.comp is const.Hz:
             idx = space.space_to_hz_index(*self.pos)
             if in_range(idx, material_hz, const.Hz):
-                material_hz[idx] = DipoleHz(material_hz[idx], self.src_time, self.amp, self.filename)
+                material_hz[idx] = DipoleHz(material_hz[idx], self.src_time, 
+                                            self.amp, self.filename)
                 if self.filename is not None:
                     loc = space.hz_index_to_space(*idx)
                     material_hz[idx].file.write('# location=' + str(loc) + '\n')
@@ -226,7 +234,8 @@ class TotalFieldScatteredField(Src):
         """Constructor
         
         Arguments:
-            center -- center of the incidence interface. The beam axis crosses this point.
+            center -- center of the incidence interface. The beam axis crosses
+                      this point.
                type: a tuple with three real numbers.
             size --  size of the incidence interface plane.
                type: a tuple with three real numbers.
@@ -245,12 +254,12 @@ class TotalFieldScatteredField(Src):
         else:
             raise TypeError, 'src_time must be an instance of SrcTime.'
         
-        self.k = array(direction, float) / norm(direction)
-        self.center = array(center, float)
-        self.size = array(size, float)
+        self.k = np.array(direction, float) / norm(direction)
+        self.center = np.array(center, float)
+        self.size = np.array(size, float)
         
         self.half_size = .5 * self.size
-        self.e_direction = array(polarization, float) / norm(polarization)
+        self.e_direction = np.array(polarization, float) / norm(polarization)
         
         # direction of h field
         self.h_direction = cross(self.k, self.e_direction)
@@ -275,7 +284,7 @@ class TotalFieldScatteredField(Src):
         print " " * indent, "center:", self.center
         print " " * indent, "source plane size:", self.size 
         print " " * indent, "polarization direction:", self.e_direction
-        print " " * indent, "amp.:", self.amp
+        print " " * indent, "amplitude:", self.amp
         
         self.src_time.display_info(4)
         
@@ -291,18 +300,18 @@ class TotalFieldScatteredField(Src):
         """
         return norm(self.center - point)
     
-    def  _dist_from_center_along_beam_axis(self, point):
+    def _metric_from_center_along_beam_axis(self, point):
         """Calculate projected distance from center along the beam axis.
-        
-        This method returns positive value when the point is located in
+
+        Returns positive value when the point is located in
         the k direction to the center.
         
         Arguments:
-            point -- location iin the space coordinate
+            point -- location in the space coordinate
             
         """
         return dot(self.k, point - self.center)
-    
+
     def _dist_from_beam_axis(self, x, y, z):
         """Calculate distance from the beam axis.
         
@@ -327,8 +336,8 @@ class TotalFieldScatteredField(Src):
         
         return dot_with_axis[max(dot_with_axis)]
         
-    def _get_wave_number(self, k, epsilon, mu, space, error=1e-3):
-        """Calculate the wave number for auxiliary fdtd using the Newton's method.
+    def _get_wave_number(self, k, epsilon, mu, space, error=1e-10):
+        """Calculate the wave number for auxiliary fdtd using Newton's method.
         
         Arguments:
             k -- normalized wave vector
@@ -337,7 +346,7 @@ class TotalFieldScatteredField(Src):
             space -- Cartesian instance
             
         """
-        ds = array((space.dx, space.dy, space.dz))
+        ds = np.array((space.dx, space.dy, space.dz))
         dt = space.dt
         k_number_old = inf
         k_number_new = 2 * pi * self.src_time.freq
@@ -345,15 +354,17 @@ class TotalFieldScatteredField(Src):
         
         while error_old > error:
             k_number_old = k_number_new
-            f = (sum(((sin(.5 * k_number_old * k * ds) / ds)**2)) -
-                         sqrt(epsilon * mu) *
-                         (sin(pi * self.src_time.freq * dt) / dt)**2)
-            f_prime = .5 * sum(k * sin(k_number_old * k * ds) / ds)
+            f = sum(((np.sin(.5 * k_number_old * k * ds) / ds)**2)) \
+                - sqrt(epsilon * mu) \
+                * (np.sin(pi * self.src_time.freq * dt) / dt)**2
+            f_prime = .5 * sum(k * np.sin(k_number_old * k * ds) / ds)
             k_number_new = k_number_old - f / f_prime
             
             # If Newton's method fails to converge, just stop now.
-            if error_old == abs(k_number_new - k_number_old): break
-            else: error_old = abs(k_number_new - k_number_old)
+            if error_old == abs(k_number_new - k_number_old):
+                break
+            else:
+                error_old = abs(k_number_new - k_number_old)
 
         return k_number_new
 
@@ -369,22 +380,21 @@ class TotalFieldScatteredField(Src):
         
         pml_thickness = 10 * dz
         
-        # find the furthest distance, max_abs_dist from the 
-        # longitudinal axis of the incomming wave
+        # Find the furthest distance, max_dist from the longitudinal
+        # axis of the incomming wave
         #
         # FIXME: When self.size contains numpy.inf vertices contains nan
         #        and the following algorithm does not work.
         vertices = []
-        for x in (.5 * self.size[0], -.5 * self.size[0]):
-            for y in (.5 * self.size[1], -.5 * self.size[1]):
-                for z in (.5 * self.size[2], -.5 * self.size[2]):
+        for x in (0.5 * self.size[0], -0.5 * self.size[0]):
+            for y in (0.5 * self.size[1], -0.5 * self.size[1]):
+                for z in (0.5 * self.size[2], -0.5 * self.size[2]):
                     vertices.append(self.center + (x, y, z))
 
-        dist = map(self._dist_from_center_along_beam_axis, vertices)
-        abs_dist = map(abs, dist)
-        max_abs_dist = max(abs_dist)
+        dist = map(abs, map(self._metric_from_center_along_beam_axis, vertices)
+        max_dist = max(dist)
 
-        longitudinal_size = 2 * (max_abs_dist + pml_thickness + dz)
+        longitudinal_size = 2 * (max_dist + pml_thickness + dz)
         aux_size = (0, 0, longitudinal_size)
 
         mat_objs =  self.geom_tree.material_of_point((inf, inf, inf))
@@ -393,7 +403,8 @@ class TotalFieldScatteredField(Src):
                               resolution=1/dz,
                               parallel=False)
         aux_geom_list = (DefaultMaterial(material=mat_objs[0]),
-                         Boundary(material=CPML(kappa_max=2.0, sigma_max_ratio=2.0),
+                         Boundary(material=CPML(kappa_max=2.0,
+                                                sigma_max_ratio=2.0),
                                   thickness=pml_thickness,
                                   size=aux_size,
                                   minus_z=False))
@@ -411,6 +422,14 @@ class TotalFieldScatteredField(Src):
             aux_fdtd = TEMzFDTD(aux_space, aux_geom_list,
                                 aux_src_list, dt=space.dt,
                                 verbose=False)
+
+        # v_in_ais / v_in_k
+        eps = mat_objs[0].epsilon
+        mu = mat_objs[0].mu
+        v_ratio = self._get_wave_number(self.k, eps, mu, space) / \
+                  self._get_wave_number(self.on_axis_k.vector, eps, mu, space)
+        aux_fdtd.dz *= v_ratio
+        
         return aux_fdtd
     
     def _set_pw_source(self, space, component, cosine, material, 
@@ -439,36 +458,29 @@ class TotalFieldScatteredField(Src):
                       const.Hy: space.hy_index_to_space,
                       const.Hz: space.hz_index_to_space}
         
-        low_idx_array = array(low_idx)
-        high_idx_array = array(high_idx)
+        low_idx_array = np.array(low_idx)
+        high_idx_array = np.array(high_idx)
         
         for i, j, k in ndindex(*(high_idx_array - low_idx_array)):
-            i, j, k = (i, j, k) + low_idx_array
-            if in_range((i, j, k), material, component):
-                point = idx_to_spc[component](i, j, k)
+            idx = tuple((i, j, k) + low_idx_array)
+            if in_range(idx, material, component):
+                pnt = idx_to_spc[component](*idx)
                 
-                mat_objs = self.geom_tree.material_of_point(point)
-                epsilon = mat_objs[0].epsilon
+                mat_objs = self.geom_tree.material_of_point(pnt)
+                eps = mat_objs[0].epsilon
                 mu = mat_objs[0].mu
 
-                amp = cosine * self.amp * self.mode_function(*point)
+                amp = cosine * self.amp * self.mode_function(*pnt)
 
-                samp_pnt = (0, 0,
-                            self._dist_from_center_along_beam_axis(samp_i2s(i, j, k)))
+                sample_pnt = \
+                (0, 0, self._metric_from_center_along_beam_axis(samp_i2s(*idx)))
                 
-                # v_in_axis / v_in_k
-                v_ratio = \
-                self._get_wave_number(self.k, epsilon, mu, space) / \
-                self._get_wave_number(self.on_axis_k.vector, epsilon, mu, space)
-
                 if issubclass(source, TransparentElectric):
-                    material[i, j, k] = source(material[i, j, k], epsilon,
-                                               amp, self.aux_fdtd, samp_pnt,
-                                               v_ratio, face)
+                    material[idx] = source(material[idx], eps, amp,
+                                           self.aux_fdtd, sample_pnt, face)
                 if issubclass(source, TransparentMagnetic):
-                    material[i, j, k] = source(material[i, j, k], mu, 
-                                               amp, self.aux_fdtd, samp_pnt,
-                                               v_ratio, face)
+                    material[idx] = source(material[idx], mu, amp,
+                                           self.aux_fdtd, sample_pnt, face)
 
     def set_pointwise_source_ex(self, material_ex, space):
         cosine = dot(self.h_direction, (0, 0, 1))
@@ -912,18 +924,20 @@ class TotalFieldScatteredField(Src):
 class GaussianBeam(TotalFieldScatteredField):
     """Launch a transparent Gaussian beam.
     
-    It works as a guided mode with Gaussian profile is launched through the incidence interface.
-    The incidence interface is transparent, thus the scattered wave can penetrate through the 
-    interface plane.
+    It works as a guided mode with Gaussian profile is launched through the 
+    incidence interface. The incidence interface is transparent, thus the 
+    scattered wave can penetrate through the interface plane.
     
     """
-    def __init__(self, src_time, directivity, center, size, direction, polarization, waist=inf, amp=1):
+    def __init__(self, src_time, directivity, center, size, direction, 
+                 polarization, waist=inf, amp=1):
         """
         
         Arguments:
             directivity -- directivity of the incidence interface.
                type: a child class of constants.Directional.
-            center -- center of the incidence interface. The beam axis crosses this point.
+            center -- center of the incidence interface. The beam axis crosses
+                      this point.
                type: a tuple with three real numbers.
             size --  size of the incidence interface plane.
                type: a tuple with three real numbers.
@@ -939,7 +953,8 @@ class GaussianBeam(TotalFieldScatteredField):
                type: a tuple with three real numbers.
 
         """
-        TotalFieldScatteredField.__init__(self, src_time, center, size, direction, polarization, amp)
+        TotalFieldScatteredField.__init__(self, src_time, center, size, 
+                                          direction, polarization, amp)
         
         if issubclass(directivity, const.Directional):
             self.directivity = directivity
@@ -968,7 +983,7 @@ class GaussianBeam(TotalFieldScatteredField):
     
     def mode_function(self, x, y, z):
         r = self._dist_from_beam_axis(x, y, z)
-        return exp(-(r / self.waist)**2)
+        return np.exp(-(r / self.waist)**2)
         
     def set_pointwise_source_ex(self, material_ex, space):
         if self.directivity is const.PlusY:
@@ -1089,4 +1104,3 @@ class GaussianBeam(TotalFieldScatteredField):
             
         else:
             return None
-        
