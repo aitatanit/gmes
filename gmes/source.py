@@ -391,7 +391,7 @@ class TotalFieldScatteredField(Src):
                 for z in (0.5 * self.size[2], -0.5 * self.size[2]):
                     vertices.append(self.center + (x, y, z))
 
-        dist = map(abs, map(self._metric_from_center_along_beam_axis, vertices)
+        dist = map(abs, map(self._metric_from_center_along_beam_axis, vertices))
         max_dist = max(dist)
 
         longitudinal_size = 2 * (max_dist + pml_thickness + dz)
