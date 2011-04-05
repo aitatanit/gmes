@@ -8,8 +8,8 @@ except:
     pass
 
 from copy import deepcopy
-from math import sqrt, pi, sin
-from cmath import exp
+from math import sqrt, pi, sin, exp
+import cmath as cm
 
 import numpy as np
 from numpy import inf, cross, dot, ndindex
@@ -83,7 +83,7 @@ class Continuous(SrcTime):
         else:
             env = 1
         
-        osc = env * exp(-2j * pi * self.freq * time - self.phase)
+        osc = env * cm.exp(-2j * pi * self.freq * time - self.phase)
         if self.cmplx:
             return osc
         else:
@@ -105,7 +105,7 @@ class Bandpass(SrcTime):
         # Makes the last_source_time as small as possible.
         while exp(-0.5 * (self.cutoff / self.width)**2) == 0:
             self.cutoff *= 0.9
-    
+        
     def init(self, cmplx):
         self.cmplx = cmplx
         
@@ -127,7 +127,7 @@ class Bandpass(SrcTime):
         cfactor = 1.0 / (-2j * pi * self.freq)
         
         osc = cfactor * exp(-0.5 * (tt / self.width)**2) \
-            * exp(-2j * pi * self.freq * time - self.phase)
+            * cm.exp(-2j * pi * self.freq * time - self.phase)
         if self.cmplx:
             return osc
         else:
@@ -225,6 +225,7 @@ class Dipole(Src):
 from pw_source import TransparentElectric, TransparentMagnetic
 from pw_source import TransparentEx, TransparentEy, TransparentEz
 from pw_source import TransparentHx, TransparentHy, TransparentHz
+
 
 class TotalFieldScatteredField(Src):
     """Set a total and scattered field zone to launch a plane wave.
@@ -414,14 +415,11 @@ class TotalFieldScatteredField(Src):
                                pos=src_pnt),)
         
         if cmplx:
-            aux_fdtd = TEMzFDTD(aux_space, aux_geom_list,
-                                aux_src_list, dt=space.dt,
-                                wavevector=(0,0,0),
-                                verbose=False)
+            aux_fdtd = TEMzFDTD(aux_space, aux_geom_list, aux_src_list,
+                                dt=space.dt, wavevector=(0,0,0), verbose=False)
         else:
-            aux_fdtd = TEMzFDTD(aux_space, aux_geom_list,
-                                aux_src_list, dt=space.dt,
-                                verbose=False)
+            aux_fdtd = TEMzFDTD(aux_space, aux_geom_list, aux_src_list,
+                                dt=space.dt, verbose=False)
 
         # v_in_ais / v_in_k
         eps = mat_objs[0].epsilon
@@ -968,8 +966,18 @@ class GaussianBeam(TotalFieldScatteredField):
         self.geom_tree = geom_tree
         self.src_time.init(cmplx)
         
-        self.aux_fdtd = self._get_aux_fdtd(space, cmplx)
+        aux_fdtd = self._get_aux_fdtd(space, cmplx)
         
+        raising = aux_fdtd.src_list[0].src_time.width
+        dist = 2 * aux_fdtd.space.half_size[2]
+        v_p = aux_fdtd.geom_list[0].material.epsilon**-0.5
+        passby = raising + dist / v_p
+
+        while aux_fdtd.time_step.t < 2 * passby:
+            aux_fdtd.step()
+        
+        self.aux_fdtd = _GaussianBeamSrcTime(aux_fdtd)
+
     def display_info(self, indent=0):
         print " " * indent, "Gaussian beam source:"
         print " " * indent, "propagation direction:", self.k
@@ -983,7 +991,7 @@ class GaussianBeam(TotalFieldScatteredField):
     
     def mode_function(self, x, y, z):
         r = self._dist_from_beam_axis(x, y, z)
-        return np.exp(-(r / self.waist)**2)
+        return exp(-(r / self.waist)**2)
         
     def set_pointwise_source_ex(self, material_ex, space):
         if self.directivity is const.PlusY:
@@ -1104,3 +1112,40 @@ class GaussianBeam(TotalFieldScatteredField):
             
         else:
             return None
+
+
+class _GaussianBeamSrcTime(object):
+    class EX(object):
+        def __init__(self, outer):
+            self.outer = outer
+
+        def __getitem__(self, idx):
+            return self.outer.envelope() * self.outer.aux_fdtd.ex[idx]
+
+    class HY(object):
+        def __init__(self, outer):
+            self.outer = outer
+
+        def __getitem__(self, idx):
+            return self.outer.envelope() * self.outer.aux_fdtd.hy[idx]
+
+    def __init__(self, aux_fdtd):
+        self.aux_fdtd = aux_fdtd
+        self.space = self.aux_fdtd.space
+        self.ex = self.EX(self)
+        self.hy = self.HY(self)
+
+        self.n = 0
+        self.t = 0
+
+    def step(self):
+        self.aux_fdtd.step()
+        self.n += 1
+        self.t = self.n * self.aux_fdtd.dt
+        
+    def envelope(self):
+        width = self.aux_fdtd.src_list[0].src_time.width
+        env = 1
+        if self.t < width:
+            env = sin(0.5 * pi * self.t / width)**2
+        return env

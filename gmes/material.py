@@ -483,30 +483,38 @@ class UPML(PML):
         print "kappa_max:", self.kappa_max,
         
     def c1(self, w, component):
-        numerator = 2 * self.kappa(w, component) - self.sigma(w, component) * self.dt
-        denominator = 2 * self.kappa(w, component) + self.sigma(w, component) * self.dt
+        numerator = 2 * self.kappa(w, component) \
+            - self.sigma(w, component) * self.dt
+        denominator = 2 * self.kappa(w, component) \
+            + self.sigma(w, component) * self.dt
         return numerator / denominator
     
     def c2(self, w, component):
         numerator = 2 * self.dt
-        denominator = 2 * self.kappa(w, component) + self.sigma(w, component) * self.dt
+        denominator = 2 * self.kappa(w, component) \
+            + self.sigma(w, component) * self.dt
         return numerator / denominator
     
     def c3(self, w, component):
-        numerator = 2 * self.kappa(w, component) - self.sigma(w, component) * self.dt
-        denominator = 2 * self.kappa(w, component) + self.sigma(w, component) * self.dt
+        numerator = 2 * self.kappa(w, component) \
+            - self.sigma(w, component) * self.dt
+        denominator = 2 * self.kappa(w, component) \
+            + self.sigma(w, component) * self.dt
         return numerator / denominator
     
     def c4(self, w, component):
-        denominator = 2 * self.kappa(w, component) + self.sigma(w, component) * self.dt
+        denominator = 2 * self.kappa(w, component) \
+            + self.sigma(w, component) * self.dt
         return 1 / denominator
     
     def c5(self, w, component):
-        numerator = 2 * self.kappa(w, component) + self.sigma(w, component) * self.dt
+        numerator = 2 * self.kappa(w, component) \
+            + self.sigma(w, component) * self.dt
         return numerator
     
     def c6(self, w, component):
-        numerator = 2 * self.kappa(w, component) - self.sigma(w, component) * self.dt
+        numerator = 2 * self.kappa(w, component) \
+            - self.sigma(w, component) * self.dt
         return numerator
     
     def get_pw_material_ex(self, idx, coords, underneath=None, cmplx=False):

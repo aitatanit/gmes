@@ -11,7 +11,8 @@ except:
 
 from copy import deepcopy
 
-from numpy import *
+import numpy as np
+from numpy import empty, zeros, inf
 from scipy.linalg import norm
 
 try:
@@ -20,7 +21,7 @@ except ImportError:
     pass
 
 import constants as const
-from material import Compound
+from material import Compound, PML
 
 
 class AuxiCartComm(object):
@@ -116,16 +117,16 @@ class Cartesian(object):
         """
         try:
             if len(resolution) == 3:
-                self.res = array(resolution, float)
+                self.res = np.array(resolution, float)
         except TypeError:
-            self.res = array((resolution,)*3, float)
+            self.res = np.array((resolution,)*3, float)
         
         self.dx, self.dy, self.dz = 1 / self.res
 
         # local spatial differentials to calculate dt
         dx, dy, dz = self.dx, self.dy, self.dz
         
-        self.half_size = 0.5 * array(size, float)
+        self.half_size = 0.5 * np.array(size, float)
         
         if self.half_size[0] == 0:
             self.half_size[0] = .5 * self.dx
@@ -137,7 +138,7 @@ class Cartesian(object):
             self.half_size[2] = .5 * self.dz
             
         # the size of the whole field arrays 
-        self.whole_field_size = array((2 * self.half_size * self.res).round(), int)
+        self.whole_field_size = np.array((2 * self.half_size * self.res).round(), int)
         
         try:
             if not parallel:
@@ -363,7 +364,7 @@ class Cartesian(object):
             i, j, k -- array index
         
         """
-        idx = array((i, j, k), int)  
+        idx = np.array((i, j, k), int)  
         global_idx = idx + self.general_field_size * self.my_cart_idx
         
         spc_0 = (global_idx[0] + .5) * self.dx - self.half_size[0]
@@ -383,7 +384,7 @@ class Cartesian(object):
             x, y, z -- (global) space coordinate
         
         """
-        coords = array((x,y,z), float)
+        coords = np.array((x,y,z), float)
 
         global_idx = empty(3, float)
         global_idx[0] = (coords[0] + self.half_size[0]) / self.dx - .5
@@ -410,7 +411,7 @@ class Cartesian(object):
             x, y, z -- (global) space coordinate
         
         """
-        spc = array((x,y,z), float)
+        spc = np.array((x,y,z), float)
 
         global_idx = empty(3, int)
         global_idx[0] = (spc[0] + self.half_size[0]) / self.dx
@@ -437,7 +438,7 @@ class Cartesian(object):
             i, j, k -- array index
         
         """
-        idx = array((i,j,k), int)
+        idx = np.array((i,j,k), int)
             
         global_idx = idx + self.general_field_size * self.my_cart_idx
         
@@ -458,7 +459,7 @@ class Cartesian(object):
             x, y, z -- (global) space coordinate
         
         """
-        coords = array((x,y,z), float)
+        coords = np.array((x,y,z), float)
             
         global_idx = empty(3, float)
         global_idx[0] = (coords[0] + self.half_size[0]) / self.dx
@@ -485,7 +486,7 @@ class Cartesian(object):
             x, y, z -- (global) space coordinate
         
         """
-        coords = array((x,y,z), float)
+        coords = np.array((x,y,z), float)
             
         global_idx = empty(3, int)
         global_idx[0] = (coords[0] + self.half_size[0]) / self.dx + .5
@@ -512,7 +513,7 @@ class Cartesian(object):
             i, j, k -- array index
         
         """
-        idx = array((i, j, k), int)
+        idx = np.array((i, j, k), int)
             
         global_idx = idx + self.general_field_size * self.my_cart_idx
         
@@ -533,7 +534,7 @@ class Cartesian(object):
             x, y, z -- (global) space coordinate
         
         """
-        coords = array((x, y, z), float)
+        coords = np.array((x, y, z), float)
             
         global_idx = empty(3, float)
         global_idx[0] = (coords[0] + self.half_size[0]) / self.dx
@@ -560,7 +561,7 @@ class Cartesian(object):
             x, y, z -- (global) space coordinate
         
         """
-        coords = array((x,y,z), float)
+        coords = np.array((x,y,z), float)
             
         global_idx = empty(3, int)
         global_idx[0] = (coords[0] + self.half_size[0]) / self.dx + .5
@@ -587,7 +588,7 @@ class Cartesian(object):
             i, j, k -- array index
         
         """
-        idx = array((i, j, k), int)
+        idx = np.array((i, j, k), int)
             
         global_idx = idx + self.general_field_size * self.my_cart_idx
         
@@ -608,7 +609,7 @@ class Cartesian(object):
             x, y, z -- (global) space coordinate
         
         """
-        coords = array((x,y,z), float)
+        coords = np.array((x,y,z), float)
             
         global_idx = empty(3, float)
         global_idx[0] = (coords[0] + self.half_size[0]) / self.dx
@@ -635,7 +636,7 @@ class Cartesian(object):
             x, y, z -- (global) space coordinate
         
         """
-        coords = array((x,y,z), float)
+        coords = np.array((x,y,z), float)
             
         global_idx = empty(3, int)
         global_idx[0] = (coords[0] + self.half_size[0]) / self.dx + .5
@@ -662,7 +663,7 @@ class Cartesian(object):
             i, j, k -- array index
         
         """
-        idx = array((i,j,k), int)
+        idx = np.array((i,j,k), int)
             
         global_idx = idx + self.general_field_size * self.my_cart_idx
         
@@ -683,7 +684,7 @@ class Cartesian(object):
             x, y, z -- (global) space coordinate
         
         """
-        coords = array((x,y,z), float)
+        coords = np.array((x,y,z), float)
             
         global_idx = empty(3, float)
         global_idx[0] = (coords[0] + self.half_size[0]) / self.dx + .5
@@ -710,7 +711,7 @@ class Cartesian(object):
             x, y, z -- (global) space coordinate
         
         """
-        coords = array((x,y,z), float)
+        coords = np.array((x,y,z), float)
             
         global_idx = empty(3, int)
         global_idx[0] = (coords[0] + self.half_size[0]) / self.dx + 1
@@ -737,7 +738,7 @@ class Cartesian(object):
             i, j, k -- array index
         
         """
-        idx = array((i,j,k), int)
+        idx = np.array((i,j,k), int)
             
         global_idx = idx + self.general_field_size * self.my_cart_idx
         
@@ -758,7 +759,7 @@ class Cartesian(object):
             x, y, z -- (global) space coordinate
         
         """
-        coords = array((x,y,z), float)
+        coords = np.array((x,y,z), float)
             
         global_idx = empty(3, float)
         global_idx[0] = (coords[0] + self.half_size[0]) / self.dx + .5
@@ -785,7 +786,7 @@ class Cartesian(object):
              x, y, z -- (global) space coordinate
         
         """
-        coords = array((x,y,z), float)
+        coords = np.array((x,y,z), float)
             
         global_idx = empty(3, int)
         global_idx[0] = (coords[0] + self.half_size[0]) / self.dx + 1
@@ -840,8 +841,8 @@ class GeomBox(object):
     
     """
     def __init__(self, low=None, high=None):
-        self.low = array(low, float)
-        self.high = array(high, float)
+        self.low = np.array(low, float)
+        self.high = np.array(high, float)
         
     def union(self, box):
         """Enlarge the box to include the given box.
@@ -1197,7 +1198,8 @@ class Cone(GeometricObject):
         box -- bounding box
         
     """
-    def __init__(self, material, radius2=0, axis=(1, 0, 0), radius=1, height=1, center=(0, 0, 0)):
+    def __init__(self, material, radius2=0, axis=(1, 0, 0),
+                 radius=1, height=1, center=(0, 0, 0)):
         """
         
         Arguments:
@@ -1218,8 +1220,8 @@ class Cone(GeometricObject):
         else:
             self.radius2 = float(radius2) # high side radius
 
-        self.center = array(center, float)
-        self.axis = array(axis, float) / norm(axis)
+        self.center = np.array(center, float)
+        self.axis = np.array(axis, float) / norm(axis)
         self.height = float(height)
         
         GeometricObject.__init__(self, material)
@@ -1229,7 +1231,7 @@ class Cone(GeometricObject):
         Override GeometricObject.in_object.
         
         """
-        x = array(x, float)
+        x = np.array(x, float)
         r = x - self.center
         proj = dot(self.axis, r)
         if fabs(proj) <= .5 * self.height:
@@ -1265,7 +1267,7 @@ class Cone(GeometricObject):
         tmpBox1 = GeomBox(low=self.center, high=self.center)
 
         h = .5 * self.height
-        r = sqrt(1 - self.axis * self.axis)
+        r = np.sqrt(1 - self.axis * self.axis)
 
         # set tmpBox2 to center of object
         tmpBox2 = deepcopy(tmpBox1)
@@ -1287,7 +1289,8 @@ class Cylinder(Cone):
     """Form a cylinder.
     
     """
-    def __init__(self, material, axis=(0, 0, 1), radius=1, height=1, center=(0, 0, 0)):
+    def __init__(self, material, axis=(0, 0, 1),
+                 radius=1, height=1, center=(0, 0, 0)):
         """
         Arguments:
             axis -- Direction of the cylinder's axis; the length of 
@@ -1321,15 +1324,17 @@ class _Block(GeometricObject):
     """Base class for Block and Ellipsoid class.
     
     """
-    def __init__(self, material, e1=(1, 0, 0), e2=(0, 1, 0), e3=(0, 0, 1), size=(0, 0, 0), center=(0, 0, 0)):
-        self.center = array(center, float)
+    def __init__(self, material,
+                 e1=(1, 0, 0), e2=(0, 1, 0), e3=(0, 0, 1),
+                 size=(0, 0, 0), center=(0, 0, 0)):
+        self.center = np.array(center, float)
         
-        self.e1 = array(e1, float) / norm(e1)
-        self.e2 = array(e2, float) / norm(e2)
-        self.e3 = array(e3, float) / norm(e3)
-        self.size = array(size, float)
+        self.e1 = np.array(e1, float) / norm(e1)
+        self.e2 = np.array(e2, float) / norm(e2)
+        self.e3 = np.array(e3, float) / norm(e3)
+        self.size = np.array(size, float)
         
-        self.projection_matrix = array([self.e1, self.e2, self.e3])
+        self.projection_matrix = np.array([self.e1, self.e2, self.e3])
         
         GeometricObject.__init__(self, material)
         
@@ -1338,7 +1343,7 @@ class _Block(GeometricObject):
         Override GeometricObject.in_object.
         
         """
-        x = array(x, float)
+        x = np.array(x, float)
         r = x - self.center
         proj = dot(self.projection_matrix, r)
 
@@ -1350,7 +1355,8 @@ class _Block(GeometricObject):
         
         """
         tmpBox = GeomBox(low=self.center, high=self.center)
-        # enlarge the box to be big enough to contain all 8 corners of the block.
+        # enlarge the box to be big enough to contain all 8 corners
+        # of the block.
         s1 = self.size[0] * self.e1
         s2 = self.size[1] * self.e2
         s3 = self.size[2] * self.e3
@@ -1373,7 +1379,9 @@ class Block(_Block):
     """Form a parallelpiped (i.e., a brick, possibly with non-orthogonal axes).
     
     """
-    def __init__(self, material, e1=(1, 0, 0), e2=(0, 1, 0), e3=(0, 0, 1), size=(1, 1, 1), center=(0, 0, 0)):
+    def __init__(self, material,
+                 e1=(1, 0, 0), e2=(0, 1, 0), e3=(0, 0, 1),
+                 size=(1, 1, 1), center=(0, 0, 0)):
         """
         
         Arguments:
@@ -1400,13 +1408,15 @@ class Ellipsoid(_Block):
     """Form an ellipsoid.
     
     """
-    def __init__(self, material, e1=(1, 0, 0), e2=(0, 1, 0), e3=(0, 0, 1), size=(1, 1, 1), center=(0, 0, 0)):
+    def __init__(self, material,
+                 e1=(1, 0, 0), e2=(0, 1, 0), e3=(0, 0, 1),
+                 size=(1, 1, 1), center=(0, 0, 0)):
         _Block.__init__(self, material, e1, e2, e3, size, center)
 
-        self.inverse_semi_axes = 2 / array(size, float)
+        self.inverse_semi_axes = 2 / np.array(size, float)
 
     def in_object(self, x):
-        x = array(x, float)
+        x = np.array(x, float)
         r = x - self.center
         proj = dot(self.projection_matrix, r)
         q = proj * self.inverse_semi_axes
@@ -1444,7 +1454,8 @@ class Sphere(Ellipsoid):
         else:
             self.radius = radius
             
-        Ellipsoid.__init__(self, material, (1, 0, 0), (0, 1, 0), (0, 0, 1), (2 * radius, 2 * radius, 2 * radius), center)
+        Ellipsoid.__init__(self, material, (1, 0, 0), (0, 1, 0), (0, 0, 1),
+                           (2 * radius, 2 * radius, 2 * radius), center)
 
     def display_info(self, indent=0):
         print " " * indent, "sphere"
@@ -1459,7 +1470,10 @@ class Boundary(GeometricObject):
     """Form a boundary.
      
     """
-    def __init__(self, material, thickness=None, size=None, plus_x=True, minus_x=True, plus_y=True, minus_y=True, plus_z=True, minus_z=True):
+    def __init__(self, material, thickness=None, size=None,
+                 plus_x=True, minus_x=True,
+                 plus_y=True, minus_y=True,
+                 plus_z=True, minus_z=True):
         """
         
          Arguments:
@@ -1484,18 +1498,16 @@ class Boundary(GeometricObject):
         """
         self.d = float(thickness)
         
-        self.half_size = .5 * array(size, float)
+        self.half_size = .5 * np.array(size, float)
         
         self.box_list = []
         
         self.minus_x, self.plus_x = minus_x, plus_x
         self.minus_y, self.plus_y = minus_y, plus_y
         self.minus_z, self.plus_z = minus_z, plus_z
-         
-        if material.__class__ .__name__ == 'CPML':
-            pass
-        
-        elif material.__class__.__name__ == 'UPML':
+
+        # do someting for the PML derived class?
+        if isinstance(material, PML):
             pass
         
         GeometricObject.__init__(self, material)
@@ -1512,32 +1524,38 @@ class Boundary(GeometricObject):
             
         if 2 * self.half_size[0] > space.dx:
             if self.plus_x:
-                low = (self.half_size[0] - self.d, -self.half_size[1], -self.half_size[2])
+                low = (self.half_size[0] - self.d, -self.half_size[1],
+                       -self.half_size[2])
                 high = self.half_size[:]
                 self.box_list.append(GeomBox(low, high))
             if self.minus_x:
                 low = -self.half_size[:]
-                high = (-self.half_size[0] + self.d, self.half_size[1], self.half_size[2])
+                high = (-self.half_size[0] + self.d, self.half_size[1],
+                        self.half_size[2])
                 self.box_list.append(GeomBox(low, high))
                 
         if 2 * self.half_size[1] > space.dy:
             if self.plus_y:
-                low = (-self.half_size[0], self.half_size[1] - self.d, -self.half_size[2])
+                low = (-self.half_size[0], self.half_size[1] - self.d,
+                       -self.half_size[2])
                 high = self.half_size[:]
                 self.box_list.append(GeomBox(low, high))
             if self.minus_y:
                 low = -self.half_size[:]
-                high = (self.half_size[0], -self.half_size[1] + self.d, self.half_size[2])
+                high = (self.half_size[0], -self.half_size[1] + self.d,
+                        self.half_size[2])
                 self.box_list.append(GeomBox(low, high))
 
         if 2 * self.half_size[2] > space.dz:
             if self.plus_z:
-                low = (-self.half_size[0], -self.half_size[1], self.half_size[2] - self.d)
+                low = (-self.half_size[0], -self.half_size[1],
+                       self.half_size[2] - self.d)
                 high = self.half_size[:]
                 self.box_list.append(GeomBox(low, high))
             if self.minus_z:
                 low = -self.half_size[:]
-                high = (self.half_size[0], self.half_size[1], -self.half_size[2] + self.d)
+                high = (self.half_size[0], self.half_size[1],
+                        -self.half_size[2] + self.d)
                 self.box_list.append(GeomBox(low, high))
         
         self.material.init(space, self.d)

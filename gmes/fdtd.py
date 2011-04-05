@@ -9,9 +9,13 @@ except:
 
 from copy import deepcopy
 from threading import Thread, Lock
-from numpy import *
+from math import sqrt
+from cmath import exp
 
-from geometry import GeomBoxTree, in_range
+import numpy as np
+from numpy import ndindex
+
+from geometry import GeomBoxTree, in_range, DefaultMaterial
 from file_io import Probe
 #from file_io import write_hdf5, snapshot
 from show import ShowLine, ShowPlane, Snapshot
@@ -41,7 +45,8 @@ class FDTD(object):
             space.period.
         
     """
-    def __init__(self, space=None, geom_list=None, src_list=None, courant_ratio=.99, dt=None, wavevector=None, verbose=True):
+    def __init__(self, space=None, geom_list=None, src_list=None,
+                 courant_ratio=.99, dt=None, wavevector=None, verbose=True):
         """
         Argumetns:
         space -- an instance which represents the coordinate system.
@@ -116,15 +121,14 @@ class FDTD(object):
         else:
             self.cmplx = True
 
-#             # Calculate more accurate k for PBC.
-#             from numpy import arcsin
-#             ds = array((self.dx, self.dy, self.dz))
-#             S = self.courant_ratio
-#             self.k = array(wavevector, float)
-#             self.k = 2 / ds * arcsin(sin(self.k * S * ds / 2) / S)
-
-            self.k = array(wavevector, float)
-
+            # Calculate accurate k for PBC.
+            ds = np.array((self.dx, self.dy, self.dz))
+            S = self.courant_ratio
+            ref_n = self.geom_list[0].material.epsilon**0.5
+            self.k = np.array(wavevector, float)
+            self.k = 2 * ref_n / ds \
+                * np.arcsin(np.sin(self.k * S * ds / 2) / S)
+            
         if verbose:
             print "wave vector is", self.k
             
@@ -227,12 +231,12 @@ class FDTD(object):
         
         """
         newcopy = self.__class__(self.space, self.geom_list, self.src_list, False)
-        newcopy.ex = array(self.ex)
-        newcopy.ey = array(self.ey)
-        newcopy.ez = array(self.ez)
-        newcopy.hx = array(self.hx)
-        newcopy.hy = array(self.hy)
-        newcopy.hz = array(self.hz)
+        newcopy.ex = np.array(self.ex)
+        newcopy.ey = np.array(self.ey)
+        newcopy.ez = np.array(self.ez)
+        newcopy.hx = np.array(self.hx)
+        newcopy.hy = np.array(self.hy)
+        newcopy.hz = np.array(self.hz)
         
         newcopy.time_step = deepcopy(self.time_step)
         return newcopy
@@ -2105,7 +2109,7 @@ class TEMzFDTD(FDTD):
 if __name__ == '__main__':
     from math import sin
     
-    from numpy.core import inf
+    from numpy import inf
     
     from geometry import DefaultMaterial, Cylinder, Cartesian
     from material import Dielectric
