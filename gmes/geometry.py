@@ -1157,7 +1157,7 @@ class GeometricObject(object):
             self.material.display_info(indent + 5)
        
             
-class DefaultMaterial(GeometricObject):
+class DefaultMedium(GeometricObject):
     """A geometric object expanding the whole space.
     
     """
@@ -1659,7 +1659,7 @@ def in_range(idx, numpy_array, component):
 if __name__ == '__main__':
     from material import *
     
-    geom_list = [DefaultMaterial(material=Dielectric()),
+    geom_list = [DefaultMedium(material=Dielectric()),
                  Cone(0, (1, 0, 0), 1, 1, Dielectric(), (0, 0, 2)),
                  Cone(0, (1, 0, 0), 1, 1, Dielectric(), (0, 0, -2))]
     t = GeomBoxTree(geom_list)

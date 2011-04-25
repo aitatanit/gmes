@@ -15,7 +15,7 @@ from cmath import exp
 import numpy as np
 from numpy import ndindex
 
-from geometry import GeomBoxTree, in_range, DefaultMaterial
+from geometry import GeomBoxTree, in_range, DefaultMedium
 from file_io import Probe
 #from file_io import write_hdf5, snapshot
 from show import ShowLine, ShowPlane, Snapshot
@@ -61,6 +61,17 @@ class FDTD(object):
         wavevector -- Bloch wave vector.
         verbose --
         
+        Attributes:
+        lock_ex, lock_ey, lock_ez
+        lock_hx, lock_hy, lock_hz
+        lock_fig
+        space
+        fig_id
+        dx, dy, dz
+        dt
+        courant_ratio: the ratio of dt to Courant stability bound
+        k: Bloch wavevector
+
         """
         self.lock_ex, self.lock_ey = Lock(), Lock()
         self.lock_ez, self.lock_hx = Lock(), Lock()
@@ -73,14 +84,19 @@ class FDTD(object):
             
         self.dx, self.dy, self.dz = space.dx, space.dy, space.dz
 
-        stable_limit = self.stable_limit(space)
-        # courant_ratio is the ratio of dt to Courant stability bound
+        default_medium = (i for i in geom_list 
+                            if isinstance(i, DefaultMedium)).next()
+        eps = default_medium.material.epsilon
+        mu = default_medium.material.mu
+        dt_limit = self.dt_limit(space, eps, mu)
+
         if dt is None:
             self.courant_ratio = float(courant_ratio)
-            self.dt = self.courant_ratio * stable_limit
+            self.dt = self.courant_ratio * dt_limit
         else:
             self.dt = float(dt)
-            self.courant_ratio = self.dt / stable_limit
+            self.courant_ratio = self.dt / dt_limit
+
         # Some codes in geometry.py and source.py use space.dt.
         self.space.dt = self.dt
 
@@ -121,16 +137,24 @@ class FDTD(object):
         else:
             self.cmplx = True
 
-            # Calculate accurate k for PBC.
+            # Calculate accurate a Bloch wave vector using equation 4.14a 
+            # at p.112 of 'A. Taflove and S. C. Hagness, Computational 
+            # Electrodynamics: The Finite-Difference Time-Domain Method, 
+            # Third Edition, 3rd ed. Artech House Publishers, 2005'.
             ds = np.array((self.dx, self.dy, self.dz))
-            S = self.courant_ratio
-            ref_n = self.geom_list[0].material.epsilon**0.5
+            default_medium = (i for i in geom_list 
+                                if isinstance(i, DefaultMedium)).next()
+            eps = default_medium.material.epsilon
+            mu = default_medium.material.mu
+            c = 1 / sqrt(eps * mu)
+            S = c * self.dt / ds
+            ref_n = sqrt(eps)
             self.k = np.array(wavevector, float)
             self.k = 2 * ref_n / ds \
                 * np.arcsin(np.sin(self.k * S * ds / 2) / S)
             
         if verbose:
-            print "wave vector is", self.k
+            print "Bloch wave vector is", self.k
             
         if verbose:
             print "Initializing source...",
@@ -217,9 +241,16 @@ class FDTD(object):
         if verbose:
             print "done."
     
-    def stable_limit(self, space):
-        # Courant stability bound
-        return 1 / sqrt(space.dx**-2 + space.dy**-2 + space.dz**-2)
+    def dt_limit(self, space, epsilon, mu):
+        """Courant stability bound of a time step.
+
+        Equation 4.54b at p.131 of A. Taflove and S. C. Hagness, Computational
+        Electrodynamics: The Finite-Difference Time-Domain Method, Third 
+        Edition, 3rd ed. Artech House Publishers, 2005.
+
+        """
+        c = 1 / sqrt(epsilon * mu)
+        return 1 / c / sqrt(space.dx**-2 + space.dy**-2 + space.dz**-2)
         
     def _step_aux_fdtd(self):
         for src in self.src_list:
@@ -1305,9 +1336,12 @@ class TExFDTD(FDTD):
     direction. TExFDTD updates only Ey, Ez, and Hx field components.
     
     """
-    def stable_limit(self, space):
-        # Courant stability bound
-        return 1 / sqrt(space.dy**-2 + space.dz**-2)
+    def dt_limit(self, space, epsilon, mu):
+        """Courant stability bound of a time step.
+
+        """
+        c = 1 / sqrt(epsilon * mu)
+        return 1 / c / sqrt(space.dy**-2 + space.dz**-2)
     
     def init_material(self):
         """Override FDTD.init_material().
@@ -1405,9 +1439,12 @@ class TEyFDTD(FDTD):
     TEyFDTD updates only Ez, Ex, and Hy field components.
     
     """
-    def stable_limit(self, space):
-        # Courant stability bound
-        return 1 / sqrt(space.dx**-2 + space.dz**-2)
+    def dt_limit(self, space, epsilon, mu):
+        """Courant stability bound of a time step.
+        
+        """
+        c = 1 / sqrt(epsilon * mu)
+        return 1 / c /sqrt(space.dx**-2 + space.dz**-2)
     
     def init_material(self):
         """Override FDTD.init_source().
@@ -1499,20 +1536,24 @@ class TEyFDTD(FDTD):
        
         
 class TEzFDTD(FDTD):
-    """Two dimensional fdtd which has transverse-electric mode with respect to z
+    """Two dimensional fdtd which has transverse-electric mode with respect to z.
 
     Assume that the structure and incident wave are uniform in the z direction.
     TEzFDTD updates only Ex, Ey, and Hz field components.
     
     """
-    def stable_limit(self, space):
-        # Courant stability bound
-        return 1 / sqrt(space.dx**-2 + space.dy**-2)
+    def dt_limit(self, space, epsilon, mu):
+        """Courant stability bound of a time step.
+        
+        """
+        c = 1 / sqrt(epsilon * mu)
+        return 1 / c / sqrt(space.dx**-2 + space.dy**-2)
     
     def init_material(self):
         """Override FDTD.init_material().
         
-        Initialize pointwise_material arrays only for Ex, Ey, and Hz field components.
+        Initialize pointwise_material arrays only for Ex, Ey, and Hz field 
+        components.
         
         """
         # FIXME: Thread makes GMES slow.
@@ -1604,9 +1645,12 @@ class TMxFDTD(FDTD):
     TMxFDTD updates only Hy, Hz, and Ex field components.
     
     """
-    def stable_limit(self, space):
-        # Courant stability bound
-        return 1 / sqrt(space.dy**-2 + space.dz**-2)
+    def dt_limit(self, space, epsilon, mu):
+        """Courant stability bound of a time step.
+
+        """
+        c = 1 / sqrt(epsilon * mu)
+        return 1 / c / sqrt(space.dy**-2 + space.dz**-2)
     
     def init_material(self):
         """Override FDTD.init_material().
@@ -1702,8 +1746,11 @@ class TMyFDTD(FDTD):
     TMyFDTD updates only Hz, Hx, and Ey field components.
     
     """
-    def stable_limit(self, space):
-        # Courant stability bound
+    def dt_limit(self, space, epsilon, mu):
+        """Courant stability bound of a time step.
+
+        """
+        c = 1 / sqrt(epsilon * mu)
         return 1 / sqrt(space.dx**-2 + space.dz**-2)
     
     def init_material(self):
@@ -1801,9 +1848,12 @@ class TMzFDTD(FDTD):
     TMzFDTD updates only Hx, Hy, and Ez field components.
     
     """
-    def stable_limit(self, space):
-        # Courant stability bound
-        return 1 / sqrt(space.dx**-2 + space.dy**-2)
+    def dt_limit(self, space, epsilon, mu):
+        """Courant stability bound of a time step.
+
+        """
+        c = 1 / sqrt(epsilon * mu)
+        return 1 / c / sqrt(space.dx**-2 + space.dy**-2)
     
     def init_material(self):
         """Override FDTD.init_material().
@@ -1900,9 +1950,12 @@ class TEMxFDTD(FDTD):
     TEMxFDTD updates only Ey and Hz field components.
     
     """
-    def stable_limit(self, space):
-        # Courant stability bound
-        return space.dx
+    def dt_limit(self, space, epsilon, mu):
+        """Courant stability bound of a time step.
+        
+        """
+        c = 1 / sqrt(epsilon * mu)
+        return space.dx / c
     
     def init_material(self):
         """Override FDTD.init_material().
@@ -1971,9 +2024,12 @@ class TEMyFDTD(FDTD):
     TEMyFDTD updates only Ez and Hx field components.
     
     """
-    def stable_limit(self, space):
-        # Courant stability bound
-        return space.dy
+    def dt_limit(self, space, epsilon, mu):
+        """Courant stability bound of a time step.
+        
+        """
+        c = 1 / sqrt(epsilon * mu)
+        return space.dy / c
     
     def init_material(self):
         """Override FDTD.init_material().
@@ -2042,10 +2098,13 @@ class TEMzFDTD(FDTD):
     TEMzFDTD updates only Ex and Hy field components.
     
     """
-    def stable_limit(self, space):
-        # Courant stability bound
-        return space.dz
-    
+    def dt_limit(self, space, epsilon, mu):
+        """Courant stability bound of a time step.
+        
+        """
+        c = 1 / sqrt(epsilon * mu)
+        return space.dz / c
+
     def init_material(self):
         """Override FDTD.init_material().
         
@@ -2111,14 +2170,14 @@ if __name__ == '__main__':
     
     from numpy import inf
     
-    from geometry import DefaultMaterial, Cylinder, Cartesian
+    from geometry import DefaultMedium, Cylinder, Cartesian
     from material import Dielectric
     
     low = Dielectric(index=1)
     hi = Dielectric(index=3)
     width_hi = low.epsilon / (low.epsilon + hi.epsilon)
     space = Cartesian(size=[1, 1, 1])
-    geom_list = [DefaultMaterial(material=low), Cylinder(material=hi, axis=[1, 0, 0], radius=inf, height=width_hi)]
+    geom_list = [DefaultMedium(material=low), Cylinder(material=hi, axis=[1, 0, 0], radius=inf, height=width_hi)]
     
     a = FDTD(space=space, geometry=geom_list)
     
