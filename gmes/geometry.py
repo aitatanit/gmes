@@ -12,7 +12,7 @@ except:
 from copy import deepcopy
 
 import numpy as np
-from numpy import empty, zeros, inf
+from numpy import empty, zeros, inf, dot
 from scipy.linalg import norm
 
 try:
@@ -1234,12 +1234,12 @@ class Cone(GeometricObject):
         x = np.array(x, float)
         r = x - self.center
         proj = dot(self.axis, r)
-        if fabs(proj) <= .5 * self.height:
+        if np.abs(proj) <= .5 * self.height:
             if self.radius2 == self.radius == inf:
                 return True
             radius = self.radius
             radius += (proj / self.height + .5) * (self.radius2 - radius)
-            truth = radius != 0 and norm(r - proj * self.axis) <= fabs(radius)
+            truth = radius != 0 and norm(r - proj * self.axis) <= np.abs(radius)
             return truth
         else:
             return False
@@ -1347,7 +1347,7 @@ class _Block(GeometricObject):
         r = x - self.center
         proj = dot(self.projection_matrix, r)
 
-        return (fabs(proj) <= .5 * self.size).all()
+        return (np.abs(proj) <= .5 * self.size).all()
         
     def geom_box(self):
         """

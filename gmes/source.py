@@ -400,7 +400,7 @@ class TotalFieldScatteredField(Src):
             omega: the angular frequency of the input wave.
             ds: the space-cell size, (dx, dy, dz)
             dt: the time step
-            k: the true wavevector
+            k: the true wavevector, (kx, ky, kz)
 
         Equation 5.65 at p.214 of 'A. Taflove and S. C. Hagness, Computational
         Electrodynamics: The Finite-Difference Time-Domain Method, Third 
@@ -408,7 +408,7 @@ class TotalFieldScatteredField(Src):
 
         """
         lhs = (sin(0.5 * dt * omega) / v / dt)**2
-        rhs = sum((np.sin(0.5 * zeta * np.array(ds) * np.array(k)) / ds)**2)
+        rhs = sum((np.sin(0.5 * zeta * np.array(ds) * k) / ds)**2)
 
         return lhs - rhs
 
@@ -432,15 +432,16 @@ class TotalFieldScatteredField(Src):
     #                          cos(zeta * k[2] * delta) - 3)
     #     return lhs - rhs
 
-    def _1d_dispersion_relation(self, ds, zeta, dt, v, omega, k):
+    def _1d_dispersion_relation(self, ds, zeta, v, omega, dt, k):
         """
         Arguments:
             ds: an 1D cell-size which is yet to be determined
             zeta: the scalar factor which relates the true and numerical 
                   wavenumber
-            dt: the time step
-            v: the phase velocity of the input wave in the default medium
+            v: the phase speed of the input wave in the default medium
             omega: the angular frequency of the input wave
+            dt: the time step
+            k: the true wavenumber
 
         Equation 5.67 at p.215 of A. Taflove and S. C. Hagness, Computational
         Electrodynamics: The Finite-Difference Time-Domain Method, Third 
@@ -495,7 +496,7 @@ class TotalFieldScatteredField(Src):
                       (v, omega, ds, dt, wave_vector))
         wave_number = omega / v
         delta_1d = bisect(self._1d_dispersion_relation, 0, 2 * max(ds),
-                          (zeta, dt, v, omega, wave_number))
+                          (zeta, v, omega, dt, wave_number))
         
         # delta_3d  = min(space.dx, space.dy, space.dz)
         # s_3d = v * space.dt / delta_3d
