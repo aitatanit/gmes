@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
 
 try:
     import psyco
@@ -77,6 +78,10 @@ class Continuous(SrcTime):
         if ts < 0 or te < 0:
             return 0
         
+        # Use Hanning window function to reduce the transition.
+        # D. T. Prescott and N. V. Shuley, "Reducing solution time in
+        # monochromatic FDTD waveguide simulations", IEEE Trans. Microwave 
+        # Theory Tech., vol. 42, no. 8, pp. 1582-1584, 8. 1994.
         if ts < self.width:
             env = sin(0.5 * pi * ts / self.width)**2
         elif te < self.width:
@@ -1092,7 +1097,6 @@ class GaussianBeam(TotalFieldScatteredField):
         self.src_time.init(cmplx)
         
         aux_fdtd = self._get_aux_fdtd(space, geom_tree, cmplx)
-        
         raising = aux_fdtd.src_list[0].src_time.width
         dist = 2 * aux_fdtd.space.half_size[2]
         default_medium = (i for i in aux_fdtd.geom_list 
@@ -1274,7 +1278,8 @@ class _GaussianBeamSrcTime(object):
         
     def envelope(self):
         width = self.aux_fdtd.src_list[0].src_time.width
-        env = 1
         if self.t < width:
             env = sin(0.5 * pi * self.t / width)**2
+        else:
+            env = 1
         return env
