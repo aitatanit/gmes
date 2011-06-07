@@ -365,38 +365,6 @@ class TotalFieldScatteredField(Src):
 
         return zeta * wave_number
 
-    # def _get_wave_number(self, k, epsilon, mu, space, error=1e-10):
-    #     """Calculate the wave number for auxiliary fdtd using Newton's method.
-        
-    #     Arguments:
-    #         k -- normalized wave vector
-    #         epsilon -- permittivity which fills the auxiliary fdtd
-    #         mu -- permeability which fills the auxiliary fdtd
-    #         space -- Cartesian instance
-            
-    #     """
-    #     ds = np.array((space.dx, space.dy, space.dz))
-    #     dt = space.dt
-    #     k_number_old = inf
-    #     k_number_new = 2 * pi * self.src_time.freq
-    #     error_old = inf
-        
-    #     while error_old > error:
-    #         k_number_old = k_number_new
-    #         f = sum(((np.sin(.5 * k_number_old * k * ds) / ds)**2)) \
-    #             - epsilon * mu \
-    #             * (np.sin(pi * self.src_time.freq * dt) / dt)**2
-    #         f_prime = .5 * sum(k * np.sin(k_number_old * k * ds) / ds)
-    #         k_number_new = k_number_old - f / f_prime
-            
-    #         # If Newton's method fails to converge, just stop now.
-    #         if error_old == abs(k_number_new - k_number_old):
-    #             break
-    #         else:
-    #             error_old = abs(k_number_new - k_number_old)
-
-    #     return k_number_new
-
     def _3d_dispersion_relation(self, zeta, v, omega, ds, dt, k):
         """
         Arguments:
@@ -416,26 +384,6 @@ class TotalFieldScatteredField(Src):
         rhs = sum((np.sin(0.5 * zeta * np.array(ds) * k) / ds)**2)
 
         return lhs - rhs
-
-    # def _3d_dispersion_relation(self, zeta, s, n_lambda, delta, k):
-    #     """
-    #     Arguments:
-    #         zeta: a scalar factor which is yet to be determined.
-    #         s: the Courant number of 3D grid.
-    #         n_lambda: the number of cells per wavelength.
-    #         delta: space-cell size of 3D grid.
-    #         k: the true wavevector
-
-    #     Equation 5.65 at p.214 of 'A. Taflove and S. C. Hagness, Computational
-    #     Electrodynamics: The Finite-Difference Time-Domain Method, Third 
-    #     Edition, 3rd ed. Artech House Publishers, 2005'.
-        
-    #     """
-    #     lhs = sin(pi * s / n_lambda)**2
-    #     rhs = -0.5 * s**2 * (cos(zeta * k[0] * delta) +
-    #                          cos(zeta * k[1] * delta) +
-    #                          cos(zeta * k[2] * delta) - 3)
-    #     return lhs - rhs
 
     def _1d_dispersion_relation(self, ds, zeta, v, omega, dt, k):
         """
@@ -460,27 +408,6 @@ class TotalFieldScatteredField(Src):
             rhs = sin(0.5 * k * zeta * ds) / ds
         return lhs - rhs
 
-    # def _1d_dispersion_relation(self, s_1d, s_3d, n_lambda, zeta):
-    #     """
-    #     Arguments:
-    #         s_1d: a Courant number which is yet to be determined.
-    #         s_3d: the Courant number of 3D grid.
-    #         n_lambda: the number of cells per wavelength.
-    #         zeta: the scalar factor which relates the true and numerical 
-    #               wavenumber.
-
-    #     Equation 5.67 at p.215 of A. Taflove and S. C. Hagness, Computational
-    #     Electrodynamics: The Finite-Difference Time-Domain Method, Third 
-    #     Edition, 3rd ed. Artech House Publishers, 2005.
-
-    #     """
-    #     lhs = sin(pi * s_3d / n_lambda)
-    #     if s_1d == 0:
-    #         rhs = 0
-    #     else:
-    #         rhs = s_1d * sin(pi * zeta * s_3d / n_lambda / s_1d)
-    #     return lhs - rhs
-    
     def _get_aux_fdtd(self, space, geom_tree, cmplx):
         """Returns a TEMz FDTD for a reference of a plane wave.
         
@@ -502,19 +429,6 @@ class TotalFieldScatteredField(Src):
         wave_number = omega / v
         delta_1d = bisect(self._1d_dispersion_relation, 0, 2 * max(ds),
                           (zeta, v, omega, dt, wave_number))
-        
-        # delta_3d  = min(space.dx, space.dy, space.dz)
-        # s_3d = v * space.dt / delta_3d
-        # n_lambda = 1 / (self.src_time.freq * space.dz)
-        # k = 2 * pi * self.src_time.freq * self.k
-
-        # zeta = bisect(self._3d_dispersion_relation, 0, pi, 
-        #               (s_3d, n_lambda, delta_3d, k))
-        
-        # s_1d = bisect(self._1d_dispersion_relation, 0, 1,
-        #               (s_3d, n_lambda, zeta))
-        
-        # delta_1d = delta_3d * s_3d / s_1d
         
         pml_thickness = 10 * delta_1d
         

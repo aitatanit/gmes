@@ -313,16 +313,6 @@ class TransparentEz(TransparentElectric):
         idx = self.i, self.j, self.k
         ez[idx] += dt / (self.epsilon * dx) * self.amp[face] * incident_hy
 
-        # # DEBUG CODE STARTS
-        # if idx == (55,6,0):
-        #     f = open("DEBUG_ez_amp_hy.dat", 'a')
-        #     f.write(str(self.amp[face]) + '\n')
-        #     f.close()
-        #     f = open("DEBUG_ez_incident_hy.dat", 'a')
-        #     f.write(str(incident_hy) + '\n')
-        #     f.close()
-        # # DEBUG CODE ENDS
-
     def _consistency_plus_y(self, ez, hy, hx, dx, dy, dt, face):
         incident_hx = (self.r0[face] * self.aux_fdtd.hy[self.samp_idx0[face]] + 
                        self.r1[face] * self.aux_fdtd.hy[self.samp_idx1[face]])
@@ -472,15 +462,6 @@ class TransparentHy(TransparentMagnetic):
         idx = self.i, self.j, self.k
         hy[idx] += dt / (self.mu * dx) * self.amp[face] * incident_ez
         
-        # # DEBUG CODE STARTS
-        # if idx == (56,6,1):
-        #     f = open("DEBUG_hy_amp_ez.dat", 'a')
-        #     f.write(str(self.amp[face]) + '\n')
-        #     f.close()
-        #     f = open("DEBUG_hy_incident_ez.dat", 'a')
-        #     f.write(str(incident_ez) + '\n')
-        #     f.close()
-        # # DEBUG CODE ENDS
 
 class TransparentHz(TransparentMagnetic):
     def __init__(self, pw_material, mu, amp, aux_fdtd, samp_pnt, directional):
