@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
 
 try:
     import psyco
@@ -7,12 +8,12 @@ try:
 except:
     pass
 
-# this code is based on libctl 3.0.2.
+# This code is based on libctl 3.0.2.
 
 from copy import deepcopy
 
 import numpy as np
-from numpy import empty, zeros, inf
+from numpy import empty, zeros, inf, dot
 from scipy.linalg import norm
 
 try:
@@ -78,13 +79,19 @@ class AuxiCartComm(object):
         """
         return sendbuf
         
-    def Reduce(self, value, root=0, op=None):
-        """Mimic Reduce method.
+    def reduce(self, value, root=0, op=None):
+        """Mimic reduce method.
         
         """
         return value
     
-    
+    def bcast(self, obj=None, root=0):
+        """Mimic bcast method.
+
+        """
+        return obj
+
+
 class Cartesian(object):
     """Define the calculation space with Cartesian coordinates.
     
@@ -138,21 +145,18 @@ class Cartesian(object):
             self.half_size[2] = .5 * self.dz
             
         # the size of the whole field arrays 
-        self.whole_field_size = np.array((2 * self.half_size * self.res).round(), int)
+        self.whole_field_size = \
+            np.array((2 * self.half_size * self.res).round(), int)
         
-        try:
-            if not parallel:
-                raise StandardError
-            
+        if parallel:
             self.my_id = MPI.COMM_WORLD.rank
             self.numprocs = MPI.COMM_WORLD.size
             self.cart_comm = \
             MPI.COMM_WORLD.Create_cart(self.find_best_deploy(), (1, 1, 1))
-        except StandardError:
+        else:
             self.my_id = 0
             self.numprocs = 1
             self.cart_comm = AuxiCartComm()
-            
         self.my_cart_idx = self.cart_comm.topo[2]
         
         # usually the my_field_size is general_field_size,
@@ -163,7 +167,22 @@ class Cartesian(object):
         # my_field_size may be different than general_field_size at the last 
         # node in each dimension.
         self.my_field_size = self.get_my_field_size()
+    
+    def bcast(self, obj=None, root=None):
+        """Same with the Broadcast but, it handles for unknown root among 
+        the nodes.
         
+        """
+        if root is None:
+            obj = self.cart_comm.recv(source = MPI.ANY_SOURCE)
+        else:
+            size = self.cart_comm.Get_size()
+            for dest in xrange(size):
+                if dest != root:
+                    self.cart_comm.send(obj, dest)
+            
+        return obj
+
     def get_my_field_size(self):
         """Return the field size of this node.
         
@@ -175,7 +194,7 @@ class Cartesian(object):
         """
         field_size = empty(3, int)
         dims = self.cart_comm.topo[0]
-        
+
         for i in xrange(3):
             # At the last node of that dimension.
             if self.my_cart_idx[i] == dims[i] - 1:
@@ -1157,7 +1176,7 @@ class GeometricObject(object):
             self.material.display_info(indent + 5)
        
             
-class DefaultMaterial(GeometricObject):
+class DefaultMedium(GeometricObject):
     """A geometric object expanding the whole space.
     
     """
@@ -1234,12 +1253,12 @@ class Cone(GeometricObject):
         x = np.array(x, float)
         r = x - self.center
         proj = dot(self.axis, r)
-        if fabs(proj) <= .5 * self.height:
+        if np.abs(proj) <= .5 * self.height:
             if self.radius2 == self.radius == inf:
                 return True
             radius = self.radius
             radius += (proj / self.height + .5) * (self.radius2 - radius)
-            truth = radius != 0 and norm(r - proj * self.axis) <= fabs(radius)
+            truth = radius != 0 and norm(r - proj * self.axis) <= np.abs(radius)
             return truth
         else:
             return False
@@ -1347,7 +1366,7 @@ class _Block(GeometricObject):
         r = x - self.center
         proj = dot(self.projection_matrix, r)
 
-        return (fabs(proj) <= .5 * self.size).all()
+        return (np.abs(proj) <= .5 * self.size).all()
         
     def geom_box(self):
         """
@@ -1659,7 +1678,7 @@ def in_range(idx, numpy_array, component):
 if __name__ == '__main__':
     from material import *
     
-    geom_list = [DefaultMaterial(material=Dielectric()),
+    geom_list = [DefaultMedium(material=Dielectric()),
                  Cone(0, (1, 0, 0), 1, 1, Dielectric(), (0, 0, 2)),
                  Cone(0, (1, 0, 0), 1, 1, Dielectric(), (0, 0, -2))]
     t = GeomBoxTree(geom_list)

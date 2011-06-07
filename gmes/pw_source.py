@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
 
 try:
     import psyco
@@ -461,7 +462,7 @@ class TransparentHy(TransparentMagnetic):
         idx = self.i, self.j, self.k
         hy[idx] += dt / (self.mu * dx) * self.amp[face] * incident_ez
         
-        
+
 class TransparentHz(TransparentMagnetic):
     def __init__(self, pw_material, mu, amp, aux_fdtd, samp_pnt, directional):
         TransparentMagnetic.__init__(self, pw_material, mu, amp, aux_fdtd, samp_pnt, directional)

@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
 
 try:
     import psyco
@@ -8,15 +9,16 @@ except:
     pass
 
 from copy import deepcopy
-from math import sqrt, pi, sin, exp
+from math import sqrt, pi, sin, cos, exp
 import cmath as cm
 
 import numpy as np
 from numpy import inf, cross, dot, ndindex
 from numpy.linalg import norm
+from scipy.optimize import bisect
 
 import constants as const
-from geometry import Cartesian, DefaultMaterial, Boundary, in_range
+from geometry import Cartesian, DefaultMedium, Boundary, in_range
 from fdtd import TEMzFDTD
 from material import Dielectric, CPML
 
@@ -76,6 +78,10 @@ class Continuous(SrcTime):
         if ts < 0 or te < 0:
             return 0
         
+        # Use Hanning window function to reduce the transition.
+        # D. T. Prescott and N. V. Shuley, "Reducing solution time in
+        # monochromatic FDTD waveguide simulations", IEEE Trans. Microwave 
+        # Theory Tech., vol. 42, no. 8, pp. 1582-1584, 8. 1994.
         if ts < self.width:
             env = sin(0.5 * pi * ts / self.width)**2
         elif te < self.width:
@@ -274,7 +280,7 @@ class TotalFieldScatteredField(Src):
         self.geom_tree = geom_tree
         self.src_time.init(cmplx)
         
-        self.aux_fdtd = self._get_aux_fdtd(space, cmplx)
+        self.aux_fdtd = self._get_aux_fdtd(space, geom_tree, cmplx)
         
     def step(self):
         self.aux_fdtd.step()
@@ -336,8 +342,8 @@ class TotalFieldScatteredField(Src):
         dot_with_axis[dot(const.MinusZ.vector, self.k)] = const.MinusZ 
         
         return dot_with_axis[max(dot_with_axis)]
-        
-    def _get_wave_number(self, k, epsilon, mu, space, error=1e-10):
+
+    def _get_wave_number(self, k, epsilon, mu, space):
         """Calculate the wave number for auxiliary fdtd using Newton's method.
         
         Arguments:
@@ -349,37 +355,82 @@ class TotalFieldScatteredField(Src):
         """
         ds = np.array((space.dx, space.dy, space.dz))
         dt = space.dt
-        k_number_old = inf
-        k_number_new = 2 * pi * self.src_time.freq
-        error_old = inf
+        v = 1 / sqrt(epsilon * mu)
+        omega = 2 * pi * self.src_time.freq
+        wave_number = omega / v
+        wave_vector = wave_number * np.array(k)
         
-        while error_old > error:
-            k_number_old = k_number_new
-            f = sum(((np.sin(.5 * k_number_old * k * ds) / ds)**2)) \
-                - sqrt(epsilon * mu) \
-                * (np.sin(pi * self.src_time.freq * dt) / dt)**2
-            f_prime = .5 * sum(k * np.sin(k_number_old * k * ds) / ds)
-            k_number_new = k_number_old - f / f_prime
-            
-            # If Newton's method fails to converge, just stop now.
-            if error_old == abs(k_number_new - k_number_old):
-                break
-            else:
-                error_old = abs(k_number_new - k_number_old)
+        zeta = bisect(self._3d_dispersion_relation, 0, 2,
+                      (v, omega, ds, dt, wave_vector))
 
-        return k_number_new
+        return zeta * wave_number
 
-    def _get_aux_fdtd(self, space, cmplx):
+    def _3d_dispersion_relation(self, zeta, v, omega, ds, dt, k):
+        """
+        Arguments:
+            zeta: a scalar factor which is yet to be determined.
+            v: the phase speed of the wave in the default medium.
+            omega: the angular frequency of the input wave.
+            ds: the space-cell size, (dx, dy, dz)
+            dt: the time step
+            k: the true wavevector, (kx, ky, kz)
+
+        Equation 5.65 at p.214 of 'A. Taflove and S. C. Hagness, Computational
+        Electrodynamics: The Finite-Difference Time-Domain Method, Third 
+        Edition, 3rd ed. Artech House Publishers, 2005'.
+
+        """
+        lhs = (sin(0.5 * dt * omega) / v / dt)**2
+        rhs = sum((np.sin(0.5 * zeta * np.array(ds) * k) / ds)**2)
+
+        return lhs - rhs
+
+    def _1d_dispersion_relation(self, ds, zeta, v, omega, dt, k):
+        """
+        Arguments:
+            ds: an 1D cell-size which is yet to be determined
+            zeta: the scalar factor which relates the true and numerical 
+                  wavenumber
+            v: the phase speed of the input wave in the default medium
+            omega: the angular frequency of the input wave
+            dt: the time step
+            k: the true wavenumber
+
+        Equation 5.67 at p.215 of A. Taflove and S. C. Hagness, Computational
+        Electrodynamics: The Finite-Difference Time-Domain Method, Third 
+        Edition, 3rd ed. Artech House Publishers, 2005.
+
+        """
+        lhs = sin(0.5 * omega * dt) / v / dt
+        if ds == 0:
+            rhs = 0.5 * k * zeta
+        else:
+            rhs = sin(0.5 * k * zeta * ds) / ds
+        return lhs - rhs
+
+    def _get_aux_fdtd(self, space, geom_tree, cmplx):
         """Returns a TEMz FDTD for a reference of a plane wave.
         
+        The space-cell size of the aux_fdtd is calculated using the matched
+        numerical dispersion technique. This method assumes that dx=dy=dz.
+
         """
-        aux_ds = {const.PlusX: space.dx, const.MinusX: space.dx,
-                  const.PlusY: space.dy, const.MinusY: space.dy,
-                  const.PlusZ: space.dz, const.MinusZ: space.dz}
+        default_medium = geom_tree.object_of_point((inf, inf, inf))[0]
+        eps = default_medium.material.epsilon
+        mu = default_medium.material.mu
+        v = 1 / sqrt(eps * mu)
         
-        dz = aux_ds[self.on_axis_k]
+        ds = (space.dx, space.dy, space.dz)
+        dt = space.dt
+        omega = 2 * pi * self.src_time.freq
+        wave_vector = omega * self.k / v
+        zeta = bisect(self._3d_dispersion_relation, 0, 2,
+                      (v, omega, ds, dt, wave_vector))
+        wave_number = omega / v
+        delta_1d = bisect(self._1d_dispersion_relation, 0, 2 * max(ds),
+                          (zeta, v, omega, dt, wave_number))
         
-        pml_thickness = 10 * dz
+        pml_thickness = 10 * delta_1d
         
         # Find the furthest distance, max_dist from the longitudinal
         # axis of the incomming wave
@@ -395,15 +446,15 @@ class TotalFieldScatteredField(Src):
         dist = map(abs, map(self._metric_from_center_along_beam_axis, vertices))
         max_dist = max(dist)
 
-        longitudinal_size = 2 * (max_dist + pml_thickness + dz)
+        longitudinal_size = 2 * (max_dist + pml_thickness + delta_1d)
         aux_size = (0, 0, longitudinal_size)
 
-        mat_objs =  self.geom_tree.material_of_point((inf, inf, inf))
+        mat_objs =  self.geom_tree.material_of_point((inf, inf, inf))[0]
         
         aux_space = Cartesian(size=aux_size,
-                              resolution=1/dz,
+                              resolution=1/delta_1d,
                               parallel=False)
-        aux_geom_list = (DefaultMaterial(material=mat_objs[0]),
+        aux_geom_list = (DefaultMedium(material=mat_objs),
                          Boundary(material=CPML(kappa_max=2.0,
                                                 sigma_max_ratio=2.0),
                                   thickness=pml_thickness,
@@ -421,15 +472,8 @@ class TotalFieldScatteredField(Src):
             aux_fdtd = TEMzFDTD(aux_space, aux_geom_list, aux_src_list,
                                 dt=space.dt, verbose=False)
 
-        # v_in_ais / v_in_k
-        eps = mat_objs[0].epsilon
-        mu = mat_objs[0].mu
-        v_ratio = self._get_wave_number(self.k, eps, mu, space) / \
-                  self._get_wave_number(self.on_axis_k.vector, eps, mu, space)
-        aux_fdtd.dz *= v_ratio
-        
         return aux_fdtd
-    
+
     def _set_pw_source(self, space, component, cosine, material, 
                        low_idx, high_idx, source, samp_i2s, face):
         """
@@ -966,11 +1010,14 @@ class GaussianBeam(TotalFieldScatteredField):
         self.geom_tree = geom_tree
         self.src_time.init(cmplx)
         
-        aux_fdtd = self._get_aux_fdtd(space, cmplx)
-        
+        aux_fdtd = self._get_aux_fdtd(space, geom_tree, cmplx)
         raising = aux_fdtd.src_list[0].src_time.width
         dist = 2 * aux_fdtd.space.half_size[2]
-        v_p = aux_fdtd.geom_list[0].material.epsilon**-0.5
+        default_medium = (i for i in aux_fdtd.geom_list 
+                            if isinstance(i, DefaultMedium)).next()
+        eps = default_medium.material.epsilon
+        mu = default_medium.material.mu
+        v_p = 1 / sqrt(eps * mu)
         passby = raising + dist / v_p
 
         while aux_fdtd.time_step.t < 2 * passby:
@@ -1145,7 +1192,8 @@ class _GaussianBeamSrcTime(object):
         
     def envelope(self):
         width = self.aux_fdtd.src_list[0].src_time.width
-        env = 1
         if self.t < width:
             env = sin(0.5 * pi * self.t / width)**2
+        else:
+            env = 1
         return env

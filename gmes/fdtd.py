@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
 
 try:
     import psyco
@@ -13,9 +14,9 @@ from math import sqrt
 from cmath import exp
 
 import numpy as np
-from numpy import ndindex
+from numpy import ndindex, arange
 
-from geometry import GeomBoxTree, in_range, DefaultMaterial
+from geometry import GeomBoxTree, in_range, DefaultMedium
 from file_io import Probe
 #from file_io import write_hdf5, snapshot
 from show import ShowLine, ShowPlane, Snapshot
@@ -61,6 +62,17 @@ class FDTD(object):
         wavevector -- Bloch wave vector.
         verbose --
         
+        Attributes:
+        lock_ex, lock_ey, lock_ez
+        lock_hx, lock_hy, lock_hz
+        lock_fig
+        space
+        fig_id
+        dx, dy, dz
+        dt
+        courant_ratio: the ratio of dt to Courant stability bound
+        k: Bloch wavevector
+
         """
         self.lock_ex, self.lock_ey = Lock(), Lock()
         self.lock_ez, self.lock_hx = Lock(), Lock()
@@ -73,14 +85,19 @@ class FDTD(object):
             
         self.dx, self.dy, self.dz = space.dx, space.dy, space.dz
 
-        stable_limit = self.stable_limit(space)
-        # courant_ratio is the ratio of dt to Courant stability bound
+        default_medium = (i for i in geom_list 
+                            if isinstance(i, DefaultMedium)).next()
+        eps = default_medium.material.epsilon
+        mu = default_medium.material.mu
+        dt_limit = self.dt_limit(space, eps, mu)
+
         if dt is None:
             self.courant_ratio = float(courant_ratio)
-            self.dt = self.courant_ratio * stable_limit
+            self.dt = self.courant_ratio * dt_limit
         else:
             self.dt = float(dt)
-            self.courant_ratio = self.dt / stable_limit
+            self.courant_ratio = self.dt / dt_limit
+
         # Some codes in geometry.py and source.py use space.dt.
         self.space.dt = self.dt
 
@@ -121,16 +138,24 @@ class FDTD(object):
         else:
             self.cmplx = True
 
-            # Calculate accurate k for PBC.
+            # Calculate accurate a Bloch wave vector using equation 4.14a 
+            # at p.112 of 'A. Taflove and S. C. Hagness, Computational 
+            # Electrodynamics: The Finite-Difference Time-Domain Method, 
+            # Third Edition, 3rd ed. Artech House Publishers, 2005'.
             ds = np.array((self.dx, self.dy, self.dz))
-            S = self.courant_ratio
-            ref_n = self.geom_list[0].material.epsilon**0.5
+            default_medium = (i for i in geom_list 
+                                if isinstance(i, DefaultMedium)).next()
+            eps = default_medium.material.epsilon
+            mu = default_medium.material.mu
+            c = 1 / sqrt(eps * mu)
+            S = c * self.dt / ds
+            ref_n = sqrt(eps)
             self.k = np.array(wavevector, float)
             self.k = 2 * ref_n / ds \
                 * np.arcsin(np.sin(self.k * S * ds / 2) / S)
             
         if verbose:
-            print "wave vector is", self.k
+            print "Bloch wave vector is", self.k
             
         if verbose:
             print "Initializing source...",
@@ -217,9 +242,16 @@ class FDTD(object):
         if verbose:
             print "done."
     
-    def stable_limit(self, space):
-        # Courant stability bound
-        return 1 / sqrt(space.dx**-2 + space.dy**-2 + space.dz**-2)
+    def dt_limit(self, space, epsilon, mu):
+        """Courant stability bound of a time step.
+
+        Equation 4.54b at p.131 of A. Taflove and S. C. Hagness, Computational
+        Electrodynamics: The Finite-Difference Time-Domain Method, Third 
+        Edition, 3rd ed. Artech House Publishers, 2005.
+
+        """
+        c = 1 / sqrt(epsilon * mu)
+        return 1 / c / sqrt(space.dx**-2 + space.dy**-2 + space.dz**-2)
         
     def _step_aux_fdtd(self):
         for src in self.src_list:
@@ -368,13 +400,19 @@ class FDTD(object):
         self.lock_hz.release()
         
     def init_material(self):
-        self.init_material_ex()
-        self.init_material_ey()
-        self.init_material_ez()
-        self.init_material_hx()
-        self.init_material_hy()
-        self.init_material_hz()
-        
+        threads = (Thread(target=self.init_material_ex),
+                   Thread(target=self.init_material_ey),
+                   Thread(target=self.init_material_ez),
+                   Thread(target=self.init_material_hx),
+                   Thread(target=self.init_material_hy),
+                   Thread(target=self.init_material_hz))
+
+        for thread in threads:
+            thread.start()
+           
+        for thread in threads:
+            thread.join()
+
     def init_source_ex(self):
         for so in self.src_list:
             so.set_pointwise_source_ex(self.material_ex, self.space)
@@ -400,13 +438,19 @@ class FDTD(object):
             so.set_pointwise_source_hz(self.material_hz, self.space)
 			
     def init_source(self):
-        self.init_source_ex()
-        self.init_source_ey()
-        self.init_source_ez()
-        self.init_source_hx()
-        self.init_source_hy()
-        self.init_source_hz()
-	
+        threads = (Thread(target=self.init_source_ex),
+                   Thread(target=self.init_source_ey),
+                   Thread(target=self.init_source_ez),
+                   Thread(target=self.init_source_hx),
+                   Thread(target=self.init_source_hy),
+                   Thread(target=self.init_source_hz))
+
+        for thread in threads:
+            thread.start()
+
+        for thread in threads:
+            thread.join()
+            
     def set_probe(self, x, y, z, prefix):
         if self.material_ex is not None:
             idx = self.space.space_to_ex_index(x, y, z)
@@ -744,75 +788,109 @@ class FDTD(object):
         self.space.cart_comm.sendrecv(self.hz[:, -1, :], dest, const.Hz.tag,
                                       None, src, const.Hz.tag)
         
+    def init_threads(self):
+        self.h_chatter_threads = (Thread(target=self.talk_with_hx_neighbors),
+                                  Thread(target=self.talk_with_hy_neighbors), 
+                                  Thread(target=self.talk_with_hz_neighbors))
+
+        self.e_chatter_threads = (Thread(target=self.talk_with_ex_neighbors),
+                                  Thread(target=self.talk_with_ey_neighbors), 
+                                  Thread(target=self.talk_with_ez_neighbors))
+
+        self.h_worker_threads = (Thread(target=self.update_hx),
+                                 Thread(target=self.update_hy),
+                                 Thread(target=self.update_hz))
+
+        self.e_worker_threads = (Thread(target=self.update_ex),
+                                 Thread(target=self.update_ey),
+                                 Thread(target=self.update_ez))
+
     def step(self):
+        self.init_threads()
+
         self.time_step.n += .5
         self.time_step.t = self.time_step.n * self.dt
         
-        # FIXME: MPI for Python is not thread safe.
-#        h_chatter_threads = (Thread(target=self.talk_with_hx_neighbors),
-#                             Thread(target=self.talk_with_hy_neighbors), 
-#                             Thread(target=self.talk_with_hz_neighbors))
-#        
-#        for chatter in h_chatter_threads:
-#            chatter.start()
-#                    
-#        for chatter in h_chatter_threads:
-#            chatter.join()
+        for chatter in self.h_chatter_threads:
+            chatter.start()
+                   
+        for chatter in self.h_chatter_threads:
+            chatter.join()
         
-        self.talk_with_hx_neighbors()
-        self.talk_with_hy_neighbors()
-        self.talk_with_hz_neighbors()
+        for worker in self.e_worker_threads:
+            worker.start()
+           
+        for worker in self.e_worker_threads:
+            worker.join()
 
-        # FIXME: Thread makes GMES slow.
-#        e_worker_threads = (Thread(target=self.update_ex),
-#                            Thread(target=self.update_ey),
-#                            Thread(target=self.update_ez))
-#                    
-#        for worker in e_worker_threads:
-#            worker.start()
-#            
-#        for worker in e_worker_threads:
-#            worker.join()
-
-        self.update_ex()
-        self.update_ey()
-        self.update_ez()
-        
         self.time_step.n += .5
         self.time_step.t = self.time_step.n * self.dt
 
         self._step_aux_fdtd()
         
-        # FIXME: MPI for Python is not thread safe.
-#        e_chatter_threads = (Thread(target=self.talk_with_ex_neighbors),
-#                             Thread(target=self.talk_with_ey_neighbors), 
-#                             Thread(target=self.talk_with_ez_neighbors))
-#        
-#        for chatter in e_chatter_threads:
-#            chatter.start()
-#                    
-#        for chatter in e_chatter_threads:
-#            chatter.join()
+        for chatter in self.e_chatter_threads:
+            chatter.start()
+                   
+        for chatter in self.e_chatter_threads:
+            chatter.join()
         
-        self.talk_with_ex_neighbors()
-        self.talk_with_ey_neighbors()
-        self.talk_with_ez_neighbors()
+        for worker in self.h_worker_threads:
+            worker.start()
+           
+        for worker in self.h_worker_threads:
+            worker.join()
         
-        # FIXME: Thread makes GMES slow.
-#        h_worker_threads = (Thread(target=self.update_hx),
-#                            Thread(target=self.update_hy),
-#                            Thread(target=self.update_hz))
-#                    
-#        for worker in h_worker_threads:
-#            worker.start()
-#            
-#        for worker in h_worker_threads:
-#            worker.join()
+    def step_while_zero(self, component, point):
+        """Run self.step() while the field value at the given point is 0.
         
-        self.update_hx()
-        self.update_hy()
-        self.update_hz()
-        
+        Arguments:
+            component: filed component to check.
+                one of gmes.constants.{Ex, Ey, Ez, Hx, Hy, Hz}.
+            point: coordinates of the location to check the field. 
+                tuple of three scalars
+
+        """
+        spc_to_idx = {const.Ex: self.space.space_to_ex_index,
+                      const.Ey: self.space.space_to_ey_index,
+                      const.Ez: self.space.space_to_ez_index,
+                      const.Hx: self.space.space_to_hx_index,
+                      const.Hy: self.space.space_to_hy_index,
+                      const.Hz: self.space.space_to_hz_index}
+
+        field = {const.Ex: self.ex, const.Ey: self.ey,
+                 const.Ez: self.ez, const.Hx: self.hx,
+                 const.Hy: self.hy, const.Hz: self.hz}
+
+        idx = spc_to_idx[component](*point)
+
+        if in_range(idx, field[component], component):
+            hot_node = self.space.my_id
+        else:
+            hot_node = None
+            
+        hot_node = self.space.bcast(hot_node, hot_node)
+            
+        flag = True
+        while flag:
+            self.step()
+            if self.space.my_id == hot_node and field[component][idx] != 0:
+                flag = False
+            flag = self.space.cart_comm.bcast(flag, hot_node)
+
+    def step_until_n(self, n=0):
+        """Run self.step() untill time step reaches n.
+
+        """
+        while self.time_step.n < n:
+            self.step()
+
+    def step_untill_t(self, t=0):
+        """Run self.step() untill time reaches t.
+
+        """
+        while self.time_step.t < t:
+            self.step()
+    
     def _show_line(self, component, start, end, y_range, msecs, title):
         """Wrapper method of show.ShowLine.
 		
@@ -917,31 +995,73 @@ class FDTD(object):
         showcase.start()
 		
     def show_line_ex(self, start, end, y_range=(-1, 1), msecs=2500):
+        """
+        start: The start point of the probing line.
+        end: The end point of the probing line.
+        y_range: Plot range of the y axis.
+        msecs: Refresh rate of the plot in milliseconds.
+
+        """
         self.lock_fig.acquire()
         self._show_line(const.Ex, start, end, y_range, msecs, 'Ex field')
         self.lock_fig.release()
 		
     def show_line_ey(self, start, end, y_range=(-1, 1), msecs=2500):
+        """
+        start: The start point of the probing line.
+        end: The end point of the probing line.
+        y_range: Plot range of the y axis.
+        msecs: Refresh rate of the plot in milliseconds.
+
+        """
         self.lock_fig.acquire()
         self._show_line(const.Ey, start, end, y_range, msecs, 'Ey field')
         self.lock_fig.release()
 		
     def show_line_ez(self, start, end, y_range=(-1, 1), msecs=2500):
+        """
+        start: The start point of the probing line.
+        end: The end point of the probing line.
+        y_range: Plot range of the y axis.
+        msecs: Refresh rate of the plot in milliseconds.
+
+        """
         self.lock_fig.acquire()
         self._show_line(const.Ez, start, end, y_range, msecs, 'Ez field')
         self.lock_fig.release()
 		
     def show_line_hx(self, start, end, y_range=(-1, 1), msecs=2500):
+        """
+        start: The start point of the probing line.
+        end: The end point of the probing line.
+        y_range: Plot range of the y axis.
+        msecs: Refresh rate of the plot in milliseconds.
+
+        """
         self.lock_fig.acquire()
         self._show_line(const.Hx, start, end, y_range, msecs, 'Hx field')
         self.lock_fig.release()
 		
     def show_line_hy(self, start, end, y_range=(-1, 1), msecs=2500):
+        """
+        start: The start point of the probing line.
+        end: The end point of the probing line.
+        y_range: Plot range of the y axis.
+        msecs: Refresh rate of the plot in milliseconds.
+
+        """
         self.lock_fig.acquire()
         self._show_line(const.Hy, start, end, y_range, msecs, 'Hy field')
         self.lock_fig.release()
 		
     def show_line_hz(self, start, end, y_range=(-1, 1), msecs=2500):
+        """
+        start: The start point of the probing line.
+        end: The end point of the probing line.
+        y_range: Plot range of the y axis.
+        msecs: Refresh rate of the plot in milliseconds.
+
+        """
         self.lock_fig.acquire()
         self._show_line(const.Hz, start, end, y_range, msecs, 'Hz field')
         self.lock_fig.release()
@@ -1305,9 +1425,12 @@ class TExFDTD(FDTD):
     direction. TExFDTD updates only Ey, Ez, and Hx field components.
     
     """
-    def stable_limit(self, space):
-        # Courant stability bound
-        return 1 / sqrt(space.dy**-2 + space.dz**-2)
+    def dt_limit(self, space, epsilon, mu):
+        """Courant stability bound of a time step.
+
+        """
+        c = 1 / sqrt(epsilon * mu)
+        return 1 / c / sqrt(space.dy**-2 + space.dz**-2)
     
     def init_material(self):
         """Override FDTD.init_material().
@@ -1316,21 +1439,16 @@ class TExFDTD(FDTD):
         field components.
         
         """
-        # FIXME: Thread makes GMES slow.
-#        threads = (Thread(target=self.init_material_ey),
-#                   Thread(target=self.init_material_ez),
-#                   Thread(target=self.init_material_hx))
-#                   
-#        for thread in threads:
-#            thread.start()
-#            
-#        for thread in threads:
-#            thread.join()
+        threads = (Thread(target=self.init_material_ey),
+                   Thread(target=self.init_material_ez),
+                   Thread(target=self.init_material_hx))
+                  
+        for thread in threads:
+            thread.start()
+           
+        for thread in threads:
+            thread.join()
     
-        self.init_material_ey()
-        self.init_material_ez()
-        self.init_material_hx()
-
     def init_source(self):
         """Override FDTD.init_source().
         
@@ -1338,65 +1456,27 @@ class TExFDTD(FDTD):
         Ey, Ez, and Hx field components.
         
         """
-        # FIXME: Thread makes GMES slow.
-#        threads = (Thread(target=self.init_source_ey),
-#                   Thread(target=self.init_source_ez),
-#                   Thread(target=self.init_source_hx))
-#        
-#        for thread in threads:
-#            thread.start()
-#            
-#        for thread in threads:
-#            thread.join()
+        threads = (Thread(target=self.init_source_ey),
+                   Thread(target=self.init_source_ez),
+                   Thread(target=self.init_source_hx))
+       
+        for thread in threads:
+            thread.start()
+           
+        for thread in threads:
+            thread.join()
 
-        self.init_source_ey()
-        self.init_source_ez()
-        self.init_source_hx()
-        
-    def step(self):  
-        """Override FDTD.step().
-        
-        Updates only Ey, Ez, and Hx field components.
-        
-        """
-        self.time_step.n += .5
-        self.time_step.t = self.time_step.n * self.dt
-        
-        self.talk_with_hx_neighbors()
-        
-        # FIXME: Thread makes GMES slow.
-#        worker_threads = (Thread(target=self.update_ey),
-#                          Thread(target=self.update_ez))
-#        
-#        for worker in worker_threads:
-#            worker.start()
-#            
-#        for worker in worker_threads:
-#            worker.join()
+    def init_threads(self):
+        self.h_chatter_threads = (Thread(target=self.talk_with_hx_neighbors),)
 
-        self.update_ey()
-        self.update_ez()
-        
-        self.time_step.n += .5
-        self.time_step.t = self.time_step.n * self.dt
-        
-        self._step_aux_fdtd()
-        
-        # FIXME: MPI for Python is not thread safe.
-#        chatter_threads = (Thread(target=self.talk_with_ey_neighbors),
-#                           Thread(target=self.talk_with_ez_neighbors))
-#        
-#        for chatter in chatter_threads:
-#            chatter.start()
-#            
-#        for chatter in chatter_threads:
-#            chatter.join()
-            
-        self.talk_with_ey_neighbors()
-        self.talk_with_ez_neighbors()
+        self.e_chatter_threads = (Thread(target=self.talk_with_ey_neighbors), 
+                                  Thread(target=self.talk_with_ez_neighbors))
 
-        self.update_hx()
-        
+        self.h_worker_threads = (Thread(target=self.update_hx),)
+
+        self.e_worker_threads = (Thread(target=self.update_ey),
+                                 Thread(target=self.update_ez))
+
         
 class TEyFDTD(FDTD):
     """Two dimensional fdtd which has transverse-electric mode with respect to y.
@@ -1405,9 +1485,12 @@ class TEyFDTD(FDTD):
     TEyFDTD updates only Ez, Ex, and Hy field components.
     
     """
-    def stable_limit(self, space):
-        # Courant stability bound
-        return 1 / sqrt(space.dx**-2 + space.dz**-2)
+    def dt_limit(self, space, epsilon, mu):
+        """Courant stability bound of a time step.
+        
+        """
+        c = 1 / sqrt(epsilon * mu)
+        return 1 / c /sqrt(space.dx**-2 + space.dz**-2)
     
     def init_material(self):
         """Override FDTD.init_source().
@@ -1416,21 +1499,16 @@ class TEyFDTD(FDTD):
         Ez, Ex, and Hy field components.
         
         """
-        # FIXME: Thread makes GMES slow.
-#        threads = (Thread(target=self.init_material_ez),
-#                   Thread(target=self.init_material_ex),
-#                   Thread(target=self.init_material_hy))
-#                   
-#        for thread in threads:
-#            thread.start()
-#            
-#        for thread in threads:
-#            thread.join()
+        threads = (Thread(target=self.init_material_ez),
+                   Thread(target=self.init_material_ex),
+                   Thread(target=self.init_material_hy))
+                  
+        for thread in threads:
+            thread.start()
+           
+        for thread in threads:
+            thread.join()
     	
-        self.init_material_ez()
-        self.init_material_ex()
-        self.init_material_hy()
-        	
     def init_source(self):
         """Override FDTD.init_source().
         
@@ -1438,98 +1516,59 @@ class TEyFDTD(FDTD):
         Ez, Ex, and Hy field components.
         
         """
-        # FIXME: Thread makes GMES slow.
-#        threads = (Thread(target=self.init_source_ez),
-#                   Thread(target=self.init_source_ex),
-#                   Thread(target=self.init_source_hy))
-#        
-#        for thread in threads:
-#            thread.start()
-#            
-#        for thread in threads:
-#            thread.join()
-            
-        self.init_source_ez()
-        self.init_source_ex()
-        self.init_source_hy()
-
-    def step(self):
-        """Override FDTD.step().
-        
-        Updates only Ez, Ex, and Hy field components.
-        
-        """
-        self.time_step.n += .5
-        self.time_step.t = self.time_step.n * self.dt
-        
-        self.talk_with_hy_neighbors()
-        
-        # FIXME: Thread makes GMES slow.
-#        worker_threads = (Thread(target=self.update_ez),
-#                          Thread(target=self.update_ex))
-#        
-#        for worker in worker_threads:
-#            worker.start()
-#            
-#        for worker in worker_threads:
-#            worker.join()
-            
-        self.update_ez()
-        self.update_ex()
-
-        self.time_step.n += .5
-        self.time_step.t = self.time_step.n * self.dt
-        
-        self._step_aux_fdtd()
-        
-        # FIXME: MPI for Python is not thread safe.
-#        chatter_threads = (Thread(target=self.talk_with_ez_neighbors),
-#                           Thread(target=self.talk_with_ex_neighbors))
-#     	
-#        for chatter in chatter_threads:
-#            chatter.start()
-#            
-#        for chatter in chatter_threads:
-#            chatter.join()
-        
-        self.talk_with_ez_neighbors()
-        self.talk_with_ex_neighbors()
-
-        self.update_hy()
+        threads = (Thread(target=self.init_source_ez),
+                   Thread(target=self.init_source_ex),
+                   Thread(target=self.init_source_hy))
        
-        
+        for thread in threads:
+            thread.start()
+           
+        for thread in threads:
+            thread.join()
+            
+    def init_threads(self):
+        self.h_chatter_threads = (Thread(target=self.talk_with_hy_neighbors),)
+
+        self.e_chatter_threads = (Thread(target=self.talk_with_ex_neighbors),
+                                  Thread(target=self.talk_with_ez_neighbors))
+
+        self.h_worker_threads = (Thread(target=self.update_hy),)
+
+        self.e_worker_threads = (Thread(target=self.update_ex),
+                                 Thread(target=self.update_ez))
+
+
 class TEzFDTD(FDTD):
-    """Two dimensional fdtd which has transverse-electric mode with respect to z
+    """Two dimensional fdtd which has transverse-electric mode with respect to z.
 
     Assume that the structure and incident wave are uniform in the z direction.
     TEzFDTD updates only Ex, Ey, and Hz field components.
     
     """
-    def stable_limit(self, space):
-        # Courant stability bound
-        return 1 / sqrt(space.dx**-2 + space.dy**-2)
+    def dt_limit(self, space, epsilon, mu):
+        """Courant stability bound of a time step.
+        
+        """
+        c = 1 / sqrt(epsilon * mu)
+        return 1 / c / sqrt(space.dx**-2 + space.dy**-2)
     
     def init_material(self):
         """Override FDTD.init_material().
         
-        Initialize pointwise_material arrays only for Ex, Ey, and Hz field components.
+        Initialize pointwise_material arrays only for Ex, Ey, and Hz field 
+        components.
         
         """
-        # FIXME: Thread makes GMES slow.
-#        threads = (Thread(target=self.init_material_ex),
-#                   Thread(target=self.init_material_ey),
-#                   Thread(target=self.init_material_hz))
-#        
-#        for thread in threads:
-#            thread.start()
-#            
-#        for thread in threads:
-#            thread.join()
+        threads = (Thread(target=self.init_material_ex),
+                   Thread(target=self.init_material_ey),
+                   Thread(target=self.init_material_hz))
+       
+        for thread in threads:
+            thread.start()
+           
+        for thread in threads:
+            thread.join()
     
-        self.init_material_ex()
-        self.init_material_ey()
-        self.init_material_hz()
-
     def init_source(self):
         """Override FDTD.init_source().
         
@@ -1537,65 +1576,27 @@ class TEzFDTD(FDTD):
         Ex, Ey, and Hz field components.
         
         """
-        # FIXME: Thread makes GMES slow.
-#        threads = (Thread(target=self.init_source_ex),
-#                   Thread(target=self.init_source_ey),
-#                   Thread(target=self.init_source_hz))
-#        
-#        for thread in threads:
-#            thread.start()
-#            
-#        for thread in threads:
-#            thread.join()
+        threads = (Thread(target=self.init_source_ex),
+                   Thread(target=self.init_source_ey),
+                   Thread(target=self.init_source_hz))
+       
+        for thread in threads:
+            thread.start()
+           
+        for thread in threads:
+            thread.join()
             
-        self.init_source_ex()
-        self.init_source_ey()
-        self.init_source_hz()
+    def init_threads(self):
+        self.h_chatter_threads = (Thread(target=self.talk_with_hz_neighbors),)
 
-    def step(self):
-        """Override FDTD.step().
-        
-        Updates only Ex, Ey, and Hz field components.
-        
-        """
-        self.time_step.n += .5
-        self.time_step.t = self.time_step.n * self.dt
-        
-        self.talk_with_hz_neighbors()
-        
-        # FIXME: Thread makes GMES slow.
-#        worker_threads = (Thread(target=self.update_ex),
-#                          Thread(target=self.update_ey))
-#        
-#        for worker in worker_threads:
-#            worker.start()
-#            
-#        for worker in worker_threads:
-#            worker.join()
+        self.e_chatter_threads = (Thread(target=self.talk_with_ex_neighbors),
+                                  Thread(target=self.talk_with_ey_neighbors))
 
-        self.update_ex()
-        self.update_ey()
+        self.h_worker_threads = (Thread(target=self.update_hz),)
 
-        self.time_step.n += .5
-        self.time_step.t = self.time_step.n * self.dt
-        
-        self._step_aux_fdtd()
-        
-        # FIXME: MPI for Python is not thread safe.
-#        chatter_threads = (Thread(target=self.talk_with_ex_neighbors),
-#                           Thread(target=self.talk_with_ey_neighbors))
-#        
-#        for chatter in chatter_threads:
-#            chatter.start()
-#            
-#        for chatter in chatter_threads:
-#            chatter.join()
-            
-        self.talk_with_ex_neighbors()
-        self.talk_with_ey_neighbors()
+        self.e_worker_threads = (Thread(target=self.update_ex),
+                                 Thread(target=self.update_ey))
 
-        self.update_hz()
-                
         
 class TMxFDTD(FDTD):
     """Two dimensional fdtd which has transverse-magnetic mode with respect to x.
@@ -1604,9 +1605,12 @@ class TMxFDTD(FDTD):
     TMxFDTD updates only Hy, Hz, and Ex field components.
     
     """
-    def stable_limit(self, space):
-        # Courant stability bound
-        return 1 / sqrt(space.dy**-2 + space.dz**-2)
+    def dt_limit(self, space, epsilon, mu):
+        """Courant stability bound of a time step.
+
+        """
+        c = 1 / sqrt(epsilon * mu)
+        return 1 / c / sqrt(space.dy**-2 + space.dz**-2)
     
     def init_material(self):
         """Override FDTD.init_material().
@@ -1614,21 +1618,16 @@ class TMxFDTD(FDTD):
         Initialize pointwise_material arrays only for Hy, Hz, and Ex field components.
         
         """
-        # FIXME: Thread makes GMES slow.
-#        threads = (Thread(target=self.init_material_hy),
-#                   Thread(target=self.init_material_hz),
-#                   Thread(target=self.init_material_ex))
-#        
-#        for thread in threads:
-#            thread.start()
-#            
-#        for thread in threads:
-#            thread.join()
+        threads = (Thread(target=self.init_material_hy),
+                   Thread(target=self.init_material_hz),
+                   Thread(target=self.init_material_ex))
+       
+        for thread in threads:
+            thread.start()
+           
+        for thread in threads:
+            thread.join()
     
-        self.init_material_hy()
-        self.init_material_hz()
-        self.init_material_ex()
-        
     def init_source(self):
         """Override FDTD.init_source().
         
@@ -1636,64 +1635,27 @@ class TMxFDTD(FDTD):
         Hy, Hz, and Ex field components.
         
         """
-        # FIXME: Thread makes GMES slow.
-#        threads = (Thread(target=self.init_source_hy),
-#                   Thread(target=self.init_source_hz),
-#                   Thread(target=self.init_source_ex))
-#        
-#        for thread in threads:
-#            thread.start()
-#            
-#        for thread in threads:
-#            thread.join()
+        threads = (Thread(target=self.init_source_hy),
+                   Thread(target=self.init_source_hz),
+                   Thread(target=self.init_source_ex))
+       
+        for thread in threads:
+            thread.start()
+           
+        for thread in threads:
+            thread.join()
         
-        self.init_source_hy()
-        self.init_source_hz()
-        self.init_source_ex()
-    
-    def step(self):
-        """Override FDTD.step().
-        
-        Updates only Hy, Hz, and Ex field components.
-        
-        """
-        self.time_step.n += .5
-        self.time_step.t = self.time_step.n * self.dt    
-        
-        # FIXME: MPI for Python is not thread safe.
-#        chatter_threads = (Thread(target=self.talk_with_hy_neighbors),
-#                           Thread(target=self.talk_with_hz_neighbors))
-#        
-#        for chatter in chatter_threads:
-#            chatter.start()
-#        
-#        for chatter in chatter_threads:
-#            chatter.join()
-            
-        self.talk_with_hy_neighbors()
-        self.talk_with_hz_neighbors()
-        
-        self.update_ex()
+    def init_threads(self):
+        self.h_chatter_threads = (Thread(target=self.talk_with_hy_neighbors), 
+                                  Thread(target=self.talk_with_hz_neighbors))
 
-        self.time_step.n += .5
-        self.time_step.t = self.time_step.n * self.dt
-        
-        self._step_aux_fdtd()
-        
-        self.talk_with_ex_neighbors()
-        
-        # FIXME: Thread makes GMES slow.
-#        worker_threads = (Thread(target=self.update_hy),
-#                          Thread(target=self.update_hz))
-#        
-#        for worker in worker_threads:
-#            worker.start()
-#            
-#        for worker in worker_threads:
-#            worker.join()
+        self.e_chatter_threads = (Thread(target=self.talk_with_ex_neighbors),)
 
-        self.update_hy()
-        self.update_hz()
+        self.h_worker_threads = (Thread(target=self.update_hy),
+                                 Thread(target=self.update_hz))
+
+        self.e_worker_threads = (Thread(target=self.update_ex),)
+
         
 class TMyFDTD(FDTD):
     """Two dimensional fdtd which has transverse-magnetic mode with respect to y
@@ -1702,8 +1664,11 @@ class TMyFDTD(FDTD):
     TMyFDTD updates only Hz, Hx, and Ey field components.
     
     """
-    def stable_limit(self, space):
-        # Courant stability bound
+    def dt_limit(self, space, epsilon, mu):
+        """Courant stability bound of a time step.
+
+        """
+        c = 1 / sqrt(epsilon * mu)
         return 1 / sqrt(space.dx**-2 + space.dz**-2)
     
     def init_material(self):
@@ -1712,21 +1677,16 @@ class TMyFDTD(FDTD):
         Initialize pointwise_material arrays only for Hz, Hx, and Ey field components.
         
         """
-        # FIXME: Thread makes GMES slow.
-#        threads = (Thread(target=self.init_material_hz),
-#                   Thread(target=self.init_material_hx),
-#                   Thread(target=self.init_material_ey))
-#                            
-#        for thread in threads:
-#            thread.start()
-#            
-#        for thread in threads:
-#            thread.join()
+        threads = (Thread(target=self.init_material_hz),
+                   Thread(target=self.init_material_hx),
+                   Thread(target=self.init_material_ey))
+                           
+        for thread in threads:
+            thread.start()
+           
+        for thread in threads:
+            thread.join()
     
-        self.init_material_hz()
-        self.init_material_hx()
-        self.init_material_ey()
-
     def init_source(self):
         """Override FDTD.init_source().
         
@@ -1734,65 +1694,27 @@ class TMyFDTD(FDTD):
         Hz, Hx, and Ey field components.
         
         """
-        # FIXME: Thread makes GMES slow.
-#        threads = (Thread(target=self.init_source_hz),
-#                   Thread(target=self.init_source_hx),
-#                   Thread(target=self.init_source_ey))
-#        
-#        for thread in threads:
-#            thread.start()
-#            
-#        for thread in threads:
-#            thread.join()
+        threads = (Thread(target=self.init_source_hz),
+                   Thread(target=self.init_source_hx),
+                   Thread(target=self.init_source_ey))
+       
+        for thread in threads:
+            thread.start()
+           
+        for thread in threads:
+            thread.join()
         
-        self.init_source_hz()
-        self.init_source_hx()
-        self.init_source_ey()
+    def init_threads(self):
+        self.h_chatter_threads = (Thread(target=self.talk_with_hx_neighbors),
+                                  Thread(target=self.talk_with_hz_neighbors))
 
-    def step(self):
-        """Override FDTD.step().
-        
-        Updates only Hz, Hx, and Ey field components.
-        
-        """
-        self.time_step.n += .5
-        self.time_step.t = self.time_step.n * self.dt
-        
-        # FIXME: MPI for Python is not thread safe.
-#        chatter_threads = (Thread(target=self.talk_with_hz_neighbors),
-#                           Thread(target=self.talk_with_hx_neighbors))
-#        
-#        for chatter in chatter_threads:
-#            chatter.start()
-#        
-#        for chatter in chatter_threads:
-#            chatter.join()
-            
-        self.talk_with_hz_neighbors()
-        self.talk_with_hx_neighbors()
+        self.e_chatter_threads = (Thread(target=self.talk_with_ey_neighbors),)
 
-        self.update_ey()
-        
-        self.time_step.n += .5
-        self.time_step.t = self.time_step.n * self.dt
-        
-        self._step_aux_fdtd()
-        
-        self.talk_with_ey_neighbors()
-        
-        # FIXME: Thread makes GMES slow.
-#        worker_threads = (Thread(target=self.update_hz),
-#                          Thread(target=self.update_hx))
-#        
-#        for worker in worker_threads:
-#            worker.start()
-#            
-#        for worker in worker_threads:
-#            worker.join()
-            
-        self.update_hz()
-        self.update_hx()
-        
+        self.h_worker_threads = (Thread(target=self.update_hx),
+                                 Thread(target=self.update_hz))
+
+        self.e_worker_threads = (Thread(target=self.update_ey),)
+
         
 class TMzFDTD(FDTD):
     """Two dimensional fdtd which has transverse-magnetic mode with respect to z
@@ -1801,9 +1723,12 @@ class TMzFDTD(FDTD):
     TMzFDTD updates only Hx, Hy, and Ez field components.
     
     """
-    def stable_limit(self, space):
-        # Courant stability bound
-        return 1 / sqrt(space.dx**-2 + space.dy**-2)
+    def dt_limit(self, space, epsilon, mu):
+        """Courant stability bound of a time step.
+
+        """
+        c = 1 / sqrt(epsilon * mu)
+        return 1 / c / sqrt(space.dx**-2 + space.dy**-2)
     
     def init_material(self):
         """Override FDTD.init_material().
@@ -1811,20 +1736,15 @@ class TMzFDTD(FDTD):
         Initialize pointwise_material arrays only for Hx, Hy, and Ez field components.
         
         """
-        # FIXME: Thread makes GMES slow.
-#        threads = (Thread(target=self.init_material_hx),
-#                   Thread(target=self.init_material_hy),
-#                   Thread(target=self.init_material_ez))
-#                            
-#        for thread in threads:
-#            thread.start()
-#            
-#        for thread in threads:
-#            thread.join()
-    
-        self.init_material_hx()
-        self.init_material_hy()
-        self.init_material_ez()
+        threads = (Thread(target=self.init_material_hx),
+                   Thread(target=self.init_material_hy),
+                   Thread(target=self.init_material_ez))
+                           
+        for thread in threads:
+            thread.start()
+           
+        for thread in threads:
+            thread.join()
 
     def init_source(self):
         """Override FDTD.init_source().
@@ -1833,65 +1753,27 @@ class TMzFDTD(FDTD):
         Hx, Hy, and Ez field components.
         
         """
-        # FIXME: Thread makes GMES slow.
-#        threads = (Thread(target=self.init_source_hx),
-#                   Thread(target=self.init_source_hy),
-#                   Thread(target=self.init_source_ez))
-#        
-#        for thread in threads:
-#            thread.start()
-#            
-#        for thread in threads:
-#            thread.join()
+        threads = (Thread(target=self.init_source_hx),
+                   Thread(target=self.init_source_hy),
+                   Thread(target=self.init_source_ez))
+       
+        for thread in threads:
+            thread.start()
+           
+        for thread in threads:
+            thread.join()
         
-        self.init_source_hx()
-        self.init_source_hy()
-        self.init_source_ez()
-        
-    def step(self):
-        """Override FDTD.step().
-        
-        Updates only Hx, Hy, and Ez field components.
-        
-        """
-        self.time_step.n += .5
-        self.time_step.t = self.time_step.n * self.dt
-        
-        # FIXME: MPI for Python is not thread safe.
-#        chatter_threads = (Thread(target=self.talk_with_hx_neighbors),
-#                           Thread(target=self.talk_with_hy_neighbors))
-#        
-#        for chatter in chatter_threads:
-#            chatter.start()
-#        
-#        for chatter in chatter_threads:
-#            chatter.join()
-            
-        self.talk_with_hx_neighbors()
-        self.talk_with_hy_neighbors()
+    def init_threads(self):
+        self.h_chatter_threads = (Thread(target=self.talk_with_hx_neighbors),
+                                  Thread(target=self.talk_with_hy_neighbors))
 
-        self.update_ez()
+        self.e_chatter_threads = (Thread(target=self.talk_with_ez_neighbors),)
 
-        self.time_step.n += .5
-        self.time_step.t = self.time_step.n * self.dt
-        
-        self._step_aux_fdtd()
-        
-        self.talk_with_ez_neighbors()
-        
-        # FIXME: Thread makes GMES slow.
-#        worker_threads = (Thread(target=self.update_hx),
-#                          Thread(target=self.update_hy))
-#        
-#        for thread in worker_threads:
-#            thread.start()
-#            
-#        for thread in worker_threads:
-#            thread.join()
+        self.h_worker_threads = (Thread(target=self.update_hx),
+                                 Thread(target=self.update_hy))
 
-        self.update_hx()
-        self.update_hy()
-        
+        self.e_worker_threads = (Thread(target=self.update_ez),)
+
 
 class TEMxFDTD(FDTD):
     """y-polarized and x-directed one dimensional fdtd class
@@ -1900,9 +1782,12 @@ class TEMxFDTD(FDTD):
     TEMxFDTD updates only Ey and Hz field components.
     
     """
-    def stable_limit(self, space):
-        # Courant stability bound
-        return space.dx
+    def dt_limit(self, space, epsilon, mu):
+        """Courant stability bound of a time step.
+        
+        """
+        c = 1 / sqrt(epsilon * mu)
+        return space.dx / c
     
     def init_material(self):
         """Override FDTD.init_material().
@@ -1910,18 +1795,14 @@ class TEMxFDTD(FDTD):
         Initialize pointwise_material arrays only for Ey and Hz field components.
         
         """
-        # FIXME: Thread makes GMES slow.
-#        threads = (Thread(target=self.init_material_ey),
-#                   Thread(target=self.init_material_hz))
-#
-#        for thread in threads:
-#            thread.start()
-#
-#        for thread in threads:
-#            thread.join()
+        threads = (Thread(target=self.init_material_ey),
+                   Thread(target=self.init_material_hz))
 
-        self.init_material_ey()
-        self.init_material_hz()
+        for thread in threads:
+            thread.start()
+
+        for thread in threads:
+            thread.join()
 
     def init_source(self):
         """Override FDTD.init_source().
@@ -1930,39 +1811,24 @@ class TEMxFDTD(FDTD):
         Ey and Hz field components.
         
         """
-        # FIXME: Thread makes GMES slow.
-#        threads = (Thread(target=self.init_source_ey),
-#                   Thread(target=self.init_source_hz))
-#
-#        for thread in threads:
-#            thread.start()
-#
-#        for thread in threads:
-#            thread.join()
+        threads = (Thread(target=self.init_source_ey),
+                   Thread(target=self.init_source_hz))
 
-        self.init_source_ey()
-        self.init_source_hz()
+        for thread in threads:
+            thread.start()
 
-    def step(self):
-        """Override FDTD.step().
-        
-        Update only Ey and Hz field components.
-        
-        """
-        self.time_step.n += .5
-        self.time_step.t = self.time_step.n * self.dt
-                
-        self.talk_with_hz_neighbors()
-        self.update_ey()
+        for thread in threads:
+            thread.join()
 
-        self.time_step.n += .5
-        self.time_step.t = self.time_step.n * self.dt
-        
-        self._step_aux_fdtd()
-        
-        self.talk_with_ey_neighbors()
-        self.update_hz()
-                
+    def init_threads(self):
+        self.h_chatter_threads = (Thread(target=self.talk_with_hz_neighbors),)
+
+        self.e_chatter_threads = (Thread(target=self.talk_with_ey_neighbors),)
+
+        self.h_worker_threads = (Thread(target=self.update_hz),)
+
+        self.e_worker_threads = (Thread(target=self.update_ey),)
+
         
 class TEMyFDTD(FDTD):
     """z-polarized and y-directed one dimensional fdtd class
@@ -1971,9 +1837,12 @@ class TEMyFDTD(FDTD):
     TEMyFDTD updates only Ez and Hx field components.
     
     """
-    def stable_limit(self, space):
-        # Courant stability bound
-        return space.dy
+    def dt_limit(self, space, epsilon, mu):
+        """Courant stability bound of a time step.
+        
+        """
+        c = 1 / sqrt(epsilon * mu)
+        return space.dy / c
     
     def init_material(self):
         """Override FDTD.init_material().
@@ -1981,18 +1850,14 @@ class TEMyFDTD(FDTD):
         Initialize pointwise_material arrays only for Ez and Hx field components.
         
         """
-        # FIXME: Thread makes GMES slow.
-#        threads = (Thread(target=self.init_material_ez),
-#                   Thread(target=self.init_material_hx))
-#
-#        for thread in threads:
-#            thread.start()
-#
-#        for thread in threads:
-#            thread.join()
+        threads = (Thread(target=self.init_material_ez),
+                   Thread(target=self.init_material_hx))
 
-        self.init_material_ez()
-        self.init_material_hx()
+        for thread in threads:
+            thread.start()
+
+        for thread in threads:
+            thread.join()
 
     def init_source(self):
         """Override FDTD.init_source().
@@ -2001,38 +1866,23 @@ class TEMyFDTD(FDTD):
         Ez and Hx field components.
         
         """
-        # FIXME: Thread makes GMES slow.
-#        threads = (Thread(target=self.init_source_ez),
-#                   Thread(target=self.init_source_hx))
-#
-#        for thread in threads:
-#            thread.start()
-#
-#        for thread in threads:
-#            thread.join()
+        threads = (Thread(target=self.init_source_ez),
+                   Thread(target=self.init_source_hx))
 
-        self.init_source_ez()
-        self.init_source_hx()
+        for thread in threads:
+            thread.start()
 
-    def step(self):
-        """Override FDTD.step().
-        
-        Update only Ez and Hx field components.
-        
-        """
-        self.time_step.n += .5
-        self.time_step.t = self.time_step.n * self.dt
-                
-        self.talk_with_hx_neighbors()
-        self.update_ez()
+        for thread in threads:
+            thread.join()
 
-        self.time_step.n += .5
-        self.time_step.t = self.time_step.n * self.dt
-        
-        self._step_aux_fdtd()
-        
-        self.talk_with_ez_neighbors()
-        self.update_hx()
+    def init_threads(self):
+        self.h_chatter_threads = (Thread(target=self.talk_with_hx_neighbors),)
+
+        self.e_chatter_threads = (Thread(target=self.talk_with_ez_neighbors),)
+
+        self.h_worker_threads = (Thread(target=self.update_hx),)
+
+        self.e_worker_threads = (Thread(target=self.update_ez),)
 
         
 class TEMzFDTD(FDTD):
@@ -2042,28 +1892,28 @@ class TEMzFDTD(FDTD):
     TEMzFDTD updates only Ex and Hy field components.
     
     """
-    def stable_limit(self, space):
-        # Courant stability bound
-        return space.dz
-    
+    def dt_limit(self, space, epsilon, mu):
+        """Courant stability bound of a time step.
+        
+        """
+        c = 1 / sqrt(epsilon * mu)
+        return space.dz / c
+
     def init_material(self):
         """Override FDTD.init_material().
         
         Initialize pointwise_material arrays only for Ex and Hy field components.
         
         """
-        # FIXME: Thread makes GMES slow.
-#        threads = (Thread(target=self.init_material_ex),
-#                   Thread(target=self.init_material_hy))
-#
-#        for thread in threads:
-#            thread.start()
-#
-#        for thread in threads:
-#            thread.join()
+        threads = (Thread(target=self.init_material_ex),
+                   Thread(target=self.init_material_hy))
 
-        self.init_material_ex()
-        self.init_material_hy()
+        for thread in threads:
+            thread.start()
+
+        for thread in threads:
+            thread.join()
+
 
     def init_source(self):
         """Override FDTD.init_source().
@@ -2072,53 +1922,38 @@ class TEMzFDTD(FDTD):
         Ex and Hy field components.
         
         """
-        # FIXME: Thread makes GMES slow.
-#        threads = (Thread(target=self.init_source_ex),
-#                   Thread(target=self.init_source_hy))
-#
-#        for thread in threads:
-#            thread.start()
-#
-#        for thread in threads:
-#            thread.join()
+        threads = (Thread(target=self.init_source_ex),
+                   Thread(target=self.init_source_hy))
 
-        self.init_source_ex()
-        self.init_source_hy()
+        for thread in threads:
+            thread.start()
 
-    def step(self):
-        """Override FDTD.step().
-        
-        Update only Ex and Hy field components.
-        
-        """
-        self.time_step.n += .5
-        self.time_step.t = self.time_step.n * self.dt
-        
-        self.talk_with_hy_neighbors()
-        self.update_ex()
+        for thread in threads:
+            thread.join()
 
-        self.time_step.n += .5
-        self.time_step.t = self.time_step.n * self.dt
-        
-        self._step_aux_fdtd()
-        
-        self.talk_with_ex_neighbors()
-        self.update_hy()
-        
-        
+    def init_threads(self):
+        self.h_chatter_threads = (Thread(target=self.talk_with_hy_neighbors),)
+
+        self.e_chatter_threads = (Thread(target=self.talk_with_ex_neighbors),)
+
+        self.h_worker_threads = (Thread(target=self.update_hy),)
+
+        self.e_worker_threads = (Thread(target=self.update_ex),)
+
+
 if __name__ == '__main__':
     from math import sin
     
     from numpy import inf
     
-    from geometry import DefaultMaterial, Cylinder, Cartesian
+    from geometry import DefaultMedium, Cylinder, Cartesian
     from material import Dielectric
     
     low = Dielectric(index=1)
     hi = Dielectric(index=3)
     width_hi = low.epsilon / (low.epsilon + hi.epsilon)
     space = Cartesian(size=[1, 1, 1])
-    geom_list = [DefaultMaterial(material=low), Cylinder(material=hi, axis=[1, 0, 0], radius=inf, height=width_hi)]
+    geom_list = [DefaultMedium(material=low), Cylinder(material=hi, axis=[1, 0, 0], radius=inf, height=width_hi)]
     
     a = FDTD(space=space, geometry=geom_list)
     
