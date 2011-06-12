@@ -1,12 +1,14 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+from sys import stderr
+
 try:
     import psyco
     psyco.profile()
     from psyco.classes import *
-except:
-    pass
+except ImportError:
+    stderr.write('No module named psyco. Execution speed might be slow.\n')
 
 from numpy import *
 

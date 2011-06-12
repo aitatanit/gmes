@@ -1,13 +1,15 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+from sys import stderr
+
 try:
     import psyco
     psyco.profile()
     from psyco.classes import *
-except:
-    pass
-
+except ImportError:
+    stderr.write('No module named psyco. Execution speed might be slow.\n')
+    
 from copy import deepcopy
 from math import sqrt, pi, sin, cos, exp
 import cmath as cm
@@ -373,7 +375,7 @@ class TotalFieldScatteredField(Src):
             omega: the angular frequency of the input wave.
             ds: the space-cell size, (dx, dy, dz)
             dt: the time step
-            k: the true wavevector, (kx, ky, kz)
+            k: the true wave vector, (kx, ky, kz)
 
         Equation 5.65 at p.214 of 'A. Taflove and S. C. Hagness, Computational
         Electrodynamics: The Finite-Difference Time-Domain Method, Third 
@@ -467,10 +469,10 @@ class TotalFieldScatteredField(Src):
         
         if cmplx:
             aux_fdtd = TEMzFDTD(aux_space, aux_geom_list, aux_src_list,
-                                dt=space.dt, wavevector=(0,0,0), verbose=False)
+                                dt=space.dt, bloch=(0,0,0), verbose=False)
         else:
             aux_fdtd = TEMzFDTD(aux_space, aux_geom_list, aux_src_list,
-                                dt=space.dt, verbose=False)
+                                dt=space.dt, bloch=None, verbose=False)
 
         return aux_fdtd
 

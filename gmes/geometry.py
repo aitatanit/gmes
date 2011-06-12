@@ -1,25 +1,27 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+# This code is based on libctl 3.0.2.
+
+from sys import stderr
+
 try:
     import psyco
     psyco.profile()
     from psyco.classes import *
-except:
-    pass
+except ImportError:
+    stderr.write('No module named psyco. Execution speed might be slow.\n')
 
-# This code is based on libctl 3.0.2.
+try:
+    from mpi4py import MPI
+except ImportError:
+    stderr.write('No module named mpi4py. MPI support will not be available.\n')
 
 from copy import deepcopy
 
 import numpy as np
 from numpy import empty, zeros, inf, dot
 from scipy.linalg import norm
-
-try:
-    from mpi4py import MPI
-except ImportError:
-    pass
 
 import constants as const
 from material import Compound, PML
@@ -148,7 +150,7 @@ class Cartesian(object):
         self.whole_field_size = \
             np.array((2 * self.half_size * self.res).round(), int)
         
-        if parallel:
+        if 'MPI' in dir() and parallel:
             self.my_id = MPI.COMM_WORLD.rank
             self.numprocs = MPI.COMM_WORLD.size
             self.cart_comm = \
@@ -1676,7 +1678,7 @@ def in_range(idx, numpy_array, component):
 
 
 if __name__ == '__main__':
-    from material import *
+    from material import Dielectric
     
     geom_list = [DefaultMedium(material=Dielectric()),
                  Cone(0, (1, 0, 0), 1, 1, Dielectric(), (0, 0, 2)),
