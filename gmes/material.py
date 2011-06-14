@@ -652,7 +652,7 @@ class CPML(PML):
         print " " * indent, "CPML"
         print " " * indent, 
         print "effective permittivity:", self.effective_epsilon,
-        print "effective permeability:", self.effective_mu,
+        print "effective permeability:", self.effective_mu
         
         print " " * indent,
         print "sigma_max:", self.sigma_max,
