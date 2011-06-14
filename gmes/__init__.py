@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 ##    gmes - GIST Maxwell's Equations Solver
-##    Copyright (C) 2007  Kyungwon Chun
+##    Copyright (C) 2007-2011  Kyungwon Chun
 ##
 ##    This library is free software; you can redistribute it and/or
 ##    modify it under the terms of the GNU Library General Public
@@ -28,8 +28,8 @@ time-domain (FDTD) method. It is designed to simulate the photonic
 device in 1, 2, and 3-d Cartesian coordinates.
 
 Modules:
-    fdtd --- Provide various simulation classes suitable for 1, 2, and 3-d cases.
-    geometry --- Provide coordinate and geometric primitives
+    fdtd --- Provide various simulation classes suitable for 1, 2, and 3-d.
+    geometry --- Provide coordinate and geometric primitives.
     show --- Real-time display classes
     constants --- Physical and simulation constants
     source --- Define the input sources
@@ -39,21 +39,23 @@ Modules:
 
 """
 
+from sys import stderr
+
 try:
     import psyco
     psyco.profile()
     from psyco.classes import *
-except:
-    pass
-    
+except ImportError:
+    stderr.write('No module named psyco. Execution speed might be slow.\n')
+
 try:
     from mpi4py import MPI
 except ImportError:
-    pass
+    stderr.write('No module named mpi4py. MPI support will not be available.\n')
 
 # List here only the objects we want to be publicly available
-__all__ = ['fdtd', 'geometry', 'show', 'constants', 'source', \
-           'pw_source', 'material', 'pw_material']
+__all__ = ['fdtd', 'geometry', 'show', 'constants', 'source', 'pw_source', 
+           'material', 'pw_material']
 
 import fdtd, geometry, show, constants, source, material
 import pw_material, pw_source

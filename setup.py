@@ -24,12 +24,12 @@ pw_dep_lst = glob('src/pw_*.hh')
 
 # _pw_material module
 _pw_material = Extension(name = 'gmes._pw_material',
-                              sources = pw_src_lst,
-                              depends = pw_dep_lst,
-                              include_dirs = [numpy_include],
-                              swig_opts = ['-c++', '-outdir', 'gmes'],
-                              #language = 'c++',
-                              extra_compile_args=[])
+                         sources = pw_src_lst,
+                         depends = pw_dep_lst,
+                         include_dirs = [numpy_include],
+                         swig_opts = ['-c++', '-outdir', 'gmes'],
+                         #language = 'c++',
+                         extra_compile_args=[])
 
 # _constants module
 _constants = Extension(name = 'gmes._constants',
