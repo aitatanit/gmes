@@ -529,44 +529,50 @@ class FDTD(object):
             
     def update_ex(self):
         self.lock_ex.acquire()
-        for mo in self.material_ex.flat:
-            mo.update(self.ex, self.hz, self.hy, self.dy, self.dz, self.dt, 
-                      self.time_step.n)
+        for idx in ndindex(self.material_ex.shape):
+            self.material_ex[idx].update(self.ex, self.hz, self.hy, 
+                                         self.dy, self.dz, self.dt, 
+                                         self.time_step.n, *idx)
         self.lock_ex.release()
         
     def update_ey(self):
         self.lock_ey.acquire()
-        for mo in self.material_ey.flat:
-            mo.update(self.ey, self.hx, self.hz, self.dz, self.dx, self.dt, 
-                      self.time_step.n)
+        for idx in ndindex(self.material_ey.shape):
+            self.material_ey[idx].update(self.ey, self.hx, self.hz, 
+                                         self.dz, self.dx, self.dt, 
+                                         self.time_step.n, *idx)
         self.lock_ey.release()
 		
     def update_ez(self):
         self.lock_ez.acquire()
-        for mo in self.material_ez.flat:
-            mo.update(self.ez, self.hy, self.hx, self.dx, self.dy, self.dt, 
-                      self.time_step.n)
+        for idx in ndindex(self.material_ez.shape):
+            self.material_ez[idx].update(self.ez, self.hy, self.hx,
+                                         self.dx, self.dy, self.dt,
+                                         self.time_step.n, *idx)
         self.lock_ez.release()
 		
     def update_hx(self):
         self.lock_hx.acquire()
-        for mo in self.material_hx.flat:
-            mo.update(self.hx, self.ez, self.ey, self.dy, self.dz, self.dt, 
-                      self.time_step.n)
+        for idx in ndindex(self.material_hx.shape):
+            self.material_hx[idx].update(self.hx, self.ez, self.ey, 
+                                         self.dy, self.dz, self.dt, 
+                                         self.time_step.n, *idx)
         self.lock_hx.release()
 		
     def update_hy(self):
         self.lock_hy.acquire()
-        for mo in self.material_hy.flat:
-            mo.update(self.hy, self.ex, self.ez, self.dz, self.dx, self.dt, 
-                      self.time_step.n)
+        for idx in ndindex(self.material_hy.shape):
+            self.material_hy[idx].update(self.hy, self.ex, self.ez,
+                                         self.dz, self.dx, self.dt,
+                                         self.time_step.n, *idx)
         self.lock_hy.release()
 		
     def update_hz(self):
         self.lock_hz.acquire()
-        for mo in self.material_hz.flat:
-            mo.update(self.hz, self.ey, self.ex, self.dx, self.dy, self.dt, 
-                      self.time_step.n)
+        for idx in ndindex(self.material_hz.shape):
+            self.material_hz[idx].update(self.hz, self.ey, self.ex,
+                                         self.dx, self.dy, self.dt,
+                                         self.time_step.n, *idx)
         self.lock_hz.release()
 
     def talk_with_ex_neighbors(self):
@@ -1137,7 +1143,7 @@ class FDTD(object):
                 This should be one of the gmes.constants.Directional.
             cut: A scalar value which specifies the cut position on the 
                 axis.
-            vrange: Specify the colorbar range. a tuple of length two.
+            vrange: Specify the colorbar range. A tuple of length two.
         
         """
         showcase = Snapshot(self, const.Ex, axis, cut, vrange, 
@@ -1154,7 +1160,7 @@ class FDTD(object):
                 This should be one of the gmes.constants.Directional.
             cut: A scalar value which specifies the cut position on the 
                 axis.
-            vrange: Specify the colorbar range. a tuple of length two.
+            vrange: Specify the colorbar range. A tuple of length two.
         
         """
         showcase = Snapshot(self, const.Ey, axis, cut, vrange, 
@@ -1171,7 +1177,7 @@ class FDTD(object):
                 This should be one of the gmes.constants.Directional.
             cut: A scalar value which specifies the cut position on the 
                 axis.
-            vrange: Specify the colorbar range. a tuple of length two.
+            vrange: Specify the colorbar range. A tuple of length two.
         
         """
         showcase = Snapshot(self, const.Ez, axis, cut, vrange, 
@@ -1188,7 +1194,7 @@ class FDTD(object):
                 This should be one of the gmes.constants.Directional.
             cut: A scalar value which specifies the cut position on the 
                 axis.
-            vrange: Specify the colorbar range. a tuple of length two.
+            vrange: Specify the colorbar range. A tuple of length two.
         
         """
         showcase = Snapshot(self, const.Hx, axis, cut, vrange, 
@@ -1205,7 +1211,7 @@ class FDTD(object):
                 This should be one of the gmes.constants.Directional.
             cut: A scalar value which specifies the cut position on the 
                 axis.
-            vrange: Specify the colorbar range. a tuple of length two.
+            vrange: Specify the colorbar range. A tuple of length two.
         
         """
         showcase = Snapshot(self, const.Hy, axis, cut, vrange, 

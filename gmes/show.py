@@ -412,7 +412,7 @@ class Snapshot(Thread):
             [v for i, v in enumerate(data_shape_3d) if i != axis_int]
         self.data = empty(data_shape_2d, float)
 
-        for idx in ndindex(*data_shape_2d):
+        for idx in ndindex(data_shape_2d):
             material_idx = empty(3, float)
             for i in [i for i in xrange(3) if i != axis_int]:
                 material_idx[i] = idx[i % 2] + start_boundary_idx[i]

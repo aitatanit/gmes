@@ -505,7 +505,7 @@ class TotalFieldScatteredField(Src):
         low_idx_array = np.array(low_idx)
         high_idx_array = np.array(high_idx)
         
-        for i, j, k in ndindex(*(high_idx_array - low_idx_array)):
+        for i, j, k in ndindex(tuple(high_idx_array - low_idx_array)):
             idx = tuple((i, j, k) + low_idx_array)
             if in_range(idx, material, component):
                 pnt = idx_to_spc[component](*idx)

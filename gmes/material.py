@@ -121,49 +121,49 @@ class Dummy(Material):
         
     def get_pw_material_ex(self, idx, coords, underneath=None, cmplx=False):
         if cmplx:
-            pw_obj = DummyExCmplx(idx, self.epsilon)
+            pw_obj = DummyExCmplx(self.epsilon)
         else:
-            pw_obj = DummyExReal(idx, self.epsilon)
+            pw_obj = DummyExReal(self.epsilon)
             
         return pw_obj
     
     def get_pw_material_ey(self, idx, coords, underneath=None, cmplx=False):
         if cmplx:
-            pw_obj = DummyEyCmplx(idx, self.epsilon)
+            pw_obj = DummyEyCmplx(self.epsilon)
         else:
-            pw_obj = DummyEyReal(idx, self.epsilon)
+            pw_obj = DummyEyReal(self.epsilon)
             
         return pw_obj
     
     def get_pw_material_ez(self, idx, coords, underneath=None, cmplx=False):
         if cmplx:
-            pw_obj = DummyEzCmplx(idx, self.epsilon)
+            pw_obj = DummyEzCmplx(self.epsilon)
         else:
-            pw_obj = DummyEzReal(idx, self.epsilon)
+            pw_obj = DummyEzReal(self.epsilon)
         
         return pw_obj
     
     def get_pw_material_hx(self, idx, coords, underneath=None, cmplx=False):
         if cmplx:
-            pw_obj = DummyHxCmplx(idx, self.mu)
+            pw_obj = DummyHxCmplx(self.mu)
         else:
-            pw_obj = DummyHxReal(idx, self.mu)
+            pw_obj = DummyHxReal(self.mu)
         
         return pw_obj
     
     def get_pw_material_hy(self, idx, coords, underneath=None, cmplx=False):
         if cmplx:
-            pw_obj = DummyHyCmplx(idx, self.mu)
+            pw_obj = DummyHyCmplx(self.mu)
         else:
-            pw_obj = DummyHyReal(idx, self.mu)
+            pw_obj = DummyHyReal(self.mu)
         
         return pw_obj
     
     def get_pw_material_hz(self, idx, coords, underneath=None, cmplx=False):
         if cmplx:
-            pw_obj = DummyHzCmplx(idx, self.mu)
+            pw_obj = DummyHzCmplx(self.mu)
         else:
-            pw_obj = DummyHzReal(idx, self.mu)
+            pw_obj = DummyHzReal(self.mu)
         
         return pw_obj
 
@@ -187,49 +187,49 @@ class Zero(Material):
         
     def get_pw_material_ex(self, idx, coords, underneath=None, cmplx=False):
         if cmplx:
-            pw_obj = ZeroExCmplx(idx, self.epsilon)
+            pw_obj = ZeroExCmplx(self.epsilon)
         else:
-            pw_obj = ZeroExReal(idx, self.epsilon)
+            pw_obj = ZeroExReal(self.epsilon)
             
         return pw_obj
     
     def get_pw_material_ey(self, idx, coords, underneath=None, cmplx=False):
         if cmplx:
-            pw_obj = ZeroEyCmplx(idx, self.epsilon)
+            pw_obj = ZeroEyCmplx(self.epsilon)
         else:
-            pw_obj = ZeroEyReal(idx, self.epsilon)
+            pw_obj = ZeroEyReal(self.epsilon)
             
         return pw_obj
     
     def get_pw_material_ez(self, idx, coords, underneath=None, cmplx=False):
         if cmplx:
-            pw_obj = ZeroEzCmplx(idx, self.epsilon)
+            pw_obj = ZeroEzCmplx(self.epsilon)
         else:
-            pw_obj = ZeroEzReal(idx, self.epsilon)
+            pw_obj = ZeroEzReal(self.epsilon)
             
         return pw_obj
     
     def get_pw_material_hx(self, idx, coords, underneath=None, cmplx=False):
         if cmplx:
-            pw_obj = ZeroHxCmplx(idx, self.mu)
+            pw_obj = ZeroHxCmplx(self.mu)
         else:
-            pw_obj = ZeroHxReal(idx, self.mu)
+            pw_obj = ZeroHxReal(self.mu)
             
         return pw_obj
     
     def get_pw_material_hy(self, idx, coords, underneath=None, cmplx=False):
         if cmplx:
-            pw_obj = ZeroHyCmplx(idx, self.mu)
+            pw_obj = ZeroHyCmplx(self.mu)
         else:
-            pw_obj = ZeroHyReal(idx, self.mu)
+            pw_obj = ZeroHyReal(self.mu)
             
         return pw_obj
     
     def get_pw_material_hz(self, idx, coords, underneath=None, cmplx=False):
         if cmplx:
-            pw_obj = ZeroHzCmplx(idx, self.mu)
+            pw_obj = ZeroHzCmplx(self.mu)
         else:
-            pw_obj = ZeroHzReal(idx, self.mu)
+            pw_obj = ZeroHzReal(self.mu)
             
         return pw_obj
     
@@ -253,49 +253,49 @@ class One(Material):
         
     def get_pw_material_ex(self, idx, coords, underneath=None, cmplx=False):
         if cmplx:
-            pw_obj = OneExCmplx(idx, self.epsilon)
+            pw_obj = OneExCmplx(self.epsilon)
         else:
-            pw_obj = OneExReal(idx, self.epsilon)
+            pw_obj = OneExReal(self.epsilon)
             
         return pw_obj
     
     def get_pw_material_ey(self, idx, coords, underneath=None, cmplx=False):
         if cmplx:
-            pw_obj = OneEyCmplx(idx, self.epsilon)
+            pw_obj = OneEyCmplx(self.epsilon)
         else:
-            pw_obj = OneEyReal(idx, self.epsilon)
+            pw_obj = OneEyReal(self.epsilon)
             
         return pw_obj
     
     def get_pw_material_ez(self, idx, coords, underneath=None, cmplx=False):
         if cmplx:
-            pw_obj = OneEzCmplx(idx, self.epsilon)
+            pw_obj = OneEzCmplx(self.epsilon)
         else:
-            pw_obj = OneEzReal(idx, self.epsilon)
+            pw_obj = OneEzReal(self.epsilon)
             
         return pw_obj
     
     def get_pw_material_hx(self, idx, coords, underneath=None, cmplx=False):
         if cmplx:
-            pw_obj = OneHxCmplx(idx, self.mu)
+            pw_obj = OneHxCmplx(self.mu)
         else:
-            pw_obj = OneHxReal(idx, self.mu)
+            pw_obj = OneHxReal(self.mu)
             
         return pw_obj
     
     def get_pw_material_hy(self, idx, coords, underneath=None, cmplx=False):
         if cmplx:
-            pw_obj = OneHyCmplx(idx, self.mu)
+            pw_obj = OneHyCmplx(self.mu)
         else:
-            pw_obj = OneHyReal(idx, self.mu)
+            pw_obj = OneHyReal(self.mu)
             
         return pw_obj
     
     def get_pw_material_hz(self, idx, coords, underneath=None, cmplx=False):
         if cmplx:
-            pw_obj = OneHzCmplx(idx, self.mu)
+            pw_obj = OneHzCmplx(self.mu)
         else:
-            pw_obj = OneHzReal(idx, self.mu)
+            pw_obj = OneHzReal(self.mu)
             
         return pw_obj
     
@@ -323,49 +323,49 @@ class Dielectric(Material):
 
     def get_pw_material_ex(self, idx, coords, underneath=None, cmplx=False):
         if cmplx:
-            pw_obj = DielectricExCmplx(idx, self.epsilon)
+            pw_obj = DielectricExCmplx(self.epsilon)
         else:
-            pw_obj = DielectricExReal(idx, self.epsilon)
+            pw_obj = DielectricExReal(self.epsilon)
             
         return pw_obj
 
     def get_pw_material_ey(self, idx, coords, underneath=None, cmplx=False):
         if cmplx:
-            pw_obj = DielectricEyCmplx(idx, self.epsilon)
+            pw_obj = DielectricEyCmplx(self.epsilon)
         else:
-            pw_obj = DielectricEyReal(idx, self.epsilon)
+            pw_obj = DielectricEyReal(self.epsilon)
             
         return pw_obj
     
     def get_pw_material_ez(self, idx, coords, underneath=None, cmplx=False):
         if cmplx:
-            pw_obj = DielectricEzCmplx(idx, self.epsilon)
+            pw_obj = DielectricEzCmplx(self.epsilon)
         else:
-            pw_obj = DielectricEzReal(idx, self.epsilon)
+            pw_obj = DielectricEzReal(self.epsilon)
             
         return pw_obj
     
     def get_pw_material_hx(self, idx, coords, underneath=None, cmplx=False):
         if cmplx:
-            pw_obj = DielectricHxCmplx(idx, self.mu)
+            pw_obj = DielectricHxCmplx(self.mu)
         else:
-            pw_obj = DielectricHxReal(idx, self.mu)
+            pw_obj = DielectricHxReal(self.mu)
             
         return pw_obj
     
     def get_pw_material_hy(self, idx, coords, underneath=None, cmplx=False):
         if cmplx:
-            pw_obj = DielectricHyCmplx(idx, self.mu)
+            pw_obj = DielectricHyCmplx(self.mu)
         else:
-            pw_obj = DielectricHyReal(idx, self.mu)
+            pw_obj = DielectricHyReal(self.mu)
             
         return pw_obj
     
     def get_pw_material_hz(self, idx, coords, underneath=None, cmplx=False):
         if cmplx:
-            pw_obj = DielectricHzCmplx(idx, self.mu)
+            pw_obj = DielectricHzCmplx(self.mu)
         else:
-            pw_obj = DielectricHzReal(idx, self.mu)
+            pw_obj = DielectricHzReal(self.mu)
             
         return pw_obj
 
@@ -529,9 +529,9 @@ class UPML(PML):
         c6 = self.c6(coords[0], 0)
         
         if cmplx:
-            pw_obj = UpmlExCmplx(idx, underneath.epsilon, c1, c2, c3, c4, c5, c6)
+            pw_obj = UpmlExCmplx(underneath.epsilon, c1, c2, c3, c4, c5, c6)
         else:
-            pw_obj = UpmlExReal(idx, underneath.epsilon, c1, c2, c3, c4, c5, c6)
+            pw_obj = UpmlExReal(underneath.epsilon, c1, c2, c3, c4, c5, c6)
             
         return pw_obj
     
@@ -544,9 +544,9 @@ class UPML(PML):
         c6 = self.c6(coords[1], 1)
         
         if cmplx:
-            pw_obj = UpmlEyCmplx(idx, underneath.epsilon, c1, c2, c3, c4, c5, c6)
+            pw_obj = UpmlEyCmplx(underneath.epsilon, c1, c2, c3, c4, c5, c6)
         else:
-            pw_obj = UpmlEyReal(idx, underneath.epsilon, c1, c2, c3, c4, c5, c6)
+            pw_obj = UpmlEyReal(underneath.epsilon, c1, c2, c3, c4, c5, c6)
             
         return pw_obj
     
@@ -559,9 +559,9 @@ class UPML(PML):
         c6 = self.c6(coords[2], 2)
         
         if cmplx:
-            pw_obj = UpmlEzCmplx(idx, underneath.epsilon, c1, c2, c3, c4, c5, c6)
+            pw_obj = UpmlEzCmplx(underneath.epsilon, c1, c2, c3, c4, c5, c6)
         else:
-            pw_obj = UpmlEzReal(idx, underneath.epsilon, c1, c2, c3, c4, c5, c6)
+            pw_obj = UpmlEzReal(underneath.epsilon, c1, c2, c3, c4, c5, c6)
             
         return pw_obj
     
@@ -574,9 +574,9 @@ class UPML(PML):
         c6 = self.c6(coords[0], 0)
         
         if cmplx:
-            pw_obj = UpmlHxCmplx(idx, underneath.mu, c1, c2, c3, c4, c5, c6)
+            pw_obj = UpmlHxCmplx(underneath.mu, c1, c2, c3, c4, c5, c6)
         else:
-            pw_obj = UpmlHxReal(idx, underneath.mu, c1, c2, c3, c4, c5, c6)
+            pw_obj = UpmlHxReal(underneath.mu, c1, c2, c3, c4, c5, c6)
             
         return pw_obj
     
@@ -589,9 +589,9 @@ class UPML(PML):
         c6 = self.c6(coords[1], 1)
         
         if cmplx:
-            pw_obj = UpmlHyCmplx(idx, underneath.mu, c1, c2, c3, c4, c5, c6)
+            pw_obj = UpmlHyCmplx(underneath.mu, c1, c2, c3, c4, c5, c6)
         else:
-            pw_obj = UpmlHyReal(idx, underneath.mu, c1, c2, c3, c4, c5, c6)
+            pw_obj = UpmlHyReal(underneath.mu, c1, c2, c3, c4, c5, c6)
             
         return pw_obj
     
@@ -604,9 +604,9 @@ class UPML(PML):
         c6 = self.c6(coords[2], 2)
         
         if cmplx:
-            pw_obj = UpmlHzCmplx(idx, underneath.mu, c1, c2, c3, c4, c5, c6)
+            pw_obj = UpmlHzCmplx(underneath.mu, c1, c2, c3, c4, c5, c6)
         else:
-            pw_obj = UpmlHzReal(idx, underneath.mu, c1, c2, c3, c4, c5, c6)
+            pw_obj = UpmlHzReal(underneath.mu, c1, c2, c3, c4, c5, c6)
             
         return pw_obj
     
@@ -690,9 +690,9 @@ class CPML(PML):
         kappaz = self.kappa(coords[2], 2)
         
         if cmplx:
-            pw_obj = CpmlExCmplx(idx, underneath.epsilon, by, bz, cy, cz, kappay, kappaz)
+            pw_obj = CpmlExCmplx(underneath.epsilon, by, bz, cy, cz, kappay, kappaz)
         else:
-            pw_obj = CpmlExReal(idx, underneath.epsilon, by, bz, cy, cz, kappay, kappaz)
+            pw_obj = CpmlExReal(underneath.epsilon, by, bz, cy, cz, kappay, kappaz)
             
         return pw_obj
     
@@ -705,9 +705,9 @@ class CPML(PML):
         kappax = self.kappa(coords[0], 0)
         
         if cmplx:
-            pw_obj = CpmlEyCmplx(idx, underneath.epsilon, bz, bx, cz, cx, kappaz, kappax)
+            pw_obj = CpmlEyCmplx(underneath.epsilon, bz, bx, cz, cx, kappaz, kappax)
         else:
-            pw_obj = CpmlEyReal(idx, underneath.epsilon, bz, bx, cz, cx, kappaz, kappax)
+            pw_obj = CpmlEyReal(underneath.epsilon, bz, bx, cz, cx, kappaz, kappax)
             
         return pw_obj
     
@@ -720,9 +720,9 @@ class CPML(PML):
         kappay = self.kappa(coords[1], 1)
         
         if cmplx:
-            pw_obj = CpmlEzCmplx(idx, underneath.epsilon, bx, by, cx, cy, kappax, kappay)
+            pw_obj = CpmlEzCmplx(underneath.epsilon, bx, by, cx, cy, kappax, kappay)
         else:
-            pw_obj = CpmlEzReal(idx, underneath.epsilon, bx, by, cx, cy, kappax, kappay)
+            pw_obj = CpmlEzReal(underneath.epsilon, bx, by, cx, cy, kappax, kappay)
             
         return pw_obj
     
@@ -735,9 +735,9 @@ class CPML(PML):
         kappaz = self.kappa(coords[2], 2)
         
         if cmplx:
-            pw_obj = CpmlHxCmplx(idx, underneath.mu, by, bz, cy, cz, kappay, kappaz)
+            pw_obj = CpmlHxCmplx(underneath.mu, by, bz, cy, cz, kappay, kappaz)
         else:
-            pw_obj = CpmlHxReal(idx, underneath.mu, by, bz, cy, cz, kappay, kappaz)
+            pw_obj = CpmlHxReal(underneath.mu, by, bz, cy, cz, kappay, kappaz)
             
         return pw_obj
     
@@ -750,9 +750,9 @@ class CPML(PML):
         kappax = self.kappa(coords[0], 0)
         
         if cmplx:
-            pw_obj = CpmlHyCmplx(idx, underneath.mu, bz, bx, cz, cx, kappaz, kappax)
+            pw_obj = CpmlHyCmplx(underneath.mu, bz, bx, cz, cx, kappaz, kappax)
         else:
-            pw_obj = CpmlHyReal(idx, underneath.mu, bz, bx, cz, cx, kappaz, kappax)
+            pw_obj = CpmlHyReal(underneath.mu, bz, bx, cz, cx, kappaz, kappax)
             
         return pw_obj
     
@@ -765,9 +765,9 @@ class CPML(PML):
         kappay = self.kappa(coords[1], 1)
         
         if cmplx:
-            pw_obj = CpmlHzCmplx(idx, underneath.mu, bx, by, cx, cy, kappax, kappay)
+            pw_obj = CpmlHzCmplx(underneath.mu, bx, by, cx, cy, kappax, kappay)
         else:
-            pw_obj = CpmlHzReal(idx, underneath.mu, bx, by, cx, cy, kappax, kappay)
+            pw_obj = CpmlHzReal(underneath.mu, bx, by, cx, cy, kappax, kappay)
             
         return pw_obj
         
@@ -922,49 +922,49 @@ class DCP(Dielectric):
         
     def get_pw_material_ex(self, idx, coords, underneath=None, cmplx=False):
         if cmplx:
-            pw_obj = DCPExCmplx(idx, self.epsilon, self.a, self.b, self.c)
+            pw_obj = DCPExCmplx(self.epsilon, self.a, self.b, self.c)
         else:
-            pw_obj = DCPExReal(idx, self.epsilon, self.a, self.b, self.c)
+            pw_obj = DCPExReal(self.epsilon, self.a, self.b, self.c)
                 
         return pw_obj
     
     def get_pw_material_ey(self, idx, coords, underneath=None, cmplx=False):
         if cmplx:
-            pw_obj = DCPEyCmplx(idx, self.epsilon, self.a, self.b, self.c)
+            pw_obj = DCPEyCmplx(self.epsilon, self.a, self.b, self.c)
         else:
-            pw_obj = DCPEyReal(idx, self.epsilon, self.a, self.b, self.c)
+            pw_obj = DCPEyReal(self.epsilon, self.a, self.b, self.c)
                 
         return pw_obj
     
     def get_pw_material_ez(self, idx, coords, underneath=None, cmplx=False):
         if cmplx:
-            pw_obj = DCPEzCmplx(idx, self.epsilon, self.a, self.b, self.c)
+            pw_obj = DCPEzCmplx(self.epsilon, self.a, self.b, self.c)
         else:
-            pw_obj = DCPEzReal(idx, self.epsilon, self.a, self.b, self.c)
+            pw_obj = DCPEzReal(self.epsilon, self.a, self.b, self.c)
         
         return pw_obj
     
     def get_pw_material_hx(self, idx, coords, underneath=None, cmplx=False):
         if cmplx:
-            pw_obj = DCPHxCmplx(idx, self.mu)
+            pw_obj = DCPHxCmplx(self.mu)
         else:
-            pw_obj = DCPHxReal(idx, self.mu)
+            pw_obj = DCPHxReal(self.mu)
             
         return pw_obj
     
     def get_pw_material_hy(self, idx, coords, underneath=None, cmplx=False):
         if cmplx:
-            pw_obj = DCPHyCmplx(idx, self.mu)
+            pw_obj = DCPHyCmplx(self.mu)
         else:
-            pw_obj = DCPHyReal(idx, self.mu)
+            pw_obj = DCPHyReal(self.mu)
             
         return pw_obj
     
     def get_pw_material_hz(self, idx, coords, underneath=None, cmplx=False):
         if cmplx:
-            pw_obj = DCPHzCmplx(idx, self.mu)
+            pw_obj = DCPHzCmplx(self.mu)
         else:
-            pw_obj = DCPHzReal(idx, self.mu)
+            pw_obj = DCPHzReal(self.mu)
             
         return pw_obj
     
@@ -1090,49 +1090,49 @@ class DCPPLRC(Dielectric):
         
     def get_pw_material_ex(self, idx, coords, underneath=None, cmplx=False):
         if cmplx:
-            pw_obj = DCPPLRCExCmplx(idx, self.epsilon, self.a, self.b, self.c)
+            pw_obj = DCPPLRCExCmplx(self.epsilon, self.a, self.b, self.c)
         else:
-            pw_obj = DCPPLRCExReal(idx, self.epsilon, self.a, self.b, self.c)
+            pw_obj = DCPPLRCExReal(self.epsilon, self.a, self.b, self.c)
                 
         return pw_obj
     
     def get_pw_material_ey(self, idx, coords, underneath=None, cmplx=False):
         if cmplx:
-            pw_obj = DCPPLRCEyCmplx(idx, self.epsilon, self.a, self.b, self.c)
+            pw_obj = DCPPLRCEyCmplx(self.epsilon, self.a, self.b, self.c)
         else:
-            pw_obj = DCPPLRCEyReal(idx, self.epsilon, self.a, self.b, self.c)
+            pw_obj = DCPPLRCEyReal(self.epsilon, self.a, self.b, self.c)
                 
         return pw_obj
     
     def get_pw_material_ez(self, idx, coords, underneath=None, cmplx=False):
         if cmplx:
-            pw_obj = DCPPLRCEzCmplx(idx, self.epsilon, self.a, self.b, self.c)
+            pw_obj = DCPPLRCEzCmplx(self.epsilon, self.a, self.b, self.c)
         else:
-            pw_obj = DCPPLRCEzReal(idx, self.epsilon, self.a, self.b, self.c)
+            pw_obj = DCPPLRCEzReal(self.epsilon, self.a, self.b, self.c)
         
         return pw_obj
     
     def get_pw_material_hx(self, idx, coords, underneath=None, cmplx=False):
         if cmplx:
-            pw_obj = DCPPLRCHxCmplx(idx, self.mu)
+            pw_obj = DCPPLRCHxCmplx(self.mu)
         else:
-            pw_obj = DCPPLRCHxReal(idx, self.mu)
+            pw_obj = DCPPLRCHxReal(self.mu)
             
         return pw_obj
     
     def get_pw_material_hy(self, idx, coords, underneath=None, cmplx=False):
         if cmplx:
-            pw_obj = DCPPLRCHyCmplx(idx, self.mu)
+            pw_obj = DCPPLRCHyCmplx(self.mu)
         else:
-            pw_obj = DCPPLRCHyReal(idx, self.mu)
+            pw_obj = DCPPLRCHyReal(self.mu)
             
         return pw_obj
     
     def get_pw_material_hz(self, idx, coords, underneath=None, cmplx=False):
         if cmplx:
-            pw_obj = DCPPLRCHzCmplx(idx, self.mu)
+            pw_obj = DCPPLRCHzCmplx(self.mu)
         else:
-            pw_obj = DCPPLRCHzReal(idx, self.mu)
+            pw_obj = DCPPLRCHzReal(self.mu)
             
         return pw_obj
     
@@ -1219,49 +1219,49 @@ class Drude(Dielectric):
         
     def get_pw_material_ex(self, idx, coords, underneath=None, cmplx=False):
         if cmplx:
-            pw_obj = DrudeExCmplx(idx, self.epsilon, self.a, self.c)
+            pw_obj = DrudeExCmplx(self.epsilon, self.a, self.c)
         else:
-            pw_obj = DrudeExReal(idx, self.epsilon, self.a, self.c)
+            pw_obj = DrudeExReal(self.epsilon, self.a, self.c)
             
         return pw_obj
     
     def get_pw_material_ey(self, idx, coords, underneath=None, cmplx=False):
         if cmplx:
-            pw_obj = DrudeEyCmplx(idx, self.epsilon, self.a, self.c)
+            pw_obj = DrudeEyCmplx(self.epsilon, self.a, self.c)
         else:
-            pw_obj = DrudeEyReal(idx, self.epsilon, self.a, self.c)
+            pw_obj = DrudeEyReal(self.epsilon, self.a, self.c)
             
         return pw_obj
     
     def get_pw_material_ez(self, idx, coords, underneath=None, cmplx=False):
         if cmplx:
-            pw_obj = DrudeEzCmplx(idx, self.epsilon, self.a, self.c)
+            pw_obj = DrudeEzCmplx(self.epsilon, self.a, self.c)
         else:
-            pw_obj = DrudeEzReal(idx, self.epsilon, self.a, self.c)
+            pw_obj = DrudeEzReal(self.epsilon, self.a, self.c)
             
         return pw_obj
     
     def get_pw_material_hx(self, idx, coords, underneath=None, cmplx=False):
         if cmplx:
-            pw_obj = DrudeHxCmplx(idx, self.mu)
+            pw_obj = DrudeHxCmplx(self.mu)
         else:
-            pw_obj = DrudeHxReal(idx, self.mu)
+            pw_obj = DrudeHxReal(self.mu)
             
         return pw_obj
     
     def get_pw_material_hy(self, idx, coords, underneath=None, cmplx=False):
         if cmplx:
-            pw_obj = DrudeHyCmplx(idx, self.mu)
+            pw_obj = DrudeHyCmplx(self.mu)
         else:
-            pw_obj = DrudeHyReal(idx, self.mu)
+            pw_obj = DrudeHyReal(self.mu)
             
         return pw_obj
     
     def get_pw_material_hz(self, idx, coords, underneath=None, cmplx=False):
         if cmplx:
-            pw_obj = DrudeHzCmplx(idx, self.mu)
+            pw_obj = DrudeHzCmplx(self.mu)
         else:
-            pw_obj = DrudeHzReal(idx, self.mu)
+            pw_obj = DrudeHzReal(self.mu)
             
         return pw_obj
         
@@ -1319,49 +1319,49 @@ class Lorentz(Dielectric):
         
     def get_pw_material_ex(self, idx, coords, underneath=None, cmplx=False):
         if cmplx:
-            pw_obj = LorentzExCmplx(idx, self.epsilon, self.a, self.c)
+            pw_obj = LorentzExCmplx(self.epsilon, self.a, self.c)
         else:
-            pw_obj = LorentzExReal(idx, self.epsilon, self.a, self.c)
+            pw_obj = LorentzExReal(self.epsilon, self.a, self.c)
             
         return pw_obj
     
     def get_pw_material_ey(self, idx, coords, underneath=None, cmplx=False):
         if cmplx:
-            pw_obj = LorentzEyCmplx(idx, self.epsilon, self.a, self.c)
+            pw_obj = LorentzEyCmplx(self.epsilon, self.a, self.c)
         else:
-            pw_obj = LorentzEyReal(idx, self.epsilon, self.a, self.c)
+            pw_obj = LorentzEyReal(self.epsilon, self.a, self.c)
             
         return pw_obj
     
     def get_pw_material_ez(self, idx, coords, underneath=None, cmplx=False):
         if cmplx:
-            pw_obj = LorentzEzCmplx(idx, self.epsilon, self.a, self.c)
+            pw_obj = LorentzEzCmplx(self.epsilon, self.a, self.c)
         else:
-            pw_obj = LorentzEzReal(idx, self.epsilon, self.a, self.c)
+            pw_obj = LorentzEzReal(self.epsilon, self.a, self.c)
             
         return pw_obj
     
     def get_pw_material_hx(self, idx, coords, underneath=None, cmplx=False):
         if cmplx:
-            pw_obj = LorentzHxCmplx(idx, self.mu)
+            pw_obj = LorentzHxCmplx(self.mu)
         else:
-            pw_obj = LorentzHxReal(idx, self.mu)
+            pw_obj = LorentzHxReal(self.mu)
             
         return pw_obj
     
     def get_pw_material_hy(self, idx, coords, underneath=None, cmplx=False):
         if cmplx:
-            pw_obj = LorentzHyCmplx(idx, self.mu)
+            pw_obj = LorentzHyCmplx(self.mu)
         else:
-            pw_obj = LorentzHyReal(idx, self.mu)
+            pw_obj = LorentzHyReal(self.mu)
             
         return pw_obj
     
     def get_pw_material_hz(self, idx, coords, underneath=None, cmplx=False):
         if cmplx:
-            pw_obj = LorentzHzCmplx(idx, self.mu)
+            pw_obj = LorentzHzCmplx(self.mu)
         else:
-            pw_obj = LorentzHzReal(idx, self.mu)
+            pw_obj = LorentzHzReal(self.mu)
             
         return pw_obj
     

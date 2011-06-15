@@ -39,9 +39,9 @@ class Probe(object):
     def __del__(self):
         self.f.close()
         
-    def update(self, field1, field2, field3, d1, d2, dt, n):
-        self.pw_mat.update(field1, field2, field3, d1, d2, dt, n)
-        idx = self.pw_mat.i, self.pw_mat.j, self.pw_mat.k
+    def update(self, field1, field2, field3, d1, d2, dt, n, i, j, k):
+        idx = i, j, k
+        self.pw_mat.update(field1, field2, field3, d1, d2, dt, n, *idx)
         self.f.write(str(n) + ' ' + str(field1[idx]) + '\n')
         
         
