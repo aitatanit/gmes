@@ -76,14 +76,6 @@ if _newclass:prop = property(eval("_"+__name__.split('.')[-1]).##py##_##get, eva
 %}
 %enddef    /* property() macro */
 
-%property(PwMaterialReal, gmes::PwMaterial<double>, i, get_i, set_i)
-%property(PwMaterialReal, gmes::PwMaterial<double>, j, get_j, set_j)
-%property(PwMaterialReal, gmes::PwMaterial<double>, k, get_k, set_k)
-
-%property(PwMaterialCmplx, gmes::PwMaterial<std::complex<double> >, i, get_i, set_i)
-%property(PwMaterialCmplx, gmes::PwMaterial<std::complex<double> >, j, get_j, set_j)
-%property(PwMaterialCmplx, gmes::PwMaterial<std::complex<double> >, k, get_k, set_k)
-
 %property(MaterialElectricReal, gmes::MaterialElectric<double>, epsilon, get_epsilon, set_epsilon)
 %property(MaterialMagneticReal, gmes::MaterialMagnetic<double>, mu, get_mu, set_mu)
 
