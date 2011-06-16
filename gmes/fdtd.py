@@ -36,15 +36,21 @@ class TimeStep(object):
     """Store the current time-step and time.
     
     Attributes:
+        dt -- time-step size
         n -- current time-step
         t -- current time
         
     """
-    def __init__(self, n=0.0, t=0.0):
-        self.n = n
-        self.t = t
+    def __init__(self, dt, n=0.0, t=0.0):
+        self.n = float(n)
+        self.t = float(t)
+        self.dt = float(dt)
         
-        
+    def half_step_up(self):
+        self.n += 0.5
+        self.t = self.n * self.dt
+
+
 class FDTD(object):
     """three dimensional finite-difference time-domain class
     
@@ -63,7 +69,7 @@ class FDTD(object):
         src_list -- a list of source instances.
         courant_ratio -- the ratio of dt to Courant stability bound
                          default: 0.99
-        dt -- the time differential
+        dt -- time-step size
               If None is given, dt is calculated using space differentials 
               and courant_ratio.
               default: None
@@ -101,43 +107,43 @@ class FDTD(object):
 
         if dt is None:
             self.courant_ratio = float(courant_ratio)
-            self.dt = self.courant_ratio * dt_limit
+            time_step_size = self.courant_ratio * dt_limit
         else:
-            self.dt = float(dt)
-            self.courant_ratio = self.dt / dt_limit
+            time_step_size = float(dt)
+            self.courant_ratio = tim_step_size / dt_limit
 
-        # Some codes in geometry.py and source.py use space.dt.
-        self.space.dt = self.dt
+        # Some codes in geometry.py and source.py use dt.
+        self.space.dt = time_step_size
 
-        self.time_step = TimeStep()
+        self.time_step = TimeStep(time_step_size)
         
         if verbose:
             self.space.display_info()
 
         if verbose:
-            print 'dt:', self.dt
+            print 'dt:', time_step_size
             print 'courant ratio:', self.courant_ratio
             
         if verbose:
-            print "Initializing the geometry list...",
+            print 'Initializing the geometry list...',
             
         self.geom_list = deepcopy(geom_list)
         for geom_obj in self.geom_list:
             geom_obj.init(self.space)
             
         if verbose:
-            print "done."
+            print 'done.'
             
         if verbose:
-            print "Generating geometric binary search tree...",
+            print 'Generating geometric binary search tree...',
             
         self.geom_tree = GeomBoxTree(self.geom_list)
 
         if verbose:
-            print "done."
+            print 'done.'
             
         if verbose:
-            print "The geometric tree follows..."
+            print 'The geometric tree follows...'
             self.geom_tree.display_info()
                 
         if bloch is None:
@@ -156,32 +162,32 @@ class FDTD(object):
             eps = default_medium.material.epsilon
             mu = default_medium.material.mu
             c = 1 / sqrt(eps * mu)
-            S = c * self.dt / ds
+            S = c * time_step_size / ds
             ref_n = sqrt(eps)
             self.bloch = np.array(bloch, float)
             self.bloch = 2 * ref_n / ds \
                 * np.arcsin(np.sin(self.bloch * S * ds / 2) / S)
             
         if verbose:
-            print "Bloch wave vector is", self.bloch
+            print 'Bloch wave vector is', self.bloch
             
         if verbose:
-            print "Initializing source...",
+            print 'Initializing source...',
             
         self.src_list = deepcopy(src_list)
         for so in self.src_list:
             so.init(self.geom_tree, self.space, self.cmplx)
             
         if verbose:
-            print "done."
+            print 'done.'
             
         if verbose:
-            print "The source list information follows..."
+            print 'The source list information follows...'
             for so in self.src_list:
                 so.display_info()
                 
         if verbose:
-            print "Allocating memory for the electric & magnetic fields...",
+            print 'Allocating memory for the electric & magnetic fields...',
             
         # storage for the electric & magnetic field 
         self.ex = space.get_ex_storage(self.cmplx)
@@ -192,18 +198,18 @@ class FDTD(object):
         self.hz = space.get_hz_storage(self.cmplx)
         
         if verbose:
-            print "done."
+            print 'done.'
             
         if verbose:
-            print "ex field:", self.ex.dtype, self.ex.shape 
-            print "ey field:", self.ey.dtype, self.ey.shape 
-            print "ez field:", self.ez.dtype, self.ez.shape
-            print "hx field:", self.hx.dtype, self.hx.shape
-            print "hy field:", self.hy.dtype, self.hy.shape
-            print "hz field:", self.hz.dtype, self.hz.shape
+            print 'ex field:', self.ex.dtype, self.ex.shape 
+            print 'ey field:', self.ey.dtype, self.ey.shape 
+            print 'ez field:', self.ez.dtype, self.ez.shape
+            print 'hx field:', self.hx.dtype, self.hx.shape
+            print 'hy field:', self.hy.dtype, self.hy.shape
+            print 'hz field:', self.hz.dtype, self.hz.shape
         
         if verbose:
-            print "Mapping the pointwise material...",
+            print 'Mapping the pointwise material...',
             
         self.material_ex = self.material_ey = self.material_ez = None
         self.material_hx = self.material_hy = self.material_hz = None
@@ -213,44 +219,44 @@ class FDTD(object):
         self.init_material()
 
         if verbose:
-            print "done."
+            print 'done.'
 
         # medium information for electric & magnetic fields
         if verbose:
-            print "ex material:",
+            print 'ex material:',
             if self.material_ex is None: print None
             else: print self.material_ex.dtype, self.material_ex.shape
                 
-            print "ey material:", 
+            print 'ey material:', 
             if self.material_ey is None: print None
             else: print self.material_ey.dtype, self.material_ey.shape
                 
-            print "ez material:", 
+            print 'ez material:', 
             if self.material_ez is None: print None
             else: print self.material_ez.dtype, self.material_ez.shape
             
-            print "hx material:", 
+            print 'hx material:', 
             if self.material_hx is None: print None
             else: print self.material_hx.dtype, self.material_hx.shape
                 
-            print "hy material:", 
+            print 'hy material:', 
             if self.material_hy is None: print None
             else: print self.material_hy.dtype, self.material_hy.shape
                 
-            print "hz material:", 
+            print 'hz material:', 
             if self.material_hz is None: print None
             else: print self.material_hz.dtype, self.material_hz.shape
 		
         if verbose:
-            print "done."
+            print 'done.'
             
         if verbose:
-            print "Mapping the pointwise source...",
+            print 'Mapping the pointwise source...',
             
         self.init_source()
 
         if verbose:
-            print "done."
+            print 'done.'
     
     def init_field_components(self):
         self.e_field_components = (const.Ex, const.Ey, const.Ez)
@@ -280,7 +286,7 @@ class FDTD(object):
                                  geom_list=self.geom_list, 
                                  src_list=self.src_list, 
                                  courant_ratio=self.courant_ratio, 
-                                 dt=self.dt, 
+                                 dt=self.time_step.dt, 
                                  wavevector=self.wavevector, 
                                  verbose=self.verbose)
 
@@ -480,7 +486,8 @@ class FDTD(object):
                                               self.material_ex[idx])
                 loc = self.space.ex_index_to_space(*idx)
                 self.material_ex[idx].f.write('# location=' + str(loc) + '\n')
-                self.material_ex[idx].f.write('# dt=' + str(self.dt) + '\n')
+                self.material_ex[idx].f.write('# dt=' + str(self.time_step.dt)
+                                              + '\n')
         
         if self.material_ey is not None:
             idx = self.space.space_to_ey_index(x, y, z)
@@ -489,7 +496,8 @@ class FDTD(object):
                                               self.material_ey[idx])
                 loc = self.space.ey_index_to_space(*idx)
                 self.material_ey[idx].f.write('# location=' + str(loc) + '\n')
-                self.material_ey[idx].f.write('# dt=' + str(self.dt) + '\n')
+                self.material_ey[idx].f.write('# dt=' + str(self.time_step.dt)
+                                              + '\n')
         
         if self.material_ez is not None:
             idx = self.space.space_to_ez_index(x, y, z)
@@ -498,7 +506,8 @@ class FDTD(object):
                                               self.material_ez[idx])
                 loc = self.space.ez_index_to_space(*idx)
                 self.material_ez[idx].f.write('# location=' + str(loc) + '\n')
-                self.material_ez[idx].f.write('# dt=' + str(self.dt) + '\n')
+                self.material_ez[idx].f.write('# dt=' + str(self.time_step.dt)
+                                              + '\n')
         
         if self.material_hx is not None:
             idx = self.space.space_to_hx_index(x, y, z)
@@ -507,7 +516,8 @@ class FDTD(object):
                                               self.material_hx[idx])
                 loc = self.space.hx_index_to_space(*idx)
                 self.material_hx[idx].f.write('# location=' + str(loc) + '\n')
-                self.material_hx[idx].f.write('# dt=' + str(self.dt) + '\n')
+                self.material_hx[idx].f.write('# dt=' + str(self.time_step.dt)
+                                              + '\n')
         
         if self.material_hy is not None:
             idx = self.space.space_to_hy_index(x, y, z)
@@ -516,7 +526,8 @@ class FDTD(object):
                                               self.material_hy[idx])
                 loc = self.space.hy_index_to_space(*idx)
                 self.material_hy[idx].f.write('# location=' + str(loc) + '\n')
-                self.material_hy[idx].f.write('# dt=' + str(self.dt) + '\n')
+                self.material_hy[idx].f.write('# dt=' + str(self.time_step.dt)
+                                              + '\n')
         
         if self.material_hz is not None:
             idx = self.space.space_to_hz_index(x, y, z)
@@ -525,13 +536,14 @@ class FDTD(object):
                                               self.material_hz[idx])
                 loc = self.space.hz_index_to_space(*idx)
                 self.material_hz[idx].f.write('# location=' + str(loc) + '\n')
-                self.material_hz[idx].f.write('# dt=' + str(self.dt) + '\n')
+                self.material_hz[idx].f.write('# dt=' + str(self.time_step.dt)
+                                              + '\n')
             
     def update_ex(self):
         self.lock_ex.acquire()
         for idx in ndindex(self.material_ex.shape):
             self.material_ex[idx].update(self.ex, self.hz, self.hy, 
-                                         self.dy, self.dz, self.dt, 
+                                         self.dy, self.dz, self.time_step.dt, 
                                          self.time_step.n, *idx)
         self.lock_ex.release()
         
@@ -539,7 +551,7 @@ class FDTD(object):
         self.lock_ey.acquire()
         for idx in ndindex(self.material_ey.shape):
             self.material_ey[idx].update(self.ey, self.hx, self.hz, 
-                                         self.dz, self.dx, self.dt, 
+                                         self.dz, self.dx, self.time_step.dt, 
                                          self.time_step.n, *idx)
         self.lock_ey.release()
 		
@@ -547,7 +559,7 @@ class FDTD(object):
         self.lock_ez.acquire()
         for idx in ndindex(self.material_ez.shape):
             self.material_ez[idx].update(self.ez, self.hy, self.hx,
-                                         self.dx, self.dy, self.dt,
+                                         self.dx, self.dy, self.time_step.dt,
                                          self.time_step.n, *idx)
         self.lock_ez.release()
 		
@@ -555,7 +567,7 @@ class FDTD(object):
         self.lock_hx.acquire()
         for idx in ndindex(self.material_hx.shape):
             self.material_hx[idx].update(self.hx, self.ez, self.ey, 
-                                         self.dy, self.dz, self.dt, 
+                                         self.dy, self.dz, self.time_step.dt, 
                                          self.time_step.n, *idx)
         self.lock_hx.release()
 		
@@ -563,7 +575,7 @@ class FDTD(object):
         self.lock_hy.acquire()
         for idx in ndindex(self.material_hy.shape):
             self.material_hy[idx].update(self.hy, self.ex, self.ez,
-                                         self.dz, self.dx, self.dt,
+                                         self.dz, self.dx, self.time_step.dt,
                                          self.time_step.n, *idx)
         self.lock_hy.release()
 		
@@ -571,7 +583,7 @@ class FDTD(object):
         self.lock_hz.acquire()
         for idx in ndindex(self.material_hz.shape):
             self.material_hz[idx].update(self.hz, self.ey, self.ex,
-                                         self.dx, self.dy, self.dt,
+                                         self.dx, self.dy, self.time_step.dt,
                                          self.time_step.n, *idx)
         self.lock_hz.release()
 
@@ -841,26 +853,25 @@ class FDTD(object):
         
     def _init_threads(self):
         self._h_chatter_threads = (Thread(target=self.talk_with_hx_neighbors),
-                                  Thread(target=self.talk_with_hy_neighbors), 
-                                  Thread(target=self.talk_with_hz_neighbors))
+                                   Thread(target=self.talk_with_hy_neighbors), 
+                                   Thread(target=self.talk_with_hz_neighbors))
 
         self._e_chatter_threads = (Thread(target=self.talk_with_ex_neighbors),
-                                  Thread(target=self.talk_with_ey_neighbors), 
-                                  Thread(target=self.talk_with_ez_neighbors))
+                                   Thread(target=self.talk_with_ey_neighbors), 
+                                   Thread(target=self.talk_with_ez_neighbors))
 
         self._h_worker_threads = (Thread(target=self.update_hx),
-                                 Thread(target=self.update_hy),
-                                 Thread(target=self.update_hz))
+                                  Thread(target=self.update_hy),
+                                  Thread(target=self.update_hz))
 
         self._e_worker_threads = (Thread(target=self.update_ex),
-                                 Thread(target=self.update_ey),
-                                 Thread(target=self.update_ez))
+                                  Thread(target=self.update_ey),
+                                  Thread(target=self.update_ez))
 
     def step(self):
         self._init_threads()
 
-        self.time_step.n += .5
-        self.time_step.t = self.time_step.n * self.dt
+        self.time_step.half_step_up()
         
         for chatter in self._h_chatter_threads:
             chatter.start()
@@ -874,8 +885,7 @@ class FDTD(object):
         for worker in self._e_worker_threads:
             worker.join()
 
-        self.time_step.n += .5
-        self.time_step.t = self.time_step.n * self.dt
+        self.time_step.half_step_up()
 
         self._step_aux_fdtd()
         
@@ -1327,12 +1337,12 @@ class TExFDTD(FDTD):
         self._h_chatter_threads = (Thread(target=self.talk_with_hx_neighbors),)
 
         self._e_chatter_threads = (Thread(target=self.talk_with_ey_neighbors), 
-                                  Thread(target=self.talk_with_ez_neighbors))
+                                   Thread(target=self.talk_with_ez_neighbors))
 
         self._h_worker_threads = (Thread(target=self.update_hx),)
 
         self._e_worker_threads = (Thread(target=self.update_ey),
-                                 Thread(target=self.update_ez))
+                                  Thread(target=self.update_ez))
 
         
 class TEyFDTD(FDTD):
@@ -1357,12 +1367,12 @@ class TEyFDTD(FDTD):
         self._h_chatter_threads = (Thread(target=self.talk_with_hy_neighbors),)
 
         self._e_chatter_threads = (Thread(target=self.talk_with_ex_neighbors),
-                                  Thread(target=self.talk_with_ez_neighbors))
+                                   Thread(target=self.talk_with_ez_neighbors))
 
         self._h_worker_threads = (Thread(target=self.update_hy),)
 
         self._e_worker_threads = (Thread(target=self.update_ex),
-                                 Thread(target=self.update_ez))
+                                  Thread(target=self.update_ez))
 
 
 class TEzFDTD(FDTD):
@@ -1387,12 +1397,12 @@ class TEzFDTD(FDTD):
         self._h_chatter_threads = (Thread(target=self.talk_with_hz_neighbors),)
 
         self._e_chatter_threads = (Thread(target=self.talk_with_ex_neighbors),
-                                  Thread(target=self.talk_with_ey_neighbors))
+                                   Thread(target=self.talk_with_ey_neighbors))
 
         self._h_worker_threads = (Thread(target=self.update_hz),)
 
         self._e_worker_threads = (Thread(target=self.update_ex),
-                                 Thread(target=self.update_ey))
+                                  Thread(target=self.update_ey))
 
         
 class TMxFDTD(FDTD):
@@ -1415,12 +1425,12 @@ class TMxFDTD(FDTD):
     
     def _init_threads(self):
         self._h_chatter_threads = (Thread(target=self.talk_with_hy_neighbors), 
-                                  Thread(target=self.talk_with_hz_neighbors))
+                                   Thread(target=self.talk_with_hz_neighbors))
 
         self._e_chatter_threads = (Thread(target=self.talk_with_ex_neighbors),)
 
         self._h_worker_threads = (Thread(target=self.update_hy),
-                                 Thread(target=self.update_hz))
+                                  Thread(target=self.update_hz))
 
         self._e_worker_threads = (Thread(target=self.update_ex),)
 
@@ -1445,12 +1455,12 @@ class TMyFDTD(FDTD):
     
     def _init_threads(self):
         self._h_chatter_threads = (Thread(target=self.talk_with_hx_neighbors),
-                                  Thread(target=self.talk_with_hz_neighbors))
+                                   Thread(target=self.talk_with_hz_neighbors))
 
         self._e_chatter_threads = (Thread(target=self.talk_with_ey_neighbors),)
 
         self._h_worker_threads = (Thread(target=self.update_hx),
-                                 Thread(target=self.update_hz))
+                                  Thread(target=self.update_hz))
 
         self._e_worker_threads = (Thread(target=self.update_ey),)
 
@@ -1475,12 +1485,12 @@ class TMzFDTD(FDTD):
     
     def _init_threads(self):
         self._h_chatter_threads = (Thread(target=self.talk_with_hx_neighbors),
-                                  Thread(target=self.talk_with_hy_neighbors))
+                                   Thread(target=self.talk_with_hy_neighbors))
 
         self._e_chatter_threads = (Thread(target=self.talk_with_ez_neighbors),)
 
         self._h_worker_threads = (Thread(target=self.update_hx),
-                                 Thread(target=self.update_hy))
+                                  Thread(target=self.update_hy))
 
         self._e_worker_threads = (Thread(target=self.update_ez),)
 

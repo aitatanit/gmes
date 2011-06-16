@@ -25,7 +25,7 @@ start = time()
 SIZE = (10,10,0)
 
 space = geometry.Cartesian(size=SIZE, resolution=20, parallel=True)
-geom_list = (geometry.DefaultMaterial(material=material.Dielectric()), 
+geom_list = (geometry.DefaultMedium(material=material.Dielectric()), 
              geometry.Boundary(material=material.UPML(), thickness=0.5, size=SIZE))
 src_list = (source.Dipole(src_time=source.Continuous(freq=0.8), 
                           component=constants.Ez, pos=(0,0,0)),)
@@ -39,10 +39,5 @@ my_fdtd.show_hx(constants.Z, 0)
 my_fdtd.show_hy(constants.Z, 0)
 
 start = time()
-
-while my_fdtd.time_step.n != 100:
-    my_fdtd.step()
-    if space.my_id == 0:
-        print int(my_fdtd.time_step.n)
-
+my_fdtd.step_utill_n(100)
 print time() - start
