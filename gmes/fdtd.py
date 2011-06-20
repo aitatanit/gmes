@@ -10,18 +10,12 @@ try:
 except ImportError:
     stderr.write('No module named psyco. Execution speed might be slow.\n')
 
-try:
-    from threading import Thread, Lock
-except ImportError:
-    stderr.write('No module named threading. Using dummy_threading instead.\n')
-    from dummy_threading import Thread, Lock
-
 from copy import deepcopy
 from math import sqrt
 from cmath import exp
 
 import numpy as np
-from numpy import ndindex, arange
+from numpy import ndindex, arange, inf, array
 
 # GMES modules
 from geometry import GeomBoxTree, in_range, DefaultMedium
@@ -36,17 +30,28 @@ class TimeStep(object):
     """Store the current time-step and time.
     
     Attributes:
-        dt -- time-step size
-        n -- current time-step
-        t -- current time
+    dt -- time-step size
+    n -- current time-step
+    t -- current time
         
     """
     def __init__(self, dt, n=0.0, t=0.0):
+        """Constructor.
+        
+        Keyword arguments:
+        dt -- time-step size (no default)
+        n -- initial value of the time-step (default 0.0)
+        t -- initial value of the time (default 0.0)
+
+        """
         self.n = float(n)
         self.t = float(t)
         self.dt = float(dt)
         
     def half_step_up(self):
+        """Increase n and t for the electric or magnetic field update.
+
+        """
         self.n += 0.5
         self.t = self.n * self.dt
 
@@ -55,62 +60,76 @@ class FDTD(object):
     """three dimensional finite-difference time-domain class
     
     Attributes:
-        space -- geometry.Cartesian instance
-        cmplx -- Boolean of whether field is complex. Determined by the 
-            space.period.
-        
+    space -- geometry.Cartesian instance
+    cmplx -- Boolean of whether field is complex. Determined by the 
+        space.period.
+    dx, dy, dz -- space differentials
+    dt -- time-step size
+    courant_ratio -- the ratio of dt to Courant stability bound
+    bloch -- Bloch wave vector
+    e_field_component
+    h_field_component -- component list of the
+    time_step -- an instance of the TimeStep class
+    ex, ey, ez -- arrays for the electric fields
+    hx, hy, hz -- arrays for the magnetic fields
+    worker -- list of the update methods
+    chatter -- list of the syncronizaion methods
+
     """
     def __init__(self, space=None, geom_list=None, src_list=None,
                  courant_ratio=.99, dt=None, bloch=None, verbose=True):
-        """
-        Argumetns:
-        space -- an instance which represents the coordinate system.
-        geom_list -- a list which represents the geometric structure.
-        src_list -- a list of source instances.
-        courant_ratio -- the ratio of dt to Courant stability bound
-                         default: 0.99
-        dt -- time-step size
-              If None is given, dt is calculated using space differentials 
-              and courant_ratio.
-              default: None
-        bloch -- Bloch wave vector.
-        verbose --
+        """Constructor.
         
-        Attributes:
-        lock_ex, lock_ey, lock_ez
-        lock_hx, lock_hy, lock_hz
-        space
-        fig_id
-        dx, dy, dz
-        dt
-        courant_ratio: the ratio of dt to Courant stability bound
-        bloch: Bloch wave vector
+        Keyword arguments:
+        space -- an instance which represents the coordinate system 
+            (default None)
+        geom_list -- a list which represents the geometric structure
+            (default None)
+        src_list -- a list of source instances
+            (default None)
+        courant_ratio -- the ratio of dt to Courant stability bound 
+            (default 0.99)
+        dt -- time-step size. If None is given, dt is calculated using space 
+            differentials and courant_ratio. (default None)
+        bloch -- Bloch wave vector (default None)
+        verbose -- whether it prints the details (default True)
 
         """
-        self.verbose = verbose
+        self._init_field_compnt()
+        
+        self._updater = {const.Ex: self.update_ex, const.Ey: self.update_ey,
+                         const.Ez: self.update_ez, const.Hx: self.update_hx,
+                         const.Hy: self.update_hy, const.Hz: self.update_hz}
+        
+        self._chatter = {const.Ex: self.talk_with_ex_neighbors,
+                         const.Ey: self.talk_with_ey_neighbors,
+                         const.Ez: self.talk_with_ez_neighbors,
+                         const.Hx: self.talk_with_hx_neighbors,
+                         const.Hy: self.talk_with_hy_neighbors,
+                         const.Hz: self.talk_with_hz_neighbors}
+        
+        self.verbose = bool(verbose)
 
-        self.lock_ex, self.lock_ey = Lock(), Lock()
-        self.lock_ez, self.lock_hx = Lock(), Lock()
-        self.lock_hy, self.lock_hz = Lock(), Lock()
-       	
         self.space = space
                 
-        self.fig_id = self.space.my_id
+        self._fig_id = int(self.space.my_id)
             
-        self.dx, self.dy, self.dz = space.dx, space.dy, space.dz
+        self.dx = float(space.dx)
+        self.dy = float(space.dy)
+        self.dz = float(space.dz)
 
         default_medium = (i for i in geom_list 
                             if isinstance(i, DefaultMedium)).next()
         eps = default_medium.material.epsilon
         mu = default_medium.material.mu
-        dt_limit = self.dt_limit(space, eps, mu)
+        dt_limit = self._dt_limit(space, eps, mu)
 
         if dt is None:
             self.courant_ratio = float(courant_ratio)
             time_step_size = self.courant_ratio * dt_limit
         else:
             time_step_size = float(dt)
-            self.courant_ratio = tim_step_size / dt_limit
+            self.courant_ratio = time_step_size / dt_limit
 
         # Some codes in geometry.py and source.py use dt.
         self.space.dt = time_step_size
@@ -213,11 +232,9 @@ class FDTD(object):
             
         self.material_ex = self.material_ey = self.material_ez = None
         self.material_hx = self.material_hy = self.material_hz = None
-        
-        self.init_field_components()
 
         self.init_material()
-
+        
         if verbose:
             print 'done.'
 
@@ -258,20 +275,41 @@ class FDTD(object):
         if verbose:
             print 'done.'
     
-    def init_field_components(self):
-        self.e_field_components = (const.Ex, const.Ey, const.Ez)
-        self.h_field_components = (const.Hx, const.Hy, const.Hz)
+    def _init_field_compnt(self):
+        """Set the significant electromagnetic field components.
+        
+        """
+        self.e_field_compnt = (const.Ex, const.Ey, const.Ez)
+        self.h_field_compnt = (const.Hx, const.Hy, const.Hz)
 
-    def dt_limit(self, space, epsilon, mu):
-        """Courant stability bound of a time step.
+    def _dt_limit(self, space, epsilon, mu):
+        """Courant stability bound of a time-step.
 
         Equation 4.54b at p.131 of A. Taflove and S. C. Hagness, Computational
         Electrodynamics: The Finite-Difference Time-Domain Method, Third 
         Edition, 3rd ed. Artech House Publishers, 2005.
 
         """
+        # Pick out meaningful space-differential(s).
+        # 0 for dx, 1 for dy, and 2 for dz.
+        ds = {const.Ex: (1, 2), const.Ey: (2, 0), const.Ez: (0, 1),
+              const.Hx: (1, 2), const.Hy: (2, 0), const.Hz: (0, 1)}
+        
+        e_ds = set()
+        for i in self.e_field_compnt:
+            e_ds.update(ds[i])
+        h_ds = set()
+        for i in self.h_field_compnt:
+            h_ds.update(ds[i])
+
+        non_inf = e_ds.intersection(h_ds)
+
+        dr = array((space.dx, space.dy, space.dz), float)
+        for i in range(3):
+            if i not in non_inf: dr[i] = inf
+        
         c = 1 / sqrt(epsilon * mu)
-        return 1 / c / sqrt(space.dx**-2 + space.dy**-2 + space.dz**-2)
+        return 1 / c / sqrt(sum(dr**-2))
         
     def _step_aux_fdtd(self):
         for src in self.src_list:
@@ -307,19 +345,15 @@ class FDTD(object):
         at self.material_ex.
         
         """
-        self.lock_ex.acquire()
-        
         self.material_ex = self.space.get_material_ex_storage()
         shape = self.ex.shape
         for idx in ndindex(shape):
-            coords = self.space.ex_index_to_space(*idx)
-            mat_obj, underneath = self.geom_tree.material_of_point(coords)
+            spc = self.space.ex_index_to_space(*idx)
+            mat_obj, underneath = self.geom_tree.material_of_point(spc)
             if idx[1] == shape[1] - 1 or idx[2] == shape[2] - 1:
                 mat_obj = Dummy(mat_obj.epsilon, mat_obj.mu)
             self.material_ex[idx] = \
-            mat_obj.get_pw_material_ex(idx, coords, underneath, self.cmplx)
-        
-        self.lock_ex.release()
+            mat_obj.get_pw_material_ex(idx, spc, underneath, self.cmplx)
         
     def init_material_ey(self):
         """Set up the update mechanism for Ey field.
@@ -328,20 +362,16 @@ class FDTD(object):
         at self.material_ey.
         
         """
-        self.lock_ey.acquire()
-        
         self.material_ey = self.space.get_material_ey_storage()
         shape = self.ey.shape
         for idx in ndindex(shape):
-            coords = self.space.ey_index_to_space(*idx)
-            mat_obj, underneath = self.geom_tree.material_of_point(coords)
+            spc = self.space.ey_index_to_space(*idx)
+            mat_obj, underneath = self.geom_tree.material_of_point(spc)
             if idx[2] == shape[2] - 1 or idx[0] == shape[0] - 1:
                 mat_obj = Dummy(mat_obj.epsilon, mat_obj.mu)
             self.material_ey[idx] = \
-            mat_obj.get_pw_material_ey(idx, coords, underneath, self.cmplx)
+            mat_obj.get_pw_material_ey(idx, spc, underneath, self.cmplx)
             
-        self.lock_ey.release()
-        
     def init_material_ez(self):
         """Set up the update mechanism for Ez field.
         
@@ -349,20 +379,16 @@ class FDTD(object):
         at self.material_ez.
         
         """
-        self.lock_ez.acquire()
-        
         self.material_ez = self.space.get_material_ez_storage()
         shape = self.ez.shape
         for idx in ndindex(shape):
-            coords = self.space.ez_index_to_space(*idx)
-            mat_obj, underneath = self.geom_tree.material_of_point(coords)
+            spc = self.space.ez_index_to_space(*idx)
+            mat_obj, underneath = self.geom_tree.material_of_point(spc)
             if idx[0] == shape[0] - 1 or idx[1] == shape[1] - 1:
                 mat_obj = Dummy(mat_obj.epsilon, mat_obj.mu)
             self.material_ez[idx] = \
-            mat_obj.get_pw_material_ez(idx, coords, underneath, self.cmplx)
+            mat_obj.get_pw_material_ez(idx, spc, underneath, self.cmplx)
             
-        self.lock_ez.release()
-        
     def init_material_hx(self):
         """Set up the update mechanism for Hx field.
         
@@ -370,20 +396,16 @@ class FDTD(object):
         at self.material_hx.
         
         """
-        self.lock_hx.acquire()
-        
         self.material_hx = self.space.get_material_hx_storage()
         shape = self.hx.shape
         for idx in ndindex(shape):
-            coords = self.space.hx_index_to_space(*idx)
-            mat_obj, underneath = self.geom_tree.material_of_point(coords)
+            spc = self.space.hx_index_to_space(*idx)
+            mat_obj, underneath = self.geom_tree.material_of_point(spc)
             if idx[1] == 0 or idx[2] == 0:
                 mat_obj = Dummy(mat_obj.epsilon, mat_obj.mu)
             self.material_hx[idx] = \
-            mat_obj.get_pw_material_hx(idx, coords, underneath, self.cmplx)
+            mat_obj.get_pw_material_hx(idx, spc, underneath, self.cmplx)
                 
-        self.lock_hx.release()
-        
     def init_material_hy(self):
         """Set up the update mechanism for Hy field.
         
@@ -391,20 +413,16 @@ class FDTD(object):
         at self.material_hy.
         
         """
-        self.lock_hy.acquire()
-        
         self.material_hy = self.space.get_material_hy_storage()
         shape = self.hy.shape
         for idx in ndindex(shape):
-            coords = self.space.hy_index_to_space(*idx)
-            mat_obj, underneath = self.geom_tree.material_of_point(coords)
+            spc = self.space.hy_index_to_space(*idx)
+            mat_obj, underneath = self.geom_tree.material_of_point(spc)
             if idx[2] == 0 or idx[0] == 0:
                 mat_obj = Dummy(mat_obj.epsilon, mat_obj.mu)
             self.material_hy[idx] = \
-            mat_obj.get_pw_material_hy(idx, coords, underneath, self.cmplx)
+            mat_obj.get_pw_material_hy(idx, spc, underneath, self.cmplx)
             
-        self.lock_hy.release()
-        
     def init_material_hz(self):
         """Set up the update mechanism for Hz field.
         
@@ -412,20 +430,16 @@ class FDTD(object):
         at self.material_hz.
         
         """
-        self.lock_hz.acquire()
-        
         self.material_hz = self.space.get_material_hz_storage()
         shape = self.hz.shape
         for idx in ndindex(shape):
-            coords = self.space.hz_index_to_space(*idx)
-            mat_obj, underneath = self.geom_tree.material_of_point(coords)
+            spc = self.space.hz_index_to_space(*idx)
+            mat_obj, underneath = self.geom_tree.material_of_point(spc)
             if idx[0] == 0 or idx[1] == 0:
                 mat_obj = Dummy(mat_obj.epsilon, mat_obj.mu)
             self.material_hz[idx] = \
-            mat_obj.get_pw_material_hz(idx, coords, underneath, self.cmplx)
+            mat_obj.get_pw_material_hz(idx, spc, underneath, self.cmplx)
             
-        self.lock_hz.release()
-        
     def init_material(self):
         init_mat_func = {const.Ex: self.init_material_ex,
                          const.Ey: self.init_material_ey,
@@ -434,10 +448,10 @@ class FDTD(object):
                          const.Hy: self.init_material_hy,
                          const.Hz: self.init_material_hz}
         
-        for comp in self.e_field_components:
+        for comp in self.e_field_compnt:
             init_mat_func[comp]()
 
-        for comp in self.h_field_components:
+        for comp in self.h_field_compnt:
             init_mat_func[comp]()
 
     def init_source_ex(self):
@@ -472,10 +486,10 @@ class FDTD(object):
                          const.Hy: self.init_source_hy,
                          const.Hz: self.init_source_hz}
 
-        for comp in self.e_field_components:
+        for comp in self.e_field_compnt:
             init_src_func[comp]()
             
-        for comp in self.h_field_components:
+        for comp in self.h_field_compnt:
             init_src_func[comp]()
             
     def set_probe(self, x, y, z, prefix):
@@ -540,52 +554,40 @@ class FDTD(object):
                                               + '\n')
             
     def update_ex(self):
-        self.lock_ex.acquire()
         for idx in ndindex(self.material_ex.shape):
             self.material_ex[idx].update(self.ex, self.hz, self.hy, 
                                          self.dy, self.dz, self.time_step.dt, 
                                          self.time_step.n, *idx)
-        self.lock_ex.release()
         
     def update_ey(self):
-        self.lock_ey.acquire()
         for idx in ndindex(self.material_ey.shape):
             self.material_ey[idx].update(self.ey, self.hx, self.hz, 
                                          self.dz, self.dx, self.time_step.dt, 
                                          self.time_step.n, *idx)
-        self.lock_ey.release()
 		
     def update_ez(self):
-        self.lock_ez.acquire()
         for idx in ndindex(self.material_ez.shape):
             self.material_ez[idx].update(self.ez, self.hy, self.hx,
                                          self.dx, self.dy, self.time_step.dt,
                                          self.time_step.n, *idx)
-        self.lock_ez.release()
 		
     def update_hx(self):
-        self.lock_hx.acquire()
         for idx in ndindex(self.material_hx.shape):
             self.material_hx[idx].update(self.hx, self.ez, self.ey, 
                                          self.dy, self.dz, self.time_step.dt, 
                                          self.time_step.n, *idx)
-        self.lock_hx.release()
 		
     def update_hy(self):
-        self.lock_hy.acquire()
         for idx in ndindex(self.material_hy.shape):
             self.material_hy[idx].update(self.hy, self.ex, self.ez,
                                          self.dz, self.dx, self.time_step.dt,
                                          self.time_step.n, *idx)
-        self.lock_hy.release()
 		
     def update_hz(self):
-        self.lock_hz.acquire()
         for idx in ndindex(self.material_hz.shape):
             self.material_hz[idx].update(self.hz, self.ey, self.ex,
                                          self.dx, self.dy, self.time_step.dt,
                                          self.time_step.n, *idx)
-        self.lock_hz.release()
 
     def talk_with_ex_neighbors(self):
         """Synchronize ex data.
@@ -851,64 +853,34 @@ class FDTD(object):
         self.space.cart_comm.sendrecv(self.hz[:, -1, :], dest, const.Hz.tag,
                                       None, src, const.Hz.tag)
         
-    def _init_threads(self):
-        self._h_chatter_threads = (Thread(target=self.talk_with_hx_neighbors),
-                                   Thread(target=self.talk_with_hy_neighbors), 
-                                   Thread(target=self.talk_with_hz_neighbors))
-
-        self._e_chatter_threads = (Thread(target=self.talk_with_ex_neighbors),
-                                   Thread(target=self.talk_with_ey_neighbors), 
-                                   Thread(target=self.talk_with_ez_neighbors))
-
-        self._h_worker_threads = (Thread(target=self.update_hx),
-                                  Thread(target=self.update_hy),
-                                  Thread(target=self.update_hz))
-
-        self._e_worker_threads = (Thread(target=self.update_ex),
-                                  Thread(target=self.update_ey),
-                                  Thread(target=self.update_ez))
-
     def step(self):
-        self._init_threads()
-
         self.time_step.half_step_up()
-        
-        for chatter in self._h_chatter_threads:
-            chatter.start()
-                   
-        for chatter in self._h_chatter_threads:
-            chatter.join()
-        
-        for worker in self._e_worker_threads:
-            worker.start()
-           
-        for worker in self._e_worker_threads:
-            worker.join()
+
+        for comp in self.h_field_compnt:
+            self._chatter[comp]()
+            
+        for comp in self.e_field_compnt:
+            self._updater[comp]()
 
         self.time_step.half_step_up()
 
         self._step_aux_fdtd()
+
+        for comp in self.e_field_compnt:
+            self._chatter[comp]()
         
-        for chatter in self._e_chatter_threads:
-            chatter.start()
-                   
-        for chatter in self._e_chatter_threads:
-            chatter.join()
-        
-        for worker in self._h_worker_threads:
-            worker.start()
-           
-        for worker in self._h_worker_threads:
-            worker.join()
-        
-    def step_while_zero(self, component, point):
+        for comp in self.h_field_compnt:
+            self._updater[comp]()
+
+    def step_while_zero(self, component, point, modulus=inf):
         """Run self.step() while the field value at the given point is 0.
         
-        Arguments:
-            component: filed component to check.
-                one of gmes.constants.{Ex, Ey, Ez, Hx, Hy, Hz}.
-            point: coordinates of the location to check the field. 
-                tuple of three scalars
+        Keyword arguments:
+        component: filed component to check.
+            one of gmes.constants.{Ex, Ey, Ez, Hx, Hy, Hz}.
+        point: coordinates of the location to check the field. 
+            tuple of three scalars
+        modulus: print n and t at every modulus steps.
 
         """
         spc_to_idx = {const.Ex: self.space.space_to_ex_index,
@@ -934,23 +906,29 @@ class FDTD(object):
         flag = True
         while flag:
             self.step()
+            if self.time_step.n % modulus == 0:
+                print 'n:', self.time_step.n, 't:', self.time_step.t
             if self.space.my_id == hot_node and field[component][idx] != 0:
                 flag = False
             flag = self.space.cart_comm.bcast(flag, hot_node)
 
-    def step_until_n(self, n=0):
-        """Run self.step() untill time step reaches n.
+    def step_until_n(self, n=0, modulus=inf):
+        """Run self.step() until time step reaches n.
 
         """
         while self.time_step.n < n:
             self.step()
+            if self.time_step.n % modulus == 0:
+                print 'n:', self.time_step.n, 't:', self.time_step.t
 
-    def step_untill_t(self, t=0):
-        """Run self.step() untill time reaches t.
+    def step_until_t(self, t=0, modulus=inf):
+        """Run self.step() until time reaches t.
 
         """
         while self.time_step.t < t:
             self.step()
+            if self.time_step.n % modulus == 0:
+                print 'n:', self.time_step.n, 't:', self.time_step.t
     
     def show_line_ex(self, start, end, vrange=(-1, 1), interval=2500):
         """Show the real value of the ex along the line.
@@ -963,8 +941,8 @@ class FDTD(object):
 
         """
         showcase = ShowLine(self, const.Ex, start, end, vrange, interval, 
-                            'Ex field', self.fig_id)
-        self.fig_id += self.space.numprocs
+                            'Ex field', self._fig_id)
+        self._fig_id += self.space.numprocs
         showcase.start()
         return showcase
 		
@@ -978,8 +956,8 @@ class FDTD(object):
 
         """
         showcase = ShowLine(self, const.Ey, start, end, vrange, interval, 
-                            'Ey field', self.fig_id)
-        self.fig_id += self.space.numprocs
+                            'Ey field', self._fig_id)
+        self._fig_id += self.space.numprocs
         showcase.start()
         return showcase
 		
@@ -993,8 +971,8 @@ class FDTD(object):
 
         """
         showcase = ShowLine(self, const.Ez, start, end, vrange, interval, 
-                            'Ez field', self.fig_id)
-        self.fig_id += self.space.numprocs
+                            'Ez field', self._fig_id)
+        self._fig_id += self.space.numprocs
         showcase.start()
         return showcase
 		
@@ -1008,8 +986,8 @@ class FDTD(object):
 
         """
         showcase = ShowLine(self, const.Hx, start, end, vrange, interval, 
-                            'Hx field', self.fig_id)
-        self.fig_id += self.space.numprocs
+                            'Hx field', self._fig_id)
+        self._fig_id += self.space.numprocs
         showcase.start()
         return showcase
 		
@@ -1023,8 +1001,8 @@ class FDTD(object):
 
         """
         showcase = ShowLine(self, const.Hy, start, end, vrange, interval, 
-                            'Hy field', self.fig_id)
-        self.fig_id += self.space.numprocs
+                            'Hy field', self._fig_id)
+        self._fig_id += self.space.numprocs
         showcase.start()
         return showcase
 		
@@ -1038,8 +1016,8 @@ class FDTD(object):
 
         """
         showcase = ShowLine(self, const.Hz, start, end, vrange, interval, 
-                            'Hz field', self.fig_id)
-        self.fig_id += self.space.numprocs
+                            'Hz field', self._fig_id)
+        self._fig_id += self.space.numprocs
         showcase.start()
         return showcase
 
@@ -1055,8 +1033,8 @@ class FDTD(object):
 
         """
         showcase = ShowPlane(self, const.Ex, axis, cut, vrange, 
-                             interval, 'Ex field', self.fig_id)
-        self.fig_id += self.space.numprocs
+                             interval, 'Ex field', self._fig_id)
+        self._fig_id += self.space.numprocs
         showcase.start()
         return showcase
         
@@ -1072,8 +1050,8 @@ class FDTD(object):
 
         """
         showcase = ShowPlane(self, const.Ey, axis, cut, vrange, 
-                             interval, 'Ey field', self.fig_id)
-        self.fig_id += self.space.numprocs
+                             interval, 'Ey field', self._fig_id)
+        self._fig_id += self.space.numprocs
         showcase.start()
         return showcase
         
@@ -1089,8 +1067,8 @@ class FDTD(object):
 
         """
         showcase = ShowPlane(self, const.Ez, axis, cut, vrange, 
-                             interval, 'Ez field', self.fig_id)
-        self.fig_id += self.space.numprocs
+                             interval, 'Ez field', self._fig_id)
+        self._fig_id += self.space.numprocs
         showcase.start()
         return showcase
         
@@ -1106,8 +1084,8 @@ class FDTD(object):
 
         """
         showcase = ShowPlane(self, const.Hx, axis, cut, vrange, 
-                             interval, 'Hx field', self.fig_id)
-        self.fig_id += self.space.numprocs
+                             interval, 'Hx field', self._fig_id)
+        self._fig_id += self.space.numprocs
         showcase.start()
         return showcase
         
@@ -1123,8 +1101,8 @@ class FDTD(object):
 
         """
         showcase = ShowPlane(self, const.Hy, axis, cut, vrange, 
-                             interval, 'Hy field', self.fig_id)
-        self.fig_id += self.space.numprocs
+                             interval, 'Hy field', self._fig_id)
+        self._fig_id += self.space.numprocs
         showcase.start()
         return showcase
         
@@ -1140,110 +1118,110 @@ class FDTD(object):
 
         """
         showcase = ShowPlane(self, const.Hz, axis, cut, vrange, 
-                             interval, 'Hz field', self.fig_id)
-        self.fig_id += self.space.numprocs
+                             interval, 'Hz field', self._fig_id)
+        self._fig_id += self.space.numprocs
         showcase.start()
         return showcase
         
     def show_permittivity_ex(self, axis, cut, vrange=None):
         """Show permittivity for the ex on the plane.
 
-        Arguments:
-            axis: Specify the normal axis to the show plane.
-                This should be one of the gmes.constants.Directional.
-            cut: A scalar value which specifies the cut position on the 
-                axis.
-            vrange: Specify the colorbar range. A tuple of length two.
+        Keyword arguments:
+        axis: Specify the normal axis to the show plane.
+            This should be one of the gmes.constants.Directional.
+        cut: A scalar value which specifies the cut position on the 
+            axis.
+        vrange: Specify the colorbar range. A tuple of length two.
         
         """
         showcase = Snapshot(self, const.Ex, axis, cut, vrange, 
-                             'Permittivity for Ex', self.fig_id)
-        self.fig_id += self.space.numprocs
+                            'Permittivity for Ex', self._fig_id)
+        self._fig_id += self.space.numprocs
         showcase.start()
         return showcase
         
     def show_permittivity_ey(self, axis, cut, vrange=None):
         """Show permittivity for the ey on the plane.
 
-        Arguments:
-            axis: Specify the normal axis to the show plane.
-                This should be one of the gmes.constants.Directional.
-            cut: A scalar value which specifies the cut position on the 
-                axis.
-            vrange: Specify the colorbar range. A tuple of length two.
+        Keyword arguments:
+        axis: Specify the normal axis to the show plane.
+            This should be one of the gmes.constants.Directional.
+        cut: A scalar value which specifies the cut position on the 
+            axis.
+        vrange: Specify the colorbar range. A tuple of length two.
         
         """
         showcase = Snapshot(self, const.Ey, axis, cut, vrange, 
-                             'Permittivity for Ey', self.fig_id)
-        self.fig_id += self.space.numprocs
+                            'Permittivity for Ey', self._fig_id)
+        self._fig_id += self.space.numprocs
         showcase.start()
         return showcase
             
     def show_permittivity_ez(self, axis, cut, vrange=None):
         """Show permittivity for the ez on the plane.
 
-        Arguments:
-            axis: Specify the normal axis to the show plane.
-                This should be one of the gmes.constants.Directional.
-            cut: A scalar value which specifies the cut position on the 
-                axis.
-            vrange: Specify the colorbar range. A tuple of length two.
+        Keyword arguments:
+        axis: Specify the normal axis to the show plane.
+            This should be one of the gmes.constants.Directional.
+        cut: A scalar value which specifies the cut position on the 
+            axis.
+        vrange: Specify the colorbar range. A tuple of length two.
         
         """
         showcase = Snapshot(self, const.Ez, axis, cut, vrange, 
-                             'Permittivity for Ez', self.fig_id)
-        self.fig_id += self.space.numprocs
+                            'Permittivity for Ez', self._fig_id)
+        self._fig_id += self.space.numprocs
         showcase.start()
         return showcase
 
     def show_permeability_hx(self, axis, cut, vrange=None):
         """Show permeability for the hx on the plane.
 
-        Arguments:
-            axis: Specify the normal axis to the show plane.
-                This should be one of the gmes.constants.Directional.
-            cut: A scalar value which specifies the cut position on the 
-                axis.
-            vrange: Specify the colorbar range. A tuple of length two.
+        Keyword arguments:
+        axis: Specify the normal axis to the show plane.
+            This should be one of the gmes.constants.Directional.
+        cut: A scalar value which specifies the cut position on the 
+            axis.
+        vrange: Specify the colorbar range. A tuple of length two.
         
         """
         showcase = Snapshot(self, const.Hx, axis, cut, vrange, 
-                             'Permittivity for Hx', self.fig_id)
-        self.fig_id += self.space.numprocs
+                            'Permittivity for Hx', self._fig_id)
+        self._fig_id += self.space.numprocs
         showcase.start()
         return showcase
         
     def show_permeability_hy(self, axis, cut, vrange=None):
         """Show permeability for the hy on the plane.
 
-        Arguments:
-            axis: Specify the normal axis to the show plane.
-                This should be one of the gmes.constants.Directional.
-            cut: A scalar value which specifies the cut position on the 
-                axis.
-            vrange: Specify the colorbar range. A tuple of length two.
+        Keyword arguments:
+        axis: Specify the normal axis to the show plane.
+            This should be one of the gmes.constants.Directional.
+        cut: A scalar value which specifies the cut position on the 
+            axis.
+        vrange: Specify the colorbar range. A tuple of length two.
         
         """
         showcase = Snapshot(self, const.Hy, axis, cut, vrange, 
-                             'Permittivity for Hy', self.fig_id)
-        self.fig_id += self.space.numprocs
+                            'Permittivity for Hy', self._fig_id)
+        self._fig_id += self.space.numprocs
         showcase.start()
         return showcase
             
     def show_permeability_hz(self, axis, cut, vrange=None):
         """Show permeability for the hz on the plane.
 
-        Arguments:
-            axis: Specify the normal axis to the show plane.
-                This should be one of the gmes.constants.Directional.
-            cut: A scalar value which specifies the cut position on the 
-                axis.
-            vrange: Specify the colorbar range. a tuple of length two.
+        Keyword arguments:
+        axis: Specify the normal axis to the show plane.
+            This should be one of the gmes.constants.Directional.
+        cut: A scalar value which specifies the cut position on the 
+            axis.
+        vrange: Specify the colorbar range. a tuple of length two.
         
         """
         showcase = Snapshot(self, const.Hz, axis, cut, vrange, 
-                             'Permittivity for Hz', self.fig_id)
-        self.fig_id += self.space.numprocs
+                            'Permittivity for Hz', self._fig_id)
+        self._fig_id += self.space.numprocs
         showcase.start()
         return showcase
         
@@ -1322,27 +1300,9 @@ class TExFDTD(FDTD):
     direction. TExFDTD updates only Ey, Ez, and Hx field components.
     
     """
-    def init_field_components(self):
-        self.e_field_components = (const.Ey, const.Ez)
-        self.h_field_components = (const.Hx,)
-
-    def dt_limit(self, space, epsilon, mu):
-        """Courant stability bound of a time step.
-
-        """
-        c = 1 / sqrt(epsilon * mu)
-        return 1 / c / sqrt(space.dy**-2 + space.dz**-2)
-    
-    def _init_threads(self):
-        self._h_chatter_threads = (Thread(target=self.talk_with_hx_neighbors),)
-
-        self._e_chatter_threads = (Thread(target=self.talk_with_ey_neighbors), 
-                                   Thread(target=self.talk_with_ez_neighbors))
-
-        self._h_worker_threads = (Thread(target=self.update_hx),)
-
-        self._e_worker_threads = (Thread(target=self.update_ey),
-                                  Thread(target=self.update_ez))
+    def _init_field_compnt(self):
+        self.e_field_compnt = (const.Ey, const.Ez)
+        self.h_field_compnt = (const.Hx,)
 
         
 class TEyFDTD(FDTD):
@@ -1352,27 +1312,9 @@ class TEyFDTD(FDTD):
     TEyFDTD updates only Ez, Ex, and Hy field components.
     
     """
-    def init_field_components(self):
-        self.e_field_components = (const.Ex, const.Ez)
-        self.h_field_components = (const.Hy,)
-
-    def dt_limit(self, space, epsilon, mu):
-        """Courant stability bound of a time step.
-        
-        """
-        c = 1 / sqrt(epsilon * mu)
-        return 1 / c /sqrt(space.dx**-2 + space.dz**-2)
-    
-    def _init_threads(self):
-        self._h_chatter_threads = (Thread(target=self.talk_with_hy_neighbors),)
-
-        self._e_chatter_threads = (Thread(target=self.talk_with_ex_neighbors),
-                                   Thread(target=self.talk_with_ez_neighbors))
-
-        self._h_worker_threads = (Thread(target=self.update_hy),)
-
-        self._e_worker_threads = (Thread(target=self.update_ex),
-                                  Thread(target=self.update_ez))
+    def _init_field_compnt(self):
+        self.e_field_compnt = (const.Ex, const.Ez)
+        self.h_field_compnt = (const.Hy,)
 
 
 class TEzFDTD(FDTD):
@@ -1382,29 +1324,11 @@ class TEzFDTD(FDTD):
     TEzFDTD updates only Ex, Ey, and Hz field components.
     
     """
-    def init_field_components(self):
-        self.e_field_components = (const.Ex, const.Ey)
-        self.h_field_components = (const.Hz,)
+    def _init_field_compnt(self):
+        self.e_field_compnt = (const.Ex, const.Ey)
+        self.h_field_compnt = (const.Hz,)
 
-    def dt_limit(self, space, epsilon, mu):
-        """Courant stability bound of a time step.
-        
-        """
-        c = 1 / sqrt(epsilon * mu)
-        return 1 / c / sqrt(space.dx**-2 + space.dy**-2)
-    
-    def _init_threads(self):
-        self._h_chatter_threads = (Thread(target=self.talk_with_hz_neighbors),)
 
-        self._e_chatter_threads = (Thread(target=self.talk_with_ex_neighbors),
-                                   Thread(target=self.talk_with_ey_neighbors))
-
-        self._h_worker_threads = (Thread(target=self.update_hz),)
-
-        self._e_worker_threads = (Thread(target=self.update_ex),
-                                  Thread(target=self.update_ey))
-
-        
 class TMxFDTD(FDTD):
     """2-D FDTD which has transverse-magnetic mode with respect to x.
 
@@ -1412,27 +1336,9 @@ class TMxFDTD(FDTD):
     TMxFDTD updates only Hy, Hz, and Ex field components.
     
     """
-    def init_field_components(self):
-        self.e_field_components = (const.Ex,)
-        self.h_field_components = (const.Hy, const.Hz)
-
-    def dt_limit(self, space, epsilon, mu):
-        """Courant stability bound of a time step.
-
-        """
-        c = 1 / sqrt(epsilon * mu)
-        return 1 / c / sqrt(space.dy**-2 + space.dz**-2)
-    
-    def _init_threads(self):
-        self._h_chatter_threads = (Thread(target=self.talk_with_hy_neighbors), 
-                                   Thread(target=self.talk_with_hz_neighbors))
-
-        self._e_chatter_threads = (Thread(target=self.talk_with_ex_neighbors),)
-
-        self._h_worker_threads = (Thread(target=self.update_hy),
-                                  Thread(target=self.update_hz))
-
-        self._e_worker_threads = (Thread(target=self.update_ex),)
+    def _init_field_compnt(self):
+        self.e_field_compnt = (const.Ex,)
+        self.h_field_compnt = (const.Hy, const.Hz)
 
         
 class TMyFDTD(FDTD):
@@ -1442,29 +1348,11 @@ class TMyFDTD(FDTD):
     TMyFDTD updates only Hz, Hx, and Ey field components.
     
     """
-    def init_field_components(self):
-        self.e_field_components = (const.Ey,)
-        self.h_field_components = (const.Hz, const.Hx)
+    def _init_field_compnt(self):
+        self.e_field_compnt = (const.Ey,)
+        self.h_field_compnt = (const.Hz, const.Hx)
 
-    def dt_limit(self, space, epsilon, mu):
-        """Courant stability bound of a time step.
 
-        """
-        c = 1 / sqrt(epsilon * mu)
-        return 1 / sqrt(space.dx**-2 + space.dz**-2)
-    
-    def _init_threads(self):
-        self._h_chatter_threads = (Thread(target=self.talk_with_hx_neighbors),
-                                   Thread(target=self.talk_with_hz_neighbors))
-
-        self._e_chatter_threads = (Thread(target=self.talk_with_ey_neighbors),)
-
-        self._h_worker_threads = (Thread(target=self.update_hx),
-                                  Thread(target=self.update_hz))
-
-        self._e_worker_threads = (Thread(target=self.update_ey),)
-
-        
 class TMzFDTD(FDTD):
     """2-D FDTD which has transverse-magnetic mode with respect to z
     
@@ -1472,83 +1360,33 @@ class TMzFDTD(FDTD):
     TMzFDTD updates only Hx, Hy, and Ez field components.
     
     """
-    def init_field_components(self):
-        self.e_field_components = (const.Ez,)
-        self.h_field_components = (const.Hx, const.Hy)
-
-    def dt_limit(self, space, epsilon, mu):
-        """Courant stability bound of a time step.
-
-        """
-        c = 1 / sqrt(epsilon * mu)
-        return 1 / c / sqrt(space.dx**-2 + space.dy**-2)
-    
-    def _init_threads(self):
-        self._h_chatter_threads = (Thread(target=self.talk_with_hx_neighbors),
-                                   Thread(target=self.talk_with_hy_neighbors))
-
-        self._e_chatter_threads = (Thread(target=self.talk_with_ez_neighbors),)
-
-        self._h_worker_threads = (Thread(target=self.update_hx),
-                                  Thread(target=self.update_hy))
-
-        self._e_worker_threads = (Thread(target=self.update_ez),)
+    def _init_field_compnt(self):
+        self.e_field_compnt = (const.Ez,)
+        self.h_field_compnt = (const.Hx, const.Hy)
 
 
 class TEMxFDTD(FDTD):
     """y-polarized and x-directed one dimensional fdtd class
 
-    Assume that the structure and incident wave are uniform in transverse direction.
-    TEMxFDTD updates only Ey and Hz field components.
+    Assume that the structure and incident wave are uniform in transverse 
+    direction. TEMxFDTD updates only Ey and Hz field components.
     
     """
-    def init_field_components(self):
-        self.e_field_components = (const.Ey,)
-        self.h_field_components = (const.Hz,)
-
-    def dt_limit(self, space, epsilon, mu):
-        """Courant stability bound of a time step.
-        
-        """
-        c = 1 / sqrt(epsilon * mu)
-        return space.dx / c
-    
-    def _init_threads(self):
-        self._h_chatter_threads = (Thread(target=self.talk_with_hz_neighbors),)
-
-        self._e_chatter_threads = (Thread(target=self.talk_with_ey_neighbors),)
-
-        self._h_worker_threads = (Thread(target=self.update_hz),)
-
-        self._e_worker_threads = (Thread(target=self.update_ey),)
+    def _init_field_compnt(self):
+        self.e_field_compnt = (const.Ey,)
+        self.h_field_compnt = (const.Hz,)
 
         
 class TEMyFDTD(FDTD):
     """z-polarized and y-directed one dimensional fdtd class
 
-    Assume that the structure and incident wave are uniform in transverse direction.
-    TEMyFDTD updates only Ez and Hx field components.
+    Assume that the structure and incident wave are uniform in transverse 
+    direction. TEMyFDTD updates only Ez and Hx field components.
     
     """
-    def init_field_components(self):
-        self.e_field_components = (const.Ez,)
-        self.h_field_components = (const.Hx,)
-
-    def dt_limit(self, space, epsilon, mu):
-        """Courant stability bound of a time step.
-        
-        """
-        c = 1 / sqrt(epsilon * mu)
-        return space.dy / c
-    
-    def _init_threads(self):
-        self._h_chatter_threads = (Thread(target=self.talk_with_hx_neighbors),)
-
-        self._e_chatter_threads = (Thread(target=self.talk_with_ez_neighbors),)
-
-        self._h_worker_threads = (Thread(target=self.update_hx),)
-
-        self._e_worker_threads = (Thread(target=self.update_ez),)
+    def _init_field_compnt(self):
+        self.e_field_compnt = (const.Ez,)
+        self.h_field_compnt = (const.Hx,)
 
         
 class TEMzFDTD(FDTD):
@@ -1558,25 +1396,9 @@ class TEMzFDTD(FDTD):
     direction. TEMzFDTD updates only Ex and Hy field components.
     
     """
-    def init_field_components(self):
-        self.e_field_components = (const.Ex,)
-        self.h_field_components = (const.Hy,)
-
-    def dt_limit(self, space, epsilon, mu):
-        """Courant stability bound of a time step.
-        
-        """
-        c = 1 / sqrt(epsilon * mu)
-        return space.dz / c
-
-    def _init_threads(self):
-        self._h_chatter_threads = (Thread(target=self.talk_with_hy_neighbors),)
-
-        self._e_chatter_threads = (Thread(target=self.talk_with_ex_neighbors),)
-
-        self._h_worker_threads = (Thread(target=self.update_hy),)
-
-        self._e_worker_threads = (Thread(target=self.update_ex),)
+    def _init_field_compnt(self):
+        self.e_field_compnt = (const.Ex,)
+        self.h_field_compnt = (const.Hy,)
 
 
 if __name__ == '__main__':
@@ -1597,9 +1419,9 @@ if __name__ == '__main__':
                           radius=inf, 
                           height=width_hi)]
     
-    a = FDTD(space=space, geometry=geom_list)
+    fdtd = FDTD(space=space, geometry=geom_list)
     
     while True:
-        a.step()
-        a.ex[7, 7, 7] = sin(a.n)
+        fdtd.step()
+        fdtd.ex[7, 7, 7] = sin(a.n)
         print a.n

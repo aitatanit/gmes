@@ -243,19 +243,19 @@ class TotalFieldScatteredField(Src):
         """Constructor
         
         Arguments:
-            center -- center of the incidence interface. The beam axis crosses
-                      this point.
-               type: a tuple with three real numbers.
-            size --  size of the incidence interface plane.
-               type: a tuple with three real numbers.
-            direction -- propagation direction of the beam.
-               type: a tuple with three real numbers.
-            freq -- oscillating frequency of the beam.
-               type: a real number
-            polarization -- electric field direction of the beam. 
-               type: a tuple with three real numbers.
-            amp -- amplitude of the plane wave. The default is 1.
-               type: a real number
+        center -- center of the incidence interface. The beam axis crosses
+                  this point.
+           type: a tuple with three real numbers.
+        size --  size of the incidence interface plane.
+           type: a tuple with three real numbers.
+        direction -- propagation direction of the beam.
+           type: a tuple with three real numbers.
+        freq -- oscillating frequency of the beam.
+           type: a real number
+        polarization -- electric field direction of the beam. 
+           type: a tuple with three real numbers.
+        amp -- amplitude of the plane wave. The default is 1.
+           type: a real number
 
         """
         if isinstance(src_time, SrcTime):
@@ -304,7 +304,7 @@ class TotalFieldScatteredField(Src):
         """Calculate distance from the interface plane center.
         
         Arguments:
-            point -- location in the space coordinate
+        point -- location in the space coordinate
             
         """
         return norm(self.center - point)
@@ -315,8 +315,8 @@ class TotalFieldScatteredField(Src):
         Returns positive value when the point is located in
         the k direction to the center.
         
-        Arguments:
-            point -- location in the space coordinate
+        Keyword arguments:
+        point -- location in the space coordinate
             
         """
         return dot(self.k, point - self.center)
@@ -324,8 +324,8 @@ class TotalFieldScatteredField(Src):
     def _dist_from_beam_axis(self, x, y, z):
         """Calculate distance from the beam axis.
         
-        Arguments:
-            point -- location in the space coordinate 
+        Keyword arguments:
+        point -- location in the space coordinate 
             
         """   
         return norm(cross(self.k, (x, y, z) - self.center))
@@ -348,11 +348,11 @@ class TotalFieldScatteredField(Src):
     def _get_wave_number(self, k, epsilon, mu, space):
         """Calculate the wave number for auxiliary fdtd using Newton's method.
         
-        Arguments:
-            k -- normalized wave vector
-            epsilon -- permittivity which fills the auxiliary fdtd
-            mu -- permeability which fills the auxiliary fdtd
-            space -- Cartesian instance
+        Keyword arguments:
+        k -- normalized wave vector
+        epsilon -- permittivity which fills the auxiliary fdtd
+        mu -- permeability which fills the auxiliary fdtd
+        space -- Cartesian instance
             
         """
         ds = np.array((space.dx, space.dy, space.dz))
@@ -369,13 +369,13 @@ class TotalFieldScatteredField(Src):
 
     def _3d_dispersion_relation(self, zeta, v, omega, ds, dt, k):
         """
-        Arguments:
-            zeta: a scalar factor which is yet to be determined.
-            v: the phase speed of the wave in the default medium.
-            omega: the angular frequency of the input wave.
-            ds: the space-cell size, (dx, dy, dz)
-            dt: the time step
-            k: the true wave vector, (kx, ky, kz)
+        Keyword arguments:
+        zeta: a scalar factor which is yet to be determined.
+        v: the phase speed of the wave in the default medium.
+        omega: the angular frequency of the input wave.
+        ds: the space-cell size, (dx, dy, dz)
+        dt: the time step
+        k: the true wave vector, (kx, ky, kz)
 
         Equation 5.65 at p.214 of 'A. Taflove and S. C. Hagness, Computational
         Electrodynamics: The Finite-Difference Time-Domain Method, Third 
@@ -389,14 +389,14 @@ class TotalFieldScatteredField(Src):
 
     def _1d_dispersion_relation(self, ds, zeta, v, omega, dt, k):
         """
-        Arguments:
-            ds: an 1D cell-size which is yet to be determined
-            zeta: the scalar factor which relates the true and numerical 
-                  wavenumber
-            v: the phase speed of the input wave in the default medium
-            omega: the angular frequency of the input wave
-            dt: the time step
-            k: the true wavenumber
+        Keyword arguments:
+        ds: an 1D cell-size which is yet to be determined
+        zeta: the scalar factor which relates the true and numerical 
+              wavenumber
+        v: the phase speed of the input wave in the default medium
+        omega: the angular frequency of the input wave
+        dt: the time step
+        k: the true wavenumber
 
         Equation 5.67 at p.215 of A. Taflove and S. C. Hagness, Computational
         Electrodynamics: The Finite-Difference Time-Domain Method, Third 
@@ -479,16 +479,16 @@ class TotalFieldScatteredField(Src):
     def _set_pw_source(self, space, component, cosine, material, 
                        low_idx, high_idx, source, samp_i2s, face):
         """
-        Arguments:
-            space - the Coordinate object given as a FDTD argument.
-            component - Specify the field component.
-            cosine - the cosine of the field vector and the given component.
-            material - pointwise material object array.
-            low_idx - the low end index of the source boundary
-            high_idx - the high end index of the source boundary
-            source - the pointwise source class
-            samp_i2s - the corresponding index_to_space function
-            face - which side of the interface
+        Keyword arguments:
+        space - the Coordinate object given as a FDTD argument.
+        component - Specify the field component.
+        cosine - the cosine of the field vector and the given component.
+        material - pointwise material object array.
+        low_idx - the low end index of the source boundary
+        high_idx - the high end index of the source boundary
+        source - the pointwise source class
+        samp_i2s - the corresponding index_to_space function
+        face - which side of the interface
             
         """
         aux_ds = {const.PlusX: space.dx, const.MinusX: space.dx,  
@@ -977,24 +977,24 @@ class GaussianBeam(TotalFieldScatteredField):
                  polarization, waist=inf, amp=1):
         """
         
-        Arguments:
-            directivity -- directivity of the incidence interface.
-               type: a child class of constants.Directional.
-            center -- center of the incidence interface. The beam axis crosses
-                      this point.
-               type: a tuple with three real numbers.
-            size --  size of the incidence interface plane.
-               type: a tuple with three real numbers.
-            direction -- propagation direction of the beam.
-               type: a tuple with three real numbers.
-            freq -- oscillating frequency of the beam.
-               type: a real number
-            polarization -- electric field direction of the beam.
-               type: a tuple with three real numbers.
-            waist -- the Gaussian beam radius. The default is inf.
-               type: a tuple with three real numbers.
-            amp -- amplitude of the plane wave. The default is 1.
-               type: a tuple with three real numbers.
+        Keyword arguments:
+        directivity -- directivity of the incidence interface.
+           type: a child class of constants.Directional.
+        center -- center of the incidence interface. The beam axis crosses
+                  this point.
+           type: a tuple with three real numbers.
+        size --  size of the incidence interface plane.
+           type: a tuple with three real numbers.
+        direction -- propagation direction of the beam.
+           type: a tuple with three real numbers.
+        freq -- oscillating frequency of the beam.
+           type: a real number
+        polarization -- electric field direction of the beam.
+           type: a tuple with three real numbers.
+        waist -- the Gaussian beam radius. The default is inf.
+           type: a tuple with three real numbers.
+        amp -- amplitude of the plane wave. The default is 1.
+           type: a tuple with three real numbers.
 
         """
         TotalFieldScatteredField.__init__(self, src_time, center, size, 
@@ -1190,7 +1190,7 @@ class _GaussianBeamSrcTime(object):
     def step(self):
         self.aux_fdtd.step()
         self.n += 1
-        self.t = self.n * self.aux_fdtd.dt
+        self.t = self.n * self.aux_fdtd.time_step.dt
         
     def envelope(self):
         width = self.aux_fdtd.src_list[0].src_time.width

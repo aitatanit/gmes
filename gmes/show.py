@@ -302,7 +302,8 @@ class ShowPlane(Thread):
         self.manager = new_figure_manager(self.id)
         ax = self.manager.canvas.figure.add_subplot(111)
         self.im = ax.imshow(self.data, extent=self.extent, aspect='auto', 
-                            vmin=self.vrange[0], vmax=self.vrange[1])
+                            vmin=self.vrange[0], vmax=self.vrange[1],
+                            cmap=cm.RdBu)
         ax.set_xlabel(self.xlabel)
         ax.set_ylabel(self.ylabel)
         ax.set_title(self.title)
@@ -408,11 +409,11 @@ class Snapshot(Thread):
         self.ylabel = label[(axis_int + 2) % 3]
 
         data_shape_3d = array(end_boundary_idx) - array(start_boundary_idx) + 1
-        data_shape_2d = \
-            [v for i, v in enumerate(data_shape_3d) if i != axis_int]
+        data_shape_2d = [v for i, v in enumerate(data_shape_3d) 
+                         if i != axis_int]
         self.data = empty(data_shape_2d, float)
 
-        for idx in ndindex(data_shape_2d):
+        for idx in ndindex(*data_shape_2d):
             material_idx = empty(3, float)
             for i in [i for i in xrange(3) if i != axis_int]:
                 material_idx[i] = idx[i % 2] + start_boundary_idx[i]
@@ -443,7 +444,7 @@ class Snapshot(Thread):
         ax = self.manager.canvas.figure.add_subplot(111)
         self.im = ax.imshow(self.data, extent=self.extent, aspect='auto', 
                             vmin=self.vrange[0], vmax=self.vrange[1], 
-                            cmap=cm.gray)
+                            cmap=cm.bone)
         ax.set_xlabel(self.xlabel)
         ax.set_ylabel(self.ylabel)
         ax.set_title(self.title)

@@ -30,12 +30,22 @@ from material import Compound, PML
 class AuxiCartComm(object):
     """Auxiliary MPI Cartesian communicator for the absence of MPI implementation.
     
+    Make an instance with default parameters only.
+
     Attributes:
-        dims -- size of mpi Cartesian communicator
-        ndims -- dimensionality of this Cartesian topology
+    dims -- size of mpi Cartesian communicator
+    ndims -- dimensionality of this Cartesian topology
         
     """
     def __init__(self, dims=(1,1,1), periods=(1,1,1), reorder=(0,0,0)):
+        """Constructor. 
+        
+        Keyword arguments:
+        dims -- dimensions of the communicator (default (1,1,1))
+        periods -- default (1,1,1)
+        reorder -- default (0,0,0)
+
+        """
         self.rank = 0
         self.dim = 3
         cyclic = tuple(map(int, periods))
@@ -48,7 +58,7 @@ class AuxiCartComm(object):
         """Get local or remote grid coordinate.
         
         Keyword arguments:
-            rank -- local rank
+        rank -- local rank
             
         """
         return 0, 0, 0
@@ -63,8 +73,8 @@ class AuxiCartComm(object):
         """Get source/destination with specified shift.
         
         Keyword arguments:
-            direction -- 0 <= Dimension to move < ndims
-            displacement -- steps to take in that dimension
+        direction -- 0 <= Dimension to move < ndims
+        displacement -- steps to take in that dimension
             
         """
         if self.topo[1][direction]:
@@ -98,32 +108,33 @@ class Cartesian(object):
     """Define the calculation space with Cartesian coordinates.
     
     Attributes:
-        half_size -- the half size of whole calculation volume
-        res -- number of sections of one unit length
-        dx, dy, dz -- the space differentials
-        dt -- the time differential
-        whole_field_size -- the total array size for the each component of 
-            the electromagnetic field except the communication buffers
-        my_id -- mpi rank of this node
-        numprocs -- the number of mpi nodes
-        cart_comm -- mpi Cartesian communicator
-        my_cart_idx -- the coordinates of this node in mpi Cartesian communicator
-        general_field_size -- the general array size for the each component of 
-            the electromagnetic field except the communication buffers
-        my_field_size -- the specific array size for the each component of
-            the electromagnetic field of this node except the communication buffers
+    half_size -- the half size of whole calculation volume
+    res -- number of sections of one unit length
+    dx, dy, dz -- the space differentials
+    dt -- the time differential
+    whole_field_size -- the total array size for the each component of 
+        the electromagnetic field except the communication buffers
+    my_id -- mpi rank of this node
+    numprocs -- the number of mpi nodes
+    cart_comm -- mpi Cartesian communicator
+    my_cart_idx -- the coordinates of this node in mpi Cartesian communicator
+    general_field_size -- the general array size for the each component of 
+        the electromagnetic field except the communication buffers
+    my_field_size -- the specific array size for the each component of
+        the electromagnetic field of this node except the communication buffers
             
     """
     def __init__(self, size, resolution=15, parallel=False):
-        """
-        Arguments:
-            size -- a length three sequence consists of non-negative numbers
-            resolution -- number of sections of one unit (scalar or length 3 
-                sequence)
-                default: 15
-            parallel -- whether space be divided into segments.
+        """Constructor
+
+        Keyword arguments:
+        size -- a length three sequence consists of non-negative numbers
+        resolution -- number of sections of one unit. scalar or 3-tuple
+            (default 15)
+        parallel -- whether space be divided into segments (default False)
             
         """
+        
         try:
             if len(resolution) == 3:
                 self.res = np.array(resolution, float)
@@ -137,14 +148,9 @@ class Cartesian(object):
         
         self.half_size = 0.5 * np.array(size, float)
         
-        if self.half_size[0] == 0:
-            self.half_size[0] = .5 * self.dx
-            
-        if self.half_size[1] == 0:
-            self.half_size[1] = .5 * self.dy
-            
-        if self.half_size[2] == 0:
-            self.half_size[2] = .5 * self.dz
+        for i, v in enumerate((self.dx, self.dy, self.dz)):
+            if self.half_size[i] == 0:
+                self.half_size[i] = .5 * v
             
         # the size of the whole field arrays 
         self.whole_field_size = \
@@ -161,7 +167,7 @@ class Cartesian(object):
             self.cart_comm = AuxiCartComm()
         self.my_cart_idx = self.cart_comm.topo[2]
         
-        # usually the my_field_size is general_field_size,
+        # Usually the my_field_size is general_field_size,
         # except the last node in each dimension.
         self.general_field_size = \
         self.whole_field_size / self.cart_comm.topo[0]
@@ -189,9 +195,9 @@ class Cartesian(object):
         """Return the field size of this node.
         
         This method depends on 
-            self.general_field_size
-            self.whole_field_size
-            self.my_cart_idx
+        self.general_field_size
+        self.whole_field_size
+        self.my_cart_idx
             
         """
         field_size = empty(3, int)
@@ -212,7 +218,7 @@ class Cartesian(object):
         """Return the minimum load deploy of the nodes.
         
         This method depends on
-            self.numprocs
+        self.numprocs
             
         """
         best_partition = ()
@@ -235,11 +241,11 @@ class Cartesian(object):
     def load_metric(self, l, m, n):
         """Estimate the load on a node.
     
-        Arguments:
-            l, m, n -- the number of node in each direction
+        Keyword arguments:
+        l, m, n -- the number of node in each direction
         
         This method depends on
-            self.whole_field_size
+        self.whole_field_size
         
         """
         l, m, n = float(l), float(m), float(n)
@@ -381,8 +387,8 @@ class Cartesian(object):
         This method returns the (global) space coordinates corresponding to 
         the given (local) index of Ex mesh point.
         
-        Arguments:
-            i, j, k -- array index
+        Keyword arguments:
+        i, j, k -- array index
         
         """
         idx = np.array((i, j, k), int)  
@@ -401,7 +407,7 @@ class Cartesian(object):
         of the nearest Ex mesh point of the given (global) space 
         coordinate. The return index could be out-of-range.
         
-        Arguments:
+        Keyword arguments:
             x, y, z -- (global) space coordinate
         
         """
@@ -425,11 +431,12 @@ class Cartesian(object):
     def space_to_ex_index(self, x, y, z):
         """Return the nearest mesh point of the given space coordinate.
         
-        This method returns the (local) index of the nearest Ex mesh point of the
-        given (global) space coordinate. The return index could be out-of-range.
+        This method returns the (local) index of the nearest Ex mesh point of 
+        the given (global) space coordinate. The return index could be 
+        out-of-range.
         
-        Arguments:
-            x, y, z -- (global) space coordinate
+        Keyword arguments:
+        x, y, z -- (global) space coordinate
         
         """
         spc = np.array((x,y,z), float)
@@ -455,8 +462,8 @@ class Cartesian(object):
         This method returns the (global) space coordinates corresponding to 
         the given (local) index of Ey mesh point.
         
-        Arguments:
-            i, j, k -- array index
+        Keyword arguments:
+        i, j, k -- array index
         
         """
         idx = np.array((i,j,k), int)
@@ -476,8 +483,8 @@ class Cartesian(object):
         of the nearest Ey mesh point of the given (global) space 
         coordinate. The return index could be out-of-range.
         
-        Arguments:
-            x, y, z -- (global) space coordinate
+        Keyword arguments:
+        x, y, z -- (global) space coordinate
         
         """
         coords = np.array((x,y,z), float)
@@ -500,11 +507,12 @@ class Cartesian(object):
     def space_to_ey_index(self, x, y, z):
         """Return the nearest mesh point of the given space coordinate.
         
-        This method returns the (local) index of the nearest Ey mesh point of the
-        given (global) space coordinate. The return index could be out-of-range.
+        This method returns the (local) index of the nearest Ey mesh point of 
+        the given (global) space coordinate. The return index could be 
+        out-of-range.
         
-        Arguments:
-            x, y, z -- (global) space coordinate
+        Keyword arguments:
+        x, y, z -- (global) space coordinate
         
         """
         coords = np.array((x,y,z), float)
@@ -530,8 +538,8 @@ class Cartesian(object):
         This method returns the (global) space coordinates corresponding to 
         the given (local) index of Ez mesh point.
         
-        Arguments
-            i, j, k -- array index
+        Keyword arguments:
+        i, j, k -- array index
         
         """
         idx = np.array((i, j, k), int)
@@ -551,8 +559,8 @@ class Cartesian(object):
         of the nearest Ez mesh point of the given (global) space 
         coordinate. The return index could be out-of-range.
         
-        Arguments:
-            x, y, z -- (global) space coordinate
+        Keyword arguments:
+        x, y, z -- (global) space coordinate
         
         """
         coords = np.array((x, y, z), float)
@@ -575,11 +583,12 @@ class Cartesian(object):
     def space_to_ez_index(self, x, y, z):
         """Return the nearest mesh point of the given space coordinate.
         
-        This method returns the (local) index of the nearest Ez mesh point of the
-        given (global) space coordinate. The return index could be out-of-range.
+        This method returns the (local) index of the nearest Ez mesh point of 
+        the given (global) space coordinate. The return index could be 
+        out-of-range.
         
-        Arguments:
-            x, y, z -- (global) space coordinate
+        Keyword arguments:
+        x, y, z -- (global) space coordinate
         
         """
         coords = np.array((x,y,z), float)
@@ -605,8 +614,8 @@ class Cartesian(object):
         This method returns the (global) space coordinates corresponding to 
         the given (local) index of Hx mesh point.
         
-        Arguments:
-            i, j, k -- array index
+        Keyword arguments:
+        i, j, k -- array index
         
         """
         idx = np.array((i, j, k), int)
@@ -626,8 +635,8 @@ class Cartesian(object):
         of the nearest Hx mesh point of the given (global) space 
         coordinate. The return index could be out-of-range.
         
-        Arguments:
-            x, y, z -- (global) space coordinate
+        Keyword arguments:
+        x, y, z -- (global) space coordinate
         
         """
         coords = np.array((x,y,z), float)
@@ -650,11 +659,12 @@ class Cartesian(object):
     def space_to_hx_index(self, x, y, z):
         """Return the nearest mesh point of the given space coordinate.
         
-        This method returns the (local) index of the nearest Hx mesh point of the
-        given (global) space coordinate. The return index could be out-of-range.
+        This method returns the (local) index of the nearest Hx mesh point of 
+        the given (global) space coordinate. The return index could be 
+        out-of-range.
         
-        Arguments:
-            x, y, z -- (global) space coordinate
+        Keyword arguments:
+        x, y, z -- (global) space coordinate
         
         """
         coords = np.array((x,y,z), float)
@@ -680,8 +690,8 @@ class Cartesian(object):
         This method returns the (global) space coordinates corresponding to 
         the given (local) index of Hy mesh point.
         
-        Arguments
-            i, j, k -- array index
+        Keyword arguments:
+        i, j, k -- array index
         
         """
         idx = np.array((i,j,k), int)
@@ -701,8 +711,8 @@ class Cartesian(object):
         of the nearest Hy mesh point of the given (global) space 
         coordinate. The return index could be out-of-range.
         
-        Arguments:
-            x, y, z -- (global) space coordinate
+        Keyword arguments:
+        x, y, z -- (global) space coordinate
         
         """
         coords = np.array((x,y,z), float)
@@ -725,11 +735,12 @@ class Cartesian(object):
     def space_to_hy_index(self, x, y, z):
         """Return the nearest mesh point of the given space coordinate.
         
-        This method returns the (local) index of the nearest Hy mesh point of the
-        given (global) space coordinate. The return index could be out-of-range.
+        This method returns the (local) index of the nearest Hy mesh point of 
+        the given (global) space coordinate. The return index could be
+        out-of-range.
         
-        Arguments:
-            x, y, z -- (global) space coordinate
+        Keyword arguments:
+        x, y, z -- (global) space coordinate
         
         """
         coords = np.array((x,y,z), float)
@@ -755,8 +766,8 @@ class Cartesian(object):
         This method returns the (global) space coordinates corresponding to 
         the given (local) index of Hz mesh point.
         
-        Arguments:
-            i, j, k -- array index
+        Keyword arguments:
+        i, j, k -- array index
         
         """
         idx = np.array((i,j,k), int)
@@ -776,8 +787,8 @@ class Cartesian(object):
         of the nearest Hz mesh point of the given (global) space 
         coordinate. The return index could be out-of-range.
         
-        Arguments:
-            x, y, z -- (global) space coordinate
+        Keyword arguments:
+        x, y, z -- (global) space coordinate
         
         """
         coords = np.array((x,y,z), float)
@@ -800,11 +811,12 @@ class Cartesian(object):
     def space_to_hz_index(self, x, y, z):
         """Return the nearest mesh point of the given space coordinate.
         
-        This method returns the (local) index of the nearest Hy mesh point of the
-        given (global) space coordinate. The return index could be out-of-range.
+        This method returns the (local) index of the nearest Hy mesh point of 
+        the given (global) space coordinate. The return index could be 
+        out-of-range.
         
-        Arguments:
-             x, y, z -- (global) space coordinate
+        Keyword arguments:
+         x, y, z -- (global) space coordinate
         
         """
         coords = np.array((x,y,z), float)
@@ -857,8 +869,8 @@ class GeomBox(object):
     """A bounding box of a geometric object.
     
     Attributes:
-        low -- the coordinates of the lowest vertex
-        high -- the coordinates of the highest vertex
+    low -- the coordinates of the lowest vertex
+    high -- the coordinates of the highest vertex
     
     """
     def __init__(self, low=None, high=None):
@@ -936,11 +948,11 @@ class GeomBoxNode(object):
     """Node class which makes up a binary search tree.
     
     Attributes:
-        box -- a bounding box enclosing the volume of this node
-        t1 -- left branch from this node
-        t2 -- right branch from this node
-        geom_list -- a geometric object list overlapping the volume of this node.
-        depth -- depth from the root of this binary search tree
+    box -- a bounding box enclosing the volume of this node
+    t1 -- left branch from this node
+    t2 -- right branch from this node
+    geom_list -- a geometric object list overlapping the volume of this node.
+    depth -- depth from the root of this binary search tree
         
     """
     def __init__(self, box, geom_list, depth):
@@ -957,7 +969,7 @@ class GeomBoxTree(object):
     binary searches for the object containing a give point.
     
     Attributes:
-        root -- root node of the binary search tree
+    root -- root node of the binary search tree
         
     """
     def __init__(self, geom_list=None):
@@ -1131,17 +1143,17 @@ class GeometricObject(object):
     the simulation plane or line are considered. 
     
     Attributes:
-        material -- Filling up material.
-        box -- bounding box enclosing this geometric object
+    material -- Filling up material.
+    box -- bounding box enclosing this geometric object
     
     """
     def __init__(self, material):
         """
         
-        Arguments:
-            material -- The material that the object is made of. No default.
+        Keyword arguments:
+        material -- The material that the object is made of. No default.
             
-            """ 
+        """ 
         self.material = material
         self.box = self.geom_box()
         
@@ -1152,8 +1164,8 @@ class GeometricObject(object):
         """Return a bounding box enclosing this geometric object.
         
         The derived classes should override this method.
-        """
-        
+
+        """        
         raise NotImplementedError
         
     
@@ -1213,17 +1225,17 @@ class Cone(GeometricObject):
     """Form a cone or possibly a truncated cone. 
     
     Attributes:
-        center -- coordinates of the center of this geometric object
-        axis -- unit vector of axis
-        height -- length of axis
-        box -- bounding box
+    center -- coordinates of the center of this geometric object
+    axis -- unit vector of axis
+    height -- length of axis
+    box -- bounding box
         
     """
     def __init__(self, material, radius2=0, axis=(1, 0, 0),
                  radius=1, height=1, center=(0, 0, 0)):
         """
         
-        Arguments:
+        Keyword arguments:
         radius2 -- Radius of the tip of the cone (i.e. the end of the 
             cone pointed to by the axis vector). Defaults to zero 
             (a "sharp" cone).
@@ -1313,7 +1325,7 @@ class Cylinder(Cone):
     def __init__(self, material, axis=(0, 0, 1),
                  radius=1, height=1, center=(0, 0, 0)):
         """
-        Arguments:
+        Keyword arguments:
             axis -- Direction of the cylinder's axis; the length of 
                 this vector is ignored. Defaults to point parallel to 
                 the z axis i.e., (0,0,1).
@@ -1405,7 +1417,7 @@ class Block(_Block):
                  size=(1, 1, 1), center=(0, 0, 0)):
         """
         
-        Arguments:
+        Keyword arguments:
             size -- The lengths of the block edges along each of its 
                 three axes. Default is (1, 1, 1).
             e1, e2, e3 -- The directions of the axes of the block; the 
@@ -1457,17 +1469,17 @@ class Sphere(Ellipsoid):
     """Form a sphere.
     
     Attributes:
-        radius -- Radius of the sphere.
+    radius -- Radius of the sphere.
     
     """
     def __init__(self, material, radius=1, center=(0, 0, 0)):
         """
         
-        Arguments:
-            radius -- Radius of the sphere. Default is 1. 
-            material -- The material that the object is made of. 
-                No default.
-            center -- Center point of the object. Default is (0,0,0).
+        Keyword arguments:
+        radius -- Radius of the sphere. Default is 1. 
+        material -- The material that the object is made of. 
+            No default.
+        center -- Center point of the object. Default is (0,0,0).
         """
         if radius < 0:
             msg = "radius must be non-negative."
@@ -1497,7 +1509,7 @@ class Boundary(GeometricObject):
                  plus_z=True, minus_z=True):
         """
         
-         Arguments:
+         Keyword arguments:
              material --
              thickness -- The spatial thickness of the Boundary layer 
                  (which extends from the boundary towards the inside of

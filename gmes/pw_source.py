@@ -428,7 +428,7 @@ class TransparentHz(TransparentMagnetic):
         
         hz[idx] -= dt / (self.mu * dy) * self.amp[face] * incident_ex
     
-    def _consistency_plus_(self, hz, ey, ex, dx, dy, dt, face, idx):
+    def _consistency_plus_x(self, hz, ey, ex, dx, dy, dt, face, idx):
         incident_ey = (self.r0[face] * self.aux_fdtd.ex[self.samp_idx0[face]] + 
                        self.r1[face] * self.aux_fdtd.ex[self.samp_idx1[face]])
         
