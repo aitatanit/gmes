@@ -1,149 +1,136 @@
 #ifndef PW_CONST_HH_
 #define PW_CONST_HH_
 
+#include <utility>
 #include "pw_material.hh"
 
 #define inplace_field(i,j,k) inplace_field[((i)*inplace_dim2+(j))*inplace_dim3+(k)]
 
 namespace gmes
 {
+  struct ConstElectricParam: public ElectricParam 
+  {
+    double value;
+  };
+    
+  struct ConstMagneticParam: public MagneticParam 
+  {
+    double value;
+  };
+
   template <typename T> class ConstElectric: public MaterialElectric<T>
   {
   public:
-    ConstElectric(double epsilon, T value):
-      eps(epsilon), value(value)
+    ~ConstElectric()
     {
+      for(MapType::const_iterator iter = param.begin(); iter != param.end(); iter++) {
+	delete[] iter->first;
+	delete static_cast<ConstElectricParam *>(iter->second);
+	}
+      param.clear();
     }
-
-    double get_epsilon() const
+    
+    void 
+    attach(const int idx[3], int idx_size, 
+	   const PwMaterialParam * const parameter)
     {
-      return eps;
+      int *idx_ptr = new int[3];
+      std::copy(idx, idx + idx_size, idx_ptr);
+
+      ConstElectricParam *param_ptr;
+      param_ptr = new ConstElectricParam();
+      param_ptr->eps = static_cast<ConstElectricParam *>(parameter)->eps;
+      param_ptr->value = static_cast<ConstMagneticParam *>(parameter)->value;
+      param.insert(std::make_pair(idx_ptr, param_ptr));
     }
-
-    void set_epsilon(double epsilon)
+    
+    void 
+    update(T * const inplace_field, 
+	   int inplace_dim1, int inplace_dim2, int inplace_dim3,
+	   const T * const in_field1, int in1_dim1, int in1_dim2, int in1_dim3,
+	   const T * const in_field2, int in2_dim1, int in2_dim2, int in2_dim3,
+	   double d1, double d2, double dt, double n,
+	   const int idx[3], int idx_size, 
+	   const PwMaterialParam * const parameter)
     {
-      eps = epsilon;
-    }
+      int i = idx[0], j = idx[1], k = idx[2];
+      double value = static_cast<ConstElectricParam *>(parameter)->value;
 
-    T get_value() const
-    {
-      return value;
-    }
-
-    void set_value(T value)
-    {
-      this->value = value;
-    }
-
-    void update(T * const inplace_field, 
-		int inplace_dim1, int inplace_dim2, int inplace_dim3,
-		const T * const in_field1, int in1_dim1, int in1_dim2, int in1_dim3,
-		const T * const in_field2, int in2_dim1, int in2_dim2, int in2_dim3,
-		double d1, double d2, double dt, double n, int i, int j, int k)
-    {
       inplace_field(i,j,k) = value;
     }
 
   protected:
-    double eps;
-    T value;
+    using PwMaterial<T>::param;
   };
 
   template <typename T> class ConstEx: public ConstElectric<T>
   {
-  public:
-    ConstEx(double epsilon = 1, const T& value = 0):
-      ConstElectric<T>(epsilon, value)
-    {
-    }
   };
 
   template <typename T> class ConstEy: public ConstElectric<T>
   {
-  public:
-    ConstEy(double epsilon = 1, const T& value = 0):
-      ConstElectric<T>(epsilon, value)
-    {
-    }
   };
 
   template <typename T> class ConstEz: public ConstElectric<T>
   {
-  public:
-    ConstEz(double epsilon = 1, const T& value = 0):
-      ConstElectric<T>(epsilon, value)
-    {
-    }
   };
 
   template <typename T> class ConstMagnetic: public MaterialMagnetic<T>
   {
   public:
-    ConstMagnetic(double mu, T value):
-      mu(mu), value(value)
+    ~ConstMagnetic()
     {
+      for(MapType::const_iterator iter = param.begin(); iter != param.end(); iter++) {
+	delete[] iter->first;
+	delete static_cast<ConstMagneticParam *>(iter->second);
+	}
+      param.clear();
+    }
+    
+    void 
+    attach(const int idx[3], int idx_size, 
+	   const PwMaterialParam * const parameter)
+    {
+      int *idx_ptr = new int[3];
+      std::copy(idx, idx + idx_size, idx_ptr);
+
+      ConstMagneticParam *param_ptr;
+      param_ptr = new ConstMagneticParam();
+      param_ptr->mu = static_cast<ConstMagneticParam *>(parameter)->mu;
+      param_ptr->value = static_cast<ConstMagneticParam *>(parameter)->value;
+
+      param.insert(std::make_pair(idx_ptr, param_ptr));
     }
 
-    double get_mu() const
+    void 
+    update(T * const inplace_field, 
+	   int inplace_dim1, int inplace_dim2, int inplace_dim3,
+	   const T * const in_field1, int in1_dim1, int in1_dim2, int in1_dim3,
+	   const T * const in_field2, int in2_dim1, int in2_dim2, int in2_dim3,
+	   double d1, double d2, double dt, double n, 
+	   const int idx[3], int idx_size, 
+	   const PwMaterialParam * const parameter)
     {
-      return mu;
-    }
+      int i = idx[0], j = idx[1], k = idx[2];
+      double value = static_cast<ConstElectricParam *>(parameter)->value;
 
-    void set_mu(double mu)
-    {
-      this->mu = mu;
-    }
-
-    T get_value() const
-    {
-      return value;
-    }
-
-    void set_value(T value)
-    {
-      this->value = value;
-    }
-
-    void update(T * const inplace_field, 
-		int inplace_dim1, int inplace_dim2, int inplace_dim3,
-		const T * const in_field1, int in1_dim1, int in1_dim2, int in1_dim3,
-		const T * const in_field2, int in2_dim1, int in2_dim2, int in2_dim3,
-		double d1, double d2, double dt, double n, int i, int j, int k)
-
-    {
       inplace_field(i,j,k) = value;
     }
 
   protected:
-    double mu;
-    T value;
+    using PwMaterial<T>::param;
   };
 
   template <typename T> class ConstHx: public ConstMagnetic<T>
   {
-  public:
-    ConstHx(double mu = 1, const T& value = 0):
-      ConstMagnetic<T>(mu, value)
-    {
-    }
   };
 
   template <typename T> class ConstHy: public ConstMagnetic<T>
   {
-  public:
-    ConstHy(double mu = 1, const T& value = 0):
-      ConstMagnetic<T>(mu, value)
-    {
-    }
   };
 
   template <typename T> class ConstHz: public ConstMagnetic<T>
   {
-  public:
-    ConstHz(double mu = 1, const T& value = 0):
-      ConstMagnetic<T>(mu, value)
-    {
-    }
   };
 }
 
