@@ -24,8 +24,10 @@ namespace gmes
     ~ConstElectric()
     {
       for(MapType::const_iterator iter = param.begin(); iter != param.end(); iter++) {
-	delete[] iter->first;
-	delete static_cast<ConstElectricParam *>(iter->second);
+	if (iter->first != NULL)
+	  delete[] iter->first;
+	if (iter->second != NULL)
+	  delete static_cast<ConstElectricParam *>(iter->second);
 	}
       param.clear();
     }
@@ -51,7 +53,7 @@ namespace gmes
 	   const T * const in_field2, int in2_dim1, int in2_dim2, int in2_dim3,
 	   double d1, double d2, double dt, double n,
 	   const int idx[3], int idx_size, 
-	   const PwMaterialParam * const parameter)
+	   const PwMaterialParam * parameter)
     {
       int i = idx[0], j = idx[1], k = idx[2];
       double value = static_cast<ConstElectricParam *>(parameter)->value;
@@ -81,8 +83,10 @@ namespace gmes
     ~ConstMagnetic()
     {
       for(MapType::const_iterator iter = param.begin(); iter != param.end(); iter++) {
-	delete[] iter->first;
-	delete static_cast<ConstMagneticParam *>(iter->second);
+	if (iter->first != NULL)
+	  delete[] iter->first;
+	if (iter->second != NULL)
+	  delete static_cast<ConstMagneticParam *>(iter->second);
 	}
       param.clear();
     }
@@ -109,7 +113,7 @@ namespace gmes
 	   const T * const in_field2, int in2_dim1, int in2_dim2, int in2_dim3,
 	   double d1, double d2, double dt, double n, 
 	   const int idx[3], int idx_size, 
-	   const PwMaterialParam * const parameter)
+	   const PwMaterialParam * parameter)
     {
       int i = idx[0], j = idx[1], k = idx[2];
       double value = static_cast<ConstElectricParam *>(parameter)->value;

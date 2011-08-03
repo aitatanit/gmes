@@ -33,8 +33,10 @@ namespace gmes
     ~DielectricElectric()
     {
       for(MapType::const_iterator iter = param.begin(); iter != param.end(); iter++) {
-	delete[] iter->first;
-	delete static_cast<DielectricElectricParam *>(iter->second);
+	if (iter->first != NULL)
+	  delete[] iter->first;
+	if (iter->second != NULL)
+	  delete static_cast<DielectricElectricParam *>(iter->second);
 	}
       param.clear();
     }
@@ -66,7 +68,7 @@ namespace gmes
 	   const T * const hy, int hy_x_size, int hy_y_size, int hy_z_size,
 	   double dy, double dz, double dt, double n,
 	   const int idx[3], int idx_size, 
-	   const PwMaterialParam * const parameter)
+	   const PwMaterialParam * parameter)
     {
       int i = idx[0], j = idx[1], k = idx[2];
       double eps = static_cast<DielectricElectricParam *>(parameter)->eps;
@@ -88,7 +90,7 @@ namespace gmes
 	   const T * const hz, int hz_x_size, int hz_y_size, int hz_z_size,
 	   double dz, double dx, double dt, double n, 
 	   const int idx[3], int idx_size, 
-	   const PwMaterialParam * const parameter)
+	   const PwMaterialParam * parameter)
     {
       int i = idx[0], j = idx[1], k = idx[2];
       double eps = static_cast<DielectricElectricParam *>(parameter)->eps;
@@ -110,7 +112,7 @@ namespace gmes
 	   const T * const hx, int hx_x_size, int hx_y_size, int hx_z_size,
 	   double dx, double dy, double dt, double n, 
 	   const int idx[3], int idx_size, 
-	   const PwMaterialParam * const parameter)
+	   const PwMaterialParam * parameter)
     {
       int i = idx[0], j = idx[1], k = idx[2];
       double eps = static_cast<DielectricElectricParam *>(parameter)->eps;
@@ -129,8 +131,10 @@ namespace gmes
     ~DielectricMagnetic()
     {
       for(MapType::const_iterator iter = param.begin(); iter != param.end(); iter++) {
-	delete[] iter->first;
-	delete static_cast<DielectricMagneticParam *>(iter->second);
+	if (iter->first != NULL)
+	  delete[] iter->first;
+	if (iter->second != NULL)
+	  delete static_cast<DielectricMagneticParam *>(iter->second);
       }
       param.clear();
     }
@@ -162,7 +166,7 @@ namespace gmes
 	   const T * const ey, int ey_x_size, int ey_y_size, int ey_z_size,
 	   double dy, double dz, double dt, double n, 
 	   const int idx[3], int idx_size, 
-	   const PwMaterialParam * const parameter)
+	   const PwMaterialParam * parameter)
     {
       int i = idx[0], j = idx[1], k = idx[2];
       double mu = static_cast<DielectricMagneticParam *>(parameter)->mu;
@@ -184,7 +188,7 @@ namespace gmes
 	   const T * const ez, int ez_x_size, int ez_y_size, int ez_z_size,
 	   double dz, double dx, double dt, double n, 
 	   const int idx[3], int idx_size, 
-	   const PwMaterialParam * const parameter)
+	   const PwMaterialParam * parameter)
     {
       int i = idx[0], j = idx[1], k = idx[2];
       double mu = static_cast<DielectricMagneticParam *>(parameter)->mu;
@@ -206,7 +210,7 @@ namespace gmes
 	   const T * const ex, int ex_x_size, int ex_y_size, int ex_z_size,
 	   double dx, double dy, double dt, double n, 
 	   const int idx[3], int idx_size, 
-	   const PwMaterialParam * const parameter)
+	   const PwMaterialParam * parameter)
     {
       int i = idx[0], j = idx[1], k = idx[2];
       double mu = static_cast<DielectricMagneticParam *>(parameter)->mu;

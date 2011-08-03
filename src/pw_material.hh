@@ -24,14 +24,14 @@ namespace gmes
   {
     double mu;
   };
+  
+  typedef std::unordered_map<const int[3], PwMaterialParam *, eqidx> MapType;
 
   template<class T> class PwMaterial 
   {
   public:
     virtual
-    ~PwMaterial() 
-    {
-    }
+    ~PwMaterial() = 0;
 
     virtual void 
     attach(const int idx[3], int idx_size,
@@ -44,7 +44,7 @@ namespace gmes
 	   const T * const in_field2, int in2_dim1, int in2_dim2, int in2_dim3,
 	   double d1, double d2, double dt, double n, 
 	   const int idx[3], int idx_size,
-	   const PwMaterialParam * const parameter) = 0;
+	   const PwMaterialParam * parameter) = 0;
     
     void
     update_all(T * const inplace_field,
@@ -55,7 +55,8 @@ namespace gmes
 	       int in2_dim1, int in2_dim2, int in2_dim3,
 	       double d1, double d2, double dt, double n)
     {
-      for(std::unordered_map<const int[3], PwMaterialParam *, eqidx>::const_iterator iter = param.begin(); iter != param.end(); iter++) {
+      for(MapType::iterator iter = param.begin(); 
+	  iter != param.end(); iter++) {
 	update(inplace_field, inplace_dim1, inplace_dim2, inplace_dim3,
 	       in_field1, in1_dim1, in1_dim2, in1_dim3,
 	       in_field2, in2_dim1, in2_dim2, in2_dim3,
@@ -77,9 +78,7 @@ namespace gmes
   {
   public:
     virtual 
-    ~MaterialElectric()
-    {
-    }
+    ~MaterialElectric() = 0;
 
     double 
     get_epsilon(const int idx[3], int idx_size) const
@@ -118,8 +117,6 @@ namespace gmes
   protected:
     using PwMaterial<T>::param;
   };
-
-  typedef std::unordered_map<const int[3], PwMaterialParam *, eqidx> MapType;
 }
 
 #endif /*PW_MATERIAL_HH_*/
