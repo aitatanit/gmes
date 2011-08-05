@@ -1,16 +1,24 @@
 #ifndef PW_MATERIAL_HH_
 #define PW_MATERIAL_HH_
 
+#include <array>
+#include <numeric>
 #include <unordered_map>
+
+namespace std
+{
+  template <>
+  struct hash<array<int, 3> >: public unary_function<array<int, 3>, size_t>
+  {
+    size_t operator()(const array<int, 3>& idx) const
+    {
+      return std::accumulate(idx.begin(), idx.end(), 0);
+    }
+  };
+}
 
 namespace gmes 
 {
-  struct eqidx{
-    bool operator()(const int idx1[3], const int idx2[3]) const {
-      return idx1[0] == idx2[0] && idx1[1] == idx2[1] && idx1[2] == idx2[2];
-    }
-  };
-  
   struct PwMaterialParam 
   {
   };
@@ -25,7 +33,7 @@ namespace gmes
     double mu;
   };
   
-  typedef std::unordered_map<const int[3], PwMaterialParam *, eqidx> MapType;
+  typedef std::unordered_map<std::array<int, 3>, PwMaterialParam *> MapType;
 
   template<class T> class PwMaterial 
   {
@@ -44,7 +52,7 @@ namespace gmes
 	   const T * const in_field2, int in2_dim1, int in2_dim2, int in2_dim3,
 	   double d1, double d2, double dt, double n, 
 	   const int idx[3], int idx_size,
-	   const PwMaterialParam * parameter) = 0;
+	   PwMaterialParam * const parameter) = 0;
     
     void
     update_all(T * const inplace_field,
@@ -55,23 +63,26 @@ namespace gmes
 	       int in2_dim1, int in2_dim2, int in2_dim3,
 	       double d1, double d2, double dt, double n)
     {
-      for(MapType::iterator iter = param.begin(); 
+      for(MapType::const_iterator iter = param.begin(); 
 	  iter != param.end(); iter++) {
 	update(inplace_field, inplace_dim1, inplace_dim2, inplace_dim3,
 	       in_field1, in1_dim1, in1_dim2, in1_dim3,
 	       in_field2, in2_dim1, in2_dim2, in2_dim3,
-	       d1, d2, dt, n, iter->first, iter->second);
+	       d1, d2, dt, n, 
+	       iter->first.data(), iter->first.size(), iter->second);
       }
     }
     
     bool
     has_it(const int idx[3], int idx_size)
     {
-      return param.find(const_cast<int[3]>(idx)) != param.end();
+      std::array<int, 3> index;
+      std::copy(idx, idx + idx_size, index.begin());
+      return param.find(index) != param.end();
     }
     
   protected:
-    std::unordered_map<const int[3], PwMaterialParam *, eqidx> param;
+    MapType param;
   };
 
   template <typename T> class MaterialElectric: public PwMaterial<T> 
@@ -83,13 +94,27 @@ namespace gmes
     double 
     get_epsilon(const int idx[3], int idx_size) const
     {
-      return static_cast<ElectricParam *>(param[idx])->eps;
+      std::array<int, 3> index;
+      std::copy(idx, idx + idx_size, index.begin());
+
+      MapType::const_iterator it = param.find(index);
+      if (it == param.end())
+	return 0;
+      else
+	return static_cast<ElectricParam *>(it->second)->eps;
     }
 
     double 
     set_epsilon(const int idx[3], int idx_size, double epsilon)
     {
-      return static_cast<ElectricParam *>(param[idx]) = epsilon;
+      std::array<int, 3> index;
+      std::copy(idx, idx + idx_size, index.begin());
+      
+      MapType::const_iterator it = param.find(index);
+      if (it == param.end())
+	return 0;
+      else
+	return static_cast<ElectricParam *>(it->second)->eps = epsilon;
     }
 
   protected:
@@ -104,14 +129,30 @@ namespace gmes
     {
     }
 
-    double get_mu(const int idx[3], int idx_size) const
+    double 
+    get_mu(const int idx[3], int idx_size) const
     {
-      return static_cast<MagneticParam *>(param[idx])->mu;
+      std::array<int, 3> index;
+      std::copy(idx, idx + idx_size, index.begin());
+
+      MapType::const_iterator it = param.find(index);
+      if (it == param.end())
+	return 0;
+      else
+	return static_cast<MagneticParam *>(it->second)->mu;
     }
 
-    double set_mu(const int idx[3], int idx_size, double mu)
+    double 
+    set_mu(const int idx[3], int idx_size, double mu)
     {
-      return static_cast<MagneticParam *>(param[idx]) = mu;
+      std::array<int, 3> index;
+      std::copy(idx, idx + idx_size, index.begin());
+
+      MapType::const_iterator it = param.find(index);
+      if (it == param.end())
+	return 0;
+      else
+	return static_cast<MagneticParam *>(it->second)->mu = mu;
     }
 
   protected:

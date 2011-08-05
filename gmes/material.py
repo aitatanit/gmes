@@ -851,12 +851,13 @@ class DCP(Dielectric):
     * P. G. Etchegoin, E. C. Le Ru, and M. Meyer, "An analytic model for the optical 
       properties of gold," The Journal of Chemical Physics, vol. 125, no. 16, 
       pp. 164705-3, Oct. 2006.
+
+    * P. G. Etchegoin, E. C. Le Ru, and M. Meyer, "Erratum: An analytic model
+      for the optical properties of gold" [J. Chem. Phys. 125, 164705 (2006)]," 
     * A. Taflove and S. C. Hagness, Computational Electrodynamics: The Finite-
       Difference Time-Domain Method, Third Edition, 3rd ed. Artech House Publishers, 
       2005.
-    * P. G. Etchegoin, E. C. Le Ru, and M. Meyer, "An analytic model for the
-      optical properties of gold," J. Chem. Phys. 125, 164705, 2001.
-      
+
     """
     def __init__(self, epsilon=1, mu=1, sigma=0, dps=(), cps=()):
         """

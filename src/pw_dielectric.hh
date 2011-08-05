@@ -1,4 +1,5 @@
 /* This implementation is based on the following article.
+ *
  * K. S. Yee, "Numerical solution of initial boundary value problems involving
  * Maxwell's equations in isotropic media," IEEE Transactions on Antennas and 
  * Propagation, vol. 14, no. 3, pp. 302-307, May. 1966.
@@ -7,6 +8,7 @@
 #ifndef PW_DIELECTRIC_HH_
 #define PW_DIELECTRIC_HH_
 
+#include <iostream>
 #include <utility>
 #include "pw_material.hh"
 
@@ -32,12 +34,10 @@ namespace gmes
   public:
     ~DielectricElectric()
     {
-      for(MapType::const_iterator iter = param.begin(); iter != param.end(); iter++) {
-	if (iter->first != NULL)
-	  delete[] iter->first;
-	if (iter->second != NULL)
-	  delete static_cast<DielectricElectricParam *>(iter->second);
-	}
+      for(MapType::const_iterator iter = param.begin(); 
+	  iter != param.end(); iter++) {
+	delete static_cast<DielectricElectricParam *>(iter->second);
+      }
       param.clear();
     }
 
@@ -45,18 +45,25 @@ namespace gmes
     attach(const int idx[3], int idx_size,
 	   const PwMaterialParam * const parameter)
     {
-      int *idx_ptr = new int[3];
-      std::copy(idx, idx + idx_size, idx_ptr);
+      std::array<int, 3> index;
+      std::copy(idx, idx + idx_size, index.begin());
+
+      MapType::const_iterator iter = param.find(index);
+      if (iter != param.end()) {
+	std::cerr << "Overwriting the existing index." << std::endl;
+	delete static_cast<DielectricElectricParam *>(iter->second);
+	param.erase(iter);
+      }
 
       DielectricElectricParam *param_ptr;
       param_ptr = new DielectricElectricParam();
-      param_ptr->eps = static_cast<DielectricElectricParam *>(parameter)->eps;
+      param_ptr->eps = static_cast<const DielectricElectricParam *>(parameter)->eps;
 
-      param.insert(std::make_pair(idx_ptr, param_ptr));
+      param.insert(std::make_pair(index, param_ptr));
     }
     
   protected:
-    using PwMaterial<T>::param;
+    using MaterialElectric<T>::param;
   };
 
   template <typename T> class DielectricEx: public DielectricElectric<T>
@@ -68,7 +75,7 @@ namespace gmes
 	   const T * const hy, int hy_x_size, int hy_y_size, int hy_z_size,
 	   double dy, double dz, double dt, double n,
 	   const int idx[3], int idx_size, 
-	   const PwMaterialParam * parameter)
+	   PwMaterialParam * const parameter)
     {
       int i = idx[0], j = idx[1], k = idx[2];
       double eps = static_cast<DielectricElectricParam *>(parameter)->eps;
@@ -90,7 +97,7 @@ namespace gmes
 	   const T * const hz, int hz_x_size, int hz_y_size, int hz_z_size,
 	   double dz, double dx, double dt, double n, 
 	   const int idx[3], int idx_size, 
-	   const PwMaterialParam * parameter)
+	   PwMaterialParam * const parameter)
     {
       int i = idx[0], j = idx[1], k = idx[2];
       double eps = static_cast<DielectricElectricParam *>(parameter)->eps;
@@ -112,7 +119,7 @@ namespace gmes
 	   const T * const hx, int hx_x_size, int hx_y_size, int hx_z_size,
 	   double dx, double dy, double dt, double n, 
 	   const int idx[3], int idx_size, 
-	   const PwMaterialParam * parameter)
+	   const PwMaterialParam * const parameter)
     {
       int i = idx[0], j = idx[1], k = idx[2];
       double eps = static_cast<DielectricElectricParam *>(parameter)->eps;
@@ -130,11 +137,9 @@ namespace gmes
   public:
     ~DielectricMagnetic()
     {
-      for(MapType::const_iterator iter = param.begin(); iter != param.end(); iter++) {
-	if (iter->first != NULL)
-	  delete[] iter->first;
-	if (iter->second != NULL)
-	  delete static_cast<DielectricMagneticParam *>(iter->second);
+      for(MapType::const_iterator iter = param.begin(); 
+	  iter != param.end(); iter++) {
+	delete static_cast<DielectricMagneticParam *>(iter->second);
       }
       param.clear();
     }
@@ -143,18 +148,25 @@ namespace gmes
     attach(const int idx[3], int idx_size, 
 	   const PwMaterialParam * const parameter)
     {
-      int *idx_ptr = new int[3];
-      std::copy(idx, idx + idx_size, idx_ptr);
+      std::array<int, 3> index;
+      std::copy(idx, idx + idx_size, index.begin());
+
+      MapType::const_iterator iter = param.find(index);
+      if (iter != param.end()) {
+	std::cerr << "Overwriting the existing index." << std::endl;
+	delete static_cast<DielectricMagneticParam *>(iter->second);
+	param.erase(iter);
+      }
 
       DielectricMagneticParam *param_ptr;
       param_ptr = new DielectricMagneticParam();
-      param_ptr->mu = static_cast<DielectricMagneticParam *>(parameter)->mu;
+      param_ptr->mu = static_cast<const DielectricMagneticParam *>(parameter)->mu;
 
-      param.insert(std::make_pair(idx_ptr, param_ptr));
+      param.insert(std::make_pair(index, param_ptr));
     }
     
   protected:
-    using PwMaterial<T>::param;
+    using MaterialMagnetic<T>::param;
   };
 
   template <typename T> class DielectricHx: public DielectricMagnetic<T>
@@ -166,7 +178,7 @@ namespace gmes
 	   const T * const ey, int ey_x_size, int ey_y_size, int ey_z_size,
 	   double dy, double dz, double dt, double n, 
 	   const int idx[3], int idx_size, 
-	   const PwMaterialParam * parameter)
+	   PwMaterialParam * const parameter)
     {
       int i = idx[0], j = idx[1], k = idx[2];
       double mu = static_cast<DielectricMagneticParam *>(parameter)->mu;
@@ -188,7 +200,7 @@ namespace gmes
 	   const T * const ez, int ez_x_size, int ez_y_size, int ez_z_size,
 	   double dz, double dx, double dt, double n, 
 	   const int idx[3], int idx_size, 
-	   const PwMaterialParam * parameter)
+	   PwMaterialParam * const parameter)
     {
       int i = idx[0], j = idx[1], k = idx[2];
       double mu = static_cast<DielectricMagneticParam *>(parameter)->mu;
@@ -210,7 +222,7 @@ namespace gmes
 	   const T * const ex, int ex_x_size, int ex_y_size, int ex_z_size,
 	   double dx, double dy, double dt, double n, 
 	   const int idx[3], int idx_size, 
-	   const PwMaterialParam * parameter)
+	   PwMaterialParam * const parameter)
     {
       int i = idx[0], j = idx[1], k = idx[2];
       double mu = static_cast<DielectricMagneticParam *>(parameter)->mu;

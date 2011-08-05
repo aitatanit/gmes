@@ -1,13 +1,15 @@
 /* This implementation is based on the following article.
+ *
  * S. Gedney, "Perfectly Matched Layer Absorbing Boundary Conditions,"
  * Computational Electrodynamics: The Finite-Difference Time-Domain Method,
- * Third Edition, A. Taflove and S.C. Hagness, eds., Artech House Publishers,
- *  2005, pp. 273-328.
+ * Third Edition, A. Taflove and S.C. Hagness, 3rd eds., Artech House 
+ * Publishers, 2005, pp. 273-328.
  */ 
 
 #ifndef PW_CPML_HH_
 #define PW_CPML_HH_
 
+#include <iostream>
 #include <utility>
 #include "pw_material.hh"
 
@@ -37,11 +39,9 @@ namespace gmes
   public:
     ~CpmlElectric()
     {
-      for(MapType::const_iterator iter = param.begin(); iter != param.end(); iter++) {
-	if (iter->first != NULL)
-	  delete[] iter->first;
-	if (iter->second != NULL)
-	  delete static_cast<CpmlElectricParam<T> *>(iter->second);
+      for(MapType::const_iterator iter = param.begin(); 
+	  iter != param.end(); iter++) {
+	delete static_cast<CpmlElectricParam<T> *>(iter->second);
       }
       param.clear();
     }
@@ -50,11 +50,18 @@ namespace gmes
     attach(const int idx[3], int idx_size, 
 	   const PwMaterialParam * const parameter)
     {
-      int *idx_ptr = new int[3];
-      std::copy(idx, idx + idx_size, idx_ptr);
+      std::array<int, 3> index;
+      std::copy(idx, idx + idx_size, index.begin());
 
-      CpmlElectricParam<T> *CpmlElectricParameter_ptr;
-      CpmlElectricParameter_ptr = static_cast<CpmlElectricParam<T> *>(parameter);
+      MapType::const_iterator iter = param.find(index);
+      if (iter != param.end()) {
+	std::cerr << "Overwriting the existing index." << std::endl;
+	delete static_cast<CpmlElectricParam<T> *>(iter->second);
+	param.erase(iter);
+      }
+
+      const CpmlElectricParam<T> * const CpmlElectricParameter_ptr
+	= static_cast<const CpmlElectricParam<T> * const>(parameter);
       CpmlElectricParam<T> *param_ptr;
       param_ptr = new CpmlElectricParam<T>();
       param_ptr->eps = CpmlElectricParameter_ptr->eps;
@@ -66,7 +73,8 @@ namespace gmes
       param_ptr->kappa2 = CpmlElectricParameter_ptr->kappa2;
       param_ptr->psi1 = static_cast<T>(0);
       param_ptr->psi2 = static_cast<T>(0);
-      param.insert(std::make_pair(idx_ptr, param_ptr));
+
+      param.insert(std::make_pair(index, param_ptr));
     }
 
   protected:
@@ -81,8 +89,8 @@ namespace gmes
 	   const T * const hz, int hz_x_size, int hz_y_size, int hz_z_size,
 	   const T * const hy, int hy_x_size, int hy_y_size, int hy_z_size,
 	   double dy, double dz, double dt, double n,
-	   const int idx[3], int idx_size, 
-	   const PwMaterialParam * parameter)
+	   const int idx[3], int idx_size,
+	   PwMaterialParam * const parameter)
     {
       int i = idx[0], j = idx[1], k = idx[2];
 
@@ -95,8 +103,8 @@ namespace gmes
       double c2 = ptr->c2;
       double kappa1 = ptr->kappa1;
       double kappa2 = ptr->kappa2;
-      double& psi1 = ptr->psi1;
-      double& psi2 = ptr->psi2;
+      T& psi1 = ptr->psi1;
+      T& psi2 = ptr->psi2;
 
       psi1 = b1 * psi1 + c1 * (hz(i+1,j+1,k) - hz(i+1,j,k)) / dy;
       psi2 = b2 * psi2 + c2 * (hy(i+1,j,k+1) - hy(i+1,j,k)) / dz;
@@ -119,7 +127,7 @@ namespace gmes
 	   const T * const hz, int hz_x_size, int hz_y_size, int hz_z_size,
 	   double dz, double dx, double dt, double n,
 	   const int idx[3], int idx_size, 
-	   const PwMaterialParam * parameter)
+	   PwMaterialParam * const parameter)
     {
       int i = idx[0], j = idx[1], k = idx[2];
 
@@ -132,8 +140,8 @@ namespace gmes
       double c2 = ptr->c2;
       double kappa1 = ptr->kappa1;
       double kappa2 = ptr->kappa2;
-      double& psi1 = ptr->psi1;
-      double& psi2 = ptr->psi2;
+      T& psi1 = ptr->psi1;
+      T& psi2 = ptr->psi2;
 
       psi1 = b1 * psi1 + c1 * (hx(i,j+1,k+1) - hx(i,j+1,k)) / dz;
       psi2 = b2 * psi2 + c2 * (hz(i+1,j+1,k) - hz(i,j+1,k)) / dx;
@@ -156,7 +164,7 @@ namespace gmes
 	   const T * const hx, int hx_x_size, int hx_y_size, int hx_z_size,
 	   double dx, double dy, double dt, double n,
 	   const int idx[3], int idx_size, 
-	   const PwMaterialParam * parameter)
+	   PwMaterialParam * const parameter)
     {
       int i = idx[0], j = idx[1], k = idx[2];
 
@@ -169,8 +177,8 @@ namespace gmes
       double c2 = ptr->c2;
       double kappa1 = ptr->kappa1;
       double kappa2 = ptr->kappa2;
-      double& psi1 = ptr->psi1;
-      double& psi2 = ptr->psi2;
+      T& psi1 = ptr->psi1;
+      T& psi2 = ptr->psi2;
 
       psi1 = b1 * psi1 + c1 * (hy(i+1,j,k+1) - hy(i,j,k+1)) / dx;
       psi2 = b2 * psi2 + c2 * (hx(i,j+1,k+1) - hx(i,j,k+1)) / dy;
@@ -189,11 +197,9 @@ namespace gmes
   public:
     ~CpmlMagnetic()
     {
-      for(MapType::const_iterator iter = param.begin(); iter != param.end(); iter++) {
-	if (iter->first != NULL)
-	  delete[] iter->first;
-	if (iter->second != NULL)
-	  delete static_cast<CpmlMagneticParam<T> *>(iter->second);
+      for(MapType::const_iterator iter = param.begin(); 
+	  iter != param.end(); iter++) {
+	delete static_cast<CpmlMagneticParam<T> *>(iter->second);
       }
       param.clear();
     }
@@ -202,13 +208,19 @@ namespace gmes
     attach(const int idx[3], int idx_size, 
 	   const PwMaterialParam * const parameter)
     {
-      int *idx_ptr = new int[3];
-      std::copy(idx, idx + idx_size, idx_ptr);
+      std::array<int, 3> index;
+      std::copy(idx, idx + idx_size, index.begin());
 
-      CpmlMagneticParam<T> *CpmlMagneticParameter_ptr;
-      CpmlMagneticParameter_ptr = static_cast<CpmlMagneticParam<T> *>(parameter);
-      
-      CpmlMagneticParam<T> *param_ptr;
+      MapType::const_iterator iter = param.find(index);
+      if (iter != param.end()) {
+	std::cerr << "Overwriting the existing index." << std::endl;
+	delete static_cast<CpmlMagneticParam<T> *>(iter->second);
+	param.erase(iter);
+      }
+
+      const CpmlMagneticParam<T> * const CpmlMagneticParameter_ptr
+	= static_cast<const CpmlMagneticParam<T> * const>(parameter);
+      CpmlMagneticParam<T> * param_ptr;
       param_ptr = new CpmlMagneticParam<T>();
       param_ptr->mu = CpmlMagneticParameter_ptr->mu;
       param_ptr->b1 = CpmlMagneticParameter_ptr->b1;
@@ -220,7 +232,7 @@ namespace gmes
       param_ptr->psi1 = static_cast<T>(0);
       param_ptr->psi2 = static_cast<T>(0);
 
-      param.insert(std::make_pair(idx_ptr, param_ptr));
+      param.insert(std::make_pair(index, param_ptr));
     }
 
   protected:
@@ -236,7 +248,7 @@ namespace gmes
 	   const T * const ey, int ey_x_size, int ey_y_size, int ey_z_size,
 	   double dy, double dz, double dt, double n,
 	   const int idx[3], int idx_size, 
-	   const PwMaterialParam * parameter)
+	   PwMaterialParam * const parameter)
     {
       int i = idx[0], j = idx[1], k = idx[2];
 
@@ -249,8 +261,8 @@ namespace gmes
       double c2 = ptr->c2;
       double kappa1 = ptr->kappa1;
       double kappa2 = ptr->kappa2;
-      double& psi1 = ptr->psi1;
-      double& psi2 = ptr->psi2;
+      T& psi1 = ptr->psi1;
+      T& psi2 = ptr->psi2;
       
       psi1 = b1 * psi1 + c1 * (ez(i,j,k-1) - ez(i,j-1,k-1)) / dy;
       psi2 = b2 * psi2 + c2 * (ey(i,j-1,k) - ey(i,j-1,k-1)) / dz;
@@ -273,7 +285,7 @@ namespace gmes
 	   const T * const ez, int ez_x_size, int ez_y_size, int ez_z_size,
 	   double dz, double dx, double dt, double n,
 	   const int idx[3], int idx_size, 
-	   const PwMaterialParam * parameter)
+	   PwMaterialParam * const parameter)
     {
       int i = idx[0], j = idx[1], k = idx[2];
 
@@ -286,8 +298,8 @@ namespace gmes
       double c2 = ptr->c2;
       double kappa1 = ptr->kappa1;
       double kappa2 = ptr->kappa2;
-      double& psi1 = ptr->psi1;
-      double& psi2 = ptr->psi2;
+      T& psi1 = ptr->psi1;
+      T& psi2 = ptr->psi2;
 
       psi1 = b1 * psi1 + c1 * (ex(i-1,j,k) - ex(i-1,j,k-1)) / dz;
       psi2 = b2 * psi2 + c2 * (ez(i,j,k-1) - ez(i-1,j,k-1)) / dx;
@@ -310,7 +322,7 @@ namespace gmes
 	   const T * const ex, int ex_x_size, int ex_y_size, int ex_z_size,
 	   double dx, double dy, double dt, double n,
 	   const int idx[3], int idx_size, 
-	   const PwMaterialParam * parameter)
+	   PwMaterialParam * const parameter)
     {
       int i = idx[0], j = idx[1], k = idx[2];
 
@@ -323,8 +335,8 @@ namespace gmes
       double c2 = ptr->c2;
       double kappa1 = ptr->kappa1;
       double kappa2 = ptr->kappa2;
-      double& psi1 = ptr->psi1;
-      double& psi2 = ptr->psi2;
+      T& psi1 = ptr->psi1;
+      T& psi2 = ptr->psi2;
 
       psi1 = b1 * psi1 + c1 * (ey(i,j-1,k) - ey(i-1,j-1,k)) / dx;
       psi2 = b2 * psi2 + c2 * (ex(i-1,j,k) - ex(i-1,j-1,k)) / dy;

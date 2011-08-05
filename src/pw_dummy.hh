@@ -1,124 +1,135 @@
 #ifndef PW_DUMMY_HH_
 #define PW_DUMMY_HH_
 
+#include <iostream>
 #include "pw_material.hh"
 
 namespace gmes
 {
+  struct DummyElectricParam: public ElectricParam
+  {
+  };
+
+  struct DummyMagneticParam: public MagneticParam
+  {
+  };
+
   template <typename T> class DummyElectric: public MaterialElectric<T>
   {
   public:
-    DummyElectric(double epsilon):
-      eps(epsilon)
+    ~DummyElectric()
     {
+      for(MapType::const_iterator iter = param.begin(); 
+	  iter != param.end(); iter++) {
+	delete static_cast<DummyElectricParam *>(iter->second);
+      }
+      param.clear();
+    }
+    
+    void 
+    attach(const int idx[3], int idx_size,
+	   const PwMaterialParam * const parameter)
+    {
+      std::array<int, 3> index;
+      std::copy(idx, idx + idx_size, index.begin());
+      
+      MapType::const_iterator iter = param.find(index);
+      if (iter != param.end()) {
+	std::cerr << "Overwriting the existing index." << std::endl;
+	delete static_cast<DummyElectricParam *>(iter->second);
+	param.erase(iter);
+      }
+
+      DummyElectricParam *param_ptr;
+      param_ptr = new DummyElectricParam();
+      param_ptr->eps = static_cast<const DummyElectricParam *>(parameter)->eps;
+	  
+      param.insert(std::make_pair(index, param_ptr));
     }
 
-    double get_epsilon() const
+    void 
+    update(T * const inplace_field, int inplace_dim1, int inplace_dim2, int inplace_dim3,
+	   const T * const in_field1, int in1_dim1, int in1_dim2, int in1_dim3,
+	   const T * const in_field2, int in2_dim1, int in2_dim2, int in2_dim3,
+	   double d1, double d2, double dt, double n,
+	   const int idx[3], int idx_size, 
+	   PwMaterialParam * const parameter)
     {
-      return eps;
-    }
-
-    void set_epsilon(double epsilon)
-    {
-      eps = epsilon;
-    }
-
-    void update(T * const inplace_field, 
-		int inplace_dim1, int inplace_dim2, int inplace_dim3,
-		const T * const in_field1, int in1_dim1, int in1_dim2, int in1_dim3,
-		const T * const in_field2, int in2_dim1, int in2_dim2, int in2_dim3,
-		double d1, double d2, double dt, double n, int i, int j, int k)
-    {
-      return;
     }
 
   protected:
-    double eps;
+    using MaterialElectric<T>::param;
   };
 
   template <typename T> class DummyEx: public DummyElectric<T>
   {
-  public:
-    DummyEx(double epsilon = 1):
-      DummyElectric<T>(epsilon)
-    {
-    }
   };
 
   template <typename T> class DummyEy: public DummyElectric<T>
   {
-  public:
-    DummyEy(double epsilon = 1):
-      DummyElectric<T>(epsilon)
-    {
-    }
   };
 
   template <typename T> class DummyEz: public DummyElectric<T>
   {
-  public:
-    DummyEz(double epsilon = 1):
-      DummyElectric<T>(epsilon)
-    {
-    }
   };
 
   template <typename T> class DummyMagnetic: public MaterialMagnetic<T>
   {
   public:
-    DummyMagnetic(double mu):
-      mu(mu)
+    ~DummyMagnetic()
     {
+      for(MapType::const_iterator iter = param.begin(); 
+	  iter != param.end(); iter++) {
+	delete static_cast<DummyMagneticParam *>(iter->second);
+      }
+      param.clear();
+    }
+    
+    void 
+    attach(const int idx[3], int idx_size,
+	   const PwMaterialParam * const parameter)
+    {
+      std::array<int, 3> index;
+      std::copy(idx, idx + idx_size, index.begin());
+      
+      MapType::const_iterator iter = param.find(index);
+      if (iter != param.end()) {
+	std::cerr << "Overwriting the existing index." << std::endl;
+	delete static_cast<DummyMagneticParam *>(iter->second);
+	param.erase(iter);
+      }
+      
+      DummyMagneticParam *param_ptr;
+      param_ptr = new DummyMagneticParam();
+      param_ptr->mu = static_cast<const DummyMagneticParam *>(parameter)->mu;
+      
+      param.insert(std::make_pair(index, param_ptr));
     }
 
-    double get_mu() const
+    void 
+    update(T * const inplace_field, int inplace_dim1, int inplace_dim2, int inplace_dim3,
+	   const T * const in_field1, int in1_dim1, int in1_dim2, int in1_dim3,
+	   const T * const in_field2, int in2_dim1, int in2_dim2, int in2_dim3,
+	   double d1, double d2, double dt, double n,
+	   const int idx[3], int idx_size, 
+	   PwMaterialParam * const parameter)
     {
-      return mu;
-    }
-
-    void set_mu(double mu)
-    {
-      this->mu = mu;
-    }
-
-    void update(T * const inplace_field, 
-		int inplace_dim1, int inplace_dim2, int inplace_dim3,
-		const T * const in_field1, int in1_dim1, int in1_dim2, int in1_dim3,
-		const T * const in_field2, int in2_dim1, int in2_dim2, int in2_dim3,
-		double d1, double d2, double dt, double n, int i, int j, int k)
-    {
-      return;
     }
 
   protected:
-    double mu;
+    using MaterialMagnetic<T>::param;
   };
 
   template <typename T> class DummyHx: public DummyMagnetic<T>
   {
-  public:
-    DummyHx(double mu = 1):
-      DummyMagnetic<T>(mu)
-    {
-    }
   };
 
   template <typename T> class DummyHy: public DummyMagnetic<T>
   {
-  public:
-    DummyHy(double mu = 1):
-      DummyMagnetic<T>(mu)
-    {
-    }
   };
 
   template <typename T> class DummyHz: public DummyMagnetic<T>
   {
-  public:
-    DummyHz(double mu = 1):
-      DummyMagnetic<T>(mu)
-    {
-    }
   };
 }
 
