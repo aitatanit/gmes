@@ -119,7 +119,7 @@ namespace gmes
 	   const T * const hx, int hx_x_size, int hx_y_size, int hx_z_size,
 	   double dx, double dy, double dt, double n, 
 	   const int idx[3], int idx_size, 
-	   const PwMaterialParam * const parameter)
+	   PwMaterialParam * const parameter)
     {
       int i = idx[0], j = idx[1], k = idx[2];
       double eps = static_cast<DielectricElectricParam *>(parameter)->eps;
