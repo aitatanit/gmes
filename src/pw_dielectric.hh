@@ -57,7 +57,8 @@ namespace gmes
 
       DielectricElectricParam<T> *param_ptr;
       param_ptr = new DielectricElectricParam<T>();
-      param_ptr->eps = static_cast<const DielectricElectricParam<T> *>(parameter)->eps;
+      param_ptr->eps 
+	= static_cast<const DielectricElectricParam<T> *>(parameter)->eps;
 
       param.insert(std::make_pair(index, param_ptr));
     }
@@ -160,7 +161,8 @@ namespace gmes
 
       DielectricMagneticParam<T> *param_ptr;
       param_ptr = new DielectricMagneticParam<T>();
-      param_ptr->mu = static_cast<const DielectricMagneticParam<T> *>(parameter)->mu;
+      param_ptr->mu 
+	= static_cast<const DielectricMagneticParam<T> *>(parameter)->mu;
 
       param.insert(std::make_pair(index, param_ptr));
     }

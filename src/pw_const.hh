@@ -11,12 +11,12 @@ namespace gmes
 {
   template <typename T> struct ConstElectricParam: public ElectricParam<T>
   {
-    double value;
+    T value;
   };
     
   template <typename T> struct ConstMagneticParam: public MagneticParam<T>
   {
-    double value;
+    T value;
   };
 
   template <typename T> class ConstElectric: public MaterialElectric<T>
@@ -65,7 +65,8 @@ namespace gmes
 	   PwMaterialParam * const parameter)
     {
       int i = idx[0], j = idx[1], k = idx[2];
-      double value = static_cast<const ConstElectricParam<T> *>(parameter)->value;
+      const T& value 
+	= static_cast<const ConstElectricParam<T> *>(parameter)->value;
 
       inplace_field(i,j,k) = value;
     }
@@ -132,7 +133,8 @@ namespace gmes
 	   PwMaterialParam * const parameter)
     {
       int i = idx[0], j = idx[1], k = idx[2];
-      double value = static_cast<const ConstElectricParam<T> *>(parameter)->value;
+      const T& value 
+	= static_cast<const ConstElectricParam<T> *>(parameter)->value;
 
       inplace_field(i,j,k) = value;
     }

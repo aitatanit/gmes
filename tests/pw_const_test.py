@@ -1,104 +1,189 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
 
 import os, sys
 new_path = os.path.abspath('../')
 sys.path.append(new_path)
 
 import unittest
-from numpy import *
-from gmes.pw_material import * 
+import numpy as np
+from random import random
+
+from gmes.pw_material import ConstElectricParamReal, ConstElectricParamCmplx
+from gmes.pw_material import ConstMagneticParamReal, ConstMagneticParamCmplx
+from gmes.pw_material import ConstExReal, ConstExCmplx
+from gmes.pw_material import ConstEyReal, ConstEyCmplx
+from gmes.pw_material import ConstEzReal, ConstEzCmplx
+from gmes.pw_material import ConstHxReal, ConstHxCmplx
+from gmes.pw_material import ConstHyReal, ConstHyCmplx
+from gmes.pw_material import ConstHzReal, ConstHzCmplx
 
     
 class TestSequence(unittest.TestCase):
     def setUp(self):
         self.idx = (1,1,1)
         
-        self.realA = random.random((3,3,3))
-        self.realB = empty((3,3,3))
-        self.realC = empty((3,3,3))
+        self.e_param_real = ConstElectricParamReal()
+        self.e_param_real.eps = random()
+        self.e_param_real.value = random()
+
+        self.e_param_cmplx = ConstElectricParamCmplx()
+        self.e_param_cmplx.eps = random()
+        self.e_param_cmplx.value = random() + 1j * random()
+
+        self.h_param_real = ConstMagneticParamReal()
+        self.h_param_real.mu = random()
+        self.h_param_real.value = random()
+
+        self.h_param_cmplx = ConstMagneticParamCmplx()
+        self.h_param_cmplx.mu = random()
+        self.h_param_cmplx.value = random() + 1j * random()
+
+    def testExReal(self):
+        sample = ConstExReal()
+        sample.attach(self.idx, self.e_param_real)
+        self.assertEqual(sample.get_eps(self.idx), self.e_param_real.eps)
         
-        self.epsilon = random.random()
-        self.value = random.random()
-        self.diff = 1
-        self.n = 0
+        ex = np.random.random((3,3,3))
+        hz = hy = np.empty((3,3,3))
+        dy = dz = dt = 1
+        n = 0
+        sample.update_all(ex, hz, hy, dy, dz, dt, n)
+        self.assertEqual(ex[self.idx], self.e_param_real.value)
         
-        self.copyA = array(self.realA)
-        self.copyA[self.idx] = self.value
+    def testEyReal(self):
+        sample = ConstEyReal()
+        sample.attach(self.idx, self.e_param_real)
+        self.assertEqual(sample.get_eps(self.idx), self.e_param_real.eps)
         
-    def testAttributes(self):
-        ex = ConstExReal(self.idx, self.epsilon, self.value)
-        self.assertEqual(self.idx == (ex.i, ex.j, ex.k), True)
-        self.assertEqual(self.epsilon == ex.epsilon, True)
-        self.assertEqual(self.value == ex.value, True)
+        ey = np.random.random((3,3,3))
+        hx = hz = np.empty((3,3,3))
+        dz = dx = dt = 1
+        n = 0
+        sample.update_all(ey, hx, hz, dz, dx, dt, n)
+        self.assertEqual(ey[self.idx], self.e_param_real.value)
+       
+    def testEzReal(self):
+        sample = ConstEzReal()
+        sample.attach(self.idx, self.e_param_real)
+        self.assertEqual(sample.get_eps(self.idx), self.e_param_real.eps)
         
-        ey = ConstEyReal(self.idx, self.epsilon, self.value)
-        self.assertEqual(self.idx == (ey.i, ey.j, ey.k), True)
-        self.assertEqual(self.epsilon == ey.epsilon, True)
-        self.assertEqual(self.value == ey.value, True)
+        ez = np.random.random((3,3,3))
+        hy = hx = np.empty((3,3,3))
+        dx = dy = dt = 1
+        n = 0
+        sample.update_all(ez, hy, hx, dx, dy, dt, n)
+        self.assertEqual(ez[self.idx], self.e_param_real.value)
+    
+    def testHxReal(self):
+        sample = ConstHxReal()
+        sample.attach(self.idx, self.h_param_real)
+        self.assertEqual(sample.get_mu(self.idx), self.h_param_real.mu)
         
-        ez = ConstEyReal(self.idx, self.epsilon, self.value)
-        self.assertEqual(self.idx == (ez.i, ez.j, ez.k), True)
-        self.assertEqual(self.epsilon == ez.epsilon, True)
-        self.assertEqual(self.value == ez.value, True)
+        hx = np.random.random((3,3,3))
+        ez = ey = np.empty((3,3,3))
+        dy = dz = dt = 1
+        n = 0
+        sample.update_all(hx, ez, ey, dy, dz, dt, n)
+        self.assertEqual(hx[self.idx], self.h_param_real.value)
         
-        hx = ConstExReal(self.idx, self.epsilon, self.value)
-        self.assertEqual(self.idx == (hx.i, hx.j, hx.k), True)
-        self.assertEqual(self.epsilon == hx.epsilon, True)
-        self.assertEqual(self.value == hx.value, True)
+    def testHyReal(self):
+        sample = ConstHyReal()
+        sample.attach(self.idx, self.h_param_real)
+        self.assertEqual(sample.get_mu(self.idx), self.h_param_real.mu)
         
-        hy = ConstEyReal(self.idx, self.epsilon, self.value)
-        self.assertEqual(self.idx == (hy.i, hy.j, hy.k), True)
-        self.assertEqual(self.epsilon == hy.epsilon, True)
-        self.assertEqual(self.value == hy.value, True)
+        hy = np.random.random((3,3,3))
+        ex = ez = np.empty((3,3,3))
+        dz = dx = dt = 1
+        n = 0
+        sample.update_all(hy, ex, ez, dz, dx, dt, n)
+        self.assertEqual(hy[self.idx], self.h_param_real.value)
+       
+    def testHzReal(self):
+        sample = ConstHzReal()
+        sample.attach(self.idx, self.h_param_real)
+        self.assertEqual(sample.get_mu(self.idx), self.h_param_real.mu)
         
-        hz = ConstEyReal(self.idx, self.epsilon, self.value)
-        self.assertEqual(self.idx == (hz.i, hz.j, hz.k), True)
-        self.assertEqual(self.epsilon == hz.epsilon, True)
-        self.assertEqual(self.value == hz.value, True)
+        hz = np.random.random((3,3,3))
+        ey = ex = np.empty((3,3,3))
+        dx = dy = dt = 1
+        n = 0
+        sample.update_all(hz, ey, ex, dx, dy, dt, n)
+        self.assertEqual(hz[self.idx], self.h_param_real.value)
+
+    def testExCmplx(self):
+        sample = ConstExCmplx()
+        sample.attach(self.idx, self.e_param_cmplx)
+        self.assertEqual(sample.get_eps(self.idx), self.e_param_cmplx.eps)
         
-    def testEx(self):
-        ConstReal = ConstExReal(self.idx, self.epsilon, self.value)
-        ConstReal.update(self.realA, self.realB, self.realC, 
-                          self.diff, self.diff, self.diff, self.n)
+        ex = np.random.random((3,3,3)) + 1j * np.random.random((3,3,3))
+        hz = hy = np.empty((3,3,3), complex)
+        dy = dz = dt = 1
+        n = 0
+        sample.update_all(ex, hz, hy, dy, dz, dt, n)
+        self.assertEqual(ex[self.idx], self.e_param_cmplx.value)
         
-        self.assertEqual((self.realA == self.copyA).all(), True)
+    def testEyCmplx(self):
+        sample = ConstEyCmplx()
+        sample.attach(self.idx, self.e_param_cmplx)
+        self.assertEqual(sample.get_eps(self.idx), self.e_param_cmplx.eps)
         
-    def testEy(self):
-        ConstReal = ConstEyReal(self.idx, self.epsilon, self.value)
-        ConstReal.update(self.realA, self.realB, self.realC, 
-                          self.diff, self.diff, self.diff, self.n)
+        ey = np.random.random((3,3,3)) + 1j * np.random.random((3,3,3))
+        hx = hz = np.empty((3,3,3), complex)
+        dz = dx = dt = 1
+        n = 0
+        sample.update_all(ey, hx, hz, dz, dx, dt, n)
+        self.assertEqual(ey[self.idx], self.e_param_cmplx.value)
         
-        self.assertEqual((self.realA == self.copyA).all(), True)
+    def testEzCmplx(self):
+        sample = ConstEzCmplx()
+        sample.attach(self.idx, self.e_param_cmplx)
+        self.assertEqual(sample.get_eps(self.idx), self.e_param_cmplx.eps)
         
-    def testEz(self):
-        ConstReal = ConstEzReal(self.idx, self.epsilon, self.value)
-        ConstReal.update(self.realA, self.realB, self.realC, 
-                          self.diff, self.diff, self.diff, self.n)
+        ez = np.random.random((3,3,3)) + 1j * np.random.random((3,3,3))
+        hy = hx = np.empty((3,3,3), complex)
+        dx = dy = dt = 1
+        n = 0
+        sample.update_all(ez, hy, hx, dx, dy, dt, n)
+        self.assertEqual(ez[self.idx], self.e_param_cmplx.value)
+    
+    def testHxCmplx(self):
+        sample = ConstHxCmplx()
+        sample.attach(self.idx, self.h_param_cmplx)
+        self.assertEqual(sample.get_mu(self.idx), self.h_param_cmplx.mu)
         
-        self.assertEqual((self.realA == self.copyA).all(), True)
+        hx = np.random.random((3,3,3)) + 1j * np.random.random((3,3,3))
+        ez = ey = np.empty((3,3,3), complex)
+        dy = dz = dt = 1
+        n = 0
+        sample.update_all(hx, ez, ey, dy, dz, dt, n)
+        self.assertEqual(hx[self.idx], self.h_param_cmplx.value)
         
-    def testHx(self):
-        ConstReal = ConstHxReal(self.idx, self.epsilon, self.value)
-        ConstReal.update(self.realA, self.realB, self.realC, 
-                          self.diff, self.diff, self.diff, self.n)
+    def testHyCmplx(self):
+        sample = ConstHyCmplx()
+        sample.attach(self.idx, self.h_param_cmplx)
+        self.assertEqual(sample.get_mu(self.idx), self.h_param_cmplx.mu)
         
-        self.assertEqual((self.realA == self.copyA).all(), True)
+        hy = np.random.random((3,3,3)) + 1j * np.random.random((3,3,3))
+        ex = ez = np.empty((3,3,3), complex)
+        dz = dx = dt = 1
+        n = 0
+        sample.update_all(hy, ex, ez, dz, dx, dt, n)
+        self.assertEqual(hy[self.idx], self.h_param_cmplx.value)
+       
+    def testHzCmplx(self):
+        sample = ConstHzCmplx()
+        sample.attach(self.idx, self.h_param_cmplx)
+        self.assertEqual(sample.get_mu(self.idx), self.h_param_cmplx.mu)
         
-    def testHy(self):
-        ConstReal = ConstHyReal(self.idx, self.epsilon, self.value)
-        ConstReal.update(self.realA, self.realB, self.realC, 
-                          self.diff, self.diff, self.diff, self.n)
-        
-        self.assertEqual((self.realA == self.copyA).all(), True)
-        
-    def testHz(self):
-        ConstReal = ConstHzReal(self.idx, self.epsilon, self.value)
-        ConstReal.update(self.realA, self.realB, self.realC, 
-                          self.diff, self.diff, self.diff, self.n)
-        
-        self.assertEqual((self.realA == self.copyA).all(), True)
-        
-        
+        hz = np.random.random((3,3,3)) + 1j * np.random.random((3,3,3))
+        ey = ex = np.empty((3,3,3), complex)
+        dx = dy = dt = 1
+        n = 0
+        sample.update_all(hz, ey, ex, dx, dy, dt, n)
+        self.assertEqual(hz[self.idx], self.h_param_cmplx.value)
+
+
 if __name__ == '__main__':
     unittest.main(argv=('', '-v'))
     

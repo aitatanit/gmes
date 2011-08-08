@@ -95,20 +95,7 @@ namespace gmes
     }
 
     double 
-    get_epsilon(const int idx[3], int idx_size) const
-    {
-      std::array<int, 3> index;
-      std::copy(idx, idx + idx_size, index.begin());
-
-      MapType::const_iterator it = param.find(index);
-      if (it == param.end())
-	return 0;
-      else
-	return static_cast<ElectricParam<T> *>(it->second)->eps;
-    }
-
-    double 
-    set_epsilon(const int idx[3], int idx_size, double epsilon)
+    get_eps(const int idx[3], int idx_size) const
     {
       std::array<int, 3> index;
       std::copy(idx, idx + idx_size, index.begin());
@@ -117,7 +104,7 @@ namespace gmes
       if (it == param.end())
 	return 0;
       else
-	return static_cast<ElectricParam<T> *>(it->second)->eps = epsilon;
+	return static_cast<ElectricParam<T> *>(it->second)->eps;
     }
 
   protected:
@@ -142,19 +129,6 @@ namespace gmes
 	return 0;
       else
 	return static_cast<MagneticParam<T> *>(it->second)->mu;
-    }
-
-    double 
-    set_mu(const int idx[3], int idx_size, double mu)
-    {
-      std::array<int, 3> index;
-      std::copy(idx, idx + idx_size, index.begin());
-
-      MapType::const_iterator it = param.find(index);
-      if (it == param.end())
-	return 0;
-      else
-	return static_cast<MagneticParam<T> *>(it->second)->mu = mu;
     }
 
   protected:
