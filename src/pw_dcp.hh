@@ -35,7 +35,7 @@ namespace gmes
   /* Auxiliary Differential Equation Implementation */
   /**************************************************/
 
-  template <typename T> struct DcpAdeElectricParam: public ElectricParam
+  template <typename T> struct DcpAdeElectricParam: public ElectricParam<T>
   {
     // parameters for the ADE of the Drude model
     std::vector<std::array<double, 3> > a;
@@ -47,7 +47,7 @@ namespace gmes
     std::vector<T> q_old, q_now, p_old, p_now;
   };
   
-  template <typename T> struct DcpAdeMagneticParam: public MagneticParam
+  template <typename T> struct DcpAdeMagneticParam: public MagneticParam<T>
   {
   };
 
@@ -303,7 +303,7 @@ namespace gmes
   /* Piecewise-Linear Recursive Convolution Implementation */
   /*********************************************************/
 
-  struct DcpPlrcElectricParam: public ElectricParam
+  template <typename T> struct DcpPlrcElectricParam: public ElectricParam<T>
   {
     std::vector<std::array<double, 3> > a;
     std::vector<std::array<std::complex<double>, 3> > b;
@@ -314,7 +314,7 @@ namespace gmes
     std::vector<std::complex<double> > psi_cp_re, psi_cp_im;
   };
 
-  struct DcpPlrcMagneticParam: public MagneticParam
+  template <typename T> struct DcpPlrcMagneticParam: public MagneticParam<T>
   {
   };
 
@@ -325,7 +325,7 @@ namespace gmes
     {
       for(MapType::const_iterator iter = param.begin(); 
 	  iter != param.end(); iter++) {
-	delete static_cast<DcpPlrcElectricParam *>(iter->second);
+	delete static_cast<DcpPlrcElectricParam<T> *>(iter->second);
       }
       param.clear();
     }
@@ -340,14 +340,15 @@ namespace gmes
       MapType::const_iterator iter = param.find(index);
       if (iter != param.end()) {
 	std::cerr << "Overwriting the existing index." << std::endl;
-	delete static_cast<DcpPlrcElectricParam *>(iter->second);
+	delete static_cast<DcpPlrcElectricParam<T> *>(iter->second);
 	param.erase(iter);
       }
 
-      const DcpPlrcElectricParam * const DcpPlrcElectricParameter_ptr
-	= static_cast<const DcpPlrcElectricParam * const>(parameter);
-      DcpPlrcElectricParam *param_ptr;
-      param_ptr = new DcpPlrcElectricParam();
+      const DcpPlrcElectricParam<T> * const DcpPlrcElectricParameter_ptr
+	= static_cast<const DcpPlrcElectricParam<T> * const>(parameter);
+      DcpPlrcElectricParam<T> *param_ptr;
+      param_ptr = new DcpPlrcElectricParam<T>();
+
       param_ptr->eps = DcpPlrcElectricParameter_ptr->eps;
       std::copy(DcpPlrcElectricParameter_ptr->a.begin(),
 		DcpPlrcElectricParameter_ptr->a.end(),
@@ -369,7 +370,7 @@ namespace gmes
     void 
     update_psi_dp(const std::complex<double>& e_now, 
 		  const std::complex<double>& e_new,
-		  DcpPlrcElectricParam * const ptr)
+		  DcpPlrcElectricParam<T> * const ptr)
     {
       const std::vector<std::array<double, 3> >& a = ptr->a;
       std::vector<double>& psi_dp_re = ptr->psi_dp_re;
@@ -386,7 +387,7 @@ namespace gmes
     void 
     update_psi_cp(const std::complex<double>& e_now, 
 		  const std::complex<double>& e_new,
-		  DcpPlrcElectricParam * const ptr)
+		  DcpPlrcElectricParam<T> * const ptr)
     {
       const std::vector<std::array<std::complex<double>, 3> >& b = ptr->b;
       std::vector<std::complex<double> >& psi_cp_re = ptr->psi_cp_re;
@@ -402,7 +403,7 @@ namespace gmes
     }
 
     std::complex<double> 
-    psi_total(const DcpPlrcElectricParam * const ptr) const
+    psi_total(const DcpPlrcElectricParam<T> * const ptr) const
     {
       const std::vector<double>& psi_dp_re = ptr->psi_dp_re;
       const std::vector<double>& psi_dp_im = ptr->psi_dp_im;
@@ -451,8 +452,8 @@ namespace gmes
     {
       int i = idx[0], j = idx[1], k = idx[2];
       
-      DcpPlrcElectricParam *ptr;
-      ptr = static_cast<DcpPlrcElectricParam *>(parameter);
+      DcpPlrcElectricParam<T> *ptr;
+      ptr = static_cast<DcpPlrcElectricParam<T> *>(parameter);
       const std::array<double, 3>& c = ptr->c;
 
       const std::complex<double> e_now = ex(i,j,k);
@@ -487,8 +488,8 @@ namespace gmes
     {
       int i = idx[0], j = idx[1], k = idx[2];
       
-      DcpPlrcElectricParam *ptr;
-      ptr = static_cast<DcpPlrcElectricParam *>(parameter);
+      DcpPlrcElectricParam<T> *ptr;
+      ptr = static_cast<DcpPlrcElectricParam<T> *>(parameter);
       const std::array<double, 3>& c = ptr->c;
 
       const std::complex<double> e_now = ey(i,j,k);
@@ -523,8 +524,8 @@ namespace gmes
     {
       int i = idx[0], j = idx[1], k = idx[2];
       
-      DcpPlrcElectricParam *ptr;
-      ptr = static_cast<DcpPlrcElectricParam *>(parameter);
+      DcpPlrcElectricParam<T> *ptr;
+      ptr = static_cast<DcpPlrcElectricParam<T> *>(parameter);
       const std::array<double, 3>& c = ptr->c;
 
       const std::complex<double> e_now = ez(i,j,k);

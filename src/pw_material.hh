@@ -19,40 +19,33 @@ namespace std
 
 namespace gmes 
 {
-  struct PwMaterialParam 
+  struct PwMaterialParam
   {
   };
-
-  struct ElectricParam: public PwMaterialParam 
+  
+  template <typename T> struct ElectricParam: public PwMaterialParam
   {
     double eps;
   };
-
-  struct MagneticParam: public PwMaterialParam 
+  
+  template <typename T> struct MagneticParam: public PwMaterialParam
   {
     double mu;
   };
-  
+
   typedef std::unordered_map<std::array<int, 3>, PwMaterialParam *> MapType;
 
   template<class T> class PwMaterial 
   {
   public:
     virtual
-    ~PwMaterial() = 0;
+    ~PwMaterial()
+    {
+    }
 
     virtual void 
     attach(const int idx[3], int idx_size,
 	   const PwMaterialParam * const parameter) = 0;
-    
-    virtual void
-    update(T * const inplace_field, 
-	   int inplace_dim1, int inplace_dim2, int inplace_dim3,
-	   const T * const in_field1, int in1_dim1, int in1_dim2, int in1_dim3,
-	   const T * const in_field2, int in2_dim1, int in2_dim2, int in2_dim3,
-	   double d1, double d2, double dt, double n, 
-	   const int idx[3], int idx_size,
-	   PwMaterialParam * const parameter) = 0;
     
     void
     update_all(T * const inplace_field,
@@ -82,14 +75,24 @@ namespace gmes
     }
     
   protected:
+    virtual void
+    update(T * const inplace_field, 
+	   int inplace_dim1, int inplace_dim2, int inplace_dim3,
+	   const T * const in_field1, int in1_dim1, int in1_dim2, int in1_dim3,
+	   const T * const in_field2, int in2_dim1, int in2_dim2, int in2_dim3,
+	   double d1, double d2, double dt, double n, 
+	   const int idx[3], int idx_size,
+	   PwMaterialParam * const parameter) = 0;
+
     MapType param;
   };
 
   template <typename T> class MaterialElectric: public PwMaterial<T> 
   {
   public:
-    virtual 
-    ~MaterialElectric() = 0;
+    ~MaterialElectric()
+    {
+    }
 
     double 
     get_epsilon(const int idx[3], int idx_size) const
@@ -101,7 +104,7 @@ namespace gmes
       if (it == param.end())
 	return 0;
       else
-	return static_cast<ElectricParam *>(it->second)->eps;
+	return static_cast<ElectricParam<T> *>(it->second)->eps;
     }
 
     double 
@@ -114,7 +117,7 @@ namespace gmes
       if (it == param.end())
 	return 0;
       else
-	return static_cast<ElectricParam *>(it->second)->eps = epsilon;
+	return static_cast<ElectricParam<T> *>(it->second)->eps = epsilon;
     }
 
   protected:
@@ -124,7 +127,6 @@ namespace gmes
   template <typename T> class MaterialMagnetic: public PwMaterial<T> 
   {
   public:
-    virtual 
     ~MaterialMagnetic() 
     {
     }
@@ -139,7 +141,7 @@ namespace gmes
       if (it == param.end())
 	return 0;
       else
-	return static_cast<MagneticParam *>(it->second)->mu;
+	return static_cast<MagneticParam<T> *>(it->second)->mu;
     }
 
     double 
@@ -152,7 +154,7 @@ namespace gmes
       if (it == param.end())
 	return 0;
       else
-	return static_cast<MagneticParam *>(it->second)->mu = mu;
+	return static_cast<MagneticParam<T> *>(it->second)->mu = mu;
     }
 
   protected:

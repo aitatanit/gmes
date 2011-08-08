@@ -9,12 +9,12 @@
 
 namespace gmes
 {
-  struct ConstElectricParam: public ElectricParam 
+  template <typename T> struct ConstElectricParam: public ElectricParam<T>
   {
     double value;
   };
     
-  struct ConstMagneticParam: public MagneticParam 
+  template <typename T> struct ConstMagneticParam: public MagneticParam<T>
   {
     double value;
   };
@@ -26,7 +26,7 @@ namespace gmes
     {
       for(MapType::const_iterator iter = param.begin(); 
 	  iter != param.end(); iter++) {
-	delete static_cast<ConstElectricParam *>(iter->second);
+	delete static_cast<ConstElectricParam<T> *>(iter->second);
       }
       param.clear();
     }
@@ -41,13 +41,14 @@ namespace gmes
       MapType::const_iterator iter = param.find(index);
       if (iter != param.end()) {
 	std::cerr << "Overwriting the existing index." << std::endl;
-	delete static_cast<ConstElectricParam *>(iter->second);
+	delete static_cast<ConstElectricParam<T> *>(iter->second);
 	param.erase(iter);
       }
 
-      const ConstElectricParam* ConstElectricParameter_ptr
-	= static_cast<const ConstElectricParam *>(parameter);      
-      ConstElectricParam *param_ptr = new ConstElectricParam();
+      const ConstElectricParam<T> *ConstElectricParameter_ptr
+	= static_cast<const ConstElectricParam<T> *>(parameter);      
+      ConstElectricParam<T> *param_ptr = new ConstElectricParam<T>();
+
       param_ptr->eps = ConstElectricParameter_ptr->eps;
       param_ptr->value = ConstElectricParameter_ptr->value;
 
@@ -64,7 +65,7 @@ namespace gmes
 	   PwMaterialParam * const parameter)
     {
       int i = idx[0], j = idx[1], k = idx[2];
-      double value = static_cast<const ConstElectricParam *>(parameter)->value;
+      double value = static_cast<const ConstElectricParam<T> *>(parameter)->value;
 
       inplace_field(i,j,k) = value;
     }
@@ -92,7 +93,7 @@ namespace gmes
     {
       for(MapType::const_iterator iter = param.begin(); 
 	  iter != param.end(); iter++) {
-	delete static_cast<ConstMagneticParam *>(iter->second);
+	delete static_cast<ConstMagneticParam<T> *>(iter->second);
       }
       param.clear();
     }
@@ -107,13 +108,14 @@ namespace gmes
       MapType::const_iterator iter = param.find(index);
       if (iter != param.end()) {
 	std::cerr << "Overwriting the existing index." << std::endl;
-	delete static_cast<ConstMagneticParam *>(iter->second);
+	delete static_cast<ConstMagneticParam<T> *>(iter->second);
 	param.erase(iter);
       }
 
-      const ConstMagneticParam* ConstMagneticParameter_ptr
-	= static_cast<const ConstMagneticParam *>(parameter);
-      ConstMagneticParam *param_ptr = new ConstMagneticParam();
+      const ConstMagneticParam<T> *ConstMagneticParameter_ptr
+	= static_cast<const ConstMagneticParam<T> *>(parameter);
+      ConstMagneticParam<T> *param_ptr = new ConstMagneticParam<T>();
+
       param_ptr->mu = ConstMagneticParameter_ptr->mu;
       param_ptr->value = ConstMagneticParameter_ptr->value;
 
@@ -130,7 +132,7 @@ namespace gmes
 	   PwMaterialParam * const parameter)
     {
       int i = idx[0], j = idx[1], k = idx[2];
-      double value = static_cast<const ConstElectricParam *>(parameter)->value;
+      double value = static_cast<const ConstElectricParam<T> *>(parameter)->value;
 
       inplace_field(i,j,k) = value;
     }

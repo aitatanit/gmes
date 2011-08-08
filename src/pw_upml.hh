@@ -21,13 +21,13 @@
 
 namespace gmes
 {
-  template <typename T> struct UpmlElectricParam: public ElectricParam 
+  template <typename T> struct UpmlElectricParam: public ElectricParam<T>
   {
     double c1, c2, c3, c4, c5, c6;
     T d;
   };
 
-  template <typename T> struct UpmlMagneticParam: public MagneticParam 
+  template <typename T> struct UpmlMagneticParam: public MagneticParam<T>
   {
     double c1, c2, c3, c4, c5, c6;
     T b;
@@ -62,6 +62,7 @@ namespace gmes
       const UpmlElectricParam<T>* UpmlElectricParameter_ptr
 	= static_cast<const UpmlElectricParam<T> *>(parameter);
       UpmlElectricParam<T> *param_ptr = new UpmlElectricParam<T>();
+
       param_ptr->eps = UpmlElectricParameter_ptr->eps;
       param_ptr->c1 = UpmlElectricParameter_ptr->c1;
       param_ptr->c2 = UpmlElectricParameter_ptr->c2;
@@ -211,6 +212,7 @@ namespace gmes
       const UpmlMagneticParam<T>* UpmlMagneticParameter_ptr 
 	= static_cast<const UpmlMagneticParam<T> *>(parameter);
       UpmlMagneticParam<T> *param_ptr = new UpmlMagneticParam<T>();
+
       param_ptr->mu = UpmlMagneticParameter_ptr->mu;
       param_ptr->c1 = UpmlMagneticParameter_ptr->c1;
       param_ptr->c2 = UpmlMagneticParameter_ptr->c2;

@@ -20,14 +20,14 @@
 
 namespace gmes
 {
-  template <typename T> struct DrudeElectricParam: public ElectricParam
+  template <typename T> struct DrudeElectricParam: public ElectricParam<T>
   {
     std::vector<std::array<double, 3> > a;
     std::array<double, 3> c;
     std::vector<T> q_now, q_new;
   };
 
-  template <typename T> struct DrudeMagneticParam: public MagneticParam
+  template <typename T> struct DrudeMagneticParam: public MagneticParam<T>
   {
   };
 

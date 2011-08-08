@@ -21,11 +21,11 @@
 
 namespace gmes
 {
-  struct DielectricElectricParam: public ElectricParam 
+  template <typename T> struct DielectricElectricParam: public ElectricParam<T>
   {
   };
     
-  struct DielectricMagneticParam: public MagneticParam 
+  template <typename T> struct DielectricMagneticParam: public MagneticParam<T>
   {
   };
 
@@ -36,7 +36,7 @@ namespace gmes
     {
       for(MapType::const_iterator iter = param.begin(); 
 	  iter != param.end(); iter++) {
-	delete static_cast<DielectricElectricParam *>(iter->second);
+	delete static_cast<DielectricElectricParam<T> *>(iter->second);
       }
       param.clear();
     }
@@ -51,13 +51,13 @@ namespace gmes
       MapType::const_iterator iter = param.find(index);
       if (iter != param.end()) {
 	std::cerr << "Overwriting the existing index." << std::endl;
-	delete static_cast<DielectricElectricParam *>(iter->second);
+	delete static_cast<DielectricElectricParam<T> *>(iter->second);
 	param.erase(iter);
       }
 
-      DielectricElectricParam *param_ptr;
-      param_ptr = new DielectricElectricParam();
-      param_ptr->eps = static_cast<const DielectricElectricParam *>(parameter)->eps;
+      DielectricElectricParam<T> *param_ptr;
+      param_ptr = new DielectricElectricParam<T>();
+      param_ptr->eps = static_cast<const DielectricElectricParam<T> *>(parameter)->eps;
 
       param.insert(std::make_pair(index, param_ptr));
     }
@@ -78,7 +78,7 @@ namespace gmes
 	   PwMaterialParam * const parameter)
     {
       int i = idx[0], j = idx[1], k = idx[2];
-      double eps = static_cast<DielectricElectricParam *>(parameter)->eps;
+      double eps = static_cast<DielectricElectricParam<T> *>(parameter)->eps;
 
       ex(i,j,k) += dt / eps * ((hz(i+1,j+1,k) - hz(i+1,j,k)) / dy - 
 			       (hy(i+1,j,k+1) - hy(i+1,j,k)) / dz);
@@ -100,7 +100,7 @@ namespace gmes
 	   PwMaterialParam * const parameter)
     {
       int i = idx[0], j = idx[1], k = idx[2];
-      double eps = static_cast<DielectricElectricParam *>(parameter)->eps;
+      double eps = static_cast<DielectricElectricParam<T> *>(parameter)->eps;
 
       ey(i,j,k) += dt / eps * ((hx(i,j+1,k+1) - hx(i,j+1,k)) / dz - 
 			       (hz(i+1,j+1,k) - hz(i,j+1,k)) / dx);
@@ -122,7 +122,7 @@ namespace gmes
 	   PwMaterialParam * const parameter)
     {
       int i = idx[0], j = idx[1], k = idx[2];
-      double eps = static_cast<DielectricElectricParam *>(parameter)->eps;
+      double eps = static_cast<DielectricElectricParam<T> *>(parameter)->eps;
       
       ez(i,j,k) += dt / eps * ((hy(i+1,j,k+1) - hy(i,j,k+1)) / dx -
 			       (hx(i,j+1,k+1) - hx(i,j,k+1)) / dy);
@@ -139,7 +139,7 @@ namespace gmes
     {
       for(MapType::const_iterator iter = param.begin(); 
 	  iter != param.end(); iter++) {
-	delete static_cast<DielectricMagneticParam *>(iter->second);
+	delete static_cast<DielectricMagneticParam<T> *>(iter->second);
       }
       param.clear();
     }
@@ -154,13 +154,13 @@ namespace gmes
       MapType::const_iterator iter = param.find(index);
       if (iter != param.end()) {
 	std::cerr << "Overwriting the existing index." << std::endl;
-	delete static_cast<DielectricMagneticParam *>(iter->second);
+	delete static_cast<DielectricMagneticParam<T> *>(iter->second);
 	param.erase(iter);
       }
 
-      DielectricMagneticParam *param_ptr;
-      param_ptr = new DielectricMagneticParam();
-      param_ptr->mu = static_cast<const DielectricMagneticParam *>(parameter)->mu;
+      DielectricMagneticParam<T> *param_ptr;
+      param_ptr = new DielectricMagneticParam<T>();
+      param_ptr->mu = static_cast<const DielectricMagneticParam<T> *>(parameter)->mu;
 
       param.insert(std::make_pair(index, param_ptr));
     }
@@ -181,7 +181,7 @@ namespace gmes
 	   PwMaterialParam * const parameter)
     {
       int i = idx[0], j = idx[1], k = idx[2];
-      double mu = static_cast<DielectricMagneticParam *>(parameter)->mu;
+      double mu = static_cast<DielectricMagneticParam<T> *>(parameter)->mu;
 
       hx(i,j,k) += dt / mu * ((ey(i,j-1,k) - ey(i,j-1,k-1)) / dz -
 			      (ez(i,j,k-1) - ez(i,j-1,k-1)) / dy);
@@ -203,7 +203,7 @@ namespace gmes
 	   PwMaterialParam * const parameter)
     {
       int i = idx[0], j = idx[1], k = idx[2];
-      double mu = static_cast<DielectricMagneticParam *>(parameter)->mu;
+      double mu = static_cast<DielectricMagneticParam<T> *>(parameter)->mu;
 
       hy(i,j,k) += dt / mu * ((ez(i,j,k-1) - ez(i-1,j,k-1)) / dx -
 			      (ex(i-1,j,k) - ex(i-1,j,k-1)) / dz);
@@ -225,7 +225,7 @@ namespace gmes
 	   PwMaterialParam * const parameter)
     {
       int i = idx[0], j = idx[1], k = idx[2];
-      double mu = static_cast<DielectricMagneticParam *>(parameter)->mu;
+      double mu = static_cast<DielectricMagneticParam<T> *>(parameter)->mu;
       
       hz(i,j,k) += dt / mu * ((ex(i-1,j,k) - ex(i-1,j-1,k)) / dy -
 			      (ey(i,j-1,k) - ey(i-1,j-1,k)) / dx);

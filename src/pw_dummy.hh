@@ -6,14 +6,14 @@
 
 namespace gmes
 {
-  struct DummyElectricParam: public ElectricParam
+  template <typename T> struct DummyElectricParam: public ElectricParam<T>
   {
   };
 
-  struct DummyMagneticParam: public MagneticParam
+  template <typename T> struct DummyMagneticParam: public MagneticParam<T>
   {
   };
-
+  
   template <typename T> class DummyElectric: public MaterialElectric<T>
   {
   public:
@@ -21,7 +21,7 @@ namespace gmes
     {
       for(MapType::const_iterator iter = param.begin(); 
 	  iter != param.end(); iter++) {
-	delete static_cast<DummyElectricParam *>(iter->second);
+	delete static_cast<DummyElectricParam<T> *>(iter->second);
       }
       param.clear();
     }
@@ -36,13 +36,13 @@ namespace gmes
       MapType::const_iterator iter = param.find(index);
       if (iter != param.end()) {
 	std::cerr << "Overwriting the existing index." << std::endl;
-	delete static_cast<DummyElectricParam *>(iter->second);
+	delete static_cast<DummyElectricParam<T> *>(iter->second);
 	param.erase(iter);
       }
 
-      DummyElectricParam *param_ptr;
-      param_ptr = new DummyElectricParam();
-      param_ptr->eps = static_cast<const DummyElectricParam *>(parameter)->eps;
+      DummyElectricParam<T> *param_ptr;
+      param_ptr = new DummyElectricParam<T>();
+      param_ptr->eps = static_cast<const DummyElectricParam<T> *>(parameter)->eps;
 	  
       param.insert(std::make_pair(index, param_ptr));
     }
@@ -60,7 +60,7 @@ namespace gmes
   protected:
     using MaterialElectric<T>::param;
   };
-
+  
   template <typename T> class DummyEx: public DummyElectric<T>
   {
   };
@@ -80,7 +80,7 @@ namespace gmes
     {
       for(MapType::const_iterator iter = param.begin(); 
 	  iter != param.end(); iter++) {
-	delete static_cast<DummyMagneticParam *>(iter->second);
+	delete static_cast<DummyMagneticParam<T> *>(iter->second);
       }
       param.clear();
     }
@@ -95,13 +95,13 @@ namespace gmes
       MapType::const_iterator iter = param.find(index);
       if (iter != param.end()) {
 	std::cerr << "Overwriting the existing index." << std::endl;
-	delete static_cast<DummyMagneticParam *>(iter->second);
+	delete static_cast<DummyMagneticParam<T> *>(iter->second);
 	param.erase(iter);
       }
       
-      DummyMagneticParam *param_ptr;
-      param_ptr = new DummyMagneticParam();
-      param_ptr->mu = static_cast<const DummyMagneticParam *>(parameter)->mu;
+      DummyMagneticParam<T> *param_ptr;
+      param_ptr = new DummyMagneticParam<T>();
+      param_ptr->mu = static_cast<const DummyMagneticParam<T> *>(parameter)->mu;
       
       param.insert(std::make_pair(index, param_ptr));
     }

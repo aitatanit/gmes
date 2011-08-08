@@ -60,27 +60,27 @@ import_array();
 %apply_numpy_typemaps(double)
 %apply_numpy_typemaps(std::complex<double>)
 
-%apply (int* IN_ARRAY1, int DIM1) {(const int* const idx, int idx_size)};
+%apply (int* IN_ARRAY1, int DIM1) {(const int idx[3], int idx_size)};
 %apply (double* IN_ARRAY2, int DIM1, int DIM2) {(const double* const a, int a_size1, int a_size2)};
 %apply (double* IN_ARRAY2, int DIM1, int DIM2) {(const double* const b, int b_size1, int b_size2)};
 %apply (std::complex<double>* IN_ARRAY2, int DIM1, int DIM2) {(const std::complex<double>* const b_c, int b_c_size1, int b_c_size2)};
 %apply (double* IN_ARRAY1, int DIM1) {(const double* const c, int c_size)};
 
 // Declare the Pythonic interfaces.
-%define %property(py, cpp, prop, get, set)
-%feature("shadow") cpp::set %{ %}
-%feature("shadow") cpp::get %{
-__swig_setmethods__["prop"] = eval("_"+__name__.split('.')[-1]).##py##_##set
-__swig_getmethods__["prop"] = eval("_"+__name__.split('.')[-1]).##py##_##get
-if _newclass:prop = property(eval("_"+__name__.split('.')[-1]).##py##_##get, eval("_"+__name__.split('.')[-1]).##py##_##set)
-%}
-%enddef    /* property() macro */
+/* %define %property(py, cpp, prop, get, set) */
+/* %feature("shadow") cpp::set %{ %} */
+/* %feature("shadow") cpp::get %{ */
+/* __swig_setmethods__["prop"] = eval("_"+__name__.split('.')[-1]).##py##_##set */
+/* __swig_getmethods__["prop"] = eval("_"+__name__.split('.')[-1]).##py##_##get */
+/* if _newclass:prop = property(eval("_"+__name__.split('.')[-1]).##py##_##get, eval("_"+__name__.split('.')[-1]).##py##_##set) */
+/* %} */
+/* %enddef    /\* property() macro *\/ */
 
-%property(MaterialElectricReal, gmes::MaterialElectric<double>, epsilon, get_epsilon, set_epsilon)
-%property(MaterialMagneticReal, gmes::MaterialMagnetic<double>, mu, get_mu, set_mu)
+/* %property(MaterialElectricReal, gmes::MaterialElectric<double>, epsilon, get_epsilon, set_epsilon) */
+/* %property(MaterialMagneticReal, gmes::MaterialMagnetic<double>, mu, get_mu, set_mu) */
 
-%property(MaterialElectricCmplx, gmes::MaterialElectric<std::complex<double> >, epsilon, get_epsilon, set_epsilon)
-%property(MaterialMagneticCmplx, gmes::MaterialMagnetic<std::complex<double> >, mu, get_mu, set_mu)
+/* %property(MaterialElectricCmplx, gmes::MaterialElectric<std::complex<double> >, epsilon, get_epsilon, set_epsilon) */
+/* %property(MaterialMagneticCmplx, gmes::MaterialMagnetic<std::complex<double> >, mu, get_mu, set_mu) */
 
 // Include the header file to be wrapped
 %include "pw_material.hh"
@@ -94,11 +94,16 @@ if _newclass:prop = property(eval("_"+__name__.split('.')[-1]).##py##_##get, eva
 %include "pw_dcp.hh"
 
 // Instantiate template classes
-%define %template_wrap(T, postfix) 
+%define %template_wrap(T, postfix)
+
+%template(ElectricParam ## postfix) gmes::ElectricParam<T >;
+%template(MagneticParam ## postfix) gmes::MagneticParam<T >;
 %template(PwMaterial ## postfix) gmes::PwMaterial<T >;
 %template(MaterialElectric ## postfix) gmes::MaterialElectric<T >;
 %template(MaterialMagnetic ## postfix) gmes::MaterialMagnetic<T >;
 
+%template(DummyElectricParam ## postfix) gmes::DummyElectricParam<T >;
+%template(DummyMagneticParam ## postfix) gmes::DummyMagneticParam<T >;
 %template(DummyElectric ## postfix) gmes::DummyElectric<T >;
 %template(DummyMagnetic ## postfix) gmes::DummyMagnetic<T >;
 %template(DummyEx ## postfix) gmes::DummyEx<T >;
@@ -108,6 +113,8 @@ if _newclass:prop = property(eval("_"+__name__.split('.')[-1]).##py##_##get, eva
 %template(DummyHy ## postfix) gmes::DummyHy<T >;
 %template(DummyHz ## postfix) gmes::DummyHz<T >;
 
+%template(ConstElectricParam ## postfix) gmes::ConstElectricParam<T >;
+%template(ConstMagneticParam ## postfix) gmes::ConstMagneticParam<T >;
 %template(ConstElectric ## postfix) gmes::ConstElectric<T >;
 %template(ConstMagnetic ## postfix) gmes::ConstMagnetic<T >;
 %template(ConstEx ## postfix) gmes::ConstEx<T >;
@@ -118,6 +125,8 @@ if _newclass:prop = property(eval("_"+__name__.split('.')[-1]).##py##_##get, eva
 %template(ConstHz ## postfix) gmes::ConstHz<T >;
 
 // Non-dispersive linear isotropic dielectrics
+%template(DielectricElectricParam ## postfix) gmes::DielectricElectricParam<T >;
+%template(DielectricMagneticParam ## postfix) gmes::DielectricMagneticParam<T >;
 %template(DielectricElectric ## postfix) gmes::DielectricElectric<T >;
 %template(DielectricMagnetic ## postfix) gmes::DielectricMagnetic<T >;
 %template(DielectricEx ## postfix) gmes::DielectricEx<T >;
@@ -128,6 +137,8 @@ if _newclass:prop = property(eval("_"+__name__.split('.')[-1]).##py##_##get, eva
 %template(DielectricHz ## postfix) gmes::DielectricHz<T >;
 
 // UPML
+%template(UpmlElectricParam ## postfix) gmes::UpmlElectricParam<T >;
+%template(UpmlMagneticParam ## postfix) gmes::UpmlMagneticParam<T >;
 %template(UpmlElectric ## postfix) gmes::UpmlElectric<T >;
 %template(UpmlMagnetic ## postfix) gmes::UpmlMagnetic<T >;
 %template(UpmlEx ## postfix) gmes::UpmlEx<T >;
@@ -138,6 +149,8 @@ if _newclass:prop = property(eval("_"+__name__.split('.')[-1]).##py##_##get, eva
 %template(UpmlHz ## postfix) gmes::UpmlHz<T >;
 
 // CPML
+%template(CpmlElectricParam ## postfix) gmes::CpmlElectricParam<T >;
+%template(CpmlMagneticParam ## postfix) gmes::CpmlMagneticParam<T >;
 %template(CpmlElectric ## postfix) gmes::CpmlElectric<T >;
 %template(CpmlMagnetic ## postfix) gmes::CpmlMagnetic<T >;
 %template(CpmlEx ## postfix) gmes::CpmlEx<T >;
@@ -148,6 +161,8 @@ if _newclass:prop = property(eval("_"+__name__.split('.')[-1]).##py##_##get, eva
 %template(CpmlHz ## postfix) gmes::CpmlHz<T >;
 
 // Drude model
+%template(DrudeElectricParam ## postfix) gmes::DrudeElectricParam<T >;
+%template(DrudeMagneticParam ## postfix) gmes::DrudeMagneticParam<T >;
 %template(DrudeElectric ## postfix) gmes::DrudeElectric<T >;
 %template(DrudeEx ## postfix) gmes::DrudeEx<T >;
 %template(DrudeEy ## postfix) gmes::DrudeEy<T >;
@@ -157,6 +172,8 @@ if _newclass:prop = property(eval("_"+__name__.split('.')[-1]).##py##_##get, eva
 %template(DrudeHz ## postfix) gmes::DrudeHz<T >;
 
 // Lerentz model
+%template(LorentzElectricParam ## postfix) gmes::LorentzElectricParam<T >;
+%template(LorentzMagneticParam ## postfix) gmes::LorentzMagneticParam<T >;
 %template(LorentzElectric ## postfix) gmes::LorentzElectric<T >;
 %template(LorentzEx ## postfix) gmes::LorentzEx<T >;
 %template(LorentzEy ## postfix) gmes::LorentzEy<T >;
@@ -166,6 +183,8 @@ if _newclass:prop = property(eval("_"+__name__.split('.')[-1]).##py##_##get, eva
 %template(LorentzHz ## postfix) gmes::LorentzHz<T >;
 
 // Drude-critical points model
+%template(DcpAdeElectricParam ## postfix) gmes::DcpAdeElectricParam<T >;
+%template(DcpAdeMagneticParam ## postfix) gmes::DcpAdeMagneticParam<T >;
 %template(DcpAdeElectric ## postfix) gmes::DcpAdeElectric<T >;
 %template(DcpAdeEx ## postfix) gmes::DcpAdeEx<T >;
 %template(DcpAdeEy ## postfix) gmes::DcpAdeEy<T >;
@@ -175,6 +194,8 @@ if _newclass:prop = property(eval("_"+__name__.split('.')[-1]).##py##_##get, eva
 %template(DcpAdeHz ## postfix) gmes::DcpAdeHz<T >;
 
 // Drude-critical points model
+%template(DcpPlrcElectricParam ## postfix) gmes::DcpPlrcElectricParam<T >;
+%template(DcpPlrcMagneticParam ## postfix) gmes::DcpPlrcMagneticParam<T >;
 %template(DcpPlrcElectric ## postfix) gmes::DcpPlrcElectric<T >;
 %template(DcpPlrcEx ## postfix) gmes::DcpPlrcEx<T >;
 %template(DcpPlrcEy ## postfix) gmes::DcpPlrcEy<T >;

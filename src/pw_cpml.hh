@@ -22,13 +22,13 @@
 
 namespace gmes
 {
-  template <typename T> struct CpmlElectricParam: public ElectricParam
+  template <typename T> struct CpmlElectricParam: public ElectricParam<T>
   {
     double b1, b2, c1, c2, kappa1, kappa2;
     T psi1, psi2;
   };
   
-  template <typename T> struct CpmlMagneticParam: public MagneticParam 
+  template <typename T> struct CpmlMagneticParam: public MagneticParam<T>
   {
     double b1, b2, c1, c2, kappa1, kappa2;
     T psi1, psi2;
