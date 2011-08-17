@@ -24,7 +24,7 @@ from numpy import empty, zeros, inf, dot
 from scipy.linalg import norm
 
 import constants as const
-from material import Compound, PML
+from material import Compound, Pml
 
 
 class AuxiCartComm(object):
@@ -1540,7 +1540,7 @@ class Boundary(GeometricObject):
         self.minus_z, self.plus_z = minus_z, plus_z
 
         # do someting for the PML derived class?
-        if isinstance(material, PML):
+        if isinstance(material, Pml):
             pass
         
         GeometricObject.__init__(self, material)

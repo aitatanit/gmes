@@ -97,20 +97,20 @@ namespace gmes
       CpmlElectricParam<T> *ptr;
       ptr = static_cast<CpmlElectricParam<T> *>(parameter);
       double eps = ptr->eps;
-      double b1 = ptr->b1;
-      double b2 = ptr->b2;
-      double c1 = ptr->c1;
-      double c2 = ptr->c2;
-      double kappa1 = ptr->kappa1;
-      double kappa2 = ptr->kappa2;
+      double by = ptr->b1;
+      double bz = ptr->b2;
+      double cy = ptr->c1;
+      double cz = ptr->c2;
+      double kappay = ptr->kappa1;
+      double kappaz = ptr->kappa2;
       T& psi1 = ptr->psi1;
       T& psi2 = ptr->psi2;
 
-      psi1 = b1 * psi1 + c1 * (hz(i+1,j+1,k) - hz(i+1,j,k)) / dy;
-      psi2 = b2 * psi2 + c2 * (hy(i+1,j,k+1) - hy(i+1,j,k)) / dz;
+      psi1 = by * psi1 + cy * (hz(i+1,j+1,k) - hz(i+1,j,k)) / dy;
+      psi2 = bz * psi2 + cz * (hy(i+1,j,k+1) - hy(i+1,j,k)) / dz;
       
-      ex(i,j,k) += dt / eps * ((hz(i+1,j+1,k) - hz(i+1,j,k)) / dy / kappa1 -
-			       (hy(i+1,j,k+1) - hy(i+1,j,k)) / dz / kappa2 +
+      ex(i,j,k) += dt / eps * ((hz(i+1,j+1,k) - hz(i+1,j,k)) / dy / kappay -
+			       (hy(i+1,j,k+1) - hy(i+1,j,k)) / dz / kappaz +
 			       psi1 - psi2);
     }
 
@@ -134,20 +134,20 @@ namespace gmes
       CpmlElectricParam<T> *ptr;
       ptr = static_cast<CpmlElectricParam<T> *>(parameter);
       double eps = ptr->eps;
-      double b1 = ptr->b1;
-      double b2 = ptr->b2;
-      double c1 = ptr->c1;
-      double c2 = ptr->c2;
-      double kappa1 = ptr->kappa1;
-      double kappa2 = ptr->kappa2;
+      double bz = ptr->b1;
+      double bx = ptr->b2;
+      double cz = ptr->c1;
+      double cx = ptr->c2;
+      double kappaz = ptr->kappa1;
+      double kappax = ptr->kappa2;
       T& psi1 = ptr->psi1;
       T& psi2 = ptr->psi2;
 
-      psi1 = b1 * psi1 + c1 * (hx(i,j+1,k+1) - hx(i,j+1,k)) / dz;
-      psi2 = b2 * psi2 + c2 * (hz(i+1,j+1,k) - hz(i,j+1,k)) / dx;
+      psi1 = bz * psi1 + cz * (hx(i,j+1,k+1) - hx(i,j+1,k)) / dz;
+      psi2 = bx * psi2 + cx * (hz(i+1,j+1,k) - hz(i,j+1,k)) / dx;
       
-      ey(i,j,k) += dt / eps * ((hx(i,j+1,k+1) - hx(i,j+1,k)) / dz / kappa1 -
-			       (hz(i+1,j+1,k) - hz(i,j+1,k)) / dx / kappa2 +
+      ey(i,j,k) += dt / eps * ((hx(i,j+1,k+1) - hx(i,j+1,k)) / dz / kappaz -
+			       (hz(i+1,j+1,k) - hz(i,j+1,k)) / dx / kappax +
 			       psi1 - psi2);
     }
 
@@ -171,20 +171,20 @@ namespace gmes
       CpmlElectricParam<T> *ptr;
       ptr = static_cast<CpmlElectricParam<T> *>(parameter);
       double eps = ptr->eps;
-      double b1 = ptr->b1;
-      double b2 = ptr->b2;
-      double c1 = ptr->c1;
-      double c2 = ptr->c2;
-      double kappa1 = ptr->kappa1;
-      double kappa2 = ptr->kappa2;
+      double bx = ptr->b1;
+      double by = ptr->b2;
+      double cx = ptr->c1;
+      double cy = ptr->c2;
+      double kappax = ptr->kappa1;
+      double kappay = ptr->kappa2;
       T& psi1 = ptr->psi1;
       T& psi2 = ptr->psi2;
 
-      psi1 = b1 * psi1 + c1 * (hy(i+1,j,k+1) - hy(i,j,k+1)) / dx;
-      psi2 = b2 * psi2 + c2 * (hx(i,j+1,k+1) - hx(i,j,k+1)) / dy;
+      psi1 = bx * psi1 + cx * (hy(i+1,j,k+1) - hy(i,j,k+1)) / dx;
+      psi2 = by * psi2 + cy * (hx(i,j+1,k+1) - hx(i,j,k+1)) / dy;
       
-      ez(i,j,k) += dt / eps * ((hy(i+1,j,k+1) - hy(i,j,k+1)) / dx / kappa1 -
-			       (hx(i,j+1,k+1) - hx(i,j,k+1)) / dy / kappa2 +
+      ez(i,j,k) += dt / eps * ((hy(i+1,j,k+1) - hy(i,j,k+1)) / dx / kappax -
+			       (hx(i,j+1,k+1) - hx(i,j,k+1)) / dy / kappay +
 			       psi1 - psi2);
     }
 
@@ -255,20 +255,20 @@ namespace gmes
       CpmlMagneticParam<T> *ptr;
       ptr = static_cast<CpmlMagneticParam<T> *>(parameter);
       double mu = ptr->mu;
-      double b1 = ptr->b1;
-      double b2 = ptr->b2;
-      double c1 = ptr->c1;
-      double c2 = ptr->c2;
-      double kappa1 = ptr->kappa1;
-      double kappa2 = ptr->kappa2;
+      double by = ptr->b1;
+      double bz = ptr->b2;
+      double cy = ptr->c1;
+      double cz = ptr->c2;
+      double kappay = ptr->kappa1;
+      double kappaz = ptr->kappa2;
       T& psi1 = ptr->psi1;
       T& psi2 = ptr->psi2;
       
-      psi1 = b1 * psi1 + c1 * (ez(i,j,k-1) - ez(i,j-1,k-1)) / dy;
-      psi2 = b2 * psi2 + c2 * (ey(i,j-1,k) - ey(i,j-1,k-1)) / dz;
+      psi1 = by * psi1 + cy * (ez(i,j,k-1) - ez(i,j-1,k-1)) / dy;
+      psi2 = bz * psi2 + cz * (ey(i,j-1,k) - ey(i,j-1,k-1)) / dz;
 
-      hx(i,j,k) -= dt / mu * ((ez(i,j,k-1) - ez(i,j-1,k-1)) / dy / kappa1 -
-			      (ey(i,j-1,k) - ey(i,j-1,k-1)) / dz / kappa2 +
+      hx(i,j,k) -= dt / mu * ((ez(i,j,k-1) - ez(i,j-1,k-1)) / dy / kappay -
+			      (ey(i,j-1,k) - ey(i,j-1,k-1)) / dz / kappaz +
 			      psi1 - psi2);
     }
 
@@ -292,20 +292,20 @@ namespace gmes
       CpmlMagneticParam<T> *ptr;
       ptr = static_cast<CpmlMagneticParam<T> *>(parameter);
       double mu = ptr->mu;
-      double b1 = ptr->b1;
-      double b2 = ptr->b2;
-      double c1 = ptr->c1;
-      double c2 = ptr->c2;
-      double kappa1 = ptr->kappa1;
-      double kappa2 = ptr->kappa2;
+      double bz = ptr->b1;
+      double bx = ptr->b2;
+      double cz = ptr->c1;
+      double cx = ptr->c2;
+      double kappaz = ptr->kappa1;
+      double kappax = ptr->kappa2;
       T& psi1 = ptr->psi1;
       T& psi2 = ptr->psi2;
 
-      psi1 = b1 * psi1 + c1 * (ex(i-1,j,k) - ex(i-1,j,k-1)) / dz;
-      psi2 = b2 * psi2 + c2 * (ez(i,j,k-1) - ez(i-1,j,k-1)) / dx;
+      psi1 = bz * psi1 + cz * (ex(i-1,j,k) - ex(i-1,j,k-1)) / dz;
+      psi2 = bx * psi2 + cx * (ez(i,j,k-1) - ez(i-1,j,k-1)) / dx;
 
-      hy(i,j,k) -= dt / mu * ((ex(i-1,j,k) - ex(i-1,j,k-1)) / dz / kappa1 -
-			      (ez(i,j,k-1) - ez(i-1,j,k-1)) / dx / kappa2 +
+      hy(i,j,k) -= dt / mu * ((ex(i-1,j,k) - ex(i-1,j,k-1)) / dz / kappaz -
+			      (ez(i,j,k-1) - ez(i-1,j,k-1)) / dx / kappax +
 			      psi1 - psi2);
     }
 
@@ -329,20 +329,20 @@ namespace gmes
       CpmlMagneticParam<T> *ptr;
       ptr = static_cast<CpmlMagneticParam<T> *>(parameter);
       double mu = ptr->mu;
-      double b1 = ptr->b1;
-      double b2 = ptr->b2;
-      double c1 = ptr->c1;
-      double c2 = ptr->c2;
-      double kappa1 = ptr->kappa1;
-      double kappa2 = ptr->kappa2;
+      double bx = ptr->b1;
+      double by = ptr->b2;
+      double cx = ptr->c1;
+      double cy = ptr->c2;
+      double kappax = ptr->kappa1;
+      double kappay = ptr->kappa2;
       T& psi1 = ptr->psi1;
       T& psi2 = ptr->psi2;
 
-      psi1 = b1 * psi1 + c1 * (ey(i,j-1,k) - ey(i-1,j-1,k)) / dx;
-      psi2 = b2 * psi2 + c2 * (ex(i-1,j,k) - ex(i-1,j-1,k)) / dy;
+      psi1 = bx * psi1 + cx * (ey(i,j-1,k) - ey(i-1,j-1,k)) / dx;
+      psi2 = by * psi2 + cy * (ex(i-1,j,k) - ex(i-1,j-1,k)) / dy;
       
-      hz(i,j,k) -= dt / mu * ((ey(i,j-1,k) - ey(i-1,j-1,k)) / dx / kappa1 -
-			      (ex(i-1,j,k) - ex(i-1,j-1,k)) / dy / kappa2 +
+      hz(i,j,k) -= dt / mu * ((ey(i,j-1,k) - ey(i-1,j-1,k)) / dx / kappax -
+			      (ex(i-1,j,k) - ex(i-1,j-1,k)) / dy / kappay +
 			      psi1 - psi2);
     }
 

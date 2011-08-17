@@ -63,7 +63,7 @@ import_array();
 %apply (int* IN_ARRAY1, int DIM1) {(const int idx[3], int idx_size)};
 %apply (double* IN_ARRAY2, int DIM1, int DIM2) {(const double* const a, int a_size1, int a_size2)};
 %apply (double* IN_ARRAY2, int DIM1, int DIM2) {(const double* const b, int b_size1, int b_size2)};
-%apply (std::complex<double>* IN_ARRAY2, int DIM1, int DIM2) {(const std::complex<double>* const b_c, int b_c_size1, int b_c_size2)};
+%apply (std::complex<double>* IN_ARRAY2, int DIM1, int DIM2) {(const std::complex<double>* const b, int b_size1, int b_size2)};
 %apply (double* IN_ARRAY1, int DIM1) {(const double* const c, int c_size)};
 
 // Declare the Pythonic interfaces.
@@ -171,6 +171,24 @@ import_array();
 %template(DrudeHy ## postfix) gmes::DrudeHy<T >;
 %template(DrudeHz ## postfix) gmes::DrudeHz<T >;
 
+%extend gmes::DrudeElectricParam<T >
+{
+  void set(const double* const a, int a_size1, int a_size2,
+	   const double* const c, int c_size)
+  {
+    for (int i = 0; i < a_size1; i++) {
+      std::array<double, 3> tmp;
+      std::copy(a + i * a_size2, a + i * a_size2 + 3, tmp.begin());
+      $self->a.push_back(tmp);
+    }
+    
+    std::copy(c, c + c_size, $self->c.begin());
+    
+    $self->q_now.resize(a_size1, T(0));
+    $self->q_new.resize(a_size1, T(0));
+  }
+};
+
 // Lerentz model
 %template(LorentzElectricParam ## postfix) gmes::LorentzElectricParam<T >;
 %template(LorentzMagneticParam ## postfix) gmes::LorentzMagneticParam<T >;
@@ -182,7 +200,25 @@ import_array();
 %template(LorentzHy ## postfix) gmes::LorentzHy<T >;
 %template(LorentzHz ## postfix) gmes::LorentzHz<T >;
 
-// Drude-critical points model
+%extend gmes::LorentzElectricParam<T >
+{
+  void set(const double* const a, int a_size1, int a_size2,
+	   const double* const c, int c_size)
+  {
+    for (int i = 0; i < a_size1; i++) {
+      std::array<double, 3> tmp;
+      std::copy(a + i * a_size2, a + i * a_size2 + 3, tmp.begin());
+      $self->a.push_back(tmp);
+    }
+
+    std::copy(c, c + c_size, $self->c.begin());
+    
+    $self->l_now.resize(a_size1);
+    $self->l_new.resize(a_size1);
+  }
+};
+
+// ADE implementation of the Drude-critical points model
 %template(DcpAdeElectricParam ## postfix) gmes::DcpAdeElectricParam<T >;
 %template(DcpAdeMagneticParam ## postfix) gmes::DcpAdeMagneticParam<T >;
 %template(DcpAdeElectric ## postfix) gmes::DcpAdeElectric<T >;
@@ -193,7 +229,34 @@ import_array();
 %template(DcpAdeHy ## postfix) gmes::DcpAdeHy<T >;
 %template(DcpAdeHz ## postfix) gmes::DcpAdeHz<T >;
 
-// Drude-critical points model
+%extend gmes::DcpAdeElectricParam<T >
+{
+  void set(const double* const a, int a_size1, int a_size2,
+	   const double* const b, int b_size1, int b_size2,
+	   const double* const c, int c_size)
+  {
+    for (int i = 0; i < a_size1; i++) {
+      std::array<double, 3> tmp;
+      std::copy(a + i * a_size2, a + i * a_size2 + 3, tmp.begin());
+      $self->a.push_back(tmp);
+    }
+
+    for (int i = 0; i < b_size1; i++) {
+      std::array<double, 4> tmp;
+      std::copy(b + i * b_size2, b + i * b_size2 + 4, tmp.begin());
+      $self->b.push_back(tmp);
+    }
+
+    std::copy(c, c + c_size, $self->c.begin());
+    
+    $self->q_old.resize(a_size1);
+    $self->q_now.resize(a_size1);
+    $self->p_old.resize(b_size1);
+    $self->p_now.resize(b_size1);
+  }
+};
+
+// PLRC implementation of the Drude-critical points model
 %template(DcpPlrcElectricParam ## postfix) gmes::DcpPlrcElectricParam<T >;
 %template(DcpPlrcMagneticParam ## postfix) gmes::DcpPlrcMagneticParam<T >;
 %template(DcpPlrcElectric ## postfix) gmes::DcpPlrcElectric<T >;
@@ -203,6 +266,33 @@ import_array();
 %template(DcpPlrcHx ## postfix) gmes::DcpPlrcHx<T >;
 %template(DcpPlrcHy ## postfix) gmes::DcpPlrcHy<T >;
 %template(DcpPlrcHz ## postfix) gmes::DcpPlrcHz<T >;
+
+%extend gmes::DcpPlrcElectricParam<T >
+{
+  void set(const double* const a, int a_size1, int a_size2,
+	   const std::complex<double>* const b, int b_size1, int b_size2,
+	   const double* const c, int c_size)
+  {
+    for (int i = 0; i < a_size1; i++) {
+      std::array<double, 3> tmp;
+      std::copy(a + i * a_size2, a + i * a_size2 + 3, tmp.begin());
+      $self->a.push_back(tmp);
+    }
+
+    for (int i = 0; i < b_size1; i++) {
+      std::array<std::complex<double>, 3> tmp;
+      std::copy(b + i * b_size2, b + i * b_size2 + 3, tmp.begin());
+      $self->b.push_back(tmp);
+    }
+
+    std::copy(c, c + c_size, $self->c.begin());
+    
+    $self->psi_dp_re.resize(a_size1);
+    $self->psi_dp_re.resize(a_size1);
+    $self->psi_cp_re.resize(b_size1);
+    $self->psi_cp_re.resize(b_size1);
+  }
+};
 
 %enddef    /* template_wrap() macro */
 

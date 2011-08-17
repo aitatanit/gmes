@@ -174,7 +174,7 @@ namespace gmes
   template <typename T> class DielectricHx: public DielectricMagnetic<T>
   {
   public:
-    void 
+    void
     update(T * const hx, int hx_x_size, int hx_y_size, int hx_z_size,
 	   const T * const ez, int ez_x_size, int ez_y_size, int ez_z_size,
 	   const T * const ey, int ey_x_size, int ey_y_size, int ey_z_size,

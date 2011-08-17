@@ -46,7 +46,7 @@ Enthought Python distribution provides all programs except MPICH2 and
 MPI4Python on which GMES depends. We didn't tested the MPI environment on 
 Windows.
 
-* Enthought Python Distribution (EPD) >= 6.0.0
+* Enthought Python Distribution (EPD) >= 6.2-2
 
 4. Compile and Install
 

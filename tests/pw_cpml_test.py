@@ -1,102 +1,183 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
 
 import os, sys
 new_path = os.path.abspath('../')
 sys.path.append(new_path)
 
 import unittest
-from numpy import *
-from gmes.pw_material import * 
+import numpy as np
+from random import random
 
-    
+from gmes.pw_material import CpmlElectricParamReal, CpmlElectricParamCmplx
+from gmes.pw_material import CpmlMagneticParamReal, CpmlMagneticParamCmplx
+from gmes.pw_material import CpmlExReal, CpmlExCmplx
+from gmes.pw_material import CpmlEyReal, CpmlEyCmplx
+from gmes.pw_material import CpmlEzReal, CpmlEzCmplx
+from gmes.pw_material import CpmlHxReal, CpmlHxCmplx
+from gmes.pw_material import CpmlHyReal, CpmlHyCmplx
+from gmes.pw_material import CpmlHzReal, CpmlHzCmplx
+
+
 class TestSequence(unittest.TestCase):
     def setUp(self):
         self.idx = (1,1,1)
         
-        self.realA = ones((3,3,3), float)
-        self.realB = ones((3,3,3), float)
-        self.realC = ones((3,3,3), float)
+        self.e_param_real = CpmlElectricParamReal()
+        self.e_param_real.eps = random()
+        self.e_param_real.b1 = self.e_param_real.b2 = 1
+        self.e_param_real.c1 = self.e_param_real.c2 = 1
+        self.e_param_real.kappa1 = self.e_param_real.kappa2 = 1
         
-        self.cmplxA = ones((3,3,3), complex)
-        self.cmplxB = ones((3,3,3), complex)
-        self.cmplxC = ones((3,3,3), complex)
+        self.e_param_cmplx = CpmlElectricParamCmplx()
+        self.e_param_cmplx.eps = random()
+        self.e_param_cmplx.b1 = self.e_param_cmplx.b2 = 1
+        self.e_param_cmplx.c1 = self.e_param_cmplx.c2 = 1
+        self.e_param_cmplx.kappa1 = self.e_param_cmplx.kappa2 = 1
+
+        self.h_param_real = CpmlMagneticParamReal()
+        self.h_param_real.mu = random()
+        self.h_param_real.b1 = self.h_param_real.b2 = 1
+        self.h_param_real.c1 = self.h_param_real.c2 = 1
+        self.h_param_real.kappa1 = self.h_param_real.kappa2 = 1
+
+        self.h_param_cmplx = CpmlMagneticParamCmplx()
+        self.h_param_cmplx.mu = random()
+        self.h_param_cmplx.b1 = self.h_param_cmplx.b2 = 1
+        self.h_param_cmplx.c1 = self.h_param_cmplx.c2 = 1
+        self.h_param_cmplx.kappa1 = self.h_param_cmplx.kappa2 = 1
+
+    def testExReal(self):
+        sample = CpmlExReal()
+        sample.attach(self.idx, self.e_param_real)
+        self.assertEqual(sample.get_eps(self.idx), self.e_param_real.eps)
+
+        ex = hz = hy = np.zeros((3,3,3))
+        dy = dz = dt = 1
+        n = 0
+        sample.update_all(ex, hz, hy, dy, dz, dt, n)
+        self.assertEqual(ex[self.idx], 0)
+
+    def testEyReal(self):
+        sample = CpmlEyReal()
+        sample.attach(self.idx, self.e_param_real)
+        self.assertEqual(sample.get_eps(self.idx), self.e_param_real.eps)
         
-        self.diff = 1
-        self.n = 0
-        self.epsilon = 1
-        self.mu = 1
-        self.b1 = 1
-        self.b2 = 1
-        self.c1 = 1
-        self.c2 = 1
-        self.kappa1 = 1
-        self.kappa2 = 1
+        ey = hx = hz = np.zeros((3,3,3))
+        dz = dx = dt = 1
+        n = 0
+        sample.update_all(ey, hx, hz, dz, dx, dt, n)
+        self.assertEqual(ey[self.idx], 0)
+       
+    def testEzReal(self):
+        sample = CpmlEzReal()
+        sample.attach(self.idx, self.e_param_real)
+        self.assertEqual(sample.get_eps(self.idx), self.e_param_real.eps)
         
-    def testEx(self):
-        sampleReal = CpmlExReal(self.idx, self.epsilon, self.b1, self.b2, 
-                             self.c1, self.c2, self.kappa1, self.kappa2)
-        sampleCmplx = CpmlExCmplx(self.idx, self.epsilon, self.b1, self.b2, 
-                             self.c1, self.c2, self.kappa1, self.kappa2)
-        sampleReal.update(self.realA, self.realB, self.realC, 
-                          self.diff, self.diff, self.diff, self.n)
-        sampleCmplx.update(self.cmplxA, self.cmplxB, self.cmplxC, 
-                           self.diff, self.diff, self.diff, self.n)
-        self.assertEqual((self.realA == self.cmplxA.real).all(), True)
+        ez = hy = hx = np.zeros((3,3,3))
+        dx = dy = dt = 1
+        n = 0
+        sample.update_all(ez, hy, hx, dx, dy, dt, n)
+        self.assertEqual(ez[self.idx], 0)
+    
+    def testHxReal(self):
+        sample = CpmlHxReal()
+        sample.attach(self.idx, self.h_param_real)
+        self.assertEqual(sample.get_mu(self.idx), self.h_param_real.mu)
         
-    def testEy(self):
-        sampleReal = CpmlEyReal(self.idx, self.epsilon, self.b1, self.b2, 
-                             self.c1, self.c2, self.kappa1, self.kappa2)
-        sampleCmplx = CpmlEyCmplx(self.idx, self.epsilon, self.b1, self.b2, 
-                             self.c1, self.c2, self.kappa1, self.kappa2)
-        sampleReal.update(self.realA, self.realB, self.realC, 
-                          self.diff, self.diff, self.diff, self.n)
-        sampleCmplx.update(self.cmplxA, self.cmplxB, self.cmplxC, 
-                           self.diff, self.diff, self.diff, self.n)
-        self.assertEqual((self.realA == self.cmplxA.real).all(), True)
+        hx = ez = ey = np.zeros((3,3,3))
+        dy = dz = dt = 1
+        n = 0
+        sample.update_all(hx, ez, ey, dy, dz, dt, n)
+        self.assertEqual(hx[self.idx], 0)
         
-    def testEz(self):
-        sampleReal = CpmlEzReal(self.idx, self.epsilon, self.b1, self.b2, 
-                             self.c1, self.c2, self.kappa1, self.kappa2)
-        sampleCmplx = CpmlEzCmplx(self.idx, self.epsilon, self.b1, self.b2, 
-                             self.c1, self.c2, self.kappa1, self.kappa2)
-        sampleReal.update(self.realA, self.realB, self.realC, 
-                          self.diff, self.diff, self.diff, self.n)
-        sampleCmplx.update(self.cmplxA, self.cmplxB, self.cmplxC, 
-                           self.diff, self.diff, self.diff, self.n)
-        self.assertEqual((self.realA == self.cmplxA.real).all(), True)
+    def testHyReal(self):
+        sample = CpmlHyReal()
+        sample.attach(self.idx, self.h_param_real)
+        self.assertEqual(sample.get_mu(self.idx), self.h_param_real.mu)
         
-    def testHx(self):
-        sampleReal = CpmlHxReal(self.idx, self.epsilon, self.b1, self.b2, 
-                             self.c1, self.c2, self.kappa1, self.kappa2)
-        sampleCmplx = CpmlHxCmplx(self.idx, self.epsilon, self.b1, self.b2, 
-                             self.c1, self.c2, self.kappa1, self.kappa2)
-        sampleReal.update(self.realA, self.realB, self.realC, 
-                          self.diff, self.diff, self.diff, self.n)
-        sampleCmplx.update(self.cmplxA, self.cmplxB, self.cmplxC, 
-                           self.diff, self.diff, self.diff, self.n)
-        self.assertEqual((self.realA == self.cmplxA.real).all(), True)
+        hy = ex = ez = np.zeros((3,3,3))
+        dz = dx = dt = 1
+        n = 0
+        sample.update_all(hy, ex, ez, dz, dx, dt, n)
+        self.assertEqual(hy[self.idx], 0)
+       
+    def testHzReal(self):
+        sample = CpmlHzReal()
+        sample.attach(self.idx, self.h_param_real)
+        self.assertEqual(sample.get_mu(self.idx), self.h_param_real.mu)
         
-    def testHy(self):
-        sampleReal = CpmlHyReal(self.idx, self.epsilon, self.b1, self.b2, 
-                             self.c1, self.c2, self.kappa1, self.kappa2)
-        sampleCmplx = CpmlHyCmplx(self.idx, self.epsilon, self.b1, self.b2, 
-                             self.c1, self.c2, self.kappa1, self.kappa2)
-        sampleReal.update(self.realA, self.realB, self.realC, 
-                          self.diff, self.diff, self.diff, self.n)
-        sampleCmplx.update(self.cmplxA, self.cmplxB, self.cmplxC, 
-                           self.diff, self.diff, self.diff, self.n)
-        self.assertEqual((self.realA == self.cmplxA.real).all(), True)
+        hz = ey = ex = np.zeros((3,3,3))
+        dx = dy = dt = 1
+        n = 0
+        sample.update_all(hz, ey, ex, dx, dy, dt, n)
+        self.assertEqual(hz[self.idx], 0)
+
+    def testExCmplx(self):
+        sample = CpmlExCmplx()
+        sample.attach(self.idx, self.e_param_cmplx)
+        self.assertEqual(sample.get_eps(self.idx), self.e_param_cmplx.eps)
         
-    def testHz(self):
-        sampleReal = CpmlHzReal(self.idx, self.epsilon, self.b1, self.b2, 
-                             self.c1, self.c2, self.kappa1, self.kappa2)
-        sampleCmplx = CpmlHzCmplx(self.idx, self.epsilon, self.b1, self.b2, 
-                             self.c1, self.c2, self.kappa1, self.kappa2)
-        sampleReal.update(self.realA, self.realB, self.realC, 
-                          self.diff, self.diff, self.diff, self.n)
-        sampleCmplx.update(self.cmplxA, self.cmplxB, self.cmplxC, 
-                           self.diff, self.diff, self.diff, self.n)
-        self.assertEqual((self.realA == self.cmplxA.real).all(), True)
+        ex = hz = hy = np.zeros((3,3,3), complex)
+        dy = dz = dt = 1
+        n = 0
+        sample.update_all(ex, hz, hy, dy, dz, dt, n)
+        self.assertEqual(ex[self.idx], 0)
+        
+    def testEyCmplx(self):
+        sample = CpmlEyCmplx()
+        sample.attach(self.idx, self.e_param_cmplx)
+        self.assertEqual(sample.get_eps(self.idx), self.e_param_cmplx.eps)
+        
+        ey = hx = hz = np.zeros((3,3,3), complex)
+        dz = dx = dt = 1
+        n = 0
+        sample.update_all(ey, hx, hz, dz, dx, dt, n)
+        self.assertEqual(ey[self.idx], 0)
+        
+    def testEzCmplx(self):
+        sample = CpmlEzCmplx()
+        sample.attach(self.idx, self.e_param_cmplx)
+        self.assertEqual(sample.get_eps(self.idx), self.e_param_cmplx.eps)
+        
+        ez = hy = hx = np.zeros((3,3,3), complex)
+        dx = dy = dt = 1
+        n = 0
+        sample.update_all(ez, hy, hx, dx, dy, dt, n)
+        self.assertEqual(ez[self.idx], 0)
+    
+    def testHxCmplx(self):
+        sample = CpmlHxCmplx()
+        sample.attach(self.idx, self.h_param_cmplx)
+        self.assertEqual(sample.get_mu(self.idx), self.h_param_cmplx.mu)
+        
+        hx = ez = ey = np.zeros((3,3,3), complex)
+        dy = dz = dt = 1
+        n = 0
+        sample.update_all(hx, ez, ey, dy, dz, dt, n)
+        self.assertEqual(hx[self.idx], 0)
+        
+    def testHyCmplx(self):
+        sample = CpmlHyCmplx()
+        sample.attach(self.idx, self.h_param_cmplx)
+        self.assertEqual(sample.get_mu(self.idx), self.h_param_cmplx.mu)
+        
+        hy = ex = ez = np.zeros((3,3,3), complex)
+        dz = dx = dt = 1
+        n = 0
+        sample.update_all(hy, ex, ez, dz, dx, dt, n)
+        self.assertEqual(hy[self.idx], 0)
+       
+    def testHzCmplx(self):
+        sample = CpmlHzCmplx()
+        sample.attach(self.idx, self.h_param_cmplx)
+        self.assertEqual(sample.get_mu(self.idx), self.h_param_cmplx.mu)
+        
+        hz = ey = ex = np.zeros((3,3,3), complex)
+        dx = dy = dt = 1
+        n = 0
+        sample.update_all(hz, ey, ex, dx, dy, dt, n)
+        self.assertEqual(hz[self.idx], 0)
         
         
 if __name__ == '__main__':

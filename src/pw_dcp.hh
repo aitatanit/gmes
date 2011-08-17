@@ -35,7 +35,7 @@ namespace gmes
   /* Auxiliary Differential Equation Implementation */
   /**************************************************/
 
-  template <typename T> struct DcpAdeElectricParam: public ElectricParam<T>
+  template <typename T> struct DcpAdeElectricParam: ElectricParam<T>
   {
     // parameters for the ADE of the Drude model
     std::vector<std::array<double, 3> > a;
@@ -47,7 +47,7 @@ namespace gmes
     std::vector<T> q_old, q_now, p_old, p_now;
   };
   
-  template <typename T> struct DcpAdeMagneticParam: public MagneticParam<T>
+  template <typename T> struct DcpAdeMagneticParam: MagneticParam<T>
   {
   };
 
@@ -303,7 +303,7 @@ namespace gmes
   /* Piecewise-Linear Recursive Convolution Implementation */
   /*********************************************************/
 
-  template <typename T> struct DcpPlrcElectricParam: public ElectricParam<T>
+  template <typename T> struct DcpPlrcElectricParam: ElectricParam<T>
   {
     std::vector<std::array<double, 3> > a;
     std::vector<std::array<std::complex<double>, 3> > b;
@@ -314,7 +314,7 @@ namespace gmes
     std::vector<std::complex<double> > psi_cp_re, psi_cp_im;
   };
 
-  template <typename T> struct DcpPlrcMagneticParam: public MagneticParam<T>
+  template <typename T> struct DcpPlrcMagneticParam: MagneticParam<T>
   {
   };
 

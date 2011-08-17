@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
+# -*- conding: utf-8 -*-
 
 import os, sys
 new_path = os.path.abspath('../')
@@ -8,14 +8,14 @@ sys.path.append(new_path)
 import unittest
 import numpy as np
 
-from gmes.material import Gold2
+from gmes.material import Meep
 from gmes.geometry import Cartesian
-from gmes.pw_material import DrudeExReal, DrudeExCmplx
-from gmes.pw_material import DrudeEyReal, DrudeEyCmplx
-from gmes.pw_material import DrudeEzReal, DrudeEzCmplx
-from gmes.pw_material import DrudeHxReal, DrudeHxCmplx
-from gmes.pw_material import DrudeHyReal, DrudeHyCmplx
-from gmes.pw_material import DrudeHzReal, DrudeHzCmplx
+from gmes.pw_material import LorentzExReal, LorentzExCmplx
+from gmes.pw_material import LorentzEyReal, LorentzEyCmplx
+from gmes.pw_material import LorentzEzReal, LorentzEzCmplx
+from gmes.pw_material import LorentzHxReal, LorentzHxCmplx
+from gmes.pw_material import LorentzHyReal, LorentzHyCmplx
+from gmes.pw_material import LorentzHzReal, LorentzHzCmplx
 
 
 class TestSequence(unittest.TestCase):
@@ -24,16 +24,15 @@ class TestSequence(unittest.TestCase):
         self.idx2 = (1, 1, 1)
         while self.idx == self.idx2:
             self.idx2 = tuple(np.random.random_integers(0, 2) for x in range(3))
-
         self.spc = Cartesian((0, 0, 0))
         self.spc.dt = 1
-        
-        self.drude = Gold2(a=1)
-        self.drude.init(self.spc)
+
+        self.lorentz = Meep(a=1)
+        self.lorentz.init(self.spc)
         
     def testExReal(self):
-        sample = DrudeExReal()
-        sample_param = self.drude.get_ex_param(self.idx, (0,0,0), cmplx=False)
+        sample = LorentzExReal()
+        sample_param = self.lorentz.get_ex_param(self.idx, (0,0,0), cmplx=False)
         sample.attach(self.idx, sample_param)
         self.assertEqual(sample.get_eps(self.idx), sample_param.eps)
         self.assertEqual(sample.get_eps(self.idx2), 0)
@@ -45,8 +44,8 @@ class TestSequence(unittest.TestCase):
         self.assertEqual(ex[self.idx], 0)
 
     def testEyReal(self):
-        sample = DrudeEyReal()
-        sample_param = self.drude.get_ey_param(self.idx, (0,0,0), cmplx=False)
+        sample = LorentzEyReal()
+        sample_param = self.lorentz.get_ey_param(self.idx, (0,0,0), cmplx=False)
 
         sample.attach(self.idx, sample_param)
         self.assertEqual(sample.get_eps(self.idx), sample_param.eps)
@@ -59,8 +58,8 @@ class TestSequence(unittest.TestCase):
         self.assertEqual(ey[self.idx], 0)
        
     def testEzReal(self):
-        sample = DrudeEzReal()
-        sample_param = self.drude.get_ez_param(self.idx, (0,0,0), cmplx=False)
+        sample = LorentzEzReal()
+        sample_param = self.lorentz.get_ez_param(self.idx, (0,0,0), cmplx=False)
         sample.attach(self.idx, sample_param)
         self.assertEqual(sample.get_eps(self.idx), sample_param.eps)
         self.assertEqual(sample.get_eps(self.idx2), 0)
@@ -72,8 +71,8 @@ class TestSequence(unittest.TestCase):
         self.assertEqual(ez[self.idx], 0)
     
     def testHxReal(self):
-        sample = DrudeHxReal()
-        sample_param = self.drude.get_hx_param(self.idx, (0,0,0), cmplx=False)
+        sample = LorentzHxReal()
+        sample_param = self.lorentz.get_hx_param(self.idx, (0,0,0), cmplx=False)
         sample.attach(self.idx, sample_param)
         self.assertEqual(sample.get_mu(self.idx), sample_param.mu)
         self.assertEqual(sample.get_mu(self.idx2), 0)
@@ -85,8 +84,8 @@ class TestSequence(unittest.TestCase):
         self.assertEqual(hx[self.idx], 0)
         
     def testHyReal(self):
-        sample = DrudeHyReal()
-        sample_param = self.drude.get_hy_param(self.idx, (0,0,0), cmplx=False)
+        sample = LorentzHyReal()
+        sample_param = self.lorentz.get_hy_param(self.idx, (0,0,0), cmplx=False)
         sample.attach(self.idx, sample_param)
         self.assertEqual(sample.get_mu(self.idx), sample_param.mu)
         self.assertEqual(sample.get_mu(self.idx2), 0)
@@ -98,8 +97,8 @@ class TestSequence(unittest.TestCase):
         self.assertEqual(hy[self.idx], 0)
        
     def testHzReal(self):
-        sample = DrudeHzReal()
-        sample_param = self.drude.get_hz_param(self.idx, (0,0,0), cmplx=False)
+        sample = LorentzHzReal()
+        sample_param = self.lorentz.get_hz_param(self.idx, (0,0,0), cmplx=False)
         sample.attach(self.idx, sample_param)
         self.assertEqual(sample.get_mu(self.idx), sample_param.mu)
         self.assertEqual(sample.get_mu(self.idx2), 0)
@@ -111,8 +110,8 @@ class TestSequence(unittest.TestCase):
         self.assertEqual(hz[self.idx], 0)
 
     def testExCmplx(self):
-        sample = DrudeExCmplx()
-        sample_param = self.drude.get_ex_param(self.idx, (0,0,0), cmplx=True)
+        sample = LorentzExCmplx()
+        sample_param = self.lorentz.get_ex_param(self.idx, (0,0,0), cmplx=True)
         sample.attach(self.idx, sample_param)
         self.assertEqual(sample.get_eps(self.idx), sample_param.eps)
         self.assertEqual(sample.get_eps(self.idx2), 0)
@@ -124,8 +123,8 @@ class TestSequence(unittest.TestCase):
         self.assertEqual(ex[self.idx], 0)
         
     def testEyCmplx(self):
-        sample = DrudeEyCmplx()
-        sample_param = self.drude.get_ey_param(self.idx, (0,0,0), cmplx=True)
+        sample = LorentzEyCmplx()
+        sample_param = self.lorentz.get_ey_param(self.idx, (0,0,0), cmplx=True)
         sample.attach(self.idx, sample_param)
         self.assertEqual(sample.get_eps(self.idx), sample_param.eps)
         self.assertEqual(sample.get_eps(self.idx2), 0)
@@ -137,8 +136,8 @@ class TestSequence(unittest.TestCase):
         self.assertEqual(ey[self.idx], 0)
         
     def testEzCmplx(self):
-        sample = DrudeEzCmplx()
-        sample_param = self.drude.get_ez_param(self.idx, (0,0,0), cmplx=True)
+        sample = LorentzEzCmplx()
+        sample_param = self.lorentz.get_ez_param(self.idx, (0,0,0), cmplx=True)
         sample.attach(self.idx, sample_param)
         self.assertEqual(sample.get_eps(self.idx), sample_param.eps)
         self.assertEqual(sample.get_eps(self.idx2), 0)
@@ -150,8 +149,8 @@ class TestSequence(unittest.TestCase):
         self.assertEqual(ez[self.idx], 0)
     
     def testHxCmplx(self):
-        sample = DrudeHxCmplx()
-        sample_param = self.drude.get_hx_param(self.idx, (0,0,0), cmplx=True)
+        sample = LorentzHxCmplx()
+        sample_param = self.lorentz.get_hx_param(self.idx, (0,0,0), cmplx=True)
         sample.attach(self.idx, sample_param)
         self.assertEqual(sample.get_mu(self.idx), sample_param.mu)
         self.assertEqual(sample.get_mu(self.idx2), 0)
@@ -163,8 +162,8 @@ class TestSequence(unittest.TestCase):
         self.assertEqual(hx[self.idx], 0)
         
     def testHyCmplx(self):
-        sample = DrudeHyCmplx()
-        sample_param = self.drude.get_hy_param(self.idx, (0,0,0), cmplx=True)
+        sample = LorentzHyCmplx()
+        sample_param = self.lorentz.get_hy_param(self.idx, (0,0,0), cmplx=True)
         sample.attach(self.idx, sample_param)
         self.assertEqual(sample.get_mu(self.idx), sample_param.mu)
         self.assertEqual(sample.get_mu(self.idx2), 0)
@@ -176,8 +175,8 @@ class TestSequence(unittest.TestCase):
         self.assertEqual(hy[self.idx], 0)
        
     def testHzCmplx(self):
-        sample = DrudeHzCmplx()
-        sample_param = self.drude.get_hz_param(self.idx, (0,0,0), cmplx=True)
+        sample = LorentzHzCmplx()
+        sample_param = self.lorentz.get_hz_param(self.idx, (0,0,0), cmplx=True)
         sample.attach(self.idx, sample_param)
         self.assertEqual(sample.get_mu(self.idx), sample_param.mu)
         self.assertEqual(sample.get_mu(self.idx2), 0)
