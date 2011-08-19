@@ -26,8 +26,8 @@ namespace gmes
       param.clear();
     }
     
-    void 
-    attach(const int idx[3], int idx_size,
+    PwMaterial<T> *
+    attach(const int* const idx, int idx_size,
 	   const PwMaterialParam * const parameter)
     {
       std::array<int, 3> index;
@@ -42,9 +42,11 @@ namespace gmes
 
       DummyElectricParam<T> *param_ptr;
       param_ptr = new DummyElectricParam<T>();
-      param_ptr->eps = static_cast<const DummyElectricParam<T> *>(parameter)->eps;
+      param_ptr->eps_inf = static_cast<const DummyElectricParam<T> *>(parameter)->eps_inf;
 	  
       param.insert(std::make_pair(index, param_ptr));
+
+      return this;
     }
 
     void 
@@ -52,7 +54,7 @@ namespace gmes
 	   const T * const in_field1, int in1_dim1, int in1_dim2, int in1_dim3,
 	   const T * const in_field2, int in2_dim1, int in2_dim2, int in2_dim3,
 	   double d1, double d2, double dt, double n,
-	   const int idx[3], int idx_size, 
+	   const int* const idx, int idx_size, 
 	   PwMaterialParam * const parameter)
     {
     }
@@ -85,8 +87,8 @@ namespace gmes
       param.clear();
     }
     
-    void 
-    attach(const int idx[3], int idx_size,
+    PwMaterial<T> *
+    attach(const int* const idx, int idx_size,
 	   const PwMaterialParam * const parameter)
     {
       std::array<int, 3> index;
@@ -101,9 +103,11 @@ namespace gmes
       
       DummyMagneticParam<T> *param_ptr;
       param_ptr = new DummyMagneticParam<T>();
-      param_ptr->mu = static_cast<const DummyMagneticParam<T> *>(parameter)->mu;
+      param_ptr->mu_inf = static_cast<const DummyMagneticParam<T> *>(parameter)->mu_inf;
       
       param.insert(std::make_pair(index, param_ptr));
+
+      return this;
     }
 
     void 
@@ -111,7 +115,7 @@ namespace gmes
 	   const T * const in_field1, int in1_dim1, int in1_dim2, int in1_dim3,
 	   const T * const in_field2, int in2_dim1, int in2_dim2, int in2_dim3,
 	   double d1, double d2, double dt, double n,
-	   const int idx[3], int idx_size, 
+	   const int* const idx, int idx_size, 
 	   PwMaterialParam * const parameter)
     {
     }

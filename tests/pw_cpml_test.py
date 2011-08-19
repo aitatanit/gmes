@@ -9,177 +9,225 @@ import unittest
 import numpy as np
 from random import random
 
-from gmes.pw_material import CpmlElectricParamReal, CpmlElectricParamCmplx
-from gmes.pw_material import CpmlMagneticParamReal, CpmlMagneticParamCmplx
-from gmes.pw_material import CpmlExReal, CpmlExCmplx
-from gmes.pw_material import CpmlEyReal, CpmlEyCmplx
-from gmes.pw_material import CpmlEzReal, CpmlEzCmplx
-from gmes.pw_material import CpmlHxReal, CpmlHxCmplx
-from gmes.pw_material import CpmlHyReal, CpmlHyCmplx
-from gmes.pw_material import CpmlHzReal, CpmlHzCmplx
+from gmes.material import Cpml
+from gmes.geometry import Cartesian
 
 
 class TestSequence(unittest.TestCase):
     def setUp(self):
         self.idx = (1,1,1)
         
-        self.e_param_real = CpmlElectricParamReal()
-        self.e_param_real.eps = random()
-        self.e_param_real.b1 = self.e_param_real.b2 = 1
-        self.e_param_real.c1 = self.e_param_real.c2 = 1
-        self.e_param_real.kappa1 = self.e_param_real.kappa2 = 1
+        self.spc = Cartesian((0, 0, 0))
+        self.spc.dt = 1
         
-        self.e_param_cmplx = CpmlElectricParamCmplx()
-        self.e_param_cmplx.eps = random()
-        self.e_param_cmplx.b1 = self.e_param_cmplx.b2 = 1
-        self.e_param_cmplx.c1 = self.e_param_cmplx.c2 = 1
-        self.e_param_cmplx.kappa1 = self.e_param_cmplx.kappa2 = 1
-
-        self.h_param_real = CpmlMagneticParamReal()
-        self.h_param_real.mu = random()
-        self.h_param_real.b1 = self.h_param_real.b2 = 1
-        self.h_param_real.c1 = self.h_param_real.c2 = 1
-        self.h_param_real.kappa1 = self.h_param_real.kappa2 = 1
-
-        self.h_param_cmplx = CpmlMagneticParamCmplx()
-        self.h_param_cmplx.mu = random()
-        self.h_param_cmplx.b1 = self.h_param_cmplx.b2 = 1
-        self.h_param_cmplx.c1 = self.h_param_cmplx.c2 = 1
-        self.h_param_cmplx.kappa1 = self.h_param_cmplx.kappa2 = 1
+        self.cpml = Cpml()
+        self.cpml.init(self.spc, 1)
 
     def testExReal(self):
-        sample = CpmlExReal()
-        sample.attach(self.idx, self.e_param_real)
-        self.assertEqual(sample.get_eps(self.idx), self.e_param_real.eps)
+        sample = \
+            self.cpml.get_pw_material_ex(self.idx, (0,0,0), cmplx=False)
+        
+        for idx in np.ndindex(3, 3, 3):
+            if idx == self.idx:
+                self.assertEqual(sample.get_eps_inf(idx), self.cpml.eps_inf)
+            else:
+                self.assertEqual(sample.get_eps_inf(idx), 0)
 
         ex = hz = hy = np.zeros((3,3,3))
-        dy = dz = dt = 1
+        dy = dz = dt = self.spc.dt
         n = 0
         sample.update_all(ex, hz, hy, dy, dz, dt, n)
-        self.assertEqual(ex[self.idx], 0)
+        for idx in np.ndindex(3, 3, 3):
+            self.assertEqual(ex[idx], 0)
 
     def testEyReal(self):
-        sample = CpmlEyReal()
-        sample.attach(self.idx, self.e_param_real)
-        self.assertEqual(sample.get_eps(self.idx), self.e_param_real.eps)
+        sample = \
+            self.cpml.get_pw_material_ey(self.idx, (0,0,0), cmplx=False)
         
+        for idx in np.ndindex(3, 3, 3):
+            if idx == self.idx:
+                self.assertEqual(sample.get_eps_inf(idx), self.cpml.eps_inf)
+            else:
+                self.assertEqual(sample.get_eps_inf(idx), 0)
+
         ey = hx = hz = np.zeros((3,3,3))
         dz = dx = dt = 1
         n = 0
         sample.update_all(ey, hx, hz, dz, dx, dt, n)
-        self.assertEqual(ey[self.idx], 0)
-       
+        for idx in np.ndindex(3, 3, 3):
+            self.assertEqual(ey[idx], 0)
+
     def testEzReal(self):
-        sample = CpmlEzReal()
-        sample.attach(self.idx, self.e_param_real)
-        self.assertEqual(sample.get_eps(self.idx), self.e_param_real.eps)
+        sample = \
+            self.cpml.get_pw_material_ez(self.idx, (0,0,0), cmplx=False)
         
+        for idx in np.ndindex(3, 3, 3):
+            if idx == self.idx:
+                self.assertEqual(sample.get_eps_inf(idx), self.cpml.eps_inf)
+            else:
+                self.assertEqual(sample.get_eps_inf(idx), 0)
+
         ez = hy = hx = np.zeros((3,3,3))
         dx = dy = dt = 1
         n = 0
         sample.update_all(ez, hy, hx, dx, dy, dt, n)
-        self.assertEqual(ez[self.idx], 0)
-    
+        for idx in np.ndindex(3, 3, 3):
+            self.assertEqual(ez[idx], 0)
+
     def testHxReal(self):
-        sample = CpmlHxReal()
-        sample.attach(self.idx, self.h_param_real)
-        self.assertEqual(sample.get_mu(self.idx), self.h_param_real.mu)
+        sample = \
+            self.cpml.get_pw_material_hx(self.idx, (0,0,0), cmplx=False)
         
+        for idx in np.ndindex(3, 3, 3):
+            if idx == self.idx:
+                self.assertEqual(sample.get_mu_inf(idx), self.cpml.mu_inf)
+            else:
+                self.assertEqual(sample.get_mu_inf(idx), 0)
+
         hx = ez = ey = np.zeros((3,3,3))
         dy = dz = dt = 1
         n = 0
         sample.update_all(hx, ez, ey, dy, dz, dt, n)
-        self.assertEqual(hx[self.idx], 0)
-        
+        for idx in np.ndindex(3, 3, 3):
+            self.assertEqual(hx[idx], 0)
+
     def testHyReal(self):
-        sample = CpmlHyReal()
-        sample.attach(self.idx, self.h_param_real)
-        self.assertEqual(sample.get_mu(self.idx), self.h_param_real.mu)
+        sample = \
+            self.cpml.get_pw_material_hy(self.idx, (0,0,0), cmplx=False)
         
+        for idx in np.ndindex(3, 3, 3):
+            if idx == self.idx:
+                self.assertEqual(sample.get_mu_inf(idx), self.cpml.mu_inf)
+            else:
+                self.assertEqual(sample.get_mu_inf(idx), 0)
+
         hy = ex = ez = np.zeros((3,3,3))
         dz = dx = dt = 1
         n = 0
         sample.update_all(hy, ex, ez, dz, dx, dt, n)
-        self.assertEqual(hy[self.idx], 0)
-       
+        for idx in np.ndindex(3, 3, 3):
+            self.assertEqual(hy[idx], 0)
+
     def testHzReal(self):
-        sample = CpmlHzReal()
-        sample.attach(self.idx, self.h_param_real)
-        self.assertEqual(sample.get_mu(self.idx), self.h_param_real.mu)
+        sample = \
+            self.cpml.get_pw_material_hz(self.idx, (0,0,0), cmplx=False)
         
+        for idx in np.ndindex(3, 3, 3):
+            if idx == self.idx:
+                self.assertEqual(sample.get_mu_inf(idx), self.cpml.mu_inf)
+            else:
+                self.assertEqual(sample.get_mu_inf(idx), 0)
+
         hz = ey = ex = np.zeros((3,3,3))
         dx = dy = dt = 1
         n = 0
         sample.update_all(hz, ey, ex, dx, dy, dt, n)
-        self.assertEqual(hz[self.idx], 0)
+        for idx in np.ndindex(3, 3, 3):
+            self.assertEqual(hz[idx], 0)
 
     def testExCmplx(self):
-        sample = CpmlExCmplx()
-        sample.attach(self.idx, self.e_param_cmplx)
-        self.assertEqual(sample.get_eps(self.idx), self.e_param_cmplx.eps)
+        sample = \
+            self.cpml.get_pw_material_ex(self.idx, (0,0,0), cmplx=True)
         
+        for idx in np.ndindex(3, 3, 3):
+            if idx == self.idx:
+                self.assertEqual(sample.get_eps_inf(idx), self.cpml.eps_inf)
+            else:
+                self.assertEqual(sample.get_eps_inf(idx), 0)
+
         ex = hz = hy = np.zeros((3,3,3), complex)
         dy = dz = dt = 1
         n = 0
         sample.update_all(ex, hz, hy, dy, dz, dt, n)
-        self.assertEqual(ex[self.idx], 0)
-        
+        for idx in np.ndindex(3, 3, 3):
+            self.assertEqual(ex[idx], 0j)
+
     def testEyCmplx(self):
-        sample = CpmlEyCmplx()
-        sample.attach(self.idx, self.e_param_cmplx)
-        self.assertEqual(sample.get_eps(self.idx), self.e_param_cmplx.eps)
+        sample = \
+            self.cpml.get_pw_material_ey(self.idx, (0,0,0), cmplx=True)
         
+        for idx in np.ndindex(3, 3, 3):
+            if idx == self.idx:
+                self.assertEqual(sample.get_eps_inf(idx), self.cpml.eps_inf)
+            else:
+                self.assertEqual(sample.get_eps_inf(idx), 0)
+
         ey = hx = hz = np.zeros((3,3,3), complex)
         dz = dx = dt = 1
         n = 0
         sample.update_all(ey, hx, hz, dz, dx, dt, n)
-        self.assertEqual(ey[self.idx], 0)
-        
+        for idx in np.ndindex(3, 3, 3):
+            self.assertEqual(ey[idx], 0j)
+
     def testEzCmplx(self):
-        sample = CpmlEzCmplx()
-        sample.attach(self.idx, self.e_param_cmplx)
-        self.assertEqual(sample.get_eps(self.idx), self.e_param_cmplx.eps)
+        sample = \
+            self.cpml.get_pw_material_ez(self.idx, (0,0,0), cmplx=True)
         
+        for idx in np.ndindex(3, 3, 3):
+            if idx == self.idx:
+                self.assertEqual(sample.get_eps_inf(idx), self.cpml.eps_inf)
+            else:
+                self.assertEqual(sample.get_eps_inf(idx), 0)
+
         ez = hy = hx = np.zeros((3,3,3), complex)
         dx = dy = dt = 1
         n = 0
         sample.update_all(ez, hy, hx, dx, dy, dt, n)
-        self.assertEqual(ez[self.idx], 0)
-    
+        for idx in np.ndindex(3, 3, 3):
+            self.assertEqual(ez[idx], 0j)
+
     def testHxCmplx(self):
-        sample = CpmlHxCmplx()
-        sample.attach(self.idx, self.h_param_cmplx)
-        self.assertEqual(sample.get_mu(self.idx), self.h_param_cmplx.mu)
+        sample = \
+            self.cpml.get_pw_material_hx(self.idx, (0,0,0), cmplx=True)
         
+        for idx in np.ndindex(3, 3, 3):
+            if idx == self.idx:
+                self.assertEqual(sample.get_mu_inf(idx), self.cpml.mu_inf)
+            else:
+                self.assertEqual(sample.get_mu_inf(idx), 0)
+
         hx = ez = ey = np.zeros((3,3,3), complex)
         dy = dz = dt = 1
         n = 0
         sample.update_all(hx, ez, ey, dy, dz, dt, n)
-        self.assertEqual(hx[self.idx], 0)
-        
+        for idx in np.ndindex(3, 3, 3):
+            self.assertEqual(hx[idx], 0j)
+
     def testHyCmplx(self):
-        sample = CpmlHyCmplx()
-        sample.attach(self.idx, self.h_param_cmplx)
-        self.assertEqual(sample.get_mu(self.idx), self.h_param_cmplx.mu)
+        sample = \
+            self.cpml.get_pw_material_hy(self.idx, (0,0,0), cmplx=True)
         
+        for idx in np.ndindex(3, 3, 3):
+            if idx == self.idx:
+                self.assertEqual(sample.get_mu_inf(idx), self.cpml.mu_inf)
+            else:
+                self.assertEqual(sample.get_mu_inf(idx), 0)
+
         hy = ex = ez = np.zeros((3,3,3), complex)
         dz = dx = dt = 1
         n = 0
         sample.update_all(hy, ex, ez, dz, dx, dt, n)
-        self.assertEqual(hy[self.idx], 0)
-       
+        for idx in np.ndindex(3, 3, 3):
+            self.assertEqual(hy[idx], 0j)
+
     def testHzCmplx(self):
-        sample = CpmlHzCmplx()
-        sample.attach(self.idx, self.h_param_cmplx)
-        self.assertEqual(sample.get_mu(self.idx), self.h_param_cmplx.mu)
+        sample = \
+            self.cpml.get_pw_material_hz(self.idx, (0,0,0), cmplx=True)
         
+        for idx in np.ndindex(3, 3, 3):
+            if idx == self.idx:
+                self.assertEqual(sample.get_mu_inf(idx), self.cpml.mu_inf)
+            else:
+                self.assertEqual(sample.get_mu_inf(idx), 0)
+
         hz = ey = ex = np.zeros((3,3,3), complex)
         dx = dy = dt = 1
         n = 0
         sample.update_all(hz, ey, ex, dx, dy, dt, n)
-        self.assertEqual(hz[self.idx], 0)
-        
-        
+        for idx in np.ndindex(3, 3, 3):
+            self.assertEqual(hz[idx], 0j)
+
+
 if __name__ == '__main__':
     unittest.main(argv=('', '-v'))
     

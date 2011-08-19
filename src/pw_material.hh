@@ -25,15 +25,15 @@ namespace gmes
   
   template <typename T> struct ElectricParam: public PwMaterialParam
   {
-    double eps;
+    double eps_inf;
   };
   
   template <typename T> struct MagneticParam: public PwMaterialParam
   {
-    double mu;
+    double mu_inf;
   };
 
-  typedef std::unordered_map<std::array<int, 3>, PwMaterialParam *> MapType;
+  typedef std::unordered_map<std::array<int, 3>, PwMaterialParam*> MapType;
 
   template<class T> class PwMaterial 
   {
@@ -43,16 +43,16 @@ namespace gmes
     {
     }
 
-    virtual void 
-    attach(const int idx[3], int idx_size,
-	   const PwMaterialParam * const parameter) = 0;
+    virtual PwMaterial<T>*
+    attach(const int* const idx, int idx_size,
+	   const PwMaterialParam* const parameter) = 0;
     
     void
-    update_all(T * const inplace_field,
+    update_all(T* const inplace_field,
 	       int inplace_dim1, int inplace_dim2, int inplace_dim3,
-	       const T * const in_field1, 
+	       const T* const in_field1, 
 	       int in1_dim1, int in1_dim2, int in1_dim3,
-	       const T * const in_field2, 
+	       const T* const in_field2, 
 	       int in2_dim1, int in2_dim2, int in2_dim3,
 	       double d1, double d2, double dt, double n)
     {
@@ -67,22 +67,40 @@ namespace gmes
     }
     
     bool
-    has_it(const int idx[3], int idx_size)
+    has_it(const int* const idx, int idx_size) const
     {
       std::array<int, 3> index;
       std::copy(idx, idx + idx_size, index.begin());
       return param.find(index) != param.end();
     }
     
+    PwMaterial<T>*
+    merge(const PwMaterial<T>* const pm)
+    {
+      // param.insert(pm->param.begin(), pm->param.end());
+
+      for (MapType::const_iterator it = pm->param.begin();
+      	   it != pm->param.end(); it++) {
+      	attach(it->first.data(), it->first.size(), it->second);
+      }
+      return this;
+    }
+
+    MapType::size_type
+    idx_size() const
+    {
+      return param.size();
+    }
+
   protected:
     virtual void
-    update(T * const inplace_field, 
+    update(T* const inplace_field, 
 	   int inplace_dim1, int inplace_dim2, int inplace_dim3,
-	   const T * const in_field1, int in1_dim1, int in1_dim2, int in1_dim3,
-	   const T * const in_field2, int in2_dim1, int in2_dim2, int in2_dim3,
+	   const T* const in_field1, int in1_dim1, int in1_dim2, int in1_dim3,
+	   const T* const in_field2, int in2_dim1, int in2_dim2, int in2_dim3,
 	   double d1, double d2, double dt, double n, 
-	   const int idx[3], int idx_size,
-	   PwMaterialParam * const parameter) = 0;
+	   const int* const idx, int idx_size,
+	   PwMaterialParam* const parameter) = 0;
 
     MapType param;
   };
@@ -95,7 +113,7 @@ namespace gmes
     }
 
     double 
-    get_eps(const int idx[3], int idx_size) const
+    get_eps_inf(const int* const idx, int idx_size) const
     {
       std::array<int, 3> index;
       std::copy(idx, idx + idx_size, index.begin());
@@ -104,7 +122,7 @@ namespace gmes
       if (it == param.end())
 	return 0;
       else
-	return static_cast<ElectricParam<T> *>(it->second)->eps;
+	return static_cast<ElectricParam<T>*>(it->second)->eps_inf;
     }
 
   protected:
@@ -119,7 +137,7 @@ namespace gmes
     }
 
     double 
-    get_mu(const int idx[3], int idx_size) const
+    get_mu_inf(const int* const idx, int idx_size) const
     {
       std::array<int, 3> index;
       std::copy(idx, idx + idx_size, index.begin());
@@ -128,7 +146,7 @@ namespace gmes
       if (it == param.end())
 	return 0;
       else
-	return static_cast<MagneticParam<T> *>(it->second)->mu;
+	return static_cast<MagneticParam<T>*>(it->second)->mu_inf;
     }
 
   protected:

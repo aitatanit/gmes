@@ -31,8 +31,8 @@ namespace gmes
       param.clear();
     }
     
-    void 
-    attach(const int idx[3], int idx_size, 
+    PwMaterial<T> *
+    attach(const int* const idx, int idx_size, 
 	   const PwMaterialParam * const parameter)
     {
       std::array<int, 3> index;
@@ -49,10 +49,12 @@ namespace gmes
 	= static_cast<const ConstElectricParam<T> *>(parameter);      
       ConstElectricParam<T> *param_ptr = new ConstElectricParam<T>();
 
-      param_ptr->eps = ConstElectricParameter_ptr->eps;
+      param_ptr->eps_inf = ConstElectricParameter_ptr->eps_inf;
       param_ptr->value = ConstElectricParameter_ptr->value;
 
       param.insert(std::make_pair(index, param_ptr));
+
+      return this;
     }
     
     void 
@@ -61,7 +63,7 @@ namespace gmes
 	   const T * const in_field1, int in1_dim1, int in1_dim2, int in1_dim3,
 	   const T * const in_field2, int in2_dim1, int in2_dim2, int in2_dim3,
 	   double d1, double d2, double dt, double n,
-	   const int idx[3], int idx_size,
+	   const int* const idx, int idx_size,
 	   PwMaterialParam * const parameter)
     {
       int i = idx[0], j = idx[1], k = idx[2];
@@ -99,8 +101,8 @@ namespace gmes
       param.clear();
     }
     
-    void 
-    attach(const int idx[3], int idx_size, 
+    PwMaterial<T> *
+    attach(const int* const idx, int idx_size, 
 	   const PwMaterialParam * const parameter)
     {
       std::array<int, 3> index;
@@ -117,10 +119,12 @@ namespace gmes
 	= static_cast<const ConstMagneticParam<T> *>(parameter);
       ConstMagneticParam<T> *param_ptr = new ConstMagneticParam<T>();
 
-      param_ptr->mu = ConstMagneticParameter_ptr->mu;
+      param_ptr->mu_inf = ConstMagneticParameter_ptr->mu_inf;
       param_ptr->value = ConstMagneticParameter_ptr->value;
 
       param.insert(std::make_pair(index, param_ptr));
+
+      return this;
     }
 
     void 
@@ -129,7 +133,7 @@ namespace gmes
 	   const T * const in_field1, int in1_dim1, int in1_dim2, int in1_dim3,
 	   const T * const in_field2, int in2_dim1, int in2_dim2, int in2_dim3,
 	   double d1, double d2, double dt, double n, 
-	   const int idx[3], int idx_size,
+	   const int* const idx, int idx_size,
 	   PwMaterialParam * const parameter)
     {
       int i = idx[0], j = idx[1], k = idx[2];

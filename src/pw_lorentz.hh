@@ -44,8 +44,8 @@ namespace gmes
       param.clear();
     }
     
-    void 
-    attach(const int idx[3], int idx_size,
+    PwMaterial<T> *
+    attach(const int* const idx, int idx_size,
 	   const PwMaterialParam * const parameter)
     {
       std::array<int, 3> index;
@@ -62,7 +62,8 @@ namespace gmes
 	= static_cast<const LorentzElectricParam<T> * const>(parameter);
       LorentzElectricParam<T> *param_ptr;
       param_ptr = new LorentzElectricParam<T>();
-      param_ptr->eps = LorentzElectricParameter_ptr->eps;
+
+      param_ptr->eps_inf = LorentzElectricParameter_ptr->eps_inf;
       std::copy(LorentzElectricParameter_ptr->a.begin(),
 		LorentzElectricParameter_ptr->a.end(),
 		std::back_inserter(param_ptr->a));
@@ -73,6 +74,8 @@ namespace gmes
       param_ptr->l_new.resize(param_ptr->a.size(), static_cast<T>(0));
 
       param.insert(std::make_pair(index, param_ptr));
+
+      return this;
     };
 
     T 
@@ -116,7 +119,7 @@ namespace gmes
 	   const T * const hz, int hz_x_size, int hz_y_size, int hz_z_size,
 	   const T * const hy, int hy_x_size, int hy_y_size, int hy_z_size,
 	   double dy, double dz, double dt, double n,
-	   const int idx[3], int idx_size, 
+	   const int* const idx, int idx_size, 
 	   PwMaterialParam * const parameter)
     {
       int i = idx[0], j = idx[1], k = idx[2];
@@ -146,7 +149,7 @@ namespace gmes
 	   const T * const hx, int hx_x_size, int hx_y_size, int hx_z_size,
 	   const T * const hz, int hz_x_size, int hz_y_size, int hz_z_size,
 	   double dz, double dx, double dt, double n,
-	   const int idx[3], int idx_size, 
+	   const int* const idx, int idx_size, 
 	   PwMaterialParam * const parameter)
     {
       int i = idx[0], j = idx[1], k = idx[2];
@@ -176,7 +179,7 @@ namespace gmes
 	   const T * const hy, int hy_x_size, int hy_y_size, int hy_z_size,
 	   const T * const hx, int hx_x_size, int hx_y_size, int hx_z_size,
 	   double dx, double dy, double dt, double n,
-	   const int idx[3], int idx_size, 
+	   const int* const idx, int idx_size, 
 	   PwMaterialParam * const parameter)
     {
       int i = idx[0], j = idx[1], k = idx[2];

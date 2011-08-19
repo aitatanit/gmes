@@ -260,127 +260,85 @@ class Cartesian(object):
                             self.whole_field_size[2] / n * self.whole_field_size[0] / l)
         
         return cpu_load + net_load
-        
-    def get_ex_storage(self, cmplx=False):
+
+    def _get_em_field_storage(self, shape, cmplx):
+        if cmplx:
+            return zeros(shape, complex)
+        else:
+            return zeros(shape, float)
+
+    def get_ex_storage(self, field_compnt, cmplx=False):
         """Return an initialized array for Ex field component.
         
         """
-        ex_shape = (self.my_field_size[0], self.my_field_size[1] + 1,
-                    self.my_field_size[2] + 1)
-        
-        if cmplx:
-            return zeros(ex_shape, complex)
+        if const.Ex in field_compnt:
+            shape = (self.my_field_size[0], self.my_field_size[1] + 1,
+                     self.my_field_size[2] + 1)
         else:
-            return zeros(ex_shape, float)
+            shape = (0, 0, 0)
         
-    def get_ey_storage(self, cmplx=False):
+        return self._get_em_field_storage(shape, cmplx)
+        
+    def get_ey_storage(self, field_compnt, cmplx=False):
         """Return an initialized array for Ey field component.
         
         """
-        ey_shape = (self.my_field_size[0] + 1, self.my_field_size[1],
-                    self.my_field_size[2] + 1)
-        
-        if cmplx:
-            return zeros(ey_shape, complex)
+        if const.Ey in field_compnt:
+            shape = (self.my_field_size[0] + 1, self.my_field_size[1],
+                     self.my_field_size[2] + 1)
         else:
-            return zeros(ey_shape, float)
+            shape = (0, 0, 0)
         
-    def get_ez_storage(self, cmplx=False):
+        return self._get_em_field_storage(shape, cmplx)
+
+    def get_ez_storage(self, field_compnt, cmplx=False):
         """Return an initialized array for Ez field component.
         
         """
-        ez_shape = (self.my_field_size[0] + 1, self.my_field_size[1] + 1,
-                    self.my_field_size[2])
-        
-        if cmplx:
-            return zeros(ez_shape, complex)
+        if const.Ez in field_compnt:
+            shape = (self.my_field_size[0] + 1, self.my_field_size[1] + 1,
+                     self.my_field_size[2])
         else:
-            return zeros(ez_shape, float)
+            shape = (0, 0, 0)
+
+        return self._get_em_field_storage(shape, cmplx)
         
-    def get_hx_storage(self, cmplx=False):
+    def get_hx_storage(self, field_compnt, cmplx=False):
         """Return an initialized array for Hx field component.
         
         """
-        hx_shape = (self.my_field_size[0], self.my_field_size[1] + 1,
-                    self.my_field_size[2] + 1)
-        
-        if cmplx:
-            return zeros(hx_shape, complex)
+        if const.Hx in field_compnt:
+            shape = (self.my_field_size[0], self.my_field_size[1] + 1,
+                     self.my_field_size[2] + 1)
         else:
-            return zeros(hx_shape, float)
+            shape = (0, 0, 0)
+
+        return self._get_em_field_storage(shape, cmplx)
         
-    def get_hy_storage(self, cmplx=False):  
+    def get_hy_storage(self, field_compnt, cmplx=False):  
         """Return an initialized array for Hy field component.
         
         """
-        hy_shape = (self.my_field_size[0] + 1, self.my_field_size[1],
-                    self.my_field_size[2] + 1)
-        
-        if cmplx:
-            return zeros(hy_shape, complex)
+        if const.Hy in field_compnt:
+            shape = (self.my_field_size[0] + 1, self.my_field_size[1],
+                     self.my_field_size[2] + 1)
         else:
-            return zeros(hy_shape, float)
+            shape = (0, 0, 0)
         
-    def get_hz_storage(self, cmplx=False):
+        return self._get_em_field_storage(shape, cmplx)
+        
+    def get_hz_storage(self, field_compnt, cmplx=False):
         """Return an initialized array for Hz field component.
         
         """
-        hz_shape = (self.my_field_size[0] + 1, self.my_field_size[1] + 1,
-                    self.my_field_size[2])
-        
-        if cmplx:
-            return zeros(hz_shape, complex)
+        if const.Hz in field_compnt:
+            shape = (self.my_field_size[0] + 1, self.my_field_size[1] + 1,
+                     self.my_field_size[2])
         else:
-            return zeros(hz_shape, float)
+            shape = (0, 0, 0)
         
-    def get_material_ex_storage(self):
-        """Return an array for Ex pointwise materials.
-        
-        """
-        ex_shape = (self.my_field_size[0], self.my_field_size[1] + 1,
-                    self.my_field_size[2] + 1)
-        return empty(ex_shape, object)
-        
-    def get_material_ey_storage(self):
-        """Return an array for Ey pointwise materials.
-        
-        """
-        ey_shape = (self.my_field_size[0] + 1, self.my_field_size[1],
-                    self.my_field_size[2] + 1)
-        return empty(ey_shape, object)
-        
-    def get_material_ez_storage(self):
-        """Return an array for Ez pointwise materials.
-        
-        """
-        ez_shape = (self.my_field_size[0] + 1, self.my_field_size[1] + 1,
-                    self.my_field_size[2])
-        return empty(ez_shape, object)
-    
-    def get_material_hx_storage(self):
-        """Return an array for Hx pointwise materials.
-        
-        """
-        hx_shape = (self.my_field_size[0], self.my_field_size[1] + 1,
-                    self.my_field_size[2] + 1)
-        return empty(hx_shape, object)
-        
-    def get_material_hy_storage(self):
-        """Return an array for Hy pointwise materials.
-        
-        """
-        hy_shape = (self.my_field_size[0] + 1, self.my_field_size[1],
-                    self.my_field_size[2] + 1)
-        return empty(hy_shape, object)
-        
-    def get_material_hz_storage(self):
-        """Return an array for Hz pointwise materials.
-        
-        """
-        hz_shape = (self.my_field_size[0] + 1, self.my_field_size[1] + 1,
-                    self.my_field_size[2])
-        return empty(hz_shape, object)
-    
+        return self._get_em_field_storage(shape, cmplx)
+
     def ex_index_to_space(self, i, j, k):
         """Return space coordinate of the given index.
         
@@ -977,7 +935,7 @@ class GeomBoxTree(object):
         self.root = GeomBoxNode(box, geom_list, 0)
         self.branch_out(self.root)
     
-    @staticmethod    
+    @staticmethod
     def find_best_partition(node, divideAxis):
         """
         Find the best place to "cut" along the axis divideAxis in 
@@ -1084,7 +1042,7 @@ class GeomBoxTree(object):
         leaf = self.tree_search(self.root, point)
         geom_obj, idx = find_object(point, leaf.geom_list)
         
-        # epsilon and mu of compound material
+        # eps_inf and mu_inf of compound material
         # refer to the underneath material.
         if isinstance(geom_obj.material, Compound):
             aux_geom_list = leaf.geom_list[:idx]
@@ -1092,8 +1050,8 @@ class GeomBoxTree(object):
         else:
             underneath_obj = None
             
-#            geom_obj.material.epsilon = geom_obj2.material.epsilon
-#            geom_obj.material.mu = geom_obj2.material.mu
+#            geom_obj.material.eps_inf = geom_obj2.material.eps_inf
+#            geom_obj.material.mu_inf = geom_obj2.material.mu_inf
         
         return geom_obj, underneath_obj
         

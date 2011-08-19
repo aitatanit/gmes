@@ -17,10 +17,10 @@ namespace gmes
   const double mu0 = 4 * pi * 1e-7; // in Henry/Meter
 
   // Vacuum permittivity
-  const double epsilon0 = 1 / (c0 * c0 * mu0); // in Farad/Meter
+  const double eps0 = 1 / (c0 * c0 * mu0); // in Farad/Meter
 
   // vacuum impedance
-  const double Z0 = sqrt(mu0 / epsilon0);
+  const double Z0 = sqrt(mu0 / eps0);
 
   // decimal factors
   const double PETA = 1e15;

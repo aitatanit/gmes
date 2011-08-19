@@ -15,7 +15,9 @@
 
 %include "complex.i"
 %include "numpy.i"
+
 %numpy_typemaps(std::complex<double>, NPY_CDOUBLE, int)
+%apply size_t { gmes::MapType::size_type }; 
 
 %init %{
 import_array();
@@ -60,27 +62,11 @@ import_array();
 %apply_numpy_typemaps(double)
 %apply_numpy_typemaps(std::complex<double>)
 
-%apply (int* IN_ARRAY1, int DIM1) {(const int idx[3], int idx_size)};
+%apply (int* IN_ARRAY1, int DIM1) {(const int* const idx, int idx_size)};
 %apply (double* IN_ARRAY2, int DIM1, int DIM2) {(const double* const a, int a_size1, int a_size2)};
 %apply (double* IN_ARRAY2, int DIM1, int DIM2) {(const double* const b, int b_size1, int b_size2)};
 %apply (std::complex<double>* IN_ARRAY2, int DIM1, int DIM2) {(const std::complex<double>* const b, int b_size1, int b_size2)};
 %apply (double* IN_ARRAY1, int DIM1) {(const double* const c, int c_size)};
-
-// Declare the Pythonic interfaces.
-/* %define %property(py, cpp, prop, get, set) */
-/* %feature("shadow") cpp::set %{ %} */
-/* %feature("shadow") cpp::get %{ */
-/* __swig_setmethods__["prop"] = eval("_"+__name__.split('.')[-1]).##py##_##set */
-/* __swig_getmethods__["prop"] = eval("_"+__name__.split('.')[-1]).##py##_##get */
-/* if _newclass:prop = property(eval("_"+__name__.split('.')[-1]).##py##_##get, eval("_"+__name__.split('.')[-1]).##py##_##set) */
-/* %} */
-/* %enddef    /\* property() macro *\/ */
-
-/* %property(MaterialElectricReal, gmes::MaterialElectric<double>, epsilon, get_epsilon, set_epsilon) */
-/* %property(MaterialMagneticReal, gmes::MaterialMagnetic<double>, mu, get_mu, set_mu) */
-
-/* %property(MaterialElectricCmplx, gmes::MaterialElectric<std::complex<double> >, epsilon, get_epsilon, set_epsilon) */
-/* %property(MaterialMagneticCmplx, gmes::MaterialMagnetic<std::complex<double> >, mu, get_mu, set_mu) */
 
 // Include the header file to be wrapped
 %include "pw_material.hh"

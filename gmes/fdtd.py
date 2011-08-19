@@ -120,9 +120,9 @@ class FDTD(object):
 
         default_medium = (i for i in geom_list 
                             if isinstance(i, DefaultMedium)).next()
-        eps = default_medium.material.epsilon
-        mu = default_medium.material.mu
-        dt_limit = self._dt_limit(space, eps, mu)
+        eps_inf = default_medium.material.eps_inf
+        mu_inf = default_medium.material.mu_inf
+        dt_limit = self._dt_limit(space, eps_inf, mu_inf)
 
         if dt is None:
             self.courant_ratio = float(courant_ratio)
@@ -178,11 +178,11 @@ class FDTD(object):
             ds = np.array((self.dx, self.dy, self.dz))
             default_medium = (i for i in geom_list 
                                 if isinstance(i, DefaultMedium)).next()
-            eps = default_medium.material.epsilon
-            mu = default_medium.material.mu
-            c = 1 / sqrt(eps * mu)
+            eps_inf = default_medium.material.eps_inf
+            mu_inf = default_medium.material.mu_inf
+            c = 1 / sqrt(eps_inf * mu_inf)
             S = c * time_step_size / ds
-            ref_n = sqrt(eps)
+            ref_n = sqrt(eps_inf)
             self.bloch = np.array(bloch, float)
             self.bloch = 2 * ref_n / ds \
                 * np.arcsin(np.sin(self.bloch * S * ds / 2) / S)
@@ -209,12 +209,12 @@ class FDTD(object):
             print 'Allocating memory for the electric & magnetic fields...',
             
         # storage for the electric & magnetic field 
-        self.ex = space.get_ex_storage(self.cmplx)
-        self.ey = space.get_ey_storage(self.cmplx)
-        self.ez = space.get_ez_storage(self.cmplx)
-        self.hx = space.get_hx_storage(self.cmplx)
-        self.hy = space.get_hy_storage(self.cmplx)
-        self.hz = space.get_hz_storage(self.cmplx)
+        self.ex = space.get_ex_storage(self.e_field_compnt, self.cmplx)
+        self.ey = space.get_ey_storage(self.e_field_compnt, self.cmplx)
+        self.ez = space.get_ez_storage(self.e_field_compnt, self.cmplx)
+        self.hx = space.get_hx_storage(self.h_field_compnt, self.cmplx)
+        self.hy = space.get_hy_storage(self.h_field_compnt, self.cmplx)
+        self.hz = space.get_hz_storage(self.h_field_compnt, self.cmplx)
         
         if verbose:
             print 'done.'
@@ -229,52 +229,81 @@ class FDTD(object):
         
         if verbose:
             print 'Mapping the pointwise material...',
-            
-        self.material_ex = self.material_ey = self.material_ez = None
-        self.material_hx = self.material_hy = self.material_hz = None
+        
+        self.material_ex = {}
+        self.material_ey = {}
+        self.material_ez = {}
+        self.material_hx = {}
+        self.material_hy = {}
+        self.material_hz = {}
 
         self.init_material()
         
         if verbose:
             print 'done.'
 
-        # medium information for electric & magnetic fields
+        # pw_material information for electric & magnetic fields
         if verbose:
             print 'ex material:',
-            if self.material_ex is None: print None
-            else: print self.material_ex.dtype, self.material_ex.shape
-                
-            print 'ey material:', 
-            if self.material_ey is None: print None
-            else: print self.material_ey.dtype, self.material_ey.shape
-                
-            print 'ez material:', 
-            if self.material_ez is None: print None
-            else: print self.material_ez.dtype, self.material_ez.shape
-            
-            print 'hx material:', 
-            if self.material_hx is None: print None
-            else: print self.material_hx.dtype, self.material_hx.shape
-                
-            print 'hy material:', 
-            if self.material_hy is None: print None
-            else: print self.material_hy.dtype, self.material_hy.shape
-                
-            print 'hz material:', 
-            if self.material_hz is None: print None
-            else: print self.material_hz.dtype, self.material_hz.shape
-		
-        if verbose:
-            print 'done.'
-            
+            self._print_pw_obj(self.material_ex)
+
+            print 'ey material:',
+            self._print_pw_obj(self.material_ey)
+
+            print 'ez material:',
+            self._print_pw_obj(self.material_ez)
+
+            print 'hx material:',
+            self._print_pw_obj(self.material_hx)
+
+            print 'hy material:',
+            self._print_pw_obj(self.material_hy)
+
+            print 'hz material:',
+            self._print_pw_obj(self.material_hz)
+
         if verbose:
             print 'Mapping the pointwise source...',
             
+        self.source_ex = {}
+        self.source_ey = {}
+        self.source_ez = {}
+        self.source_hx = {}
+        self.source_hy = {}
+        self.source_hz = {}
+
         self.init_source()
 
         if verbose:
             print 'done.'
     
+        # pw_source information for electric & magnetic fields
+        if verbose:
+            print 'ex source:',
+            self._print_pw_obj(self.source_ex)
+
+            print 'ey source:',
+            self._print_pw_obj(self.source_ey)
+
+            print 'ez source:',
+            self._print_pw_obj(self.source_ez)
+
+            print 'hx source:',
+            self._print_pw_obj(self.source_hx)
+
+            print 'hy source:',
+            self._print_pw_obj(self.source_hy)
+
+            print 'hz source:',
+            self._print_pw_obj(self.source_hz)
+
+    def _print_pw_obj(self, pw_obj):
+        print_count = 0
+        for o in pw_obj.itervalues():
+            print type(o), 'with', o.index_size(), 'point(s).'
+            print_count += 1
+        if print_count == 0: print
+
     def _init_field_compnt(self):
         """Set the significant electromagnetic field components.
         
@@ -282,7 +311,7 @@ class FDTD(object):
         self.e_field_compnt = (const.Ex, const.Ey, const.Ez)
         self.h_field_compnt = (const.Hx, const.Hy, const.Hz)
 
-    def _dt_limit(self, space, epsilon, mu):
+    def _dt_limit(self, space, eps_inf, mu_inf):
         """Courant stability bound of a time-step.
 
         Equation 4.54b at p.131 of A. Taflove and S. C. Hagness, Computational
@@ -308,7 +337,7 @@ class FDTD(object):
         for i in range(3):
             if i not in non_inf: dr[i] = inf
         
-        c = 1 / sqrt(epsilon * mu)
+        c = 1 / sqrt(eps_inf * mu_inf)
         return 1 / c / sqrt(sum(dr**-2))
         
     def _step_aux_fdtd(self):
@@ -345,16 +374,20 @@ class FDTD(object):
         at self.material_ex.
         
         """
-        self.material_ex = self.space.get_material_ex_storage()
         shape = self.ex.shape
         for idx in ndindex(shape):
             spc = self.space.ex_index_to_space(*idx)
             mat_obj, underneath = self.geom_tree.material_of_point(spc)
             if idx[1] == shape[1] - 1 or idx[2] == shape[2] - 1:
-                mat_obj = Dummy(mat_obj.epsilon, mat_obj.mu)
-            self.material_ex[idx] = \
-            mat_obj.get_pw_material_ex(idx, spc, underneath, self.cmplx)
-        
+                mat_obj = Dummy(mat_obj.eps_inf, mat_obj.mu_inf)
+            pw_obj = \
+                mat_obj.get_pw_material_ex(idx, spc, underneath, self.cmplx)
+            
+            if self.material_ex.has_key(type(pw_obj)):
+                self.material_ex[type(pw_obj)].merge(pw_obj)
+            else:
+                self.material_ex[type(pw_obj)] = pw_obj
+
     def init_material_ey(self):
         """Set up the update mechanism for Ey field.
         
@@ -362,16 +395,20 @@ class FDTD(object):
         at self.material_ey.
         
         """
-        self.material_ey = self.space.get_material_ey_storage()
         shape = self.ey.shape
         for idx in ndindex(shape):
             spc = self.space.ey_index_to_space(*idx)
             mat_obj, underneath = self.geom_tree.material_of_point(spc)
             if idx[2] == shape[2] - 1 or idx[0] == shape[0] - 1:
-                mat_obj = Dummy(mat_obj.epsilon, mat_obj.mu)
-            self.material_ey[idx] = \
-            mat_obj.get_pw_material_ey(idx, spc, underneath, self.cmplx)
-            
+                mat_obj = Dummy(mat_obj.eps_inf, mat_obj.mu_inf)
+            pw_obj = \
+                mat_obj.get_pw_material_ey(idx, spc, underneath, self.cmplx)
+
+            if self.material_ey.has_key(type(pw_obj)):
+                self.material_ey[type(pw_obj)].merge(pw_obj)
+            else:
+                self.material_ey[type(pw_obj)] = pw_obj
+
     def init_material_ez(self):
         """Set up the update mechanism for Ez field.
         
@@ -379,16 +416,20 @@ class FDTD(object):
         at self.material_ez.
         
         """
-        self.material_ez = self.space.get_material_ez_storage()
         shape = self.ez.shape
         for idx in ndindex(shape):
             spc = self.space.ez_index_to_space(*idx)
             mat_obj, underneath = self.geom_tree.material_of_point(spc)
             if idx[0] == shape[0] - 1 or idx[1] == shape[1] - 1:
-                mat_obj = Dummy(mat_obj.epsilon, mat_obj.mu)
-            self.material_ez[idx] = \
-            mat_obj.get_pw_material_ez(idx, spc, underneath, self.cmplx)
-            
+                mat_obj = Dummy(mat_obj.eps_inf, mat_obj.mu_inf)
+            pw_obj = \
+                mat_obj.get_pw_material_ez(idx, spc, underneath, self.cmplx)
+
+            if self.material_ez.has_key(type(pw_obj)):
+                self.material_ez[type(pw_obj)].merge(pw_obj)
+            else:
+                self.material_ez[type(pw_obj)] = pw_obj
+
     def init_material_hx(self):
         """Set up the update mechanism for Hx field.
         
@@ -396,16 +437,20 @@ class FDTD(object):
         at self.material_hx.
         
         """
-        self.material_hx = self.space.get_material_hx_storage()
         shape = self.hx.shape
         for idx in ndindex(shape):
             spc = self.space.hx_index_to_space(*idx)
             mat_obj, underneath = self.geom_tree.material_of_point(spc)
             if idx[1] == 0 or idx[2] == 0:
-                mat_obj = Dummy(mat_obj.epsilon, mat_obj.mu)
-            self.material_hx[idx] = \
-            mat_obj.get_pw_material_hx(idx, spc, underneath, self.cmplx)
-                
+                mat_obj = Dummy(mat_obj.eps_inf, mat_obj.mu_inf)
+            pw_obj = \
+                mat_obj.get_pw_material_hx(idx, spc, underneath, self.cmplx)
+
+            if self.material_hx.has_key(type(pw_obj)):
+                self.material_hx[type(pw_obj)].merge(pw_obj)
+            else:
+                self.material_hx[type(pw_obj)] = pw_obj
+
     def init_material_hy(self):
         """Set up the update mechanism for Hy field.
         
@@ -413,16 +458,20 @@ class FDTD(object):
         at self.material_hy.
         
         """
-        self.material_hy = self.space.get_material_hy_storage()
         shape = self.hy.shape
         for idx in ndindex(shape):
             spc = self.space.hy_index_to_space(*idx)
             mat_obj, underneath = self.geom_tree.material_of_point(spc)
             if idx[2] == 0 or idx[0] == 0:
-                mat_obj = Dummy(mat_obj.epsilon, mat_obj.mu)
-            self.material_hy[idx] = \
-            mat_obj.get_pw_material_hy(idx, spc, underneath, self.cmplx)
-            
+                mat_obj = Dummy(mat_obj.eps_inf, mat_obj.mu_inf)
+            pw_obj = \
+                mat_obj.get_pw_material_hy(idx, spc, underneath, self.cmplx)
+
+            if self.material_hy.has_key(type(pw_obj)):
+                self.material_hy[type(pw_obj)].merge(pw_obj)
+            else:
+                self.material_hy[type(pw_obj)] = pw_obj
+
     def init_material_hz(self):
         """Set up the update mechanism for Hz field.
         
@@ -430,16 +479,20 @@ class FDTD(object):
         at self.material_hz.
         
         """
-        self.material_hz = self.space.get_material_hz_storage()
         shape = self.hz.shape
         for idx in ndindex(shape):
             spc = self.space.hz_index_to_space(*idx)
             mat_obj, underneath = self.geom_tree.material_of_point(spc)
             if idx[0] == 0 or idx[1] == 0:
-                mat_obj = Dummy(mat_obj.epsilon, mat_obj.mu)
-            self.material_hz[idx] = \
-            mat_obj.get_pw_material_hz(idx, spc, underneath, self.cmplx)
-            
+                mat_obj = Dummy(mat_obj.eps_inf, mat_obj.mu_inf)
+            pw_obj = \
+                mat_obj.get_pw_material_hz(idx, spc, underneath, self.cmplx)
+
+            if self.material_hz.has_key(type(pw_obj)):
+                self.material_hz[type(pw_obj)].merge(pw_obj)
+            else:
+                self.material_hz[type(pw_obj)] = pw_obj
+
     def init_material(self):
         init_mat_func = {const.Ex: self.init_material_ex,
                          const.Ey: self.init_material_ey,
@@ -456,28 +509,76 @@ class FDTD(object):
 
     def init_source_ex(self):
         for so in self.src_list:
-            so.set_pointwise_source_ex(self.material_ex, self.space)
+            pw_src = so.get_pw_source_ex(self.ex, self.space)
+
+            if pw_src is None:
+                continue
+
+            if self.source_ex.has_key(type(pw_src)):
+                self.source_ex[type(pw_src)].merge(pw_src)
+            else:
+                self.source_ex[type(pw_src)] = pw_src
             
     def init_source_ey(self):
         for so in self.src_list:
-            so.set_pointwise_source_ey(self.material_ey, self.space)
-			
+            pw_src = so.get_pw_source_ey(self.ey, self.space)
+            
+            if pw_src is None:
+                continue
+
+            if self.source_ey.has_key(type(pw_src)):
+                self.source_ey[type(pw_src)].merge(pw_src)
+            else:
+                self.source_ey[type(pw_src)] = pw_src
+
     def init_source_ez(self):
         for so in self.src_list:
-            so.set_pointwise_source_ez(self.material_ez, self.space)
-			
+            pw_src = so.get_pw_source_ez(self.ez, self.space)
+            
+            if pw_src is None:
+                continue
+
+            if self.source_ez.has_key(type(pw_src)):
+                self.source_ez[type(pw_src)].merge(pw_src)
+            else:
+                self.source_ez[type(pw_src)] = pw_src
+
     def init_source_hx(self):
         for so in self.src_list:
-            so.set_pointwise_source_hx(self.material_hx, self.space)
-			
+            pw_src = so.get_pw_source_hx(self.hx, self.space)
+
+            if pw_src is None:
+                continue
+
+            if self.source_hx.has_key(type(pw_src)):
+                self.source_hx[type(pw_src)].merge(pw_src)
+            else:
+                self.source_hx[type(pw_src)] = pw_src
+            
     def init_source_hy(self):
         for so in self.src_list:
-            so.set_pointwise_source_hy(self.material_hy, self.space)
-			
+            pw_src = so.get_pw_source_hy(self.hy, self.space)
+
+            if pw_src is None:
+                continue
+
+            if self.source_hy.has_key(type(pw_src)):
+                self.source_hy[type(pw_src)].merge(pw_src)
+            else:
+                self.source_hy[type(pw_src)] = pw_src
+            
     def init_source_hz(self):
         for so in self.src_list:
-            so.set_pointwise_source_hz(self.material_hz, self.space)
-			
+            pw_src = so.get_pw_source_hz(self.hz, self.space)
+
+            if pw_src is None:
+                continue
+
+            if self.source_hz.has_key(type(pw_src)):
+                self.source_hz[type(pw_src)].merge(pw_src)
+            else:
+                self.source_hz[type(pw_src)] = pw_src
+            
     def init_source(self):
         init_src_func = {const.Ex: self.init_source_ex,
                          const.Ey: self.init_source_ey,
@@ -554,40 +655,58 @@ class FDTD(object):
                                               + '\n')
             
     def update_ex(self):
-        for idx in ndindex(self.material_ex.shape):
-            self.material_ex[idx].update(self.ex, self.hz, self.hy, 
-                                         self.dy, self.dz, self.time_step.dt, 
-                                         self.time_step.n, *idx)
+        for pw_obj in self.material_ex.itervalues():
+            pw_obj.update_all(self.ex, self.hz, self.hy, self.dy, self.dz, 
+                              self.time_step.dt, self.time_step.n)
+
+        for pw_obj in self.source_ex.itervalues():
+            pw_obj.update_all(self.ex, self.hz, self.hy, self.dy, self.dz, 
+                              self.time_step.dt, self.time_step.n)
         
     def update_ey(self):
-        for idx in ndindex(self.material_ey.shape):
-            self.material_ey[idx].update(self.ey, self.hx, self.hz, 
-                                         self.dz, self.dx, self.time_step.dt, 
-                                         self.time_step.n, *idx)
+        for pw_obj in self.material_ey.itervalues():
+            pw_obj.update_all(self.ey, self.hx, self.hz, self.dz, self.dx,
+                              self.time_step.dt, self.time_step.n)
 		
+        for pw_obj in self.source_ey.itervalues():
+            pw_obj.update_all(self.ey, self.hx, self.hz, self.dz, self.dx,
+                              self.time_step.dt, self.time_step.n)
+
     def update_ez(self):
-        for idx in ndindex(self.material_ez.shape):
-            self.material_ez[idx].update(self.ez, self.hy, self.hx,
-                                         self.dx, self.dy, self.time_step.dt,
-                                         self.time_step.n, *idx)
-		
+        for pw_obj in self.material_ez.itervalues():
+            pw_obj.update_all(self.ez, self.hy, self.hx, self.dx, self.dy,
+                              self.time_step.dt, self.time_step.n)
+
+        for pw_obj in self.source_ez.itervalues():
+            pw_obj.update_all(self.ez, self.hy, self.hx, self.dx, self.dy,
+                              self.time_step.dt, self.time_step.n)
+        
     def update_hx(self):
-        for idx in ndindex(self.material_hx.shape):
-            self.material_hx[idx].update(self.hx, self.ez, self.ey, 
-                                         self.dy, self.dz, self.time_step.dt, 
-                                         self.time_step.n, *idx)
+        for pw_obj in self.material_hx.itervalues():
+            pw_obj.update_all(self.hx, self.ez, self.ey, self.dy, self.dz, 
+                              self.time_step.dt, self.time_step.n)
+
+        for pw_obj in self.source_hx.itervalues():
+            pw_obj.update_all(self.hx, self.ez, self.ey, self.dy, self.dz, 
+                              self.time_step.dt, self.time_step.n)
 		
     def update_hy(self):
-        for idx in ndindex(self.material_hy.shape):
-            self.material_hy[idx].update(self.hy, self.ex, self.ez,
-                                         self.dz, self.dx, self.time_step.dt,
-                                         self.time_step.n, *idx)
+        for pw_obj in self.material_hy.itervalues():
+            pw_obj.update_all(self.hy, self.ex, self.ez, self.dz, self.dx,
+                              self.time_step.dt, self.time_step.n)
+
+        for pw_obj in self.source_hy.itervalues():
+            pw_obj.update_all(self.hy, self.ex, self.ez, self.dz, self.dx,
+                              self.time_step.dt, self.time_step.n)
 		
     def update_hz(self):
-        for idx in ndindex(self.material_hz.shape):
-            self.material_hz[idx].update(self.hz, self.ey, self.ex,
-                                         self.dx, self.dy, self.time_step.dt,
-                                         self.time_step.n, *idx)
+        for pw_obj in self.material_hz.itervalues():
+            pw_obj.update_all(self.hz, self.ey, self.ex, self.dx, self.dy, 
+                              self.time_step.dt, self.time_step.n)
+
+        for pw_obj in self.source_hz.itervalues():
+            pw_obj.update_all(self.hz, self.ey, self.ex, self.dx, self.dy, 
+                              self.time_step.dt, self.time_step.n)
 
     def talk_with_ex_neighbors(self):
         """Synchronize ex data.
@@ -1411,7 +1530,7 @@ if __name__ == '__main__':
     
     low = Dielectric(index=1)
     hi = Dielectric(index=3)
-    width_hi = low.epsilon / (low.epsilon + hi.epsilon)
+    width_hi = low.eps_inf / (low.eps_inf + hi.eps_inf)
     space = Cartesian(size=[1, 1, 1])
     geom_list = [DefaultMedium(material=low), 
                  Cylinder(material=hi, 

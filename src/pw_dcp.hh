@@ -63,8 +63,8 @@ namespace gmes
       param.clear();
     }
     
-    void 
-    attach(const int idx[3], int idx_size,
+    PwMaterial<T> *
+    attach(const int* const idx, int idx_size,
 	   const PwMaterialParam * const parameter)
     {
       std::array<int, 3> index;
@@ -81,7 +81,8 @@ namespace gmes
 	= static_cast<const DcpAdeElectricParam<T> * const>(parameter);
       DcpAdeElectricParam<T> *param_ptr;
       param_ptr = new DcpAdeElectricParam<T>();
-      param_ptr->eps = DcpAdeElectricParameter_ptr->eps;
+
+      param_ptr->eps_inf = DcpAdeElectricParameter_ptr->eps_inf;
       std::copy(DcpAdeElectricParameter_ptr->a.begin(),
 		DcpAdeElectricParameter_ptr->a.end(),
 		std::back_inserter(param_ptr->a));
@@ -98,6 +99,8 @@ namespace gmes
       param_ptr->p_now.resize(param_ptr->b.size(), static_cast<T>(0));
 
       param.insert(std::make_pair(index, param_ptr));
+
+      return this;
     }
     
     T 
@@ -175,7 +178,7 @@ namespace gmes
 	   const T * const hz, int hz_x_size, int hz_y_size, int hz_z_size,
 	   const T * const hy, int hy_x_size, int hy_y_size, int hy_z_size,
 	   double dy, double dz, double dt, double n,
-	   const int idx[3], int idx_size, 
+	   const int* const idx, int idx_size, 
 	   PwMaterialParam * const parameter)
     {
       int i = idx[0], j = idx[1], k = idx[2];
@@ -215,7 +218,7 @@ namespace gmes
 	   const T * const hx, int hx_x_size, int hx_y_size, int hx_z_size,
 	   const T * const hz, int hz_x_size, int hz_y_size, int hz_z_size,
 	   double dz, double dx, double dt, double n,
-	   const int idx[3], int idx_size, 
+	   const int* const idx, int idx_size, 
 	   PwMaterialParam * const parameter)
     {
       int i = idx[0], j = idx[1], k = idx[2];
@@ -255,7 +258,7 @@ namespace gmes
 	   const T * const hy, int hy_x_size, int hy_y_size, int hy_z_size,
 	   const T * const hx, int hx_x_size, int hx_y_size, int hx_z_size,
 	   double dx, double dy, double dt, double n,
-	   const int idx[3], int idx_size, 
+	   const int* const idx, int idx_size, 
 	   PwMaterialParam * const parameter)
     {
       int i = idx[0], j = idx[1], k = idx[2];
@@ -330,8 +333,8 @@ namespace gmes
       param.clear();
     }
 
-    void
-    attach(const int idx[3], int idx_size,
+    PwMaterial<T> *
+    attach(const int* const idx, int idx_size,
 	   const PwMaterialParam * const parameter)
     {
       std::array<int, 3> index;
@@ -349,7 +352,7 @@ namespace gmes
       DcpPlrcElectricParam<T> *param_ptr;
       param_ptr = new DcpPlrcElectricParam<T>();
 
-      param_ptr->eps = DcpPlrcElectricParameter_ptr->eps;
+      param_ptr->eps_inf = DcpPlrcElectricParameter_ptr->eps_inf;
       std::copy(DcpPlrcElectricParameter_ptr->a.begin(),
 		DcpPlrcElectricParameter_ptr->a.end(),
 		std::back_inserter(param_ptr->a));
@@ -365,6 +368,8 @@ namespace gmes
       param_ptr->psi_cp_im.resize(param_ptr->b.size(), std::complex<double>(0));
       
       param.insert(std::make_pair(index, param_ptr));
+
+      return this;
     }
 
     void 
@@ -447,7 +452,7 @@ namespace gmes
 	   const T * const hz, int hz_x_size, int hz_y_size, int hz_z_size,
 	   const T * const hy, int hy_x_size, int hy_y_size, int hy_z_size,
 	   double dy, double dz, double dt, double n,
-	   const int idx[3], int idx_size, 
+	   const int* const idx, int idx_size, 
 	   PwMaterialParam * const parameter)
     {
       int i = idx[0], j = idx[1], k = idx[2];
@@ -483,7 +488,7 @@ namespace gmes
 	   const T * const hx, int hx_x_size, int hx_y_size, int hx_z_size,
 	   const T * const hz, int hz_x_size, int hz_y_size, int hz_z_size,
 	   double dz, double dx, double dt, double n,
-	   const int idx[3], int idx_size, 
+	   const int* const idx, int idx_size, 
 	   PwMaterialParam * const parameter)
     {
       int i = idx[0], j = idx[1], k = idx[2];
@@ -519,7 +524,7 @@ namespace gmes
 	   const T * const hy, int hy_x_size, int hy_y_size, int hy_z_size,
 	   const T * const hx, int hx_x_size, int hx_y_size, int hx_z_size,
 	   double dx, double dy, double dt, double n,
-	   const int idx[3], int idx_size, 
+	   const int* const idx, int idx_size, 
 	   PwMaterialParam * const parameter)
     {
       int i = idx[0], j = idx[1], k = idx[2];

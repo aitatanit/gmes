@@ -46,8 +46,8 @@ namespace gmes
       param.clear();
     }
     
-    void 
-    attach(const int idx[3], int idx_size, 
+    PwMaterial<T> *
+    attach(const int* const idx, int idx_size, 
 	   const PwMaterialParam * const parameter)
     {
       std::array<int, 3> index;
@@ -64,7 +64,7 @@ namespace gmes
 	= static_cast<const CpmlElectricParam<T> * const>(parameter);
       CpmlElectricParam<T> *param_ptr;
       param_ptr = new CpmlElectricParam<T>();
-      param_ptr->eps = CpmlElectricParameter_ptr->eps;
+      param_ptr->eps_inf = CpmlElectricParameter_ptr->eps_inf;
       param_ptr->b1 = CpmlElectricParameter_ptr->b1;
       param_ptr->b2 = CpmlElectricParameter_ptr->b2;
       param_ptr->c1 = CpmlElectricParameter_ptr->c1;
@@ -75,6 +75,8 @@ namespace gmes
       param_ptr->psi2 = static_cast<T>(0);
 
       param.insert(std::make_pair(index, param_ptr));
+
+      return this;
     }
 
   protected:
@@ -89,14 +91,14 @@ namespace gmes
 	   const T * const hz, int hz_x_size, int hz_y_size, int hz_z_size,
 	   const T * const hy, int hy_x_size, int hy_y_size, int hy_z_size,
 	   double dy, double dz, double dt, double n,
-	   const int idx[3], int idx_size,
+	   const int* const idx, int idx_size,
 	   PwMaterialParam * const parameter)
     {
       int i = idx[0], j = idx[1], k = idx[2];
 
       CpmlElectricParam<T> *ptr;
       ptr = static_cast<CpmlElectricParam<T> *>(parameter);
-      double eps = ptr->eps;
+      double eps_inf = ptr->eps_inf;
       double by = ptr->b1;
       double bz = ptr->b2;
       double cy = ptr->c1;
@@ -109,7 +111,7 @@ namespace gmes
       psi1 = by * psi1 + cy * (hz(i+1,j+1,k) - hz(i+1,j,k)) / dy;
       psi2 = bz * psi2 + cz * (hy(i+1,j,k+1) - hy(i+1,j,k)) / dz;
       
-      ex(i,j,k) += dt / eps * ((hz(i+1,j+1,k) - hz(i+1,j,k)) / dy / kappay -
+      ex(i,j,k) += dt / eps_inf * ((hz(i+1,j+1,k) - hz(i+1,j,k)) / dy / kappay -
 			       (hy(i+1,j,k+1) - hy(i+1,j,k)) / dz / kappaz +
 			       psi1 - psi2);
     }
@@ -126,14 +128,14 @@ namespace gmes
 	   const T * const hx, int hx_x_size, int hx_y_size, int hx_z_size,
 	   const T * const hz, int hz_x_size, int hz_y_size, int hz_z_size,
 	   double dz, double dx, double dt, double n,
-	   const int idx[3], int idx_size, 
+	   const int* const idx, int idx_size, 
 	   PwMaterialParam * const parameter)
     {
       int i = idx[0], j = idx[1], k = idx[2];
 
       CpmlElectricParam<T> *ptr;
       ptr = static_cast<CpmlElectricParam<T> *>(parameter);
-      double eps = ptr->eps;
+      double eps_inf = ptr->eps_inf;
       double bz = ptr->b1;
       double bx = ptr->b2;
       double cz = ptr->c1;
@@ -146,7 +148,7 @@ namespace gmes
       psi1 = bz * psi1 + cz * (hx(i,j+1,k+1) - hx(i,j+1,k)) / dz;
       psi2 = bx * psi2 + cx * (hz(i+1,j+1,k) - hz(i,j+1,k)) / dx;
       
-      ey(i,j,k) += dt / eps * ((hx(i,j+1,k+1) - hx(i,j+1,k)) / dz / kappaz -
+      ey(i,j,k) += dt / eps_inf * ((hx(i,j+1,k+1) - hx(i,j+1,k)) / dz / kappaz -
 			       (hz(i+1,j+1,k) - hz(i,j+1,k)) / dx / kappax +
 			       psi1 - psi2);
     }
@@ -163,14 +165,14 @@ namespace gmes
 	   const T * const hy, int hy_x_size, int hy_y_size, int hy_z_size,
 	   const T * const hx, int hx_x_size, int hx_y_size, int hx_z_size,
 	   double dx, double dy, double dt, double n,
-	   const int idx[3], int idx_size, 
+	   const int* const idx, int idx_size, 
 	   PwMaterialParam * const parameter)
     {
       int i = idx[0], j = idx[1], k = idx[2];
 
       CpmlElectricParam<T> *ptr;
       ptr = static_cast<CpmlElectricParam<T> *>(parameter);
-      double eps = ptr->eps;
+      double eps_inf = ptr->eps_inf;
       double bx = ptr->b1;
       double by = ptr->b2;
       double cx = ptr->c1;
@@ -183,7 +185,7 @@ namespace gmes
       psi1 = bx * psi1 + cx * (hy(i+1,j,k+1) - hy(i,j,k+1)) / dx;
       psi2 = by * psi2 + cy * (hx(i,j+1,k+1) - hx(i,j,k+1)) / dy;
       
-      ez(i,j,k) += dt / eps * ((hy(i+1,j,k+1) - hy(i,j,k+1)) / dx / kappax -
+      ez(i,j,k) += dt / eps_inf * ((hy(i+1,j,k+1) - hy(i,j,k+1)) / dx / kappax -
 			       (hx(i,j+1,k+1) - hx(i,j,k+1)) / dy / kappay +
 			       psi1 - psi2);
     }
@@ -204,8 +206,8 @@ namespace gmes
       param.clear();
     }
     
-    void 
-    attach(const int idx[3], int idx_size, 
+    PwMaterial<T> *
+    attach(const int* const idx, int idx_size, 
 	   const PwMaterialParam * const parameter)
     {
       std::array<int, 3> index;
@@ -222,7 +224,7 @@ namespace gmes
 	= static_cast<const CpmlMagneticParam<T> * const>(parameter);
       CpmlMagneticParam<T> * param_ptr;
       param_ptr = new CpmlMagneticParam<T>();
-      param_ptr->mu = CpmlMagneticParameter_ptr->mu;
+      param_ptr->mu_inf = CpmlMagneticParameter_ptr->mu_inf;
       param_ptr->b1 = CpmlMagneticParameter_ptr->b1;
       param_ptr->b2 = CpmlMagneticParameter_ptr->b2;
       param_ptr->c1 = CpmlMagneticParameter_ptr->c1;
@@ -233,6 +235,8 @@ namespace gmes
       param_ptr->psi2 = static_cast<T>(0);
 
       param.insert(std::make_pair(index, param_ptr));
+
+      return this;
     }
 
   protected:
@@ -247,14 +251,14 @@ namespace gmes
 	   const T * const ez, int ez_x_size, int ez_y_size, int ez_z_size,
 	   const T * const ey, int ey_x_size, int ey_y_size, int ey_z_size,
 	   double dy, double dz, double dt, double n,
-	   const int idx[3], int idx_size, 
+	   const int* const idx, int idx_size, 
 	   PwMaterialParam * const parameter)
     {
       int i = idx[0], j = idx[1], k = idx[2];
 
       CpmlMagneticParam<T> *ptr;
       ptr = static_cast<CpmlMagneticParam<T> *>(parameter);
-      double mu = ptr->mu;
+      double mu_inf = ptr->mu_inf;
       double by = ptr->b1;
       double bz = ptr->b2;
       double cy = ptr->c1;
@@ -267,7 +271,7 @@ namespace gmes
       psi1 = by * psi1 + cy * (ez(i,j,k-1) - ez(i,j-1,k-1)) / dy;
       psi2 = bz * psi2 + cz * (ey(i,j-1,k) - ey(i,j-1,k-1)) / dz;
 
-      hx(i,j,k) -= dt / mu * ((ez(i,j,k-1) - ez(i,j-1,k-1)) / dy / kappay -
+      hx(i,j,k) -= dt / mu_inf * ((ez(i,j,k-1) - ez(i,j-1,k-1)) / dy / kappay -
 			      (ey(i,j-1,k) - ey(i,j-1,k-1)) / dz / kappaz +
 			      psi1 - psi2);
     }
@@ -284,14 +288,14 @@ namespace gmes
 	   const T * const ex, int ex_x_size, int ex_y_size, int ex_z_size,
 	   const T * const ez, int ez_x_size, int ez_y_size, int ez_z_size,
 	   double dz, double dx, double dt, double n,
-	   const int idx[3], int idx_size, 
+	   const int* const idx, int idx_size, 
 	   PwMaterialParam * const parameter)
     {
       int i = idx[0], j = idx[1], k = idx[2];
 
       CpmlMagneticParam<T> *ptr;
       ptr = static_cast<CpmlMagneticParam<T> *>(parameter);
-      double mu = ptr->mu;
+      double mu_inf = ptr->mu_inf;
       double bz = ptr->b1;
       double bx = ptr->b2;
       double cz = ptr->c1;
@@ -304,7 +308,7 @@ namespace gmes
       psi1 = bz * psi1 + cz * (ex(i-1,j,k) - ex(i-1,j,k-1)) / dz;
       psi2 = bx * psi2 + cx * (ez(i,j,k-1) - ez(i-1,j,k-1)) / dx;
 
-      hy(i,j,k) -= dt / mu * ((ex(i-1,j,k) - ex(i-1,j,k-1)) / dz / kappaz -
+      hy(i,j,k) -= dt / mu_inf * ((ex(i-1,j,k) - ex(i-1,j,k-1)) / dz / kappaz -
 			      (ez(i,j,k-1) - ez(i-1,j,k-1)) / dx / kappax +
 			      psi1 - psi2);
     }
@@ -321,14 +325,14 @@ namespace gmes
 	   const T * const ey, int ey_x_size, int ey_y_size, int ey_z_size,
 	   const T * const ex, int ex_x_size, int ex_y_size, int ex_z_size,
 	   double dx, double dy, double dt, double n,
-	   const int idx[3], int idx_size, 
+	   const int* const idx, int idx_size, 
 	   PwMaterialParam * const parameter)
     {
       int i = idx[0], j = idx[1], k = idx[2];
 
       CpmlMagneticParam<T> *ptr;
       ptr = static_cast<CpmlMagneticParam<T> *>(parameter);
-      double mu = ptr->mu;
+      double mu_inf = ptr->mu_inf;
       double bx = ptr->b1;
       double by = ptr->b2;
       double cx = ptr->c1;
@@ -341,7 +345,7 @@ namespace gmes
       psi1 = bx * psi1 + cx * (ey(i,j-1,k) - ey(i-1,j-1,k)) / dx;
       psi2 = by * psi2 + cy * (ex(i-1,j,k) - ex(i-1,j-1,k)) / dy;
       
-      hz(i,j,k) -= dt / mu * ((ey(i,j-1,k) - ey(i-1,j-1,k)) / dx / kappax -
+      hz(i,j,k) -= dt / mu_inf * ((ey(i,j-1,k) - ey(i-1,j-1,k)) / dx / kappax -
 			      (ex(i-1,j,k) - ex(i-1,j-1,k)) / dy / kappay +
 			      psi1 - psi2);
     }
