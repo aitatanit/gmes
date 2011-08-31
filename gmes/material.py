@@ -104,18 +104,22 @@ from pw_material import DcpPlrcHxReal, DcpPlrcHxCmplx
 from pw_material import DcpPlrcHyReal, DcpPlrcHyCmplx
 from pw_material import DcpPlrcHzReal, DcpPlrcHzCmplx
 
-from constants import c0
+from constant import c0
 
 
 class Material(object):
     """A base class for material types.
     
     """
-    def display_info(self, indentby=0):
+    def __init__(self, eps_inf=1, mu_inf=1):
+        self.eps_inf = float(eps_inf)
+        self.mu_inf = float(mu_inf)
+
+    def display_info(self, indent=0):
         """Display the parameter values.
         
         """
-        print " " * indentby, "material type object"
+        raise NotImplementedError
 
     def get_pw_material_ex(self, idx, coords, underneath=None, cmplx=False):
         """Return an ElectricParam structure of the given point.
@@ -190,7 +194,7 @@ class Material(object):
         raise NotImplementedError
 
     def init(self, space, param=None):
-        pass
+        raise NotImplementedError
         
         
 class Dummy(Material):
@@ -198,14 +202,16 @@ class Dummy(Material):
     
     """
     def __init__(self, eps_inf=1, mu_inf=1):
-        self.eps_inf = float(eps_inf)
-        self.mu_inf = float(mu_inf)
+        Material.__init__(self, eps_inf, mu_inf)
         
-    def display_info(self, indentby=0):
+    def init(self, space, param=None):
+        pass
+
+    def display_info(self, indent=0):
         """Display the parameter values.
         
         """
-        print " " * indentby, "dummy object"
+        print " " * indent, "dummy object"
         print " " * indent, 
         print "frequency independent permittivity:", self.eps_inf,
         print "frequency independent permeability:", self.mu_inf
@@ -318,19 +324,21 @@ class Const(Material):
             mu_inf -- frequency independent permeability
         
         """
+        Material.__init__(self, eps_inf, mu_inf)
+
         if type(value) is complex:
             self.value = value
         else:
             self.value = float(value)
-
-        self.eps_inf = float(eps_inf)
-        self.mu_inf = float(mu_inf)
         
-    def display_info(self, indentby=0):
+    def init(self, space, param=None):
+        pass
+
+    def display_info(self, indent=0):
         """Display the parameter values.
         
         """
-        print " " * indentby, "const object"
+        print " " * indent, "const object"
         print " " * indent, 
         print "value:", self.value,
         print "frequency independent permittivity:", self.eps_inf,
@@ -449,8 +457,10 @@ class Dielectric(Material):
             mu_inf -- frequency independent permeability
         
         """
-        self.eps_inf = float(eps_inf)
-        self.mu_inf = float(mu_inf)
+        Material.__init__(self, eps_inf, mu_inf)
+
+    def init(self, space, param=None):
+        pass
 
     def display_info(self, indent=0):
         """Display the parameter values.
@@ -580,6 +590,9 @@ class Pml(Material, Compound):
         initialized -- initialization semaphore 
         
     """
+    def __init__(self, eps_inf, mu_inf):
+        Material.__init__(self, eps_inf, mu_inf)
+
     def init(self, space, param=None):
         """
         The thickness of PML layer is provided from the boundary instance 
@@ -654,12 +667,12 @@ class Upml(Pml):
 
     """    
     def __init__(self, eps_inf=1, mu_inf=1, m=3.5, kappa_max=1, sigma_max_ratio=.75):
+        Pml.__init__(self, eps_inf, mu_inf)
+
         self.initialized = False
         
         self.m = float(m)
         self.kappa_max = float(kappa_max)
-        self.eps_inf = float(eps_inf)
-        self.mu_inf = float(eps_inf)
         self.sigma_max_ratio = float(sigma_max_ratio)
         
     def display_info(self, indent=0):
@@ -869,14 +882,14 @@ class Cpml(Pml):
     
     """
     def __init__(self, eps_inf=1, mu_inf=1, m=3, kappa_max=2, m_a=1, a_max=0, sigma_max_ratio=2):
+        Pml.__init__(self, eps_inf, mu_inf)
+
         self.initialized = False
         
         self.m = float(m)
         self.kappa_max = float(kappa_max)
         self.m_a = float(m_a)
         self.a_max = float(a_max)
-        self.eps_inf = float(eps_inf)
-        self.mu_inf = float(mu_inf)
         self.sigma_max_ratio = float(sigma_max_ratio)
         
     def display_info(self, indent=0):
@@ -1148,7 +1161,7 @@ class DcpAde(Dielectric):
         cps: list of critical points. Default is ().
         
         """
-        Dielectric.__init__(self, eps_inf=eps_inf, mu_inf=mu_inf)
+        Dielectric.__init__(self, eps_inf, mu_inf)
         self.sigma = float(sigma) # instant conductivity
         self.dps = tuple(dps) # tuple of Drude poles
         self.cps = tuple(cps) # tuple of critical points
@@ -1719,7 +1732,7 @@ class Lorentz(Dielectric):
             lps: list of Lorentz poles. Default is().
             
         """
-        Dielectric.__init__(self, eps_inf=eps_inf, mu_inf=mu_inf)
+        Dielectric.__init__(self, eps_inf, mu_inf)
         self.sigma = float(sigma)
         self.lps = tuple(lps)
         
@@ -1939,7 +1952,7 @@ class GoldRc(DcpRc):
         DcpRc.__init__(self, eps_inf=1.1431, mu_inf=1, sigma=0, 
                        dps=(dp1,), cps=(cp1,cp2))
                         
-class Gold2(Drude):
+class GoldDrude(Drude):
     """
     The parameters are from the following article.
     * M. Okoniewski and E. Okoniewska, "Drude dispersion in ADE FDTD revisited,"

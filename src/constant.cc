@@ -1,6 +1,6 @@
 #include <algorithm>
 #include <stdexcept>
-#include "constants.hh"
+#include "constant.hh"
 
 using namespace std;
 using namespace gmes;

@@ -36,14 +36,14 @@ namespace gmes
     {
       for(MapType::const_iterator iter = param.begin(); 
 	  iter != param.end(); iter++) {
-	delete static_cast<DielectricElectricParam<T> *>(iter->second);
+	delete static_cast<DielectricElectricParam<T>*>(iter->second);
       }
       param.clear();
     }
 
-    PwMaterial<T> *
+    PwMaterial<T>*
     attach(const int* const idx, int idx_size,
-	   const PwMaterialParam * const parameter)
+	   const PwMaterialParam* const parameter)
     {
       std::array<int, 3> index;
       std::copy(idx, idx + idx_size, index.begin());
@@ -51,14 +51,14 @@ namespace gmes
       MapType::const_iterator iter = param.find(index);
       if (iter != param.end()) {
 	std::cerr << "Overwriting the existing index." << std::endl;
-	delete static_cast<DielectricElectricParam<T> *>(iter->second);
+	delete static_cast<DielectricElectricParam<T>*>(iter->second);
 	param.erase(iter);
       }
 
-      DielectricElectricParam<T> *param_ptr;
+      DielectricElectricParam<T>* param_ptr;
       param_ptr = new DielectricElectricParam<T>();
       param_ptr->eps_inf 
-	= static_cast<const DielectricElectricParam<T> *>(parameter)->eps_inf;
+	= static_cast<const DielectricElectricParam<T>*>(parameter)->eps_inf;
 
       param.insert(std::make_pair(index, param_ptr));
 
@@ -73,15 +73,15 @@ namespace gmes
   {
   public:
     void 
-    update(T * const ex, int ex_x_size, int ex_y_size, int ex_z_size,
-	   const T * const hz, int hz_x_size, int hz_y_size, int hz_z_size,
-	   const T * const hy, int hy_x_size, int hy_y_size, int hy_z_size,
+    update(T* const ex, int ex_x_size, int ex_y_size, int ex_z_size,
+	   const T* const hz, int hz_x_size, int hz_y_size, int hz_z_size,
+	   const T* const hy, int hy_x_size, int hy_y_size, int hy_z_size,
 	   double dy, double dz, double dt, double n,
 	   const int* const idx, int idx_size, 
-	   PwMaterialParam * const parameter)
+	   PwMaterialParam* const parameter)
     {
       int i = idx[0], j = idx[1], k = idx[2];
-      double eps_inf = static_cast<DielectricElectricParam<T> *>(parameter)->eps_inf;
+      double eps_inf = static_cast<DielectricElectricParam<T>*>(parameter)->eps_inf;
 
       ex(i,j,k) += dt / eps_inf * ((hz(i+1,j+1,k) - hz(i+1,j,k)) / dy - 
 			       (hy(i+1,j,k+1) - hy(i+1,j,k)) / dz);
@@ -95,15 +95,15 @@ namespace gmes
   {
   public:
     void 
-    update(T * const ey, int ey_x_size, int ey_y_size, int ey_z_size,
-	   const T * const hx, int hx_x_size, int hx_y_size, int hx_z_size,
-	   const T * const hz, int hz_x_size, int hz_y_size, int hz_z_size,
+    update(T* const ey, int ey_x_size, int ey_y_size, int ey_z_size,
+	   const T* const hx, int hx_x_size, int hx_y_size, int hx_z_size,
+	   const T* const hz, int hz_x_size, int hz_y_size, int hz_z_size,
 	   double dz, double dx, double dt, double n, 
 	   const int* const idx, int idx_size, 
-	   PwMaterialParam * const parameter)
+	   PwMaterialParam* const parameter)
     {
       int i = idx[0], j = idx[1], k = idx[2];
-      double eps_inf = static_cast<DielectricElectricParam<T> *>(parameter)->eps_inf;
+      double eps_inf = static_cast<DielectricElectricParam<T>*>(parameter)->eps_inf;
 
       ey(i,j,k) += dt / eps_inf * ((hx(i,j+1,k+1) - hx(i,j+1,k)) / dz - 
 			       (hz(i+1,j+1,k) - hz(i,j+1,k)) / dx);
@@ -117,15 +117,15 @@ namespace gmes
   {
   public:
     void 
-    update(T * const ez, int ez_x_size, int ez_y_size, int ez_z_size,
-	   const T * const hy, int hy_x_size, int hy_y_size, int hy_z_size,
-	   const T * const hx, int hx_x_size, int hx_y_size, int hx_z_size,
+    update(T* const ez, int ez_x_size, int ez_y_size, int ez_z_size,
+	   const T* const hy, int hy_x_size, int hy_y_size, int hy_z_size,
+	   const T* const hx, int hx_x_size, int hx_y_size, int hx_z_size,
 	   double dx, double dy, double dt, double n, 
 	   const int* const idx, int idx_size, 
-	   PwMaterialParam * const parameter)
+	   PwMaterialParam* const parameter)
     {
       int i = idx[0], j = idx[1], k = idx[2];
-      double eps_inf = static_cast<DielectricElectricParam<T> *>(parameter)->eps_inf;
+      double eps_inf = static_cast<DielectricElectricParam<T>*>(parameter)->eps_inf;
       
       ez(i,j,k) += dt / eps_inf * ((hy(i+1,j,k+1) - hy(i,j,k+1)) / dx -
 			       (hx(i,j+1,k+1) - hx(i,j,k+1)) / dy);
@@ -142,14 +142,14 @@ namespace gmes
     {
       for(MapType::const_iterator iter = param.begin(); 
 	  iter != param.end(); iter++) {
-	delete static_cast<DielectricMagneticParam<T> *>(iter->second);
+	delete static_cast<DielectricMagneticParam<T>*>(iter->second);
       }
       param.clear();
     }
 
-    PwMaterial<T> *
+    PwMaterial<T>*
     attach(const int* const idx, int idx_size, 
-	   const PwMaterialParam * const parameter)
+	   const PwMaterialParam* const parameter)
     {
       std::array<int, 3> index;
       std::copy(idx, idx + idx_size, index.begin());
@@ -157,14 +157,14 @@ namespace gmes
       MapType::const_iterator iter = param.find(index);
       if (iter != param.end()) {
 	std::cerr << "Overwriting the existing index." << std::endl;
-	delete static_cast<DielectricMagneticParam<T> *>(iter->second);
+	delete static_cast<DielectricMagneticParam<T>*>(iter->second);
 	param.erase(iter);
       }
 
-      DielectricMagneticParam<T> *param_ptr;
+      DielectricMagneticParam<T>* param_ptr;
       param_ptr = new DielectricMagneticParam<T>();
       param_ptr->mu_inf 
-	= static_cast<const DielectricMagneticParam<T> *>(parameter)->mu_inf;
+	= static_cast<const DielectricMagneticParam<T>*>(parameter)->mu_inf;
 
       param.insert(std::make_pair(index, param_ptr));
 
@@ -179,15 +179,15 @@ namespace gmes
   {
   public:
     void
-    update(T * const hx, int hx_x_size, int hx_y_size, int hx_z_size,
-	   const T * const ez, int ez_x_size, int ez_y_size, int ez_z_size,
-	   const T * const ey, int ey_x_size, int ey_y_size, int ey_z_size,
+    update(T* const hx, int hx_x_size, int hx_y_size, int hx_z_size,
+	   const T* const ez, int ez_x_size, int ez_y_size, int ez_z_size,
+	   const T* const ey, int ey_x_size, int ey_y_size, int ey_z_size,
 	   double dy, double dz, double dt, double n, 
 	   const int* const idx, int idx_size, 
-	   PwMaterialParam * const parameter)
+	   PwMaterialParam* const parameter)
     {
       int i = idx[0], j = idx[1], k = idx[2];
-      double mu_inf = static_cast<DielectricMagneticParam<T> *>(parameter)->mu_inf;
+      double mu_inf = static_cast<DielectricMagneticParam<T>*>(parameter)->mu_inf;
 
       hx(i,j,k) += dt / mu_inf * ((ey(i,j-1,k) - ey(i,j-1,k-1)) / dz -
 			      (ez(i,j,k-1) - ez(i,j-1,k-1)) / dy);
@@ -201,15 +201,15 @@ namespace gmes
   {
   public:
     void 
-    update(T * const hy, int hy_x_size, int hy_y_size, int hy_z_size,
-	   const T * const ex, int ex_x_size, int ex_y_size, int ex_z_size,
-	   const T * const ez, int ez_x_size, int ez_y_size, int ez_z_size,
+    update(T* const hy, int hy_x_size, int hy_y_size, int hy_z_size,
+	   const T* const ex, int ex_x_size, int ex_y_size, int ex_z_size,
+	   const T* const ez, int ez_x_size, int ez_y_size, int ez_z_size,
 	   double dz, double dx, double dt, double n, 
 	   const int* const idx, int idx_size, 
-	   PwMaterialParam * const parameter)
+	   PwMaterialParam* const parameter)
     {
       int i = idx[0], j = idx[1], k = idx[2];
-      double mu_inf = static_cast<DielectricMagneticParam<T> *>(parameter)->mu_inf;
+      double mu_inf = static_cast<DielectricMagneticParam<T>*>(parameter)->mu_inf;
 
       hy(i,j,k) += dt / mu_inf * ((ez(i,j,k-1) - ez(i-1,j,k-1)) / dx -
 			      (ex(i-1,j,k) - ex(i-1,j,k-1)) / dz);
@@ -223,15 +223,15 @@ namespace gmes
   {
   public:
     void 
-    update(T * const hz, int hz_x_size, int hz_y_size, int hz_z_size,
-	   const T * const ey, int ey_x_size, int ey_y_size, int ey_z_size,
-	   const T * const ex, int ex_x_size, int ex_y_size, int ex_z_size,
+    update(T* const hz, int hz_x_size, int hz_y_size, int hz_z_size,
+	   const T* const ey, int ey_x_size, int ey_y_size, int ey_z_size,
+	   const T* const ex, int ex_x_size, int ex_y_size, int ex_z_size,
 	   double dx, double dy, double dt, double n, 
 	   const int* const idx, int idx_size, 
-	   PwMaterialParam * const parameter)
+	   PwMaterialParam* const parameter)
     {
       int i = idx[0], j = idx[1], k = idx[2];
-      double mu_inf = static_cast<DielectricMagneticParam<T> *>(parameter)->mu_inf;
+      double mu_inf = static_cast<DielectricMagneticParam<T>*>(parameter)->mu_inf;
       
       hz(i,j,k) += dt / mu_inf * ((ex(i-1,j,k) - ex(i-1,j-1,k)) / dy -
 			      (ey(i,j-1,k) - ey(i-1,j-1,k)) / dx);

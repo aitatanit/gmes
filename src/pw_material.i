@@ -11,6 +11,7 @@
 #include "pw_drude.hh"
 #include "pw_lorentz.hh"
 #include "pw_dcp.hh"
+#include "Python.h"
 %}
 
 %include "complex.i"
@@ -87,6 +88,49 @@ import_array();
 %template(PwMaterial ## postfix) gmes::PwMaterial<T >;
 %template(MaterialElectric ## postfix) gmes::MaterialElectric<T >;
 %template(MaterialMagnetic ## postfix) gmes::MaterialMagnetic<T >;
+
+%extend gmes::PwMaterial<T >
+{
+  gmes::MapType::const_iterator* 
+    _begin() 
+  {
+    return new gmes::MapType::const_iterator($self->begin());
+  }
+
+  gmes::MapType::const_iterator*
+    _end()
+  {
+    return new gmes::MapType::const_iterator($self->end());
+  }
+   
+  PyObject* 
+    _deref(gmes::MapType::const_iterator* it)
+  {
+    return Py_BuildValue("(i,i,i)", 
+			 (*it)->first[0], (*it)->first[1], (*it)->first[2]);
+  }
+
+  bool 
+    _compref(gmes::MapType::const_iterator* lhs,
+	     gmes::MapType::const_iterator* rhs)
+  {
+    return *lhs == *rhs;
+  }
+
+  void
+    _incref(gmes::MapType::const_iterator* it)
+  {
+    ++(*it);
+  }
+
+  %pythoncode %{
+    def iteridx(self):
+        it = self._begin()
+        while not self._compref(it, self._end()):
+            yield self._deref(it)
+            self._incref(it)
+  %}
+};
 
 %template(DummyElectricParam ## postfix) gmes::DummyElectricParam<T >;
 %template(DummyMagneticParam ## postfix) gmes::DummyMagneticParam<T >;

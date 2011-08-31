@@ -15,7 +15,8 @@ from math import cos, sin, pi, floor
 import numpy as np
 from numpy import inf
 
-import constants as const
+# GMES modules
+import constant as const
 
 
 class PwSourceParam(object):
@@ -161,7 +162,7 @@ class TransparentMagneticParam(TransparentParam):
 
 class TransparentEx(PwSource):
     def __init__(self):
-        PwSource.__init__()
+        PwSource.__init__(self)
         self._consist_cond = {const.MinusY: self._consistency_minus_y,
                               const.MinusZ: self._consistency_minus_z,
                               const.PlusY: self._consistency_plus_y,
@@ -199,7 +200,7 @@ class TransparentEx(PwSource):
         
 class TransparentEy(PwSource):
     def __init__(self):
-        PwSource.__init__()
+        PwSource.__init__(self)
         self._consist_cond = {const.MinusZ: self._consistency_minus_z,
                               const.MinusX: self._consistency_minus_x,
                               const.PlusZ: self._consistency_plus_z,
@@ -273,7 +274,7 @@ class TransparentEz(PwSource):
         
 class TransparentHx(PwSource):
     def __init__(self):
-        PwSource.__init__()
+        PwSource.__init__(self)
         self._consist_cond = {const.MinusY: self._consistency_minus_y,
                               const.MinusZ: self._consistency_minus_z,
                               const.PlusY: self._consistency_plus_y,
@@ -310,7 +311,7 @@ class TransparentHx(PwSource):
 
 class TransparentHy(PwSource):
     def __init__(self):
-        PwSource.__init__()        
+        PwSource.__init__(self)
         self._consist_cond = {const.MinusZ: self._consistency_minus_z,
                               const.MinusX: self._consistency_minus_x,
                               const.PlusZ: self._consistency_plus_z,
@@ -347,7 +348,7 @@ class TransparentHy(PwSource):
 
 class TransparentHz(PwSource):
     def __init__(self):
-        PwSource.__init__()
+        PwSource.__init__(self)
         self._consist_cond = {const.MinusX: self._consistency_minus_x,
                               const.MinusY: self._consistency_minus_y,
                               const.PlusX: self._consistency_plus_x,

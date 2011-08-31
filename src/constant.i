@@ -1,8 +1,8 @@
-%module constants
+%module constant
 
 %{
 #define SWIG_FILE_WITH_INIT
-#include "constants.hh"
+#include "constant.hh"
 %}
 
 // Get the NumPy typemaps
@@ -35,7 +35,7 @@ import_array();
 %rename(_minus_z) gmes::MinusZ;
 
 // Include the header file to be wrapped
-%include "constants.hh"
+%include "constant.hh"
 
 %pythoncode %{
 class Component(_component):

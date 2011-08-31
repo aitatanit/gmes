@@ -19,7 +19,7 @@ from numpy import inf, cross, dot, ndindex
 from numpy.linalg import norm
 from scipy.optimize import bisect
 
-import constants as const
+import constant as const
 from geometry import Cartesian, DefaultMedium, Boundary, in_range
 from fdtd import TEMzFDTD
 from material import Dielectric, Cpml
@@ -43,8 +43,14 @@ class SrcTime(object):
     """Time-dependent part of a source.
     
     """
+    def init(self, cmplx):
+        raise NotImplementedError
+
+    def dipole(self, time):
+        raise NotImplementedError
+
     def display_info(self, indent=0):
-        pass
+        raise NotImplementedError
     
 
 class Src(object):
@@ -52,9 +58,33 @@ class Src(object):
     
     """
     def display_info(self, indent=0):
-        pass
+        raise NotImplementedError
     
-        
+    def init(self, geom_tree, space, cmplx):
+        raise NotImplementedError
+
+    def step(self):
+        raise NotImplementedError
+
+    def get_pw_source_ex(self, ex_field, space):
+        raise NotImplementedError
+    
+    def get_pw_source_ey(self, ey_field, space):
+        raise NotImplementedError
+
+    def get_pw_source_ez(self, ez_field, space):
+        raise NotImplementedError
+
+    def get_pw_source_hx(self, hx_field, space):
+        raise NotImplementedError
+
+    def get_pw_source_hy(self, hy_field, space):
+        raise NotImplementedError
+    
+    def get_pw_source_hz(self, hz_field, space):
+        raise NotImplementedError
+
+
 class Continuous(SrcTime):
     """Continuous (CW) source with (optional) slow turn-on and/or turn-off.
     
@@ -180,7 +210,7 @@ class Dipole(Src):
 
         if self.comp is const.Ex:
             idx = space.space_to_ex_index(*self.pos)
-            if in_range(idx, ex_field, const.Ex):
+            if in_range(idx, ex_field.shape, const.Ex):
                 pw_src_param = DipoleParam(self.src_time, self.amp)
                 pw_src = DipoleEx()
                 pw_src.attach(idx, pw_src_param)
@@ -192,7 +222,7 @@ class Dipole(Src):
 
         if self.comp is const.Ey:
             idx = space.space_to_ey_index(*self.pos)
-            if in_range(idx, ey_field, const.Ey):
+            if in_range(idx, ey_field.shape, const.Ey):
                 pw_src_param = DipoleParam(self.src_time, self.amp)
                 pw_src = DipoleEy()
                 pw_src.attach(idx, pw_src_param)
@@ -204,7 +234,7 @@ class Dipole(Src):
 
         if self.comp is const.Ez:
             idx = space.space_to_ez_index(*self.pos)
-            if in_range(idx, ez_field, const.Ez):
+            if in_range(idx, ez_field.shape, const.Ez):
                 pw_src_param = DipoleParam(self.src_time, self.amp)
                 pw_src = DipoleEz()
                 pw_src.attach(idx, pw_src_param)
@@ -216,7 +246,7 @@ class Dipole(Src):
 
         if self.comp is const.Hx:
             idx = space.space_to_hx_index(*self.pos)
-            if in_range(idx, hx_field, const.Hx):
+            if in_range(idx, hx_field.shape, const.Hx):
                 pw_src_param = DipoleParam(self.src_time, self.amp)
                 pw_src = DipoleHx()
                 pw_src.attach(idx, pw_src_param)
@@ -228,7 +258,7 @@ class Dipole(Src):
 
         if self.comp is const.Hy:
             idx = space.space_to_hy_index(*self.pos)
-            if in_range(idx, hy_field, const.Hy):
+            if in_range(idx, hy_field.shape, const.Hy):
                 pw_src_param = DipoleParam(self.src_time, self.amp)
                 pw_src = DipoleHy()
                 pw_src.attach(idx, pw_src_param)
@@ -240,7 +270,7 @@ class Dipole(Src):
 
         if self.comp is const.Hz:
             idx = space.space_to_hz_index(*self.pos)
-            if in_range(idx, hz_field, const.Hz):
+            if in_range(idx, hz_field.shape, const.Hz):
                 pw_src_param = DipoleParam(self.src_time, self.amp)
                 pw_src = DipoleHz()
                 pw_src.attach(idx, pw_src_param)
@@ -489,14 +519,14 @@ class TotalFieldScatteredField(Src):
 
         return aux_fdtd
 
-    def _get_pw_source(self, space, component, cosine,
+    def _get_pw_source(self, space, component, cosine, field,
                        low_idx, high_idx, source, samp_i2s, face):
         """
         Keyword arguments:
-        space - the Coordinate object given as a FDTD argument.
-        component - Specify the field component.
-        cosine - the cosine of the field vector and the given component.
-        material - pointwise material object array.
+        space - the Coordinate object given as a FDTD argument
+        component - Specify the field component
+        cosine - the cosine of the field vector and the given component
+        field - numpy array of the electromagnetic field
         low_idx - the low end index of the source boundary
         high_idx - the high end index of the source boundary
         source - the pointwise source class
@@ -521,7 +551,7 @@ class TotalFieldScatteredField(Src):
         pw_src = source()
         for i, j, k in ndindex(tuple(high_idx_array - low_idx_array)):
             idx = tuple((i, j, k) + low_idx_array)
-            if in_range(idx, material, component):
+            if in_range(idx, field.shape, component):
                 pnt = idx_to_spc[component](*idx)
                 
                 mat_obj, underneath = self.geom_tree.material_of_point(pnt)
@@ -535,20 +565,18 @@ class TotalFieldScatteredField(Src):
 
                 amp = cosine * self.amp * self.mode_function(*pnt)
 
-                sample_pnt = \
+                samp_pnt = \
                 (0, 0, self._metric_from_center_along_beam_axis(samp_i2s(*idx)))
                 
                 if isinstance(pw_src, (TransparentEx, TransparentEy, 
                                        TransparentEz)):
                     pw_src_param = TransparentElectricParam(eps_inf, amp, 
-                                                            aux_fdtd, 
                                                             self.aux_fdtd, 
                                                             samp_pnt, face)
                     pw_src.attach(idx, pw_src_param)
                 if isinstance(pw_src, (TransparentHx, TransparentHy, 
                                        TransparentHz)):
                     pw_src_param = TransparentMagneticParam(mu_inf, amp, 
-                                                            aux_fdtd, 
                                                             self.aux_fdtd, 
                                                             samp_pnt, face)
                     pw_src.attach(idx, pw_src_param)
@@ -560,16 +588,16 @@ class TotalFieldScatteredField(Src):
 
         cosine = dot(self.h_direction, (0, 0, 1))
         if cosine != 0:
-            pw_src_tmp = self._get_pw_source_ex_minus_y(space, cosine)
+            pw_src_tmp = self._get_pw_source_ex_minus_y(ex_field, space, cosine)
             pw_src.param.update(pw_src_tmp.param)
-            pw_src_tmp = self._get_pw_source_ex_plus_y(space, cosine)
+            pw_src_tmp = self._get_pw_source_ex_plus_y(ex_field, space, cosine)
             pw_src.param.update(pw_src_tmp.param)
             
         cosine = dot(self.h_direction, (0, 1, 0))
         if cosine != 0:
-            pw_src_tmp = self._get_pw_source_ex_minus_z(space, cosine)
+            pw_src_tmp = self._get_pw_source_ex_minus_z(ex_field, space, cosine)
             pw_src.param.update(pw_src_tmp.param)
-            pw_src_tmp = self._get_pw_source_ex_plus_z(space, cosine)
+            pw_src_tmp = self._get_pw_source_ex_plus_z(ex_field, space, cosine)
             pw_src.param.update(pw_src_tmp.param)
 
         if len(pw_src.param) == 0:
@@ -577,7 +605,7 @@ class TotalFieldScatteredField(Src):
         else:
             return pw_src
 
-    def _get_pw_source_ex_minus_y(self, space, cosine):
+    def _get_pw_source_ex_minus_y(self, ex_field, space, cosine):
         pw_src = None
         if 2 * space.half_size[1] > space.dy:
             low = self.center - self.half_size
@@ -588,12 +616,12 @@ class TotalFieldScatteredField(Src):
     
             hz_i2s = lambda i, j, k: space.hz_index_to_space(i + 1, j, k)
             
-            pw_src = self._get_pw_source(space, const.Ex, cosine, material_ex, 
+            pw_src = self._get_pw_source(space, const.Ex, cosine, ex_field, 
                                          low_idx, high_idx, TransparentEx, 
                                          hz_i2s, const.MinusY)
         return pw_src
         
-    def _get_pw_source_ex_plus_y(self, space, cosine):
+    def _get_pw_source_ex_plus_y(self, ex_field, space, cosine):
         pw_src = None
         if 2 * space.half_size[1] > space.dy:
             low = self.center - self.half_size * (1, -1, 1)
@@ -604,12 +632,12 @@ class TotalFieldScatteredField(Src):
     
             hz_i2s = lambda i, j, k: space.hz_index_to_space(i + 1, j + 1, k)
             
-            pw_src = self._get_pw_source(space, const.Ex, cosine, material_ex,
+            pw_src = self._get_pw_source(space, const.Ex, cosine, ex_field,
                                          low_idx, high_idx, TransparentEx, 
                                          hz_i2s, const.PlusY)
         return pw_src
         
-    def _get_pw_source_ex_minus_z(self, space, cosine):
+    def _get_pw_source_ex_minus_z(self, ex_field, space, cosine):
         pw_src = None
         if 2 * space.half_size[2] > space.dz:
             low = self.center - self.half_size
@@ -620,12 +648,12 @@ class TotalFieldScatteredField(Src):
             
             hy_i2s = lambda i, j, k: space.hy_index_to_space(i + 1, j, k)
             
-            pw_src = self._get_pw_source(space, const.Ex, cosine, material_ex,
+            pw_src = self._get_pw_source(space, const.Ex, cosine, ex_field,
                                          low_idx, high_idx, TransparentEx, 
                                          hy_i2s, const.MinusZ)
         return pw_src
     
-    def _get_pw_source_ex_plus_z(self, space, cosine):
+    def _get_pw_source_ex_plus_z(self, ex_field, space, cosine):
         pw_src = None
         if 2 * space.half_size[2] > space.dz:
             low = self.center - self.half_size * (1, 1, -1)
@@ -636,7 +664,7 @@ class TotalFieldScatteredField(Src):
             
             i2s = lambda i, j, k: space.hy_index_to_space(i + 1, j, k + 1)
             
-            pw_src = self._get_pw_source(space, const.Ex, cosine, material_ex,
+            pw_src = self._get_pw_source(space, const.Ex, cosine, ex_field,
                                          low_idx, high_idx, TransparentEx, 
                                          i2s, const.PlusZ)
         return pw_src
@@ -646,16 +674,16 @@ class TotalFieldScatteredField(Src):
 
         cosine = dot(self.h_direction, (1, 0, 0))
         if cosine != 0:
-            pw_src_tmp = self._get_pw_source_ey_minus_z(space, cosine)
+            pw_src_tmp = self._get_pw_source_ey_minus_z(ey_field, space, cosine)
             pw_src.param.update(pw_src_tmp.param)
-            pw_src_tmp = self._get_pw_source_ey_plus_z(space, cosine)
+            pw_src_tmp = self._get_pw_source_ey_plus_z(ey_field, space, cosine)
             pw_src.param.update(pw_src_tmp.param)
             
         cosine = dot(self.h_direction, (0, 0, 1))
         if cosine != 0:
-            pw_src_tmp = self._get_pw_source_ey_minus_x(space, cosine)
+            pw_src_tmp = self._get_pw_source_ey_minus_x(ey_field, space, cosine)
             pw_src.param.update(pw_src_tmp.param)
-            pw_src_tmp = self._get_pw_source_ey_plus_x(space, cosine)
+            pw_src_tmp = self._get_pw_source_ey_plus_x(ey_field, space, cosine)
             pw_src.param.update(pw_src_tmp.param)
         
         if len(pw_src.param) == 0:
@@ -663,7 +691,7 @@ class TotalFieldScatteredField(Src):
         else:
             return pw_src
 
-    def _get_pw_source_ey_minus_z(self, space, cosine):
+    def _get_pw_source_ey_minus_z(self, ey_field, space, cosine):
         pw_src = None
         if 2 * space.half_size[2] > space.dz:
             low = self.center - self.half_size
@@ -674,12 +702,12 @@ class TotalFieldScatteredField(Src):
     
             hx_i2s = lambda i, j, k: space.hx_index_to_space(i, j + 1, k)
             
-            pw_src = self._get_pw_source(space, const.Ey, cosine, material_ey,
+            pw_src = self._get_pw_source(space, const.Ey, cosine, ey_field,
                                          low_idx, high_idx, TransparentEy, 
                                          hx_i2s, const.MinusZ)
         return pw_src
 
-    def _get_pw_source_ey_minus_z(self, space, cosine):
+    def _get_pw_source_ey_plus_z(self, ey_field, space, cosine):
         pw_src = None
         if 2 * space.half_size[2] > space.dz:
             low = self.center - self.half_size * (1, 1, -1)
@@ -690,12 +718,12 @@ class TotalFieldScatteredField(Src):
     
             hx_i2s = lambda i, j, k: space.hx_index_to_space(i, j + 1, k + 1)
             
-            pw_src = self._get_pw_source(space, const.Ey, cosine, material_ey,
+            pw_src = self._get_pw_source(space, const.Ey, cosine, ey_field,
                                          low_idx, high_idx, TransparentEy,
                                          hx_i2s, const.PlusZ)
         return pw_src
 
-    def _get_pw_source_ey_minus_z(self, space, cosine):
+    def _get_pw_source_ey_minus_x(self, ey_field, space, cosine):
         pw_src = None
         if 2 * space.half_size[0] > space.dx:
             low = self.center - self.half_size
@@ -706,12 +734,12 @@ class TotalFieldScatteredField(Src):
     
             hz_i2s = lambda i, j, k: space.hz_index_to_space(i, j + 1, k)
             
-        pw_src = self._get_pw_source(space, const.Ey, cosine, material_ey,  
+        pw_src = self._get_pw_source(space, const.Ey, cosine, ey_field,  
                                      low_idx, high_idx, TransparentEy,
                                      hz_i2s, const.MinusX)
         return pw_src
 
-    def _get_pw_source_ey_minus_z(self, space, cosine):
+    def _get_pw_source_ey_plus_x(self, ey_field, space, cosine):
         pw_src = None
         if 2 * space.half_size[0] > space.dx:
             low = self.center - self.half_size * (-1, 1, 1)
@@ -722,7 +750,7 @@ class TotalFieldScatteredField(Src):
     
             hz_i2s = lambda i, j, k: space.hz_index_to_space(i + 1, j + 1, k)
             
-            pw_src = self._get_pw_source(space, const.Ey, cosine, material_ey,  
+            pw_src = self._get_pw_source(space, const.Ey, cosine, ey_field,  
                                          low_idx, high_idx, TransparentEy,
                                          hz_i2s, const.PlusX)
         return pw_src
@@ -732,16 +760,16 @@ class TotalFieldScatteredField(Src):
 
         cosine = dot(self.h_direction, (0, 1, 0))
         if cosine != 0:
-            pw_src_tmp = self._get_pw_source_ez_minus_x(space, cosine)
+            pw_src_tmp = self._get_pw_source_ez_minus_x(ez_field, space, cosine)
             pw_src.param.update(pw_src_tmp.param)
-            pw_src_tmp = self._get_pw_source_ez_plus_x(space, cosine)
+            pw_src_tmp = self._get_pw_source_ez_plus_x(ez_field, space, cosine)
             pw_src.param.update(pw_src_tmp.param)
             
         cosine = dot(self.h_direction, (1, 0, 0))
         if cosine != 0:
-            pw_src_tmp = self._get_pw_source_ez_minus_y(space, cosine)
+            pw_src_tmp = self._get_pw_source_ez_minus_y(ez_field, space, cosine)
             pw_src.param.update(pw_src_tmp.param)
-            pw_src_tmp = self._get_pw_source_ez_plus_y(space, cosine)
+            pw_src_tmp = self._get_pw_source_ez_plus_y(ez_field, space, cosine)
             pw_src.param.update(pw_src_tmp.param)
         
         if len(pw_src.param) == 0:
@@ -749,7 +777,7 @@ class TotalFieldScatteredField(Src):
         else:
             return pw_src
 
-    def _get_pw_source_ey_minus_z(self, space, cosine):
+    def _get_pw_source_ez_minus_x(self, ex_field, space, cosine):
         pw_src = None
         if 2 * space.half_size[0] > space.dx:
             low = self.center - self.half_size
@@ -760,12 +788,12 @@ class TotalFieldScatteredField(Src):
 
             hy_i2s = lambda i, j, k: space.hy_index_to_space(i, j, k + 1)
             
-            pw_src = self._get_pw_source(space, const.Ez, cosine, material_ez,  
+            pw_src = self._get_pw_source(space, const.Ez, cosine, ez_field,  
                                          low_idx, high_idx, TransparentEz, 
                                          hy_i2s, const.MinusX)
         return pw_src
 
-    def _get_pw_source_ey_minus_z(self, space, cosine):
+    def _get_pw_source_ez_plus_x(self, ez_field, space, cosine):
         pw_src = None
         if 2 * space.half_size[0] > space.dx:
             low = self.center - self.half_size * (-1, 1, 1)
@@ -776,12 +804,12 @@ class TotalFieldScatteredField(Src):
 
             hy_i2s = lambda i, j, k: space.hy_index_to_space(i + 1, j, k + 1)
             
-            pw_src = self._get_pw_source(space, const.Ez, cosine, material_ez,
+            pw_src = self._get_pw_source(space, const.Ez, cosine, ez_field,
                                          low_idx, high_idx, TransparentEz,
                                          hy_i2s, const.PlusX)
         return pw_src
 
-    def _get_pw_source_ey_minus_z(self, space, cosine):
+    def _get_pw_source_ez_minus_y(self, ez_field, space, cosine):
         pw_src = None
         if 2 * space.half_size[1] > space.dy:
             low = self.center - self.half_size
@@ -792,12 +820,12 @@ class TotalFieldScatteredField(Src):
 
             hx_i2s = lambda i, j, k: space.hx_index_to_space(i, j, k + 1)
 
-            pw_src = self._get_pw_source(space, const.Ez, cosine, material_ez,
+            pw_src = self._get_pw_source(space, const.Ez, cosine, ez_field,
                                          low_idx, high_idx, TransparentEz, 
                                          hx_i2s, const.MinusY)
         return pw_src
 
-    def _get_pw_source_ey_minus_z(self, space, cosine):
+    def _get_pw_source_ez_plus_y(self, ez_field, space, cosine):
         pw_src = None
         if 2 * space.half_size[1] > space.dy:
             low = self.center - self.half_size * (1, -1, 1)
@@ -808,7 +836,7 @@ class TotalFieldScatteredField(Src):
 
             hx_i2s = lambda i, j, k: space.hx_index_to_space(i, j + 1, k + 1)
 
-            pw_src = self._get_pw_source(space, const.Ez, cosine, material_ez,  
+            pw_src = self._get_pw_source(space, const.Ez, cosine, ez_field,  
                                          low_idx, high_idx, TransparentEz, 
                                          hx_i2s, const.PlusY)
         return pw_src
@@ -818,16 +846,16 @@ class TotalFieldScatteredField(Src):
 
         cosine = dot(self.e_direction, (0, 0, 1))
         if cosine != 0:
-            pw_src_tmp = self._get_pw_source_hx_minus_y(space, cosine)
+            pw_src_tmp = self._get_pw_source_hx_minus_y(hx_field, space, cosine)
             pw_src.param.update(pw_src_tmp.param)
-            pw_src_tmp = self._get_pw_source_hx_plus_y(space, cosine)
+            pw_src_tmp = self._get_pw_source_hx_plus_y(hx_field, space, cosine)
             pw_src.param.update(pw_src_tmp.param)
             
         cosine = dot(self.e_direction, (0, 1, 0))
         if cosine != 0:   
-            pw_src_tmp = self._get_pw_source_hx_minus_z(space, cosine)
+            pw_src_tmp = self._get_pw_source_hx_minus_z(hx_field, space, cosine)
             pw_src.param.update(pw_src_tmp.param)
-            pw_src_tmp = self._get_pw_source_hx_plus_z(space, cosine)
+            pw_src_tmp = self._get_pw_source_hx_plus_z(hx_field, space, cosine)
             pw_src.param.update(pw_src_tmp.param)
         
         if len(pw_src.param) == 0:
@@ -835,7 +863,7 @@ class TotalFieldScatteredField(Src):
         else:
             return pw_src
 
-    def _get_pw_source_ey_minus_z(self, space, cosine):
+    def _get_pw_source_hx_minus_y(self, hx_field, space, cosine):
         pw_src = None
         if 2 * space.half_size[1] > space.dy:
             low = self.center - self.half_size
@@ -849,12 +877,12 @@ class TotalFieldScatteredField(Src):
             
             ez_i2s = lambda i, j, k: space.ez_index_to_space(i, j, k - 1)
             
-            pw_src = self._get_pw_source(space, const.Hx, cosine, material_hx,
+            pw_src = self._get_pw_source(space, const.Hx, cosine, hx_field,
                                          low_idx, high_idx, TransparentHx, 
                                          ez_i2s, const.MinusY)
         return pw_src
 
-    def _get_pw_source_ey_minus_z(self, space, cosine):
+    def _get_pw_source_hx_plus_y(self, hx_field, space, cosine):
         pw_src = None
         if 2 * space.half_size[1] > space.dy:
             low = self.center - self.half_size * (1, -1, 1)
@@ -868,11 +896,11 @@ class TotalFieldScatteredField(Src):
             
             ez_i2s = lambda i, j, k: space.ez_index_to_space(i, j - 1, k - 1)
             
-            self._get_pw_source(space, const.Hx, cosine, material_hx,  
+            self._get_pw_source(space, const.Hx, cosine, hx_field,  
                                 low_idx, high_idx, TransparentHx,
                                 ez_i2s, const.PlusY)
     
-    def _get_pw_source_ey_minus_z(self, space, cosine):
+    def _get_pw_source_hx_minus_z(self, hx_field, space, cosine):
         pw_src = None
         if 2 * space.half_size[2] > space.dz:
             low = self.center - self.half_size
@@ -886,12 +914,12 @@ class TotalFieldScatteredField(Src):
             
             ey_i2s = lambda i, j, k: space.ey_index_to_space(i, j - 1, k - 1)
             
-            pw_src = self._get_pw_source(space, const.Hx, cosine, material_hx,
+            pw_src = self._get_pw_source(space, const.Hx, cosine, hx_field,
                                          low_idx, high_idx, TransparentHx,
                                          ey_i2s, const.MinusZ)
         return pw_src
 
-    def _get_pw_source_ey_minus_z(self, space, cosine):
+    def _get_pw_source_hx_plus_z(self, hx_field, space, cosine):
         pw_src = None
         if 2 * space.half_size[2] > space.dz:
             low = self.center - self.half_size * (1, 1, -1)
@@ -905,7 +933,7 @@ class TotalFieldScatteredField(Src):
             
             ey_i2s = lambda i, j, k: space.ey_index_to_space(i, j - 1, k)
             
-            pw_src = self._get_pw_source(space, const.Hx, cosine, material_hx,
+            pw_src = self._get_pw_source(space, const.Hx, cosine, hx_field,
                                          low_idx, high_idx, TransparentHx,
                                          ey_i2s, const.PlusZ)
         return pw_src
@@ -915,16 +943,16 @@ class TotalFieldScatteredField(Src):
 
         cosine = dot(self.e_direction, (1, 0, 0))
         if cosine != 0:
-            pw_src_tmp = self._get_pw_source_hy_minus_z(space, cosine)
+            pw_src_tmp = self._get_pw_source_hy_minus_z(hy_field, space, cosine)
             pw_src.param.update(pw_src_tmp.param)
-            pw_src_tmp = self._get_pw_source_hy_plus_z(space, cosine)
+            pw_src_tmp = self._get_pw_source_hy_plus_z(hy_field, space, cosine)
             pw_src.param.update(pw_src_tmp.param)
 
         cosine = dot(self.e_direction, (0, 0, 1))
         if cosine != 0:   
-            pw_src_tmp = self._get_pw_source_hy_minus_x(space, cosine)
+            pw_src_tmp = self._get_pw_source_hy_minus_x(hy_field, space, cosine)
             pw_src.param.update(pw_src_tmp.param)
-            pw_src_tmp = self._get_pw_source_hy_plus_x(space, cosine)
+            pw_src_tmp = self._get_pw_source_hy_plus_x(hy_field, space, cosine)
             pw_src.param.update(pw_src_tmp.param)
 
         if len(pw_src.param) == 0:
@@ -932,7 +960,7 @@ class TotalFieldScatteredField(Src):
         else:
             return pw_src
 
-    def _get_pw_source_ey_minus_z(self, space, cosine):
+    def _get_pw_source_hy_minus_z(self, hy_field, space, cosine):
         pw_src = None
         if 2 * space.half_size[2] > space.dz:
             low = self.center - self.half_size
@@ -946,12 +974,12 @@ class TotalFieldScatteredField(Src):
             
             ex_i2s = lambda i, j, k: space.ex_index_to_space(i - 1, j, k)
             
-            pw_src = self._get_pw_source(space, const.Hy, cosine, material_hy,
+            pw_src = self._get_pw_source(space, const.Hy, cosine, hy_field,
                                          low_idx, high_idx, TransparentHy,
                                          ex_i2s, const.MinusZ)
         return pw_src
 
-    def _get_pw_source_ey_minus_z(self, space, cosine):
+    def _get_pw_source_hy_plus_z(self, hy_field, space, cosine):
         pw_src = None
         if 2 * space.half_size[2] > space.dz:
             low = self.center - self.half_size * (1, 1, -1)
@@ -965,12 +993,12 @@ class TotalFieldScatteredField(Src):
             
             ex_i2s = lambda i, j, k: space.ex_index_to_space(i - 1, j, k - 1)
             
-            pw_src = self._get_pw_source(space, const.Hy, cosine, material_hy,
+            pw_src = self._get_pw_source(space, const.Hy, cosine, hy_field,
                                          low_idx, high_idx, TransparentHy,
                                          ex_i2s, const.PlusZ)
         return pw_src
 
-    def _get_pw_source_ey_minus_z(self, space, cosine):
+    def _get_pw_source_hy_minus_x(self, hy_field, space, cosine):
         pw_src = None
         if 2 * space.half_size[0] > space.dx:
             low = self.center - self.half_size
@@ -984,12 +1012,12 @@ class TotalFieldScatteredField(Src):
             
             ez_i2s = lambda i, j, k: space.ez_index_to_space(i, j, k - 1)
             
-            pw_src = self._get_pw_source(space, const.Hy, cosine, material_hy,
+            pw_src = self._get_pw_source(space, const.Hy, cosine, hy_field,
                                          low_idx, high_idx, TransparentHy,
                                          ez_i2s, const.MinusX)
         return pw_src
 
-    def _get_pw_source_ey_minus_z(self, space, cosine):
+    def _get_pw_source_hy_plus_x(self, hy_field, space, cosine):
         pw_src = None
         if 2 * space.half_size[0] > space.dx:
             low = self.center - self.half_size * (-1, 1, 1)
@@ -1003,7 +1031,7 @@ class TotalFieldScatteredField(Src):
             
             ez_i2s = lambda i, j, k: space.ez_index_to_space(i - 1, j, k - 1)
             
-            pw_src = self._get_pw_source(space, const.Hy, cosine, material_hy,
+            pw_src = self._get_pw_source(space, const.Hy, cosine, hy_field,
                                          low_idx, high_idx, TransparentHy,
                                          ez_i2s, const.PlusX)
         return pw_src
@@ -1013,16 +1041,16 @@ class TotalFieldScatteredField(Src):
 
         cosine = dot(self.e_direction, (0, 1, 0))
         if cosine != 0:
-            pw_src_tmp = self._get_pw_source_hz_minus_x(space, cosine)
+            pw_src_tmp = self._get_pw_source_hz_minus_x(hz_field, space, cosine)
             pw_src.param.update(pw_src_tmp.param)
-            pw_src_tmp = self._get_pw_source_hz_plus_x(space, cosine)
+            pw_src_tmp = self._get_pw_source_hz_plus_x(hz_field, space, cosine)
             pw_src.param.update(pw_src_tmp.param)
             
         cosine = dot(self.e_direction, (1, 0, 0))
         if cosine != 0:
-            pw_src_tmp = self._get_pw_source_hz_minus_y(space, cosine)
+            pw_src_tmp = self._get_pw_source_hz_minus_y(hz_field, space, cosine)
             pw_src.param.update(pw_src_tmp.param)
-            pw_src_tmp = self._get_pw_source_hz_plus_y(space, cosine)
+            pw_src_tmp = self._get_pw_source_hz_plus_y(hz_field, space, cosine)
             pw_src.param.update(pw_src_tmp.param)
         
         if len(pw_src.param) == 0:
@@ -1030,7 +1058,7 @@ class TotalFieldScatteredField(Src):
         else:
             return pw_src
 
-    def _get_pw_source_ey_minus_z(self, space, cosine):
+    def _get_pw_source_hz_minus_x(self, hz_field, space, cosine):
         pw_src = None
         if 2 * space.half_size[0] > space.dx:
             low = self.center - self.half_size
@@ -1044,12 +1072,12 @@ class TotalFieldScatteredField(Src):
             
             ey_i2s = lambda i, j, k: space.ey_index_to_space(i, j - 1, k)
             
-            pw_src = self._get_pw_source(space, const.Hz, cosine, material_hz,
+            pw_src = self._get_pw_source(space, const.Hz, cosine, hz_field,
                                          low_idx, high_idx, TransparentHz,
                                          ey_i2s, const.MinusX)
         return pw_src
 
-    def _get_pw_source_ey_minus_z(self, space, cosine):
+    def _get_pw_source_hz_plus_x(self, hz_field, space, cosine):
         pw_src = None
         if 2 * space.half_size[0] > space.dx:
             low = self.center - self.half_size * (-1, 1, 1)
@@ -1063,12 +1091,12 @@ class TotalFieldScatteredField(Src):
             
             ey_i2s = lambda i, j, k: space.ey_index_to_space(i - 1, j - 1, k)
             
-            pw_src = self._get_pw_source(space, const.Hz, cosine, material_hz,
+            pw_src = self._get_pw_source(space, const.Hz, cosine, hz_field,
                                          low_idx, high_idx, TransparentHz,
                                          ey_i2s, const.PlusX)
         return pw_src
 
-    def _get_pw_source_ey_minus_z(self, space, cosine):
+    def _get_pw_source_hz_minus_y(self, hz_field, space, cosine):
         pw_src = None
         if 2 * space.half_size[1] > space.dy:
             low = self.center - self.half_size
@@ -1082,12 +1110,12 @@ class TotalFieldScatteredField(Src):
             
             ex_i2s = lambda i, j, k: space.ex_index_to_space(i, j - 1, k)
             
-            pw_src = self._get_pw_source(space, const.Hz, cosine, material_hz,
+            pw_src = self._get_pw_source(space, const.Hz, cosine, hz_field,
                                          low_idx, high_idx, TransparentHz,
                                          ex_i2s, const.MinusY)
         return pw_src
 
-    def _get_pw_source_ey_minus_z(self, space, cosine):
+    def _get_pw_source_hz_plus_y(self, hz_field, space, cosine):
         pw_src = None
         if 2 * space.half_size[1] > space.dy:
             low = self.center - self.half_size * (1, -1, 1)
@@ -1101,11 +1129,12 @@ class TotalFieldScatteredField(Src):
             
             ex_2s = lambda i, j, k: space.ex_index_to_space(i - 1, j - 1, k)
             
-            pw_src = self._get_pw_source(space, const.Hz, cosine, material_hz,
+            pw_src = self._get_pw_source(space, const.Hz, cosine, hz_field,
                                          low_idx, high_idx, TransparentHz,
                                          ex_i2s, const.PlusY)
         return pw_src
         
+
 class GaussianBeam(TotalFieldScatteredField):
     """Launch a transparent Gaussian beam.
     
@@ -1120,7 +1149,7 @@ class GaussianBeam(TotalFieldScatteredField):
         
         Keyword arguments:
         directivity -- directivity of the incidence interface.
-           type: a child class of constants.Directional.
+           type: a child class of constant.Directional.
         center -- center of the incidence interface. The beam axis crosses
                   this point.
            type: a tuple with three real numbers.
@@ -1186,19 +1215,19 @@ class GaussianBeam(TotalFieldScatteredField):
     def get_pw_source_ex(self, ex_field, space):
         if self.directivity is const.PlusY:
             cosine = dot(self.h_direction, (0, 0, 1))
-            self._get_pw_source_ex_minus_y(space, cosine)
+            self._get_pw_source_ex_minus_y(ex_field, space, cosine)
             
         elif self.directivity is const.MinusY:
             cosine = dot(self.h_direction, (0, 0, 1))
-            self._get_pw_source_ex_plus_y(space, cosine)
+            self._get_pw_source_ex_plus_y(ex_field, space, cosine)
             
         elif self.directivity is const.PlusZ:
             cosine = dot(self.h_direction, (0, 1, 0))
-            self._get_pw_source_ex_minus_z(space, cosine)
+            self._get_pw_source_ex_minus_z(ex_field, space, cosine)
             
         elif self.directivity is const.MinusZ:
             cosine = dot(self.h_direction, (0, 1, 0))
-            self._get_pw_source_ex_plus_z(space, cosine)
+            self._get_pw_source_ex_plus_z(ex_field, space, cosine)
             
         else:
             return None
@@ -1206,19 +1235,19 @@ class GaussianBeam(TotalFieldScatteredField):
     def get_pw_source_ey(self, ey_field, space):
         if self.directivity is const.PlusZ:
             cosine = dot(self.h_direction, (1, 0, 0))
-            self._get_pw_source_ey_minus_z(space, cosine)
+            self._get_pw_source_ey_minus_z(ey_field, space, cosine)
             
         elif self.directivity is const.MinusZ:
             cosine = dot(self.h_direction, (1, 0, 0))
-            self._get_pw_source_ey_plus_z(space, cosine)
+            self._get_pw_source_ey_plus_z(ey_field, space, cosine)
             
         elif self.directivity is const.PlusX:
             cosine = dot(self.h_direction, (0, 0, 1))
-            self._get_pw_source_ey_minus_x(space, cosine)
+            self._get_pw_source_ey_minus_x(ey_field, space, cosine)
             
         elif self.directivity is const.MinusX:
             cosine = dot(self.h_direction, (0, 0, 1))
-            self._get_pw_source_ey_plus_x(space, cosine)
+            self._get_pw_source_ey_plus_x(ey_field, space, cosine)
             
         else:
             return None
@@ -1226,19 +1255,19 @@ class GaussianBeam(TotalFieldScatteredField):
     def get_pw_source_ez(self, ez_field, space):
         if self.directivity is const.PlusX:
             cosine = dot(self.h_direction, (0, 1, 0))
-            self._get_pw_source_ez_minus_x(space, cosine)
+            self._get_pw_source_ez_minus_x(ez_field, space, cosine)
             
         elif self.directivity is const.MinusX:
             cosine = dot(self.h_direction, (0, 1, 0))
-            self._get_pw_source_ez_plus_x(space, cosine)
+            self._get_pw_source_ez_plus_x(ez_field, space, cosine)
             
         elif self.directivity is const.PlusY:
             cosine = dot(self.h_direction, (1, 0, 0))
-            self._get_pw_source_ez_minus_y(space, cosine)
+            self._get_pw_source_ez_minus_y(ez_field, space, cosine)
             
         elif self.directivity is const.MinusY:
             cosine = dot(self.h_direction, (1, 0, 0))
-            self._get_pw_source_ez_plus_y(space, cosine)
+            self._get_pw_source_ez_plus_y(ez_field, space, cosine)
             
         else:
             return None
@@ -1246,19 +1275,19 @@ class GaussianBeam(TotalFieldScatteredField):
     def get_pw_source_hx(self, hx_field, space):
         if self.directivity is const.PlusY:
             cosine = dot(self.e_direction, (0, 0, 1))
-            self._get_pw_source_hx_minus_y(space, cosine)
+            self._get_pw_source_hx_minus_y(hx_field, space, cosine)
             
         elif self.directivity is const.MinusY:
             cosine = dot(self.e_direction, (0, 0, 1))
-            self._get_pw_source_hx_plus_y(space, cosine)
+            self._get_pw_source_hx_plus_y(hx_field, space, cosine)
             
         elif self.directivity is const.PlusZ:
             cosine = dot(self.e_direction, (0, 1, 0))
-            self._get_pw_source_hx_minus_z(space, cosine)
+            self._get_pw_source_hx_minus_z(hx_field, space, cosine)
             
         elif self.directivity is const.MinusZ:
             cosine = dot(self.e_direction, (0, 1, 0))
-            self._get_pw_source_hx_plus_z(space, cosine)
+            self._get_pw_source_hx_plus_z(hx_field, space, cosine)
             
         else:
             return None
@@ -1266,19 +1295,19 @@ class GaussianBeam(TotalFieldScatteredField):
     def get_pw_source_hy(self, hy_field, space):
         if self.directivity is const.PlusZ:
             cosine = dot(self.e_direction, (1, 0, 0))
-            self._get_pw_source_hy_minus_z(space, cosine)
+            self._get_pw_source_hy_minus_z(hy_field, space, cosine)
             
         elif self.directivity is const.MinusZ:
             cosine = dot(self.e_direction, (1, 0, 0))
-            self._get_pw_source_hy_plus_z(space, cosine)
+            self._get_pw_source_hy_plus_z(hy_field, space, cosine)
             
         elif self.directivity is const.PlusX:
             cosine = dot(self.e_direction, (0, 0, 1))
-            self._get_pw_source_hy_minus_x(space, cosine)
+            self._get_pw_source_hy_minus_x(hy_field, space, cosine)
             
         elif self.directivity is const.MinusX:
             cosine = dot(self.e_direction, (0, 0, 1))
-            self._get_pw_source_hy_plus_x(space, cosine)
+            self._get_pw_source_hy_plus_x(hy_field, space, cosine)
             
         else:
             return None
@@ -1286,19 +1315,19 @@ class GaussianBeam(TotalFieldScatteredField):
     def get_pw_source_hz(self, hz_field, space):
         if self.directivity is const.PlusX:
             cosine = dot(self.e_direction, (0, 1, 0))
-            self._get_pw_source_hz_minus_x(space, cosine)
+            self._get_pw_source_hz_minus_x(hz_field, space, cosine)
             
         elif self.directivity is const.MinusX:
             cosine = dot(self.e_direction, (0, 1, 0))
-            self._get_pw_source_hz_plus_x(space, cosine)
+            self._get_pw_source_hz_plus_x(hz_field, space, cosine)
             
         elif self.directivity is const.PlusY:
             cosine = dot(self.e_direction, (1, 0, 0))
-            self._get_pw_source_hz_minus_y(space, cosine)
+            self._get_pw_source_hz_minus_y(hz_field, space, cosine)
             
         elif self.directivity is const.MinusY:
             cosine = dot(self.e_direction, (1, 0, 0))
-            self._get_pw_source_hz_plus_y(space, cosine)
+            self._get_pw_source_hz_plus_y(hz_field, space, cosine)
             
         else:
             return None

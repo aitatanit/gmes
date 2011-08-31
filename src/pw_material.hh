@@ -12,7 +12,7 @@ namespace std
   {
     size_t operator()(const array<int, 3>& idx) const
     {
-      return std::accumulate(idx.begin(), idx.end(), 0);
+      return accumulate(idx.begin(), idx.end(), 0);
     }
   };
 }
@@ -77,8 +77,6 @@ namespace gmes
     PwMaterial<T>*
     merge(const PwMaterial<T>* const pm)
     {
-      // param.insert(pm->param.begin(), pm->param.end());
-
       for (MapType::const_iterator it = pm->param.begin();
       	   it != pm->param.end(); it++) {
       	attach(it->first.data(), it->first.size(), it->second);
@@ -91,6 +89,20 @@ namespace gmes
     {
       return param.size();
     }
+
+    MapType::const_iterator
+    begin() const
+    {
+      return param.begin();
+    }
+    
+    MapType::const_iterator
+    end() const
+    {
+      return param.end();
+    }
+
+    typedef typename MapType::const_iterator const_iterator;
 
   protected:
     virtual void

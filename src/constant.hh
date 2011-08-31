@@ -1,5 +1,5 @@
-#ifndef CONSTANTS_HH_
-#define CONSTANTS_HH_
+#ifndef CONSTANT_HH_
+#define CONSTANT_HH_
 
 #include <cmath>
 
@@ -38,12 +38,12 @@ namespace gmes
   class Component
   {
   public:
-    Component();
     static int get_tag()
     {
       return tag;
     }
   private:
+    Component();
     static const int tag = 0;
   };
 
@@ -138,12 +138,12 @@ namespace gmes
   class Directional
   {
   public:
-    Directional();
     static int get_tag()
     {
       return tag;
     }
   private:
+    Directional();
     static const int tag = 10;
   };
 
@@ -260,4 +260,4 @@ namespace gmes
 
 }
 
-#endif /*CONSTANTS_HH_*/
+#endif /*CONSTANT_HH_*/

@@ -23,7 +23,7 @@ from file_io import Probe
 #from file_io import write_hdf5, snapshot
 from show import ShowLine, ShowPlane, Snapshot
 from material import Dummy
-import constants as const
+import constant as const
 
 
 class TimeStep(object):
@@ -42,7 +42,7 @@ class TimeStep(object):
         dt -- time-step size (no default)
         n -- initial value of the time-step (default 0.0)
         t -- initial value of the time (default 0.0)
-
+        
         """
         self.n = float(n)
         self.t = float(t)
@@ -108,6 +108,9 @@ class FDTD(object):
                          const.Hy: self.talk_with_hy_neighbors,
                          const.Hz: self.talk_with_hz_neighbors}
         
+        self.e_recorder = []
+        self.h_recorder = []
+
         self.verbose = bool(verbose)
 
         self.space = space
@@ -228,8 +231,9 @@ class FDTD(object):
             print 'hz field:', self.hz.dtype, self.hz.shape
         
         if verbose:
-            print 'Mapping the pointwise material...',
-        
+            print 'Mapping the pointwise material.',
+            print 'This will take some tiems...'
+
         self.material_ex = {}
         self.material_ey = {}
         self.material_ez = {}
@@ -300,7 +304,7 @@ class FDTD(object):
     def _print_pw_obj(self, pw_obj):
         print_count = 0
         for o in pw_obj.itervalues():
-            print type(o), 'with', o.index_size(), 'point(s).'
+            print type(o), 'with', o.idx_size(), 'point(s).'
             print_count += 1
         if print_count == 0: print
 
@@ -592,68 +596,63 @@ class FDTD(object):
             
         for comp in self.h_field_compnt:
             init_src_func[comp]()
-            
-    def set_probe(self, x, y, z, prefix):
-        if self.material_ex is not None:
-            idx = self.space.space_to_ex_index(x, y, z)
-            if in_range(idx, self.material_ex, const.Ex):
-                self.material_ex[idx] = Probe(prefix + '_ex.dat', 
-                                              self.material_ex[idx])
-                loc = self.space.ex_index_to_space(*idx)
-                self.material_ex[idx].f.write('# location=' + str(loc) + '\n')
-                self.material_ex[idx].f.write('# dt=' + str(self.time_step.dt)
-                                              + '\n')
         
-        if self.material_ey is not None:
-            idx = self.space.space_to_ey_index(x, y, z)
-            if in_range(idx, self.material_ey, const.Ey):
-                self.material_ey[idx] = Probe(prefix + '_ey.dat', 
-                                              self.material_ey[idx])
-                loc = self.space.ey_index_to_space(*idx)
-                self.material_ey[idx].f.write('# location=' + str(loc) + '\n')
-                self.material_ey[idx].f.write('# dt=' + str(self.time_step.dt)
-                                              + '\n')
+    def set_probe(self, p, prefix):
+        """
+        p: space coordinates. type: tuple-3
+        prefix: prefix of the recording file name. type: str
         
-        if self.material_ez is not None:
-            idx = self.space.space_to_ez_index(x, y, z)
-            if in_range(idx, self.material_ez, const.Ez):
-                self.material_ez[idx] = Probe(prefix + '_ez.dat', 
-                                              self.material_ez[idx])
-                loc = self.space.ez_index_to_space(*idx)
-                self.material_ez[idx].f.write('# location=' + str(loc) + '\n')
-                self.material_ez[idx].f.write('# dt=' + str(self.time_step.dt)
-                                              + '\n')
+        """
+        spc2idx = {const.Ex: self.space.space_to_ex_index,
+                   const.Ey: self.space.space_to_ey_index,
+                   const.Ez: self.space.space_to_ez_index,
+                   const.Hx: self.space.space_to_hx_index,
+                   const.Hy: self.space.space_to_hy_index,
+                   const.Hz: self.space.space_to_hz_index}
         
-        if self.material_hx is not None:
-            idx = self.space.space_to_hx_index(x, y, z)
-            if in_range(idx, self.material_hx, const.Hx):
-                self.material_hx[idx] = Probe(prefix + '_hx.dat', 
-                                              self.material_hx[idx])
-                loc = self.space.hx_index_to_space(*idx)
-                self.material_hx[idx].f.write('# location=' + str(loc) + '\n')
-                self.material_hx[idx].f.write('# dt=' + str(self.time_step.dt)
-                                              + '\n')
+        idx2spc = {const.Ex: self.space.ex_index_to_space,
+                   const.Ey: self.space.ey_index_to_space,
+                   const.Ez: self.space.ez_index_to_space,
+                   const.Hx: self.space.hx_index_to_space,
+                   const.Hy: self.space.hy_index_to_space,
+                   const.Hz: self.space.hz_index_to_space}
+
+        validity = {const.Ex: 
+                    (lambda idx: in_range(idx, self.ex.shape, const.Ex)),
+                    const.Ey: 
+                    (lambda idx: in_range(idx, self.ey.shape, const.Ey)),
+                    const.Ez: 
+                    (lambda idx: in_range(idx, self.ez.shape, const.Ez)),
+                    const.Hx:
+                    (lambda idx: in_range(idx, self.hx.shape, const.Hx)),
+                    const.Hy: 
+                    (lambda idx: in_range(idx, self.hy.shape, const.Hy)),
+                    const.Hz: 
+                    (lambda idx: in_range(idx, self.hz.shape, const.Hz))}
+
+        field = {const.Ex: self.ex, const.Ey: self.ey, const.Ez: self.ez,
+                 const.Hx: self.hy, const.Hy: self.hy, const.Hz: self.hz}
+
+        postfix = {const.Ex: '_ex.dat', const.Ey: '_ey.dat',
+                   const.Ez: '_ez.dat', const.Hx: '_hx.dat',
+                   const.Hy: '_hy.dat', const.Hz: '_hz.dat'}
         
-        if self.material_hy is not None:
-            idx = self.space.space_to_hy_index(x, y, z)
-            if in_range(idx, self.material_hy, const.Hy):
-                self.material_hy[idx] = Probe(prefix + '_hy.dat', 
-                                              self.material_hy[idx])
-                loc = self.space.hy_index_to_space(*idx)
-                self.material_hy[idx].f.write('# location=' + str(loc) + '\n')
-                self.material_hy[idx].f.write('# dt=' + str(self.time_step.dt)
-                                              + '\n')
-        
-        if self.material_hz is not None:
-            idx = self.space.space_to_hz_index(x, y, z)
-            if in_range(idx, self.material_hz, const.Hz):
-                self.material_hz[idx] = Probe(prefix + '_hz.dat', 
-                                              self.material_hz[idx])
-                loc = self.space.hz_index_to_space(*idx)
-                self.material_hz[idx].f.write('# location=' + str(loc) + '\n')
-                self.material_hz[idx].f.write('# dt=' + str(self.time_step.dt)
-                                              + '\n')
-            
+        for comp in self.e_field_compnt:
+            idx = spc2idx[comp](*p)
+            if validity[comp](idx):
+                recorder = Probe(idx, field[comp], postfix[comp])
+                loc = idx2spc[comp](*idx)
+                recorder.write_header(loc, self.time_step.dt)
+                self.e_recorder.append(recorder)
+
+        for comp in self.h_field_compnt:
+            idx = spc2idx[comp](*p)
+            if validity[comp](idx):
+                recorder = Probe(idx, field[comp], postfix[comp])
+                loc = idx2spc[comp](*idx)
+                recorder.write_header(loc, self.time_step.dt)
+                self.h_recorder.append(recorder)
+
     def update_ex(self):
         for pw_obj in self.material_ex.itervalues():
             pw_obj.update_all(self.ex, self.hz, self.hy, self.dy, self.dz, 
@@ -981,6 +980,9 @@ class FDTD(object):
         for comp in self.e_field_compnt:
             self._updater[comp]()
 
+        for probe in self.e_recorder:
+            probe.write(self.time_step.n)
+            
         self.time_step.half_step_up()
 
         self._step_aux_fdtd()
@@ -991,12 +993,15 @@ class FDTD(object):
         for comp in self.h_field_compnt:
             self._updater[comp]()
 
+        for probe in self.h_recorder:
+            probe.write(self.time_step.n)
+
     def step_while_zero(self, component, point, modulus=inf):
         """Run self.step() while the field value at the given point is 0.
         
         Keyword arguments:
         component: filed component to check.
-            one of gmes.constants.{Ex, Ey, Ez, Hx, Hy, Hz}.
+            one of gmes.constant.{Ex, Ey, Ez, Hx, Hy, Hz}.
         point: coordinates of the location to check the field. 
             tuple of three scalars
         modulus: print n and t at every modulus steps.
@@ -1015,7 +1020,7 @@ class FDTD(object):
 
         idx = spc_to_idx[component](*point)
 
-        if in_range(idx, field[component], component):
+        if in_range(idx, field[component].shape, component):
             hot_node = self.space.my_id
         else:
             hot_node = None
@@ -1144,7 +1149,7 @@ class FDTD(object):
         """Show the real value of the ex on the plone.
 
         axis: Specify the normal axis to the show plane.
-            This should be one of the gmes.constants.Directional.
+            This should be one of the gmes.constant.Directional.
         cut: A scalar value which specifies the cut position on the 
             axis. 
         vrange: Specify the colorbar range.
@@ -1161,7 +1166,7 @@ class FDTD(object):
         """Show the real value of the ey on the plone.
 
         axis: Specify the normal axis to the show plane.
-            This should be one of the gmes.constants.Directional.
+            This should be one of the gmes.constant.Directional.
         cut: A scalar value which specifies the cut position on the 
             axis. 
         vrange: Specify the colorbar range.
@@ -1178,7 +1183,7 @@ class FDTD(object):
         """Show the real value of the ez on the plone.
 
         axis: Specify the normal axis to the show plane.
-            This should be one of the gmes.constants.Directional.
+            This should be one of the gmes.constant.Directional.
         cut: A scalar value which specifies the cut position on the 
             axis. 
         vrange: Specify the colorbar range.
@@ -1195,7 +1200,7 @@ class FDTD(object):
         """Show the real value of the hx on the plone.
 
         axis: Specify the normal axis to the show plane.
-            This should be one of the gmes.constants.Directional.
+            This should be one of the gmes.constant.Directional.
         cut: A scalar value which specifies the cut position on the 
             axis. 
         vrange: Specify the colorbar range.
@@ -1212,7 +1217,7 @@ class FDTD(object):
         """Show the real value of the hy on the plone.
 
         axis: Specify the normal axis to the show plane.
-            This should be one of the gmes.constants.Directional.
+            This should be one of the gmes.constant.Directional.
         cut: A scalar value which specifies the cut position on the 
             axis. 
         vrange: Specify the colorbar range.
@@ -1229,7 +1234,7 @@ class FDTD(object):
         """Show the real value of the hz on the plone.
 
         axis: Specify the normal axis to the show plane.
-            This should be one of the gmes.constants.Directional.
+            This should be one of the gmes.constant.Directional.
         cut: A scalar value which specifies the cut position on the 
             axis. 
         vrange: Specify the colorbar range.
@@ -1247,7 +1252,7 @@ class FDTD(object):
 
         Keyword arguments:
         axis: Specify the normal axis to the show plane.
-            This should be one of the gmes.constants.Directional.
+            This should be one of the gmes.constant.Directional.
         cut: A scalar value which specifies the cut position on the 
             axis.
         vrange: Specify the colorbar range. A tuple of length two.
@@ -1264,7 +1269,7 @@ class FDTD(object):
 
         Keyword arguments:
         axis: Specify the normal axis to the show plane.
-            This should be one of the gmes.constants.Directional.
+            This should be one of the gmes.constant.Directional.
         cut: A scalar value which specifies the cut position on the 
             axis.
         vrange: Specify the colorbar range. A tuple of length two.
@@ -1281,7 +1286,7 @@ class FDTD(object):
 
         Keyword arguments:
         axis: Specify the normal axis to the show plane.
-            This should be one of the gmes.constants.Directional.
+            This should be one of the gmes.constant.Directional.
         cut: A scalar value which specifies the cut position on the 
             axis.
         vrange: Specify the colorbar range. A tuple of length two.
@@ -1298,7 +1303,7 @@ class FDTD(object):
 
         Keyword arguments:
         axis: Specify the normal axis to the show plane.
-            This should be one of the gmes.constants.Directional.
+            This should be one of the gmes.constant.Directional.
         cut: A scalar value which specifies the cut position on the 
             axis.
         vrange: Specify the colorbar range. A tuple of length two.
@@ -1315,7 +1320,7 @@ class FDTD(object):
 
         Keyword arguments:
         axis: Specify the normal axis to the show plane.
-            This should be one of the gmes.constants.Directional.
+            This should be one of the gmes.constant.Directional.
         cut: A scalar value which specifies the cut position on the 
             axis.
         vrange: Specify the colorbar range. A tuple of length two.
@@ -1332,7 +1337,7 @@ class FDTD(object):
 
         Keyword arguments:
         axis: Specify the normal axis to the show plane.
-            This should be one of the gmes.constants.Directional.
+            This should be one of the gmes.constant.Directional.
         cut: A scalar value which specifies the cut position on the 
             axis.
         vrange: Specify the colorbar range. a tuple of length two.

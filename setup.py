@@ -32,15 +32,15 @@ _pw_material = Extension(name = 'gmes._pw_material',
                          language = 'c++',
                          extra_compile_args=['-std=c++0x'])
 
-# _constants module
-_constants = Extension(name = 'gmes._constants',
-                       sources = ['src/constants.i',
-                                  'src/constants.cc'],
-                       depends = ['src/constants.hh'],
-                       include_dirs = [numpy_include],
-                       swig_opts = ['-c++', '-outdir', 'gmes'],
-                       language = 'c++',
-                       extra_compile_args=[])
+# _constant module
+_constant = Extension(name = 'gmes._constant',
+                      sources = ['src/constant.i',
+                                 'src/constant.cc'],
+                      depends = ['src/constant.hh'],
+                      include_dirs = [numpy_include],
+                      swig_opts = ['-c++', '-outdir', 'gmes'],
+                      language = 'c++',
+                      extra_compile_args=[])
 
 setup(name = PACKAGE,
       version = VERSION,
@@ -55,4 +55,4 @@ setup(name = PACKAGE,
       url = 'http://sourceforge.net/projects/gmes',
       license = 'http://www.gnu.org/licenses/gpl.html',
       packages = [PACKAGE],
-      ext_modules = [_pw_material, _constants])
+      ext_modules = [_pw_material, _constant])

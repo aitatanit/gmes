@@ -26,7 +26,7 @@ if not 'matplotlib.backends' in modules:
 from matplotlib.pyplot import new_figure_manager, cm, show
 
 # GMES modules
-import constants as const
+import constant as const
 from geometry import in_range
 
 
@@ -41,7 +41,7 @@ class ShowLine(Thread):
         Argumetns:
             fdtd: a FDTD instance.
             component: Specify electric or magnetic field component. 
-                This should be one of the gmes.constants.Component. 
+                This should be one of the gmes.constant.Component. 
             start: The start point of the probing line.
             end: The end point of the probing line.
             vrange: Plot range of the y axis.
@@ -100,7 +100,7 @@ class ShowLine(Thread):
             elif comp is const.Hz:
                 start_boundary_idx = idx2spc[comp](1, 1, 0)
  	else:
-            msg = "component should be of class constants.Component."
+            msg = "component should be of class constant.Component."
             raise ValueError(msg)
 
         start_idx = array(spc2idx[comp](*start), int)
@@ -111,24 +111,24 @@ class ShowLine(Thread):
                 for j in (j for j in xrange(3) if j != i):
                     tmp1_idx = array(start_boundary_idx, int)
                     tmp1_idx[j] = start_idx[j]
-                    if in_range(tmp1_idx, field, comp) is False:
+                    if in_range(tmp1_idx, field.shape, comp) is False:
                         return None
                     tmp2_idx = array(end_boundary_idx, int)
                     tmp2_idx[j] = end_idx[j]
-                    if in_range(tmp2_idx, field, comp) is False:
+                    if in_range(tmp2_idx, field.shape, comp) is False:
                         return None
                     
-                if in_range(start_idx, field, comp) is False:
+                if in_range(start_idx, field.shape, comp) is False:
                     if start_idx[i] > end_boundary_idx[i]:
                         return None
                     start_idx[i] = start_boundary_idx[i]
-                    if in_range(start_idx, field, comp) is False:
+                    if in_range(start_idx, field.shape, comp) is False:
                         return None
-                if in_range(end_idx, field, comp) is False:
+                if in_range(end_idx, field.shape, comp) is False:
                     if end_idx[i] < start_boundary_idx[i]:
                         return None
                     end_idx[i] = end_boundary_idx[i]
-                    if in_range(end_idx, field, comp) is False:
+                    if in_range(end_idx, field.shape, comp) is False:
                         return None
                 
                 if i == 0:
@@ -192,9 +192,9 @@ class ShowPlane(Thread):
         Arguments:
             fdtd: a FDTD instance
             component: Specify electric or magnetic field component. 
-                This should be one of the gmes.constants.Component. 
+                This should be one of the gmes.constant.Component. 
             axis: Specify the normal axis to the show plane.
-                This should be one of the gmes.constants.Directional.
+                This should be one of the gmes.constant.Directional.
             cut: A scalar value which specifies the cut position on the 
                 axis. 
             vrange: Specify the colorbar range.
@@ -252,7 +252,7 @@ class ShowPlane(Thread):
             elif comp is const.Hz:
                 start_boundary_idx = idx2spc[comp](1, 1, 0)
  	else:
-            msg = "component should be of class constants.Component."
+            msg = "component should be of class constant.Component."
             raise ValueError(msg)
 
         start_boundary_spc = idx2spc[comp](*start_boundary_idx)
@@ -267,7 +267,7 @@ class ShowPlane(Thread):
         cut_spc = array(end_boundary_spc, float)
         cut_spc[axis_int] = cut
         cut_idx = spc2idx[comp](*cut_spc)
-        if in_range(cut_idx, field, comp) is False:
+        if in_range(cut_idx, field.shape, comp) is False:
             return None
         label = 'x', 'y', 'z'
         self.xlabel = label[(axis_int + 2) % 3]
@@ -285,7 +285,7 @@ class ShowPlane(Thread):
                               start_boundary_idx[1]:end_boundary_idx[1], 
                               cut_idx[2]]
         else:
-            msg = "axis must be gmes.constants.Directional."
+            msg = "axis must be gmes.constant.Directional."
             raise ValueError(msg)
 
         self.window_title = 'GMES' + ' ' + str(fdtd.space.cart_comm.topo[2])
@@ -330,9 +330,9 @@ class Snapshot(Thread):
         Arguments:
             fdtd: a FDTD instance
             component: Specify electric or magnetic field component. 
-                This should be one of the gmes.constants.Component.
+                This should be one of the gmes.constant.Component.
             axis: Specify the normal axis to the show plane.
-                This should be one of the gmes.constants.Directional.
+                This should be one of the gmes.constant.Directional.
             cut: A scalar value which specifies the cut position on the 
                 axis. 
             vrange: Specify the colorbar range. a tuple of length two.
@@ -365,21 +365,25 @@ class Snapshot(Thread):
                      const.Hy: fdtd.material_hy,
                      const.Hz: fdtd.material_hz}
 
+        fields = {const.Ex: fdtd.ex, const.Ey: fdtd.ey, const.Ez: fdtd.ez,
+                 const.Hx: fdtd.hx, const.Hy: fdtd.hy, const.Hz: fdtd.hz}
+
         material = materials[comp]
+        field = fields[comp]
 
         if issubclass(comp, const.Electric):
             start_boundary_idx = (0, 0, 0)            
             if comp is const.Ex:
-                end_boundary_idx = (material.shape[0] - 1, material.shape[1] - 2,
-                                    material.shape[2] - 2)
+                end_boundary_idx = (field.shape[0] - 1, field.shape[1] - 2,
+                                    field.shape[2] - 2)
             elif comp is const.Ey:
-                end_boundary_idx = (material.shape[0] - 2, material.shape[1] - 1,
-                                    material.shape[2] - 2)
+                end_boundary_idx = (field.shape[0] - 2, field.shape[1] - 1,
+                                    field.shape[2] - 2)
             elif comp is const.Ez:
-                end_boundary_idx = (material.shape[0] - 2, material.shape[1] - 2,
-                                    material.shape[2] - 1)
+                end_boundary_idx = (field.shape[0] - 2, field.shape[1] - 2,
+                                    field.shape[2] - 1)
         elif issubclass(comp, const.Magnetic):
-            end_boundary_idx = [i - 1 for i in material.shape]
+            end_boundary_idx = [i - 1 for i in field.shape]
             if comp is const.Hx:
                 start_boundary_idx = idx2spc[comp](0, 1, 1)
             elif comp is const.Hy:
@@ -387,7 +391,7 @@ class Snapshot(Thread):
             elif comp is const.Hz:
                 start_boundary_idx = idx2spc[comp](1, 1, 0)
  	else:
-            msg = "component should be of class constants.Component."
+            msg = "component should be of class constant.Component."
             raise ValueError(msg)
     
         start_boundary_spc = idx2spc[comp](*start_boundary_idx)
@@ -402,7 +406,7 @@ class Snapshot(Thread):
         cut_spc = array(end_boundary_spc, float)
         cut_spc[axis_int] = cut
         cut_idx = spc2idx[comp](*cut_spc)
-        if in_range(cut_idx, material, comp) is False:
+        if in_range(cut_idx, field.shape, comp) is False:
             return None
         label = 'x', 'y', 'z'
         self.xlabel = label[(axis_int + 2) % 3]
@@ -414,14 +418,17 @@ class Snapshot(Thread):
         self.data = empty(data_shape_2d, float)
 
         for idx in ndindex(*data_shape_2d):
-            material_idx = empty(3, float)
+            mat_idx = empty(3, float)
             for i in [i for i in xrange(3) if i != axis_int]:
-                material_idx[i] = idx[i % 2] + start_boundary_idx[i]
-            material_idx[axis_int] = cut_idx[axis_int]
-            if issubclass(comp, const.Electric):
-                self.data[idx] = material[tuple(material_idx)].epsilon
-            elif issubclass(comp, const.Magnetic): 
-                self.data[idx] = material[tuple(material_idx)].mu
+                mat_idx[i] = idx[i % 2] + start_boundary_idx[i]
+            mat_idx[axis_int] = cut_idx[axis_int]
+            for pw_mat in material.itervalues():
+                if issubclass(comp, const.Electric):
+                    value = pw_mat.get_eps_inf(tuple(mat_idx))
+                elif issubclass(comp, const.Magnetic): 
+                    value = pw_mat.get_mu_inf(tuple(mat_idx))
+                if value != 0:
+                    self.data[idx] = value
 
         self.window_title = 'GMES' + ' ' + str(fdtd.space.cart_comm.topo[2])
 
