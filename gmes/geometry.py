@@ -157,7 +157,7 @@ class Cartesian(object):
         self.whole_field_size = \
             array((2 * self.half_size * self.res).round(), int)
         
-        if 'MPI' in dir() and parallel:
+        if parallel:
             self.my_id = MPI.COMM_WORLD.rank
             self.numprocs = MPI.COMM_WORLD.size
             self.cart_comm = \
@@ -798,6 +798,9 @@ class Cartesian(object):
     def display_info(self, indent=0):
         print " " * indent, "Cartesian space"
         
+        print " " * indent, "MPI topology:",
+        print self.my_id, '/', self.numprocs
+
         print " " * indent,
         print "size:", 2 * self.half_size,
         print "resolution:", self.res

@@ -1215,120 +1215,120 @@ class GaussianBeam(TotalFieldScatteredField):
     def get_pw_source_ex(self, ex_field, space):
         if self.directivity is const.PlusY:
             cosine = dot(self.h_direction, (0, 0, 1))
-            self._get_pw_source_ex_minus_y(ex_field, space, cosine)
+            return self._get_pw_source_ex_minus_y(ex_field, space, cosine)
             
         elif self.directivity is const.MinusY:
             cosine = dot(self.h_direction, (0, 0, 1))
-            self._get_pw_source_ex_plus_y(ex_field, space, cosine)
-            
+            return self._get_pw_source_ex_plus_y(ex_field, space, cosine)
+
         elif self.directivity is const.PlusZ:
             cosine = dot(self.h_direction, (0, 1, 0))
-            self._get_pw_source_ex_minus_z(ex_field, space, cosine)
-            
+            return self._get_pw_source_ex_minus_z(ex_field, space, cosine)
+
         elif self.directivity is const.MinusZ:
             cosine = dot(self.h_direction, (0, 1, 0))
-            self._get_pw_source_ex_plus_z(ex_field, space, cosine)
-            
+            return self._get_pw_source_ex_plus_z(ex_field, space, cosine)
+
         else:
             return None
-        
+
     def get_pw_source_ey(self, ey_field, space):
         if self.directivity is const.PlusZ:
             cosine = dot(self.h_direction, (1, 0, 0))
-            self._get_pw_source_ey_minus_z(ey_field, space, cosine)
+            return self._get_pw_source_ey_minus_z(ey_field, space, cosine)
             
         elif self.directivity is const.MinusZ:
             cosine = dot(self.h_direction, (1, 0, 0))
-            self._get_pw_source_ey_plus_z(ey_field, space, cosine)
-            
+            return self._get_pw_source_ey_plus_z(ey_field, space, cosine)
+
         elif self.directivity is const.PlusX:
             cosine = dot(self.h_direction, (0, 0, 1))
-            self._get_pw_source_ey_minus_x(ey_field, space, cosine)
-            
+            return self._get_pw_source_ey_minus_x(ey_field, space, cosine)
+
         elif self.directivity is const.MinusX:
             cosine = dot(self.h_direction, (0, 0, 1))
-            self._get_pw_source_ey_plus_x(ey_field, space, cosine)
-            
+            return self._get_pw_source_ey_plus_x(ey_field, space, cosine)
+
         else:
             return None
-        
+
     def get_pw_source_ez(self, ez_field, space):
         if self.directivity is const.PlusX:
             cosine = dot(self.h_direction, (0, 1, 0))
-            self._get_pw_source_ez_minus_x(ez_field, space, cosine)
+            return self._get_pw_source_ez_minus_x(ez_field, space, cosine)
             
         elif self.directivity is const.MinusX:
             cosine = dot(self.h_direction, (0, 1, 0))
-            self._get_pw_source_ez_plus_x(ez_field, space, cosine)
-            
+            return self._get_pw_source_ez_plus_x(ez_field, space, cosine)
+
         elif self.directivity is const.PlusY:
             cosine = dot(self.h_direction, (1, 0, 0))
-            self._get_pw_source_ez_minus_y(ez_field, space, cosine)
-            
+            return self._get_pw_source_ez_minus_y(ez_field, space, cosine)
+
         elif self.directivity is const.MinusY:
             cosine = dot(self.h_direction, (1, 0, 0))
-            self._get_pw_source_ez_plus_y(ez_field, space, cosine)
-            
+            return self._get_pw_source_ez_plus_y(ez_field, space, cosine)
+
         else:
             return None
         
     def get_pw_source_hx(self, hx_field, space):
         if self.directivity is const.PlusY:
             cosine = dot(self.e_direction, (0, 0, 1))
-            self._get_pw_source_hx_minus_y(hx_field, space, cosine)
-            
+            return self._get_pw_source_hx_minus_y(hx_field, space, cosine)
+
         elif self.directivity is const.MinusY:
             cosine = dot(self.e_direction, (0, 0, 1))
-            self._get_pw_source_hx_plus_y(hx_field, space, cosine)
-            
+            return self._get_pw_source_hx_plus_y(hx_field, space, cosine)
+
         elif self.directivity is const.PlusZ:
             cosine = dot(self.e_direction, (0, 1, 0))
-            self._get_pw_source_hx_minus_z(hx_field, space, cosine)
-            
+            return self._get_pw_source_hx_minus_z(hx_field, space, cosine)
+
         elif self.directivity is const.MinusZ:
             cosine = dot(self.e_direction, (0, 1, 0))
-            self._get_pw_source_hx_plus_z(hx_field, space, cosine)
-            
+            return self._get_pw_source_hx_plus_z(hx_field, space, cosine)
+
         else:
             return None
         
     def get_pw_source_hy(self, hy_field, space):
         if self.directivity is const.PlusZ:
             cosine = dot(self.e_direction, (1, 0, 0))
-            self._get_pw_source_hy_minus_z(hy_field, space, cosine)
-            
+            return self._get_pw_source_hy_minus_z(hy_field, space, cosine)
+
         elif self.directivity is const.MinusZ:
             cosine = dot(self.e_direction, (1, 0, 0))
-            self._get_pw_source_hy_plus_z(hy_field, space, cosine)
-            
+            return self._get_pw_source_hy_plus_z(hy_field, space, cosine)
+
         elif self.directivity is const.PlusX:
             cosine = dot(self.e_direction, (0, 0, 1))
-            self._get_pw_source_hy_minus_x(hy_field, space, cosine)
-            
+            return self._get_pw_source_hy_minus_x(hy_field, space, cosine)
+
         elif self.directivity is const.MinusX:
             cosine = dot(self.e_direction, (0, 0, 1))
-            self._get_pw_source_hy_plus_x(hy_field, space, cosine)
-            
+            return self._get_pw_source_hy_plus_x(hy_field, space, cosine)
+
         else:
             return None
         
     def get_pw_source_hz(self, hz_field, space):
         if self.directivity is const.PlusX:
             cosine = dot(self.e_direction, (0, 1, 0))
-            self._get_pw_source_hz_minus_x(hz_field, space, cosine)
-            
+            return self._get_pw_source_hz_minus_x(hz_field, space, cosine)
+
         elif self.directivity is const.MinusX:
             cosine = dot(self.e_direction, (0, 1, 0))
-            self._get_pw_source_hz_plus_x(hz_field, space, cosine)
-            
+            return self._get_pw_source_hz_plus_x(hz_field, space, cosine)
+
         elif self.directivity is const.PlusY:
             cosine = dot(self.e_direction, (1, 0, 0))
-            self._get_pw_source_hz_minus_y(hz_field, space, cosine)
-            
+            return self._get_pw_source_hz_minus_y(hz_field, space, cosine)
+
         elif self.directivity is const.MinusY:
             cosine = dot(self.e_direction, (1, 0, 0))
-            self._get_pw_source_hz_plus_y(hz_field, space, cosine)
-            
+            return self._get_pw_source_hz_plus_y(hz_field, space, cosine)
+
         else:
             return None
 
@@ -1353,7 +1353,7 @@ class _GaussianBeamSrcTime(object):
         self.space = self.aux_fdtd.space
         self.ex = self.EX(self)
         self.hy = self.HY(self)
-
+        
         self.n = 0
         self.t = 0
 

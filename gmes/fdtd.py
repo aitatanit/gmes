@@ -538,7 +538,7 @@ class FDTD(object):
     def init_source_ez(self):
         for so in self.src_list:
             pw_src = so.get_pw_source_ez(self.ez, self.space)
-            
+
             if pw_src is None:
                 continue
 
@@ -640,7 +640,8 @@ class FDTD(object):
         for comp in self.e_field_compnt:
             idx = spc2idx[comp](*p)
             if validity[comp](idx):
-                recorder = Probe(idx, field[comp], postfix[comp])
+                filename = prefix + postfix[comp]
+                recorder = Probe(idx, field[comp], filename)
                 loc = idx2spc[comp](*idx)
                 recorder.write_header(loc, self.time_step.dt)
                 self.e_recorder.append(recorder)
@@ -648,7 +649,8 @@ class FDTD(object):
         for comp in self.h_field_compnt:
             idx = spc2idx[comp](*p)
             if validity[comp](idx):
-                recorder = Probe(idx, field[comp], postfix[comp])
+                filename = prefix + postfix[comp]
+                recorder = Probe(idx, field[comp], filename)
                 loc = idx2spc[comp](*idx)
                 recorder.write_header(loc, self.time_step.dt)
                 self.h_recorder.append(recorder)

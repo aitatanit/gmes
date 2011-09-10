@@ -133,11 +133,18 @@ class _Continuous(_SrcTime):
 
 
 class TransparentParam(PwSourceParam):
-    def __init__(self, amp, aux_fdtd, samp_pnt, directional):
+    def __init__(self, amp, aux_fdtd, directional):
         self.aux_fdtd = aux_fdtd
             
         self.face_list = [directional]
         self.amp = {directional: amp}
+        
+
+class TransparentElectricParam(TransparentParam):
+    def __init__(self, eps_inf, amp, aux_fdtd, samp_pnt, directional):
+        TransparentParam.__init__(self, amp, aux_fdtd, directional)
+
+        self.eps_inf = float(eps_inf)
         
         samp_idx = aux_fdtd.space.spc_to_exact_hy_idx(*samp_pnt)
         self.samp_idx0 = {directional: tuple(np.floor(samp_idx))}
@@ -148,16 +155,19 @@ class TransparentParam(PwSourceParam):
         self.r0 = {directional: 1 - r1_value}
 
 
-class TransparentElectricParam(TransparentParam):
-    def __init__(self, eps_inf, amp, aux_fdtd, samp_pnt, directional):
-        TransparentParam.__init__(self, amp, aux_fdtd, samp_pnt, directional)
-        self.eps_inf = float(eps_inf)
-
-
 class TransparentMagneticParam(TransparentParam):
     def __init__(self, mu_inf, amp, aux_fdtd, samp_pnt, directional):
-        TransparentParam.__init__(self, amp, aux_fdtd, samp_pnt, directional)
+        TransparentParam.__init__(self, amp, aux_fdtd, directional)
+
         self.mu_inf = float(mu_inf)
+
+        samp_idx = aux_fdtd.space.spc_to_exact_ex_idx(*samp_pnt)
+        self.samp_idx0 = {directional: tuple(np.floor(samp_idx))}
+        self.samp_idx1 = {directional: tuple(np.floor(samp_idx) + (0, 0, 1))}
+        
+        r1_value = samp_idx[2] - floor(samp_idx[2])
+        self.r1 = {directional: r1_value}
+        self.r0 = {directional: 1 - r1_value}
 
 
 class TransparentEx(PwSource):
