@@ -206,15 +206,15 @@ class FDTD(object):
                 so.display_info()
                 
         if verbose:
-            print 'Allocating memory for the electric & magnetic fields...',
+            print 'Allocating memory for the electromagnetic fields...',
             
-        # storage for the electric & magnetic field 
-        self.ex = space.get_ex_storage(self.cmplx)
-        self.ey = space.get_ey_storage(self.cmplx)
-        self.ez = space.get_ez_storage(self.cmplx)
-        self.hx = space.get_hx_storage(self.cmplx)
-        self.hy = space.get_hy_storage(self.cmplx)
-        self.hz = space.get_hz_storage(self.cmplx)
+        # storage for the electromagnetic field 
+        self.ex = space.get_ex_storage(self.e_field_compnt, self.cmplx)
+        self.ey = space.get_ey_storage(self.e_field_compnt, self.cmplx)
+        self.ez = space.get_ez_storage(self.e_field_compnt, self.cmplx)
+        self.hx = space.get_hx_storage(self.h_field_compnt, self.cmplx)
+        self.hy = space.get_hy_storage(self.h_field_compnt, self.cmplx)
+        self.hz = space.get_hz_storage(self.h_field_compnt, self.cmplx)
         
         if verbose:
             print 'done.'

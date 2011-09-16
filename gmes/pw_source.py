@@ -50,7 +50,7 @@ class DipoleEz(DipoleElectric): pass
 
 
 class DipoleMagnetic(object):
-    def __init__(self, pw_material, src_time=None,amp=1, filename=None):
+    def __init__(self, pw_material, src_time=None, amp=1, filename=None):
         self.pw_material = pw_material
         self.mu = pw_material.mu
         self.src_time = src_time
