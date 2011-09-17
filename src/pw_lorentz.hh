@@ -1,8 +1,8 @@
 /* This implementation is based on the following article.
  *
  * A. Taflove and S. C. Hagness, Computational Electrodynamics: The Finite-
- * Difference Time-Domain Method, Third Edition, 3rd ed. 685 Canton Street 
- * Norwood, MA 02062, USA: Artech House Publishers, 2005.
+ * Difference Time-Domain Method, 3rd ed. 685 Canton Street Norwood, MA 02062, 
+ * USA: Artech House Publishers, 2005.
  */
 
 #ifndef PW_LORENTZ_HH_
@@ -12,12 +12,12 @@
 
 #include "pw_dielectric.hh"
 
-#define ex(i,j,k) ex[((i)*ex_y_size+(j))*ex_z_size+(k)]
-#define ey(i,j,k) ey[((i)*ey_y_size+(j))*ey_z_size+(k)]
-#define ez(i,j,k) ez[((i)*ez_y_size+(j))*ez_z_size+(k)]
-#define hx(i,j,k) hx[((i)*hx_y_size+(j))*hx_z_size+(k)]
-#define hy(i,j,k) hy[((i)*hy_y_size+(j))*hy_z_size+(k)]
-#define hz(i,j,k) hz[((i)*hz_y_size+(j))*hz_z_size+(k)]
+#define ex(i,j,k) ex[ex_y_size==1?0:((i)*ex_y_size+(j))*ex_z_size+(k)]
+#define ey(i,j,k) ey[ey_z_size==1?0:((i)*ey_y_size+(j))*ey_z_size+(k)]
+#define ez(i,j,k) ez[ez_x_size==1?0:((i)*ez_y_size+(j))*ez_z_size+(k)]
+#define hx(i,j,k) hx[hx_y_size==1?0:((i)*hx_y_size+(j))*hx_z_size+(k)]
+#define hy(i,j,k) hy[hy_z_size==1?0:((i)*hy_y_size+(j))*hy_z_size+(k)]
+#define hz(i,j,k) hz[hz_x_size==1?0:((i)*hz_y_size+(j))*hz_z_size+(k)]
 
 namespace gmes
 {

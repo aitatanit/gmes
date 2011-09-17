@@ -5,7 +5,7 @@
 #include <utility>
 #include "pw_material.hh"
 
-#define inplace_field(i,j,k) inplace_field[((i)*inplace_dim2+(j))*inplace_dim3+(k)]
+#define inplace_field(i,j,k) inplace_field[inplace_dim1==1&&inplace_dim2==1&&inplace_dim3==1?0:((i)*inplace_dim2+(j))*inplace_dim3+(k)]
 
 namespace gmes
 {
