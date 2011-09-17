@@ -275,7 +275,7 @@ class Cartesian(object):
             shape = (self.my_field_size[0], self.my_field_size[1] + 1,
                      self.my_field_size[2] + 1)
         else:
-            shape = (0, 0, 0)
+            shape = (1, 1, 1)
         
         return self._get_em_field_storage(shape, cmplx)
         
@@ -287,7 +287,7 @@ class Cartesian(object):
             shape = (self.my_field_size[0] + 1, self.my_field_size[1],
                      self.my_field_size[2] + 1)
         else:
-            shape = (0, 0, 0)
+            shape = (1, 1, 1)
         
         return self._get_em_field_storage(shape, cmplx)
 
@@ -299,7 +299,8 @@ class Cartesian(object):
             shape = (self.my_field_size[0] + 1, self.my_field_size[1] + 1,
                      self.my_field_size[2])
         else:
-            shape = (0, 0, 0)
+            shape = (self.my_field_size[0] + 1, self.my_field_size[1] + 1,
+                     self.my_field_size[2])
 
         return self._get_em_field_storage(shape, cmplx)
         
@@ -311,7 +312,8 @@ class Cartesian(object):
             shape = (self.my_field_size[0], self.my_field_size[1] + 1,
                      self.my_field_size[2] + 1)
         else:
-            shape = (0, 0, 0)
+            shape = (self.my_field_size[0], self.my_field_size[1] + 1,
+                     self.my_field_size[2] + 1)
 
         return self._get_em_field_storage(shape, cmplx)
         
@@ -323,7 +325,8 @@ class Cartesian(object):
             shape = (self.my_field_size[0] + 1, self.my_field_size[1],
                      self.my_field_size[2] + 1)
         else:
-            shape = (0, 0, 0)
+            shape = (self.my_field_size[0] + 1, self.my_field_size[1],
+                     self.my_field_size[2] + 1)
         
         return self._get_em_field_storage(shape, cmplx)
         
@@ -335,7 +338,8 @@ class Cartesian(object):
             shape = (self.my_field_size[0] + 1, self.my_field_size[1] + 1,
                      self.my_field_size[2])
         else:
-            shape = (0, 0, 0)
+            shape = (self.my_field_size[0] + 1, self.my_field_size[1] + 1,
+                     self.my_field_size[2])
         
         return self._get_em_field_storage(shape, cmplx)
     

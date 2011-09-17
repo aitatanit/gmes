@@ -271,7 +271,7 @@ class ShowPlane(Thread):
             return None
         label = 'x', 'y', 'z'
         self.xlabel = label[(axis_int + 2) % 3]
-        self.ylabel = label[(axis_int + 2) % 3]
+        self.ylabel = label[(axis_int + 1) % 3]
         if axis is const.X:
             self.data = field[cut_idx[0], 
                               start_boundary_idx[1]:end_boundary_idx[1], 

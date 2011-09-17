@@ -7,7 +7,7 @@ namespace gmes {
     virtual ~PwMaterial() {
     }
 
-    virtual void
+    virtual T
     update(T * const inplace_field, 
 	   int inplace_dim1, int inplace_dim2, int inplace_dim3,
 	   const T * const in_field1, int in1_dim1, int in1_dim2, int in1_dim3,

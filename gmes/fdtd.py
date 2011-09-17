@@ -558,7 +558,7 @@ class FDTD(object):
             self.material_ex[idx].update(self.ex, self.hz, self.hy, 
                                          self.dy, self.dz, self.time_step.dt, 
                                          self.time_step.n, *idx)
-        
+
     def update_ey(self):
         for idx in ndindex(self.material_ey.shape):
             self.material_ey[idx].update(self.ey, self.hx, self.hz, 
@@ -570,19 +570,19 @@ class FDTD(object):
             self.material_ez[idx].update(self.ez, self.hy, self.hx,
                                          self.dx, self.dy, self.time_step.dt,
                                          self.time_step.n, *idx)
-		
+
     def update_hx(self):
         for idx in ndindex(self.material_hx.shape):
             self.material_hx[idx].update(self.hx, self.ez, self.ey, 
                                          self.dy, self.dz, self.time_step.dt, 
                                          self.time_step.n, *idx)
-		
+
     def update_hy(self):
         for idx in ndindex(self.material_hy.shape):
             self.material_hy[idx].update(self.hy, self.ex, self.ez,
                                          self.dz, self.dx, self.time_step.dt,
                                          self.time_step.n, *idx)
-		
+
     def update_hz(self):
         for idx in ndindex(self.material_hz.shape):
             self.material_hz[idx].update(self.hz, self.ey, self.ex,
@@ -599,8 +599,7 @@ class FDTD(object):
         src, dest = self.space.cart_comm.Shift(1, -1)
         
         if self.cmplx:
-            dest_spc = self.space.ex_index_to_space(0, 
-                                                    self.ex.shape[1] - 1, 0)[1]
+            dest_spc = self.space.ex_index_to_space(0, self.ex.shape[1] - 1, 0)[1]
         
             src_spc = self.space.ex_index_to_space(0, 0, 0)[1]
             src_spc = self.space.cart_comm.sendrecv(src_spc, dest, const.Ex.tag,
@@ -821,8 +820,7 @@ class FDTD(object):
         if self.cmplx:
             dest_spc = self.space.hz_index_to_space(0, 0, 0)[0]
         
-            src_spc = self.space.hz_index_to_space(self.hz.shape[0] - 1, 
-                                                   0, 0)[0]
+            src_spc = self.space.hz_index_to_space(self.hz.shape[0] - 1, 0, 0)[0]
             src_spc = self.space.cart_comm.sendrecv(src_spc, dest, const.Hz.tag,
                                                     None, src, const.Hz.tag)
         
@@ -840,8 +838,7 @@ class FDTD(object):
         if self.cmplx:
             dest_spc = self.space.hz_index_to_space(0, 0, 0)[1]
         
-            src_spc = self.space.hz_index_to_space(0, 
-                                                   self.hz.shape[1] - 1, 0)[1]
+            src_spc = self.space.hz_index_to_space(0, self.hz.shape[1] - 1, 0)[1]
             src_spc = self.space.cart_comm.sendrecv(src_spc, dest, const.Hz.tag,
                                                     None, src, const.Hz.tag)
         

@@ -3,7 +3,7 @@
 
 #include "pw_material.hh"
 
-#define inplace_field(i,j,k) inplace_field[((i)*inplace_dim2+(j))*inplace_dim3+(k)]
+#define inplace_field(i,j,k) inplace_field[inplace_dim1==1&&inplace_dim2==1&&inplace_dim3==1?0:((i)*inplace_dim2+(j))*inplace_dim3+(k)]
 
 namespace gmes
 {
@@ -35,13 +35,13 @@ namespace gmes
       this->value = value;
     }
 
-    void update(T * const inplace_field, 
+    T update(T * const inplace_field, 
 		int inplace_dim1, int inplace_dim2, int inplace_dim3,
 		const T * const in_field1, int in1_dim1, int in1_dim2, int in1_dim3,
 		const T * const in_field2, int in2_dim1, int in2_dim2, int in2_dim3,
 		double d1, double d2, double dt, double n, int i, int j, int k)
     {
-      inplace_field(i,j,k) = value;
+      return inplace_field(i,j,k) = value;
     }
 
   protected:
@@ -104,14 +104,14 @@ namespace gmes
       this->value = value;
     }
 
-    void update(T * const inplace_field, 
+    T update(T * const inplace_field, 
 		int inplace_dim1, int inplace_dim2, int inplace_dim3,
 		const T * const in_field1, int in1_dim1, int in1_dim2, int in1_dim3,
 		const T * const in_field2, int in2_dim1, int in2_dim2, int in2_dim3,
 		double d1, double d2, double dt, double n, int i, int j, int k)
 
     {
-      inplace_field(i,j,k) = value;
+      return inplace_field(i,j,k) = value;
     }
 
   protected:
