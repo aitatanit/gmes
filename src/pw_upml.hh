@@ -1,8 +1,8 @@
 /* This implementation is based on the following article.
- * S. Gedney, "Perfectly Matched Layer Absorbing Boundary Conditions,
+ * S. Gedney, "Perfectly Matched Layer Absorbing Boundary Conditions,"
  * Computational Electrodynamics: The Finite-Difference Time-Domain Method,
- * Third Edition, A. Taflove and S.C. Hagness, eds., Artech House Publishers,
- *  2005, pp. 273-328.
+ * Third Edition, A. Taflove and S.C. Hagness, Artech House Publishers,
+ * 2005, pp. 273-328.
  */
 
 #ifndef PW_UPML_HH_
