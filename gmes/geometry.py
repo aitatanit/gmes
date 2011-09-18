@@ -809,7 +809,7 @@ class Cartesian(object):
         print "dx:", self.dx, "dy:", self.dy, "dz:", self.dz
         
         print " " * indent,
-        print "number of nodes participating:", self.numprocs
+        print "number of participating nodes:", self.numprocs
 
 
 ####################################################################
@@ -843,22 +843,22 @@ class GeomBox(object):
         """Enlarge the box to include the given box.
         
         """
-        self.low = map(min, self.low, box.low)
-        self.high = map(max, self.high, box.high)
+        self.low = array(map(min, self.low, box.low))
+        self.high = array(map(max, self.high, box.high))
         
     def intersection(self, box):
         """Reduce the box to intersect volume with the given box.
         
         """
-        self.low = map(max, self.low, box.low)
-        self.high = map(min, self.high, box.high)        
+        self.low = array(map(max, self.low, box.low))
+        self.high = array(map(min, self.high, box.high))
         
     def add_point(self, point):
         """Enlarge the box to include the given point.
         
         """
-        self.low = map(min, self.low, point)
-        self.high = map(max, self.high, point)
+        self.low = array(map(min, self.low, point))
+        self.high = array(map(max, self.high, point))
            
     @staticmethod
     def __between__(x, low, high):
@@ -939,17 +939,16 @@ class GeomBoxTree(object):
         self.root = GeomBoxNode(box, geom_list, 0)
         self.branch_out(self.root)
     
-    @staticmethod
-    def find_best_partition(node, divideAxis):
+    def find_best_partition(self, node, divide_axis):
         """
-        Find the best place to "cut" along the axis divideAxis in 
+        Find the best place to "cut" along the axis divide_axis in 
         order to maximally divide the objects between the partitions.
         Upon return, n1 and n2 are the number of objects below and 
         above the partition, respectively.
         
         """
         small = 1e-6 # only 1e-6 works
-        bestPartition = None
+        best_partition = None
         
         n1 = n2 = len(node.geom_list)
         
@@ -958,35 +957,34 @@ class GeomBoxTree(object):
         # end of an object. 
         
         for i in node.geom_list:
-            curPartition = i.box.high[divideAxis] + small
+            curPartition = i.box.high[divide_axis] + small
             curN1 = curN2 = 0
             for j in node.geom_list:
-                if j.box.low[divideAxis] <= curPartition:
+                if j.box.low[divide_axis] <= curPartition:
                     curN1 += 1
-                if j.box.high[divideAxis] >= curPartition:
+                if j.box.high[divide_axis] >= curPartition:
                     curN2 += 1
             if max(curN1, curN2) < max(n1, n2):
-                bestPartition = curPartition
+                best_partition = curPartition
                 n1 = curN1
                 n2 = curN2
                 
         for i in node.geom_list:
-            curPartition = i.box.low[divideAxis] - small
+            curPartition = i.box.low[divide_axis] - small
             curN1 = curN2 = 0
             for j in node.geom_list:
-                if j.box.low[divideAxis] <= curPartition:
+                if j.box.low[divide_axis] <= curPartition:
                     curN1 += 1
-                if j.box.high[divideAxis] >= curPartition:
+                if j.box.high[divide_axis] >= curPartition:
                     curN2 += 1
             if max(curN1, curN2) < max(n1, n2):
-                bestPartition = curPartition
+                best_partition = curPartition
                 n1 = curN1
                 n2 = curN2
         
-        return bestPartition, n1, n2
+        return best_partition, n1, n2
     
-    @staticmethod
-    def divide_geom_box_tree(node):
+    def divide_geom_box_tree(self, node):
         """Divide box in two, along the axis that maximally partitions the boxes.
         
         """
@@ -995,8 +993,9 @@ class GeomBoxTree(object):
         # the best partition.
         best = 0
         division = []
-        for i in xrange(3):
-            partition, n1, n2 = GeomBoxTree.find_best_partition(node, i)
+        for i in range(3):
+            partition, n1, n2 = self.find_best_partition(node, i)
+            print 'DEBUG(axis, partition, n1, n2):', i, partition, n1, n2
             division.append((partition, n1, n2))
             if max(division[i][1], division[i][2]) < max(division[best][1], division[best][2]):
                 best = i
@@ -1018,18 +1017,14 @@ class GeomBoxTree(object):
         
         return GeomBoxNode(box1, b1GeomList, node.depth + 1), GeomBoxNode(box2, b2GeomList, node.depth + 1)
     
-    @staticmethod
-    def branch_out(node):
-        node.t1, node.t2 = GeomBoxTree.divide_geom_box_tree(node)
+    def branch_out(self, node):
+        node.t1, node.t2 = self.divide_geom_box_tree(node)
         
-        if not (node.t1 or node.t2):
-            return
+        if node.t1 or node.t2:
+            self.branch_out(node.t1)
+            self.branch_out(node.t2)
     
-        GeomBoxTree.branch_out(node.t1)
-        GeomBoxTree.branch_out(node.t2)
-    
-    @staticmethod
-    def tree_search(node, point):
+    def tree_search(self, node, point):
         if node.box.in_box(point) == False: 
             return None
         else:
@@ -1037,10 +1032,10 @@ class GeomBoxTree(object):
                 return node
             else:
                 if node.t1.box.in_box(point):
-                    return GeomBoxTree.tree_search(node.t1, point)
+                    return self.tree_search(node.t1, point)
         
                 if node.t2.box.in_box(point):
-                    return GeomBoxTree.tree_search(node.t2, point)
+                    return self.tree_search(node.t2, point)
     
     def object_of_point(self, point):
         leaf = self.tree_search(self.root, point)
@@ -1073,12 +1068,12 @@ class GeomBoxTree(object):
         if not node: node = self.root
         
         print " " * indent, "depth:", node.depth, node.box
-        for i in node.geom_list:
-            print " " * (indent + 5), "bounding box:", i.box
-            i.display_info(indent + 5)
+        
+        if node.t1 is None or node.t2 is None:
+            for i in node.geom_list:
+                print " " * (indent + 5), "bounding box:", i.box
+                i.display_info(indent + 5)
             
-        print " "
-
         if node.t1: self.display_info(node.t1, indent + 5)
         if node.t2: self.display_info(node.t2, indent + 5)
  
@@ -1178,7 +1173,7 @@ class DefaultMedium(GeometricObject):
         Override GeometricObject.display_info.
         
         """
-        print " " * indent, "default material"
+        print " " * indent, "default medium"
         if self.material:
             self.material.display_info(indent + 5)
     
@@ -1356,7 +1351,7 @@ class _Block(GeometricObject):
         s2 = self.size[1] * self.e2
         s3 = self.size[2] * self.e3
         
-        corner = self.center + (-0.5 * (s1 + s2 + s3))
+        corner = self.center - 0.5 * (s1 + s2 + s3)
         
         tmpBox.add_point(corner)
         tmpBox.add_point(corner + s1)
@@ -1366,7 +1361,7 @@ class _Block(GeometricObject):
         tmpBox.add_point(corner + s1 + s3)
         tmpBox.add_point(corner + s3 + s2)
         tmpBox.add_point(corner + s1 + s2 + s3)
-        
+
         return tmpBox
         
         

@@ -122,7 +122,7 @@ class FDTD(object):
         self.dz = float(space.dz)
 
         default_medium = (i for i in geom_list 
-                            if isinstance(i, DefaultMedium)).next()
+                          if isinstance(i, DefaultMedium)).next()
         eps_inf = default_medium.material.eps_inf
         mu_inf = default_medium.material.mu_inf
         dt_limit = self._dt_limit(space, eps_inf, mu_inf)
@@ -231,7 +231,7 @@ class FDTD(object):
             print 'hz field:', self.hz.dtype, self.hz.shape
         
         if verbose:
-            print 'Mapping the pointwise material.',
+            print 'Mapping the piecewise material.',
             print 'This will take some tiems...'
 
         self.material_ex = {}
@@ -384,8 +384,7 @@ class FDTD(object):
             mat_obj, underneath = self.geom_tree.material_of_point(spc)
             if idx[1] == shape[1] - 1 or idx[2] == shape[2] - 1:
                 mat_obj = Dummy(mat_obj.eps_inf, mat_obj.mu_inf)
-            pw_obj = \
-                mat_obj.get_pw_material_ex(idx, spc, underneath, self.cmplx)
+            pw_obj = mat_obj.get_pw_material_ex(idx, spc, underneath, self.cmplx)
             
             if self.material_ex.has_key(type(pw_obj)):
                 self.material_ex[type(pw_obj)].merge(pw_obj)
@@ -405,8 +404,7 @@ class FDTD(object):
             mat_obj, underneath = self.geom_tree.material_of_point(spc)
             if idx[2] == shape[2] - 1 or idx[0] == shape[0] - 1:
                 mat_obj = Dummy(mat_obj.eps_inf, mat_obj.mu_inf)
-            pw_obj = \
-                mat_obj.get_pw_material_ey(idx, spc, underneath, self.cmplx)
+            pw_obj = mat_obj.get_pw_material_ey(idx, spc, underneath, self.cmplx)
 
             if self.material_ey.has_key(type(pw_obj)):
                 self.material_ey[type(pw_obj)].merge(pw_obj)
@@ -426,8 +424,7 @@ class FDTD(object):
             mat_obj, underneath = self.geom_tree.material_of_point(spc)
             if idx[0] == shape[0] - 1 or idx[1] == shape[1] - 1:
                 mat_obj = Dummy(mat_obj.eps_inf, mat_obj.mu_inf)
-            pw_obj = \
-                mat_obj.get_pw_material_ez(idx, spc, underneath, self.cmplx)
+            pw_obj = mat_obj.get_pw_material_ez(idx, spc, underneath, self.cmplx)
 
             if self.material_ez.has_key(type(pw_obj)):
                 self.material_ez[type(pw_obj)].merge(pw_obj)
@@ -447,8 +444,7 @@ class FDTD(object):
             mat_obj, underneath = self.geom_tree.material_of_point(spc)
             if idx[1] == 0 or idx[2] == 0:
                 mat_obj = Dummy(mat_obj.eps_inf, mat_obj.mu_inf)
-            pw_obj = \
-                mat_obj.get_pw_material_hx(idx, spc, underneath, self.cmplx)
+            pw_obj = mat_obj.get_pw_material_hx(idx, spc, underneath, self.cmplx)
 
             if self.material_hx.has_key(type(pw_obj)):
                 self.material_hx[type(pw_obj)].merge(pw_obj)
@@ -468,8 +464,7 @@ class FDTD(object):
             mat_obj, underneath = self.geom_tree.material_of_point(spc)
             if idx[2] == 0 or idx[0] == 0:
                 mat_obj = Dummy(mat_obj.eps_inf, mat_obj.mu_inf)
-            pw_obj = \
-                mat_obj.get_pw_material_hy(idx, spc, underneath, self.cmplx)
+            pw_obj = mat_obj.get_pw_material_hy(idx, spc, underneath, self.cmplx)
 
             if self.material_hy.has_key(type(pw_obj)):
                 self.material_hy[type(pw_obj)].merge(pw_obj)
@@ -489,8 +484,7 @@ class FDTD(object):
             mat_obj, underneath = self.geom_tree.material_of_point(spc)
             if idx[0] == 0 or idx[1] == 0:
                 mat_obj = Dummy(mat_obj.eps_inf, mat_obj.mu_inf)
-            pw_obj = \
-                mat_obj.get_pw_material_hz(idx, spc, underneath, self.cmplx)
+            pw_obj = mat_obj.get_pw_material_hz(idx, spc, underneath, self.cmplx)
 
             if self.material_hz.has_key(type(pw_obj)):
                 self.material_hz[type(pw_obj)].merge(pw_obj)
@@ -506,9 +500,13 @@ class FDTD(object):
                          const.Hz: self.init_material_hz}
         
         for comp in self.e_field_compnt:
+            if self.verbose:
+                print 'Mapping materials for', comp.__name__, 'field'
             init_mat_func[comp]()
 
         for comp in self.h_field_compnt:
+            if self.verbose:
+                print 'Mapping materials for', comp.__name__, 'field'
             init_mat_func[comp]()
 
     def init_source_ex(self):

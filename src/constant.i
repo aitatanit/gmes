@@ -42,62 +42,121 @@ class Component(_component):
     tag = _component_get_tag()
 	
 class Electric(Component):
-    tag = _electric_get_tag()
+  tag = _electric_get_tag()
     
 class Ex(Electric):
     tag = _ex_get_tag()
-    
+
+    @classmethod
+    def str(cls):
+        return 'Ex'
+
 class Ey(Electric):
     tag = _ey_get_tag()
-    
+
+    @classmethod
+    def str(cls):
+        return 'Ey'
+
 class Ez(Electric):
     tag = _ez_get_tag()
-    
+
+    @classmethod
+    def str(cls):
+        return 'Ez'
+
 class Magnetic(Component):
     tag = _magnetic_get_tag()
     
 class Hx(Magnetic):
     tag = _hx_get_tag()
-    
+
+    @classmethod
+    def str(cls):
+        return 'Hx'
+
 class Hy(Magnetic):
     tag = _hy_get_tag()
-    
+
+    @classmethod
+    def str(cls):
+        return 'Hy'
+
 class Hz(Magnetic):
     tag = _hz_get_tag()
-    
+
+    @classmethod
+    def str(cls):
+        return 'Hz'
+
 class Directional(_directional):
     tag = _directional_get_tag()
     
 class X(Directional):
     tag = _x_get_tag()
-    
+
+    @classmethod
+    def str(cls):
+        return 'x'
+
 class Y(Directional):
     tag = _y_get_tag()
+
+    @classmethod
+    def str(cls):
+        return 'y'
     
 class Z(Directional):
     tag = _z_get_tag()
+
+    @classmethod
+    def str(cls):
+        return 'z'
     
 class PlusX(X):
     tag = _plus_x_get_tag()
     vector = _plus_x_get_vector()
-    
+    @classmethod
+    def str(cls):
+        return '+x'
+
 class MinusX(X):
     tag = _minus_x_get_tag()
     vector = _minus_x_get_vector()
+
+    @classmethod
+    def str(cls):
+        return '-x'
     
 class PlusY(Y):
     tag = _plus_y_get_tag()
     vector = _plus_y_get_vector()
-    
+
+    @classmethod
+    def str(cls):
+        return '+y'
+        
 class MinusY(Y):
     tag = _minus_y_get_tag()
     vector = _minus_y_get_vector()
+
+    @classmethod
+    def str(cls):
+        return '-y'
     
 class PlusZ(Z):
     tag = _plus_z_get_tag()
     vector = _plus_z_get_vector()
-    
+
+    @classmethod
+    def str(cls):
+        return '+z'
+        
 class MinusZ(Z):
     tag = _minus_z_get_tag()
     vector = _minus_z_get_vector()
+
+    @classmethod
+    def str(cls):
+        return '-z'
 %}

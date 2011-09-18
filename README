@@ -102,9 +102,8 @@ and your script which uses the GMES package.
  
 $ mpiexec -l -n <N> python <GMES SCRIPT>
 
-If you use SLURM process manager, a special Python interpreter is 
-required. Check the MPI for Python user manual at 
-http://mpi4py.scipy.org/docs/usrman/.
+If you use SLURM process manager, a special Python interpreter is required. 
+Check the MPI for Python user manual at http://mpi4py.scipy.org/docs/usrman/.
 
 6. Known Issues
 

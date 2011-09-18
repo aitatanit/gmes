@@ -258,8 +258,8 @@ class ShowPlane(Thread):
         start_boundary_spc = idx2spc[comp](*start_boundary_idx)
         end_boundary_spc = idx2spc[comp](*end_boundary_idx)
 
-        direc2int = {const.X:0, const.Y:1, const.Z:2}
-        axis_int = direc2int[axis]
+        direct2int = {const.X:0, const.Y:1, const.Z:2}
+        axis_int = direct2int[axis]
         self.extent = (start_boundary_spc[(axis_int + 2) % 3], 
                        end_boundary_spc[(axis_int + 2) % 3], 
                        end_boundary_spc[(axis_int + 1) % 3], 
@@ -397,8 +397,8 @@ class Snapshot(Thread):
         start_boundary_spc = idx2spc[comp](*start_boundary_idx)
         end_boundary_spc = idx2spc[comp](*end_boundary_idx)
 
-        direc2int = {const.X:0, const.Y:1, const.Z:2}
-        axis_int = direc2int[axis]
+        direct2int = {const.X:0, const.Y:1, const.Z:2}
+        axis_int = direct2int[axis]
         self.extent = (start_boundary_spc[(axis_int + 2) % 3], 
                        end_boundary_spc[(axis_int + 2) % 3], 
                        end_boundary_spc[(axis_int + 1) % 3], 
@@ -409,7 +409,7 @@ class Snapshot(Thread):
         if in_range(cut_idx, field.shape, comp) is False:
             return None
         label = 'x', 'y', 'z'
-        self.xlabel = label[(axis_int + 2) % 3]
+        self.xlabel = label[(axis_int + 1) % 3]
         self.ylabel = label[(axis_int + 2) % 3]
 
         data_shape_3d = array(end_boundary_idx) - array(start_boundary_idx) + 1
