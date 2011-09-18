@@ -232,7 +232,7 @@ class FDTD(object):
         
         if verbose:
             print 'Mapping the piecewise material.',
-            print 'This will take some tiems...'
+            print 'This will take some times...'
 
         self.material_ex = {}
         self.material_ey = {}
@@ -713,12 +713,11 @@ class FDTD(object):
         This method uses the object serialization interface of MPI4Python.
         
         """
-        # send ex field data to -y direction and receive from +y direction.
+        # Send ex field data to -y direction and receive from +y direction.
         src, dest = self.space.cart_comm.Shift(1, -1)
         
         if self.cmplx:
-            dest_spc = self.space.ex_index_to_space(0, 
-                                                    self.ex.shape[1] - 1, 0)[1]
+            dest_spc = self.space.ex_index_to_space(0, self.ex.shape[1] - 1, 0)[1]
         
             src_spc = self.space.ex_index_to_space(0, 0, 0)[1]
             src_spc = self.space.cart_comm.sendrecv(src_spc, dest, const.Ex.tag,
@@ -726,18 +725,17 @@ class FDTD(object):
             
             phase_shift = exp(1j * self.bloch[1] * (dest_spc - src_spc))
         else:
-            phase_shift = 0
+            phase_shift = 1
         
         self.ex[:, -1, :] = phase_shift * \
         self.space.cart_comm.sendrecv(self.ex[:, 0, :], dest, const.Ex.tag,
                                       None, src, const.Ex.tag)
         
-        # send ex field data to -z direction and receive from +z direction.
+        # Send ex field data to -z direction and receive from +z direction.
         src, dest = self.space.cart_comm.Shift(2, -1)
         
         if self.cmplx:
-            dest_spc = self.space.ex_index_to_space(0, 0, 
-                                                    self.ex.shape[2] - 1)[2]
+            dest_spc = self.space.ex_index_to_space(0, 0, self.ex.shape[2] - 1)[2]
         
             src_spc = self.space.ex_index_to_space(0, 0, 0)[2]
             src_spc = self.space.cart_comm.sendrecv(src_spc, dest, const.Ex.tag,
@@ -745,7 +743,7 @@ class FDTD(object):
         
             phase_shift = exp(1j * self.bloch[2] * (dest_spc - src_spc))
         else:
-            phase_shift = 0
+            phase_shift = 1
         
         self.ex[:, :, -1] = phase_shift * \
         self.space.cart_comm.sendrecv(self.ex[:, :, 0], dest, const.Ex.tag,
@@ -757,12 +755,11 @@ class FDTD(object):
         This method uses the object serialization interface of MPI4Python.
         
         """
-        # send ey field data to -z direction and receive from +z direction.
+        # Send ey field data to -z direction and receive from +z direction.
         src, dest = self.space.cart_comm.Shift(2, -1)
         
         if self.cmplx:
-            dest_spc = self.space.ey_index_to_space(0, 0, 
-                                                    self.ey.shape[2] - 1)[2]
+            dest_spc = self.space.ey_index_to_space(0, 0, self.ey.shape[2] - 1)[2]
         
             src_spc = self.space.ey_index_to_space(0, 0, 0)[2]
             src_spc = self.space.cart_comm.sendrecv(src_spc, dest, const.Ey.tag,
@@ -770,18 +767,17 @@ class FDTD(object):
         
             phase_shift = exp(1j * self.bloch[2] * (dest_spc - src_spc))
         else:
-            phase_shift = 0
+            phase_shift = 1
             
         self.ey[:, :, -1] = phase_shift * \
         self.space.cart_comm.sendrecv(self.ey[:, :, 0], dest, const.Ey.tag,
                                       None, src, const.Ey.tag)
         
-        # send ey field data to -x direction and receive from +x direction.
+        # Send ey field data to -x direction and receive from +x direction.
         src, dest = self.space.cart_comm.Shift(0, -1)
 
         if self.cmplx:
-            dest_spc = self.space.ey_index_to_space(self.ey.shape[0] - 1, 
-                                                    0, 0)[0]
+            dest_spc = self.space.ey_index_to_space(self.ey.shape[0] - 1, 0, 0)[0]
         
             src_spc = self.space.ey_index_to_space(0, 0, 0)[0]
             src_spc = self.space.cart_comm.sendrecv(src_spc, dest, const.Ey.tag,
@@ -789,7 +785,7 @@ class FDTD(object):
             
             phase_shift = exp(1j * self.bloch[0] * (dest_spc - src_spc))
         else:
-            phase_shift = 0
+            phase_shift = 1
             
         self.ey[-1, :, :] = phase_shift * \
         self.space.cart_comm.sendrecv(self.ey[0, :, :], dest, const.Ey.tag,
@@ -801,12 +797,11 @@ class FDTD(object):
         This method uses the object serialization interface of MPI4Python.
         
         """
-        # send ez field data to -x direction and receive from +x direction.
+        # Send ez field data to -x direction and receive from +x direction.
         src, dest = self.space.cart_comm.Shift(0, -1)
         
         if self.cmplx:
-            dest_spc = self.space.ez_index_to_space(self.ez.shape[0] - 1, 
-                                                    0, 0)[0]
+            dest_spc = self.space.ez_index_to_space(self.ez.shape[0] - 1, 0, 0)[0]
         
             src_spc = self.space.ez_index_to_space(0, 0, 0)[0]
             src_spc = self.space.cart_comm.sendrecv(src_spc, dest, const.Ez.tag,
@@ -814,18 +809,17 @@ class FDTD(object):
             
             phase_shift = exp(1j * self.bloch[0] * (dest_spc - src_spc))
         else:
-            phase_shift = 0
+            phase_shift = 1
         
         self.ez[-1, :, :] = phase_shift * \
         self.space.cart_comm.sendrecv(self.ez[0, :, :], dest, const.Ez.tag,
                                       None, src, const.Ez.tag)
         
-        # send ez field data to -y direction and receive from +y direction.
+        # Send ez field data to -y direction and receive from +y direction.
         src, dest = self.space.cart_comm.Shift(1, -1)
 
         if self.cmplx:
-            dest_spc = self.space.ez_index_to_space(0, 
-                                                    self.ez.shape[1] - 1, 0)[1]
+            dest_spc = self.space.ez_index_to_space(0, self.ez.shape[1] - 1, 0)[1]
         
             src_spc = self.space.ez_index_to_space(0, 0, 0)[1]
             src_spc = self.space.cart_comm.sendrecv(src_spc, dest, const.Ez.tag,
@@ -833,7 +827,7 @@ class FDTD(object):
             
             phase_shift = exp(1j * self.bloch[1] * (dest_spc - src_spc))
         else:
-            phase_shift = 0
+            phase_shift = 1
 
         self.ez[:, -1, :] = phase_shift * \
         self.space.cart_comm.sendrecv(self.ez[:, 0, :], dest, const.Ez.tag,
@@ -845,39 +839,37 @@ class FDTD(object):
         This method uses the object serialization interface of MPI4Python.
         
         """
-        # send hx field data to +y direction and receive from -y direction.
+        # Send hx field data to +y direction and receive from -y direction.
         src, dest = self.space.cart_comm.Shift(1, 1)
 
         if self.cmplx:
             dest_spc = self.space.hx_index_to_space(0, 0, 0)[1]
         
-            src_spc = self.space.hx_index_to_space(0, 
-                                                   self.hx.shape[1] - 1, 0)[1]
+            src_spc = self.space.hx_index_to_space(0, self.hx.shape[1] - 1, 0)[1]
             src_spc = self.space.cart_comm.sendrecv(src_spc, dest, const.Hx.tag,
                                                     None, src, const.Hx.tag)
         
             phase_shift = exp(1j * self.bloch[1] * (dest_spc - src_spc))
         else:
-            phase_shift = 0
+            phase_shift = 1
         
         self.hx[:, 0, :] = phase_shift * \
         self.space.cart_comm.sendrecv(self.hx[:, -1, :], dest, const.Hx.tag,
                                       None, src, const.Hx.tag)
             
-        # send hx field data to +z direction and receive from -z direction.    
+        # Send hx field data to +z direction and receive from -z direction.    
         src, dest = self.space.cart_comm.Shift(2, 1)
         
         if self.cmplx:
             dest_spc = self.space.hx_index_to_space(0, 0, 0)[2]
         
-            src_spc = self.space.hx_index_to_space(0, 0, 
-                                                   self.hx.shape[2] - 1)[2]
+            src_spc = self.space.hx_index_to_space(0, 0, self.hx.shape[2] - 1)[2]
             src_spc = self.space.cart_comm.sendrecv(src_spc, dest, const.Hx.tag,
                                                     None, src, const.Hx.tag)
         
             phase_shift = exp(1j * self.bloch[2] * (dest_spc - src_spc))
         else:
-            phase_shift = 0
+            phase_shift = 1
         
         self.hx[:, :, 0] = phase_shift * \
         self.space.cart_comm.sendrecv(self.hx[:, :, -1], dest, const.Hx.tag,
@@ -889,39 +881,37 @@ class FDTD(object):
         This method uses the object serialization interface of MPI4Python.
         
         """
-        # send hy field data to +z direction and receive from -z direction.
+        # Send hy field data to +z direction and receive from -z direction.
         src, dest = self.space.cart_comm.Shift(2, 1)
         
         if self.cmplx:
             dest_spc = self.space.hy_index_to_space(0, 0, 0)[2]
         
-            src_spc = self.space.hy_index_to_space(0, 0, 
-                                                   self.hy.shape[2] - 1)[2]
+            src_spc = self.space.hy_index_to_space(0, 0, self.hy.shape[2] - 1)[2]
             src_spc = self.space.cart_comm.sendrecv(src_spc, dest, const.Hy.tag,
                                                     None, src, const.Hy.tag)
         
             phase_shift = exp(1j * self.bloch[2] * (dest_spc - src_spc))
         else:
-            phase_shift = 0
+            phase_shift = 1
         
         self.hy[:, :, 0] = phase_shift * \
         self.space.cart_comm.sendrecv(self.hy[:, :, -1], dest, const.Hy.tag,
                                       None, src, const.Hy.tag)
             
-        # send hy field data to +x direction and receive from -x direction.
+        # Send hy field data to +x direction and receive from -x direction.
         src, dest = self.space.cart_comm.Shift(0, 1)
         
         if self.cmplx:
             dest_spc = self.space.hy_index_to_space(0, 0, 0)[0]
         
-            src_spc = self.space.hy_index_to_space(self.hy.shape[0] - 1, 
-                                                   0, 0)[0]
+            src_spc = self.space.hy_index_to_space(self.hy.shape[0] - 1, 0, 0)[0]
             src_spc = self.space.cart_comm.sendrecv(src_spc, dest, const.Hy.tag,
                                                     None, src, const.Hy.tag)
         
             phase_shift = exp(1j * self.bloch[0] * (dest_spc - src_spc))
         else:
-            phase_shift = 0
+            phase_shift = 1
         
         self.hy[0, :, :] = phase_shift * \
         self.space.cart_comm.sendrecv(self.hy[-1, :, :], dest, const.Hy.tag,
@@ -933,39 +923,37 @@ class FDTD(object):
         This method uses the object serialization interface of MPI4Python.
         
         """
-        # send hz field data to +x direction and receive from -x direction.
+        # Send hz field data to +x direction and receive from -x direction.
         src, dest = self.space.cart_comm.Shift(0, 1)
         
         if self.cmplx:
             dest_spc = self.space.hz_index_to_space(0, 0, 0)[0]
         
-            src_spc = self.space.hz_index_to_space(self.hz.shape[0] - 1, 
-                                                   0, 0)[0]
+            src_spc = self.space.hz_index_to_space(self.hz.shape[0] - 1, 0, 0)[0]
             src_spc = self.space.cart_comm.sendrecv(src_spc, dest, const.Hz.tag,
                                                     None, src, const.Hz.tag)
         
             phase_shift = exp(1j * self.bloch[0] * (dest_spc - src_spc))
         else:
-            phase_shift = 0
+            phase_shift = 1
         
         self.hz[0, :, :] = phase_shift * \
         self.space.cart_comm.sendrecv(self.hz[-1, :, :], dest, const.Hz.tag,
                                       None, src, const.Hz.tag)
             
-        # send hz field data to +y direction and receive from -y direction.
+        # Send hz field data to +y direction and receive from -y direction.
         src, dest = self.space.cart_comm.Shift(1, 1)
         
         if self.cmplx:
             dest_spc = self.space.hz_index_to_space(0, 0, 0)[1]
         
-            src_spc = self.space.hz_index_to_space(0, 
-                                                   self.hz.shape[1] - 1, 0)[1]
+            src_spc = self.space.hz_index_to_space(0, self.hz.shape[1] - 1, 0)[1]
             src_spc = self.space.cart_comm.sendrecv(src_spc, dest, const.Hz.tag,
                                                     None, src, const.Hz.tag)
         
             phase_shift = exp(1j * self.bloch[1] * (dest_spc - src_spc))
         else:
-            phase_shift = 0
+            phase_shift = 1
         
         self.hz[:, 0, :] = phase_shift * \
         self.space.cart_comm.sendrecv(self.hz[:, -1, :], dest, const.Hz.tag,

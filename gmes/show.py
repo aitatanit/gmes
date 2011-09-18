@@ -270,8 +270,8 @@ class ShowPlane(Thread):
         if in_range(cut_idx, field.shape, comp) is False:
             return None
         label = 'x', 'y', 'z'
-        self.xlabel = label[(axis_int + 1) % 3]
-        self.ylabel = label[(axis_int + 2) % 3]
+        self.xlabel = label[(axis_int + 2) % 3]
+        self.ylabel = label[(axis_int + 1) % 3]
         if axis is const.X:
             self.data = field[cut_idx[0], 
                               start_boundary_idx[1]:end_boundary_idx[1], 
@@ -409,8 +409,8 @@ class Snapshot(Thread):
         if in_range(cut_idx, field.shape, comp) is False:
             return None
         label = 'x', 'y', 'z'
-        self.xlabel = label[(axis_int + 1) % 3]
-        self.ylabel = label[(axis_int + 2) % 3]
+        self.xlabel = label[(axis_int + 2) % 3]
+        self.ylabel = label[(axis_int + 1) % 3]
 
         data_shape_3d = array(end_boundary_idx) - array(start_boundary_idx) + 1
         data_shape_2d = [v for i, v in enumerate(data_shape_3d) 

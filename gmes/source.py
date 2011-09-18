@@ -589,18 +589,22 @@ class TotalFieldScatteredField(Src):
         cosine = dot(self.h_direction, (0, 0, 1))
         if cosine != 0:
             pw_src_tmp = self._get_pw_source_ex_minus_y(ex_field, space, cosine)
-            pw_src.param.update(pw_src_tmp.param)
+            if pw_src_tmp != None: 
+                pw_src.merge(pw_src_tmp)
             pw_src_tmp = self._get_pw_source_ex_plus_y(ex_field, space, cosine)
-            pw_src.param.update(pw_src_tmp.param)
+            if pw_src_tmp != None: 
+                pw_src.merge(pw_src_tmp)
             
         cosine = dot(self.h_direction, (0, 1, 0))
         if cosine != 0:
             pw_src_tmp = self._get_pw_source_ex_minus_z(ex_field, space, cosine)
-            pw_src.param.update(pw_src_tmp.param)
+            if pw_src_tmp != None: 
+                pw_src.merge(pw_src_tmp)
             pw_src_tmp = self._get_pw_source_ex_plus_z(ex_field, space, cosine)
-            pw_src.param.update(pw_src_tmp.param)
+            if pw_src_tmp != None: 
+                pw_src.merge(pw_src_tmp)
 
-        if len(pw_src.param) == 0:
+        if len(pw_src._param) == 0:
             return None
         else:
             return pw_src
@@ -675,18 +679,22 @@ class TotalFieldScatteredField(Src):
         cosine = dot(self.h_direction, (1, 0, 0))
         if cosine != 0:
             pw_src_tmp = self._get_pw_source_ey_minus_z(ey_field, space, cosine)
-            pw_src.param.update(pw_src_tmp.param)
+            if pw_src_tmp != None: 
+                pw_src.merge(pw_src_tmp)
             pw_src_tmp = self._get_pw_source_ey_plus_z(ey_field, space, cosine)
-            pw_src.param.update(pw_src_tmp.param)
+            if pw_src_tmp != None: 
+                pw_src.merge(pw_src_tmp)
             
         cosine = dot(self.h_direction, (0, 0, 1))
         if cosine != 0:
             pw_src_tmp = self._get_pw_source_ey_minus_x(ey_field, space, cosine)
-            pw_src.param.update(pw_src_tmp.param)
+            if pw_src_tmp != None: 
+                pw_src.merge(pw_src_tmp)
             pw_src_tmp = self._get_pw_source_ey_plus_x(ey_field, space, cosine)
-            pw_src.param.update(pw_src_tmp.param)
+            if pw_src_tmp != None: 
+                pw_src.merge(pw_src_tmp)
         
-        if len(pw_src.param) == 0:
+        if len(pw_src._param) == 0:
             return None
         else:
             return pw_src
@@ -761,23 +769,27 @@ class TotalFieldScatteredField(Src):
         cosine = dot(self.h_direction, (0, 1, 0))
         if cosine != 0:
             pw_src_tmp = self._get_pw_source_ez_minus_x(ez_field, space, cosine)
-            pw_src.param.update(pw_src_tmp.param)
+            if pw_src_tmp != None: 
+                pw_src.merge(pw_src_tmp)
             pw_src_tmp = self._get_pw_source_ez_plus_x(ez_field, space, cosine)
-            pw_src.param.update(pw_src_tmp.param)
+            if pw_src_tmp != None: 
+                pw_src.merge(pw_src_tmp)
             
         cosine = dot(self.h_direction, (1, 0, 0))
         if cosine != 0:
             pw_src_tmp = self._get_pw_source_ez_minus_y(ez_field, space, cosine)
-            pw_src.param.update(pw_src_tmp.param)
+            if pw_src_tmp != None: 
+                pw_src.merge(pw_src_tmp)
             pw_src_tmp = self._get_pw_source_ez_plus_y(ez_field, space, cosine)
-            pw_src.param.update(pw_src_tmp.param)
+            if pw_src_tmp != None: 
+                pw_src.merge(pw_src_tmp)
         
-        if len(pw_src.param) == 0:
+        if len(pw_src._param) == 0:
             return None
         else:
             return pw_src
 
-    def _get_pw_source_ez_minus_x(self, ex_field, space, cosine):
+    def _get_pw_source_ez_minus_x(self, ez_field, space, cosine):
         pw_src = None
         if 2 * space.half_size[0] > space.dx:
             low = self.center - self.half_size
@@ -847,18 +859,22 @@ class TotalFieldScatteredField(Src):
         cosine = dot(self.e_direction, (0, 0, 1))
         if cosine != 0:
             pw_src_tmp = self._get_pw_source_hx_minus_y(hx_field, space, cosine)
-            pw_src.param.update(pw_src_tmp.param)
+            if pw_src_tmp != None: 
+                pw_src.merge(pw_src_tmp)
             pw_src_tmp = self._get_pw_source_hx_plus_y(hx_field, space, cosine)
-            pw_src.param.update(pw_src_tmp.param)
+            if pw_src_tmp != None: 
+                pw_src.merge(pw_src_tmp)
             
         cosine = dot(self.e_direction, (0, 1, 0))
         if cosine != 0:   
             pw_src_tmp = self._get_pw_source_hx_minus_z(hx_field, space, cosine)
-            pw_src.param.update(pw_src_tmp.param)
+            if pw_src_tmp != None: 
+                pw_src.merge(pw_src_tmp)
             pw_src_tmp = self._get_pw_source_hx_plus_z(hx_field, space, cosine)
-            pw_src.param.update(pw_src_tmp.param)
+            if pw_src_tmp != None: 
+                pw_src.merge(pw_src_tmp)
         
-        if len(pw_src.param) == 0:
+        if len(pw_src._param) == 0:
             return None
         else:
             return pw_src
@@ -944,18 +960,22 @@ class TotalFieldScatteredField(Src):
         cosine = dot(self.e_direction, (1, 0, 0))
         if cosine != 0:
             pw_src_tmp = self._get_pw_source_hy_minus_z(hy_field, space, cosine)
-            pw_src.param.update(pw_src_tmp.param)
+            if pw_src_tmp != None: 
+                pw_src.merge(pw_src_tmp)
             pw_src_tmp = self._get_pw_source_hy_plus_z(hy_field, space, cosine)
-            pw_src.param.update(pw_src_tmp.param)
+            if pw_src_tmp != None: 
+                pw_src.merge(pw_src_tmp)
 
         cosine = dot(self.e_direction, (0, 0, 1))
         if cosine != 0:   
             pw_src_tmp = self._get_pw_source_hy_minus_x(hy_field, space, cosine)
-            pw_src.param.update(pw_src_tmp.param)
+            if pw_src_tmp != None: 
+                pw_src.merge(pw_src_tmp)
             pw_src_tmp = self._get_pw_source_hy_plus_x(hy_field, space, cosine)
-            pw_src.param.update(pw_src_tmp.param)
+            if pw_src_tmp != None: 
+                pw_src.merge(pw_src_tmp)
 
-        if len(pw_src.param) == 0:
+        if len(pw_src._param) == 0:
             return None
         else:
             return pw_src
@@ -1042,18 +1062,22 @@ class TotalFieldScatteredField(Src):
         cosine = dot(self.e_direction, (0, 1, 0))
         if cosine != 0:
             pw_src_tmp = self._get_pw_source_hz_minus_x(hz_field, space, cosine)
-            pw_src.param.update(pw_src_tmp.param)
+            if pw_src_tmp != None: 
+                pw_src.merge(pw_src_tmp)
             pw_src_tmp = self._get_pw_source_hz_plus_x(hz_field, space, cosine)
-            pw_src.param.update(pw_src_tmp.param)
+            if pw_src_tmp != None: 
+                pw_src.merge(pw_src_tmp)
             
         cosine = dot(self.e_direction, (1, 0, 0))
         if cosine != 0:
             pw_src_tmp = self._get_pw_source_hz_minus_y(hz_field, space, cosine)
-            pw_src.param.update(pw_src_tmp.param)
+            if pw_src_tmp != None: 
+                pw_src.merge(pw_src_tmp)
             pw_src_tmp = self._get_pw_source_hz_plus_y(hz_field, space, cosine)
-            pw_src.param.update(pw_src_tmp.param)
+            if pw_src_tmp != None: 
+                pw_src.merge(pw_src_tmp)
         
-        if len(pw_src.param) == 0:
+        if len(pw_src._param) == 0:
             return None
         else:
             return pw_src
