@@ -270,7 +270,7 @@ class ShowPlane(Thread):
         if in_range(cut_idx, field.shape, comp) is False:
             return None
         label = 'x', 'y', 'z'
-        self.xlabel = label[(axis_int + 2) % 3]
+        self.xlabel = label[(axis_int + 1) % 3]
         self.ylabel = label[(axis_int + 2) % 3]
         if axis is const.X:
             self.data = field[cut_idx[0], 
