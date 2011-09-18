@@ -23,24 +23,22 @@ pw_src_lst = glob('src/pw_*.cc')
 pw_src_lst.extend(glob('src/pw_*.i'))
 pw_dep_lst = glob('src/pw_*.hh')
 
-# _pw_material module
-_pw_material = Extension(name = 'gmes._pw_material',
-                         sources = pw_src_lst,
-                         depends = pw_dep_lst,
-                         include_dirs = [numpy_include],
-                         swig_opts = ['-c++', '-outdir', 'gmes'],
-                         language = 'c++',
-                         extra_compile_args=['-std=c++0x'])
+# pw_material module
+pw_material = Extension(name = 'gmes._pw_material',
+                        sources = pw_src_lst,
+                        depends = pw_dep_lst,
+                        include_dirs = [numpy_include],
+                        swig_opts = ['-c++', '-outdir', 'gmes'],
+                        language = 'c++',
+                        extra_compile_args=['-std=c++0x'])
 
-# _constant module
-_constant = Extension(name = 'gmes._constant',
-                      sources = ['src/constant.i',
-                                 'src/constant.cc'],
-                      depends = ['src/constant.hh'],
-                      include_dirs = [numpy_include],
-                      swig_opts = ['-c++', '-outdir', 'gmes'],
-                      language = 'c++',
-                      extra_compile_args=[])
+# constant module
+constant = Extension(name = 'gmes._constant',
+                     sources = ['src/constant.i', 'src/constant.cc'],
+                     depends = ['src/constant.hh'],
+                     include_dirs = [numpy_include],
+                     swig_opts = ['-c++', '-outdir', 'gmes'],
+                     language = 'c++')
 
 setup(name = PACKAGE,
       version = VERSION,
@@ -53,6 +51,15 @@ setup(name = PACKAGE,
       maintainer = 'Kyungwon Chun',
       maintainer_email = 'kwchun@gist.ac.kr',
       url = 'http://sourceforge.net/projects/gmes',
+      classifiers = [
+        'Development Status :: 2 - Pre-Alpha',
+        'User Interface :: Console/Terminal',
+        'Intended Audience :: Science/Research',
+        'License :: GNU General Public License (GPL)',
+        'Operating System :: OS Portable (Source code to work with many OS platforms)',
+        'Programming Language :: C++, Python',
+        'Topic :: Physics, Simulations',
+        'Translations: Korean'],
       license = 'http://www.gnu.org/licenses/gpl.html',
       packages = [PACKAGE],
-      ext_modules = [_pw_material, _constant])
+      ext_modules = [pw_material, constant])
