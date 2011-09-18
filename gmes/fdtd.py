@@ -209,9 +209,9 @@ class FDTD(object):
                 so.display_info()
                 
         if verbose:
-            print 'Allocating memory for the electric & magnetic fields...',
+            print 'Allocating memory for the electromagnetic fields...',
             
-        # storage for the electric & magnetic field 
+        # storage for the electromagnetic field 
         self.ex = space.get_ex_storage(self.e_field_compnt, self.cmplx)
         self.ey = space.get_ey_storage(self.e_field_compnt, self.cmplx)
         self.ez = space.get_ez_storage(self.e_field_compnt, self.cmplx)
@@ -246,7 +246,7 @@ class FDTD(object):
         if verbose:
             print 'done.'
 
-        # pw_material information for electric & magnetic fields
+        # pw_material information for electromagnetic fields
         if verbose:
             print 'ex material:',
             self._print_pw_obj(self.material_ex)
@@ -281,7 +281,7 @@ class FDTD(object):
         if verbose:
             print 'done.'
     
-        # pw_source information for electric & magnetic fields
+        # pw_source information for electromagnetic fields
         if verbose:
             print 'ex source:',
             self._print_pw_obj(self.source_ex)

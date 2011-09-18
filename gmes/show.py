@@ -76,7 +76,7 @@ class ShowLine(Thread):
                    const.Hz: fdtd.space.hz_index_to_space}
             
         fields = {const.Ex: fdtd.ex, const.Ey: fdtd.ey, const.Ez: fdtd.ez,
-                  const.Hx: fdtd.hx, const.Hy: fdtd.hy, const.Hz: fdtd.ez}
+                  const.Hx: fdtd.hx, const.Hy: fdtd.hy, const.Hz: fdtd.hz}
 
         field = fields[comp].real
 
@@ -228,7 +228,7 @@ class ShowPlane(Thread):
                    const.Hz: fdtd.space.hz_index_to_space}
         
         fields = {const.Ex: fdtd.ex, const.Ey: fdtd.ey, const.Ez: fdtd.ez,
-                  const.Hx: fdtd.hx, const.Hy: fdtd.hy, const.Hz: fdtd.ez}
+                  const.Hx: fdtd.hx, const.Hy: fdtd.hy, const.Hz: fdtd.hz}
 
         field = fields[comp].real
 
@@ -366,7 +366,7 @@ class Snapshot(Thread):
                      const.Hz: fdtd.material_hz}
 
         fields = {const.Ex: fdtd.ex, const.Ey: fdtd.ey, const.Ez: fdtd.ez,
-                 const.Hx: fdtd.hx, const.Hy: fdtd.hy, const.Hz: fdtd.hz}
+                  const.Hx: fdtd.hx, const.Hy: fdtd.hy, const.Hz: fdtd.hz}
 
         material = materials[comp]
         field = fields[comp]
@@ -419,8 +419,17 @@ class Snapshot(Thread):
 
         for idx in ndindex(*data_shape_2d):
             mat_idx = empty(3, float)
-            for i in [i for i in xrange(3) if i != axis_int]:
-                mat_idx[i] = idx[i % 2] + start_boundary_idx[i]
+            
+            if axis_int == 0:
+                mat_idx[1] = idx[0] + start_boundary_idx[1]
+                mat_idx[2] = idx[1] + start_boundary_idx[2]
+            elif axis_int == 1:
+                mat_idx[0] = idx[0] + start_boundary_idx[0]
+                mat_idx[2] = idx[1] + start_boundary_idx[2]
+            elif axis_int == 2:
+                mat_idx[0] = idx[0] + start_boundary_idx[0]
+                mat_idx[1] = idx[1] + start_boundary_idx[1]
+            
             mat_idx[axis_int] = cut_idx[axis_int]
             for pw_mat in material.itervalues():
                 if issubclass(comp, const.Electric):
