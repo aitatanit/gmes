@@ -995,7 +995,6 @@ class GeomBoxTree(object):
         division = []
         for i in range(3):
             partition, n1, n2 = self.find_best_partition(node, i)
-            print 'DEBUG(axis, partition, n1, n2):', i, partition, n1, n2
             division.append((partition, n1, n2))
             if max(division[i][1], division[i][2]) < max(division[best][1], division[best][2]):
                 best = i
