@@ -28,8 +28,7 @@ _pw_material = Extension(name = 'gmes._pw_material',
                          depends = pw_dep_lst,
                          include_dirs = [numpy_include],
                          swig_opts = ['-c++', '-outdir', 'gmes'],
-                         #language = 'c++',
-                         extra_compile_args=[])
+                         extra_compile_args=['-O'])
 
 # _constants module
 _constants = Extension(name = 'gmes._constants',
@@ -38,7 +37,6 @@ _constants = Extension(name = 'gmes._constants',
                        depends = ['src/constants.hh'],
                        include_dirs = [numpy_include],
                        swig_opts = ['-c++', '-outdir', 'gmes'],
-                       #language = 'c++',
                        extra_compile_args=[])
 
 setup(name = PACKAGE,
