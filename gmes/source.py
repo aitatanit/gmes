@@ -19,13 +19,22 @@ from numpy import inf, cross, dot, ndindex
 from numpy.linalg import norm
 from scipy.optimize import bisect
 
-import constants as const
+import constant as const
 from geometry import Cartesian, DefaultMedium, Boundary, in_range
 from fdtd import TEMzFDTD
-from material import Dielectric, CPML
+from material import Dielectric, Cpml
 
+# for a dipole source
+from pw_source import DipoleParam
+from pw_source import DipoleEx, DipoleEy, DipoleEz
+from pw_source import DipoleHx, DipoleHy, DipoleHz
 
-#
+# for a total-field/scattered-field and Gaussian beam source
+from pw_source import TransparentElectricParam, TransparentMagneticParam
+from pw_source import TransparentEx, TransparentEy, TransparentEz
+from pw_source import TransparentHx, TransparentHy, TransparentHz
+
+# 
 # SrcTime: Continuous, Bandpass
 # Src: Dipole, GaussianBeam, TotalFieldScatteredField
 #
@@ -34,8 +43,14 @@ class SrcTime(object):
     """Time-dependent part of a source.
     
     """
+    def init(self, cmplx):
+        raise NotImplementedError
+
+    def dipole(self, time):
+        raise NotImplementedError
+
     def display_info(self, indent=0):
-        pass
+        raise NotImplementedError
     
 
 class Src(object):
@@ -43,9 +58,33 @@ class Src(object):
     
     """
     def display_info(self, indent=0):
-        pass
+        raise NotImplementedError
     
-        
+    def init(self, geom_tree, space, cmplx):
+        raise NotImplementedError
+
+    def step(self):
+        raise NotImplementedError
+
+    def get_pw_source_ex(self, ex_field, space):
+        raise NotImplementedError
+    
+    def get_pw_source_ey(self, ey_field, space):
+        raise NotImplementedError
+
+    def get_pw_source_ez(self, ez_field, space):
+        raise NotImplementedError
+
+    def get_pw_source_hx(self, hx_field, space):
+        raise NotImplementedError
+
+    def get_pw_source_hy(self, hy_field, space):
+        raise NotImplementedError
+    
+    def get_pw_source_hz(self, hz_field, space):
+        raise NotImplementedError
+
+
 class Continuous(SrcTime):
     """Continuous (CW) source with (optional) slow turn-on and/or turn-off.
     
@@ -142,10 +181,6 @@ class Bandpass(SrcTime):
             return osc.real
         
 
-from pw_source import DipoleEx, DipoleEy, DipoleEz
-from pw_source import DipoleHx, DipoleHy, DipoleHz
-
-        
 class Dipole(Src):
     def __init__(self, src_time, pos, component, amp=1, filename=None):
         self.pos = np.array(pos, float)
@@ -155,6 +190,7 @@ class Dipole(Src):
         self.filename = filename
         
     def init(self, geom_tree, space, cmplx):
+        self.geom_tree = geom_tree
         self.src_time.init(cmplx)
     
     def step(self):
@@ -169,70 +205,77 @@ class Dipole(Src):
         
         self.src_time.display_info(4)
         
-    def set_pointwise_source_ex(self, material_ex, space):
+    def get_pw_source_ex(self, ex_field, space):
+        pw_src = None
+
         if self.comp is const.Ex:
             idx = space.space_to_ex_index(*self.pos)
-            if in_range(idx, material_ex, const.Ex):
-                material_ex[idx] = DipoleEx(material_ex[idx], self.src_time, 
-                                            self.amp, self.filename)
-                if self.filename is not None:
-                    loc = space.ex_index_to_space(*idx)
-                    material_ex[idx].file.write('# location=' + str(loc) + '\n')
-                    
-    def set_pointwise_source_ey(self, material_ey, space):
+            if in_range(idx, ex_field.shape, const.Ex):
+                pw_src_param = DipoleParam(self.src_time, self.amp)
+                pw_src = DipoleEx()
+                pw_src.attach(idx, pw_src_param)
+
+        return pw_src
+
+    def get_pw_source_ey(self, ey_field, space):
+        pw_src = None
+
         if self.comp is const.Ey:
             idx = space.space_to_ey_index(*self.pos)
-            if in_range(idx, material_ey, const.Ey):
-                material_ey[idx] = DipoleEy(material_ey[idx], self.src_time, 
-                                            self.amp, self.filename)
-                if self.filename is not None:
-                    loc = space.ey_index_to_space(*idx)
-                    material_ey[idx].file.write('# location=' + str(loc) + '\n')
-                    
-    def set_pointwise_source_ez(self, material_ez, space):
+            if in_range(idx, ey_field.shape, const.Ey):
+                pw_src_param = DipoleParam(self.src_time, self.amp)
+                pw_src = DipoleEy()
+                pw_src.attach(idx, pw_src_param)
+
+        return pw_src
+
+    def get_pw_source_ez(self, ez_field, space):
+        pw_src = None
+
         if self.comp is const.Ez:
             idx = space.space_to_ez_index(*self.pos)
-            if in_range(idx, material_ez, const.Ez):
-                material_ez[idx] = DipoleEz(material_ez[idx], self.src_time, 
-                                            self.amp, self.filename)
-                if self.filename is not None:
-                    loc = space.ez_index_to_space(*idx)
-                    material_ez[idx].file.write('# location=' + str(loc) + '\n')
-                    
-    def set_pointwise_source_hx(self, material_hx, space):
+            if in_range(idx, ez_field.shape, const.Ez):
+                pw_src_param = DipoleParam(self.src_time, self.amp)
+                pw_src = DipoleEz()
+                pw_src.attach(idx, pw_src_param)
+
+        return pw_src
+
+    def get_pw_source_hx(self, hx_field, space):
+        pw_src = None
+
         if self.comp is const.Hx:
             idx = space.space_to_hx_index(*self.pos)
-            if in_range(idx, material_hx, const.Hx):
-                material_hx[idx] = DipoleHx(material_hx[idx], self.src_time, 
-                                            self.amp, self.filename)
-                if self.filename is not None:
-                    loc = space.hx_index_to_space(*idx)
-                    material_hx[idx].file.write('# location=' + str(loc) + '\n')
-                    
-    def set_pointwise_source_hy(self, material_hy, space):
+            if in_range(idx, hx_field.shape, const.Hx):
+                pw_src_param = DipoleParam(self.src_time, self.amp)
+                pw_src = DipoleHx()
+                pw_src.attach(idx, pw_src_param)
+
+        return pw_src
+
+    def get_pw_source_hy(self, hy_field, space):
+        pw_src = None
+
         if self.comp is const.Hy:
             idx = space.space_to_hy_index(*self.pos)
-            if in_range(idx, material_hy, const.Hy):
-                material_hy[idx] = DipoleHy(material_hy[idx], self.src_time, 
-                                            self.amp, self.filename)
-                if self.filename is not None:
-                    loc = space.hy_index_to_space(*idx)
-                    material_hy[idx].file.write('# location=' + str(loc) + '\n')
-                    
-    def set_pointwise_source_hz(self, material_hz, space):
+            if in_range(idx, hy_field.shape, const.Hy):
+                pw_src_param = DipoleParam(self.src_time, self.amp)
+                pw_src = DipoleHy()
+                pw_src.attach(idx, pw_src_param)
+
+        return pw_src
+
+    def get_pw_source_hz(self, hz_field, space):
+        pw_src = None
+
         if self.comp is const.Hz:
             idx = space.space_to_hz_index(*self.pos)
-            if in_range(idx, material_hz, const.Hz):
-                material_hz[idx] = DipoleHz(material_hz[idx], self.src_time, 
-                                            self.amp, self.filename)
-                if self.filename is not None:
-                    loc = space.hz_index_to_space(*idx)
-                    material_hz[idx].file.write('# location=' + str(loc) + '\n')
+            if in_range(idx, hz_field.shape, const.Hz):
+                pw_src_param = DipoleParam(self.src_time, self.amp)
+                pw_src = DipoleHz()
+                pw_src.attach(idx, pw_src_param)
 
-
-from pw_source import TransparentElectric, TransparentMagnetic
-from pw_source import TransparentEx, TransparentEy, TransparentEz
-from pw_source import TransparentHx, TransparentHy, TransparentHz
+        return pw_src
 
 
 class TotalFieldScatteredField(Src):
@@ -345,19 +388,19 @@ class TotalFieldScatteredField(Src):
         
         return dot_with_axis[max(dot_with_axis)]
 
-    def _get_wave_number(self, k, epsilon, mu, space):
+    def _get_wave_number(self, k, eps_inf, mu_inf, space):
         """Calculate the wave number for auxiliary fdtd using Newton's method.
         
         Keyword arguments:
         k -- normalized wave vector
-        epsilon -- permittivity which fills the auxiliary fdtd
-        mu -- permeability which fills the auxiliary fdtd
+        eps_inf -- permittivity which fills the auxiliary fdtd
+        mu_inf -- permeability which fills the auxiliary fdtd
         space -- Cartesian instance
             
         """
         ds = np.array((space.dx, space.dy, space.dz))
         dt = space.dt
-        v = 1 / sqrt(epsilon * mu)
+        v = 1 / sqrt(eps_inf * mu_inf)
         omega = 2 * pi * self.src_time.freq
         wave_number = omega / v
         wave_vector = wave_number * np.array(k)
@@ -418,9 +461,9 @@ class TotalFieldScatteredField(Src):
 
         """
         default_medium = geom_tree.object_of_point((inf, inf, inf))[0]
-        eps = default_medium.material.epsilon
-        mu = default_medium.material.mu
-        v = 1 / sqrt(eps * mu)
+        eps_inf = default_medium.material.eps_inf
+        mu_inf = default_medium.material.mu_inf
+        v = 1 / sqrt(eps_inf * mu_inf)
         
         ds = (space.dx, space.dy, space.dz)
         dt = space.dt
@@ -457,7 +500,7 @@ class TotalFieldScatteredField(Src):
                               resolution=1/delta_1d,
                               parallel=False)
         aux_geom_list = (DefaultMedium(material=mat_objs),
-                         Boundary(material=CPML(kappa_max=2.0,
+                         Boundary(material=Cpml(kappa_max=2.0,
                                                 sigma_max_ratio=2.0),
                                   thickness=pml_thickness,
                                   size=aux_size,
@@ -476,14 +519,14 @@ class TotalFieldScatteredField(Src):
 
         return aux_fdtd
 
-    def _set_pw_source(self, space, component, cosine, material, 
+    def _get_pw_source(self, space, component, cosine, field,
                        low_idx, high_idx, source, samp_i2s, face):
         """
         Keyword arguments:
-        space - the Coordinate object given as a FDTD argument.
-        component - Specify the field component.
-        cosine - the cosine of the field vector and the given component.
-        material - pointwise material object array.
+        space - the Coordinate object given as a FDTD argument
+        component - Specify the field component
+        cosine - the cosine of the field vector and the given component
+        field - numpy array of the electromagnetic field
         low_idx - the low end index of the source boundary
         high_idx - the high end index of the source boundary
         source - the pointwise source class
@@ -504,40 +547,70 @@ class TotalFieldScatteredField(Src):
         
         low_idx_array = np.array(low_idx)
         high_idx_array = np.array(high_idx)
-        
+
+        pw_src = source()
         for i, j, k in ndindex(tuple(high_idx_array - low_idx_array)):
             idx = tuple((i, j, k) + low_idx_array)
-            if in_range(idx, material, component):
+            if in_range(idx, field.shape, component):
                 pnt = idx_to_spc[component](*idx)
                 
-                mat_objs = self.geom_tree.material_of_point(pnt)
-                eps = mat_objs[0].epsilon
-                mu = mat_objs[0].mu
+                mat_obj, underneath = self.geom_tree.material_of_point(pnt)
+                
+                if underneath is None:
+                    eps_inf = mat_obj.eps_inf
+                    mu_inf = mat_obj.mu_inf
+                else:
+                    eps_inf = underneath.eps_inf
+                    mu_inf = underneath.mu_inf
 
                 amp = cosine * self.amp * self.mode_function(*pnt)
 
-                sample_pnt = \
+                samp_pnt = \
                 (0, 0, self._metric_from_center_along_beam_axis(samp_i2s(*idx)))
                 
-                if issubclass(source, TransparentElectric):
-                    material[idx] = source(material[idx], eps, amp,
-                                           self.aux_fdtd, sample_pnt, face)
-                if issubclass(source, TransparentMagnetic):
-                    material[idx] = source(material[idx], mu, amp,
-                                           self.aux_fdtd, sample_pnt, face)
+                if isinstance(pw_src, (TransparentEx, TransparentEy, 
+                                       TransparentEz)):
+                    pw_src_param = TransparentElectricParam(eps_inf, amp, 
+                                                            self.aux_fdtd, 
+                                                            samp_pnt, face)
+                    pw_src.attach(idx, pw_src_param)
+                if isinstance(pw_src, (TransparentHx, TransparentHy, 
+                                       TransparentHz)):
+                    pw_src_param = TransparentMagneticParam(mu_inf, amp, 
+                                                            self.aux_fdtd, 
+                                                            samp_pnt, face)
+                    pw_src.attach(idx, pw_src_param)
+                
+        return pw_src
 
-    def set_pointwise_source_ex(self, material_ex, space):
+    def get_pw_source_ex(self, ex_field, space):
+        pw_src = TransparentEx()
+
         cosine = dot(self.h_direction, (0, 0, 1))
         if cosine != 0:
-            self._set_pw_source_ex_minus_y(material_ex, space, cosine)
-            self._set_pw_source_ex_plus_y(material_ex, space, cosine)
+            pw_src_tmp = self._get_pw_source_ex_minus_y(ex_field, space, cosine)
+            if pw_src_tmp != None: 
+                pw_src.merge(pw_src_tmp)
+
+            pw_src_tmp = self._get_pw_source_ex_plus_y(ex_field, space, cosine)
+            if pw_src_tmp != None: 
+                pw_src.merge(pw_src_tmp)
             
         cosine = dot(self.h_direction, (0, 1, 0))
         if cosine != 0:
-            self._set_pw_source_ex_minus_z(material_ex, space, cosine)
-            self._set_pw_source_ex_plus_z(material_ex, space, cosine)
-        
-    def _set_pw_source_ex_minus_y(self, material_ex, space, cosine):
+            pw_src_tmp = self._get_pw_source_ex_minus_z(ex_field, space, cosine)
+            if pw_src_tmp != None: 
+                pw_src.merge(pw_src_tmp)
+            pw_src_tmp = self._get_pw_source_ex_plus_z(ex_field, space, cosine)
+            if pw_src_tmp != None: 
+                pw_src.merge(pw_src_tmp)
+
+        if len(pw_src._param) == 0:
+            return None
+        else:
+            return pw_src
+
+    def _get_pw_source_ex_minus_y(self, ex_field, space, cosine):
         if 2 * space.half_size[1] > space.dy:
             low = self.center - self.half_size
             high = self.center + self.half_size * (1, -1, 1)
@@ -547,11 +620,15 @@ class TotalFieldScatteredField(Src):
     
             hz_i2s = lambda i, j, k: space.hz_index_to_space(i + 1, j, k)
             
-            self._set_pw_source(space, const.Ex, cosine, material_ex, 
-                                low_idx, high_idx, TransparentEx, 
-                                hz_i2s, const.MinusY)
+            pw_src = self._get_pw_source(space, const.Ex, cosine, ex_field, 
+                                         low_idx, high_idx, TransparentEx, 
+                                         hz_i2s, const.MinusY)
+        else:
+            pw_src = None
+            
+        return pw_src
         
-    def _set_pw_source_ex_plus_y(self, material_ex, space, cosine):
+    def _get_pw_source_ex_plus_y(self, ex_field, space, cosine):
         if 2 * space.half_size[1] > space.dy:
             low = self.center - self.half_size * (1, -1, 1)
             high = self.center + self.half_size
@@ -561,11 +638,16 @@ class TotalFieldScatteredField(Src):
     
             hz_i2s = lambda i, j, k: space.hz_index_to_space(i + 1, j + 1, k)
             
-            self._set_pw_source(space, const.Ex, cosine, material_ex,
-                                low_idx, high_idx, TransparentEx, 
-                                hz_i2s, const.PlusY)
+            pw_src = self._get_pw_source(space, const.Ex, cosine, ex_field,
+                                         low_idx, high_idx, TransparentEx, 
+                                         hz_i2s, const.PlusY)
         
-    def _set_pw_source_ex_minus_z(self, material_ex, space, cosine):
+        else:
+            pw_src = None
+
+        return pw_src
+        
+    def _get_pw_source_ex_minus_z(self, ex_field, space, cosine):
         if 2 * space.half_size[2] > space.dz:
             low = self.center - self.half_size
             high = self.center + self.half_size * (1, 1, -1)
@@ -575,11 +657,15 @@ class TotalFieldScatteredField(Src):
             
             hy_i2s = lambda i, j, k: space.hy_index_to_space(i + 1, j, k)
             
-            self._set_pw_source(space, const.Ex, cosine, material_ex,
-                                low_idx, high_idx, TransparentEx, 
-                                hy_i2s, const.MinusZ)
+            pw_src = self._get_pw_source(space, const.Ex, cosine, ex_field,
+                                         low_idx, high_idx, TransparentEx, 
+                                         hy_i2s, const.MinusZ)
+        else:
+            pw_src = None
+
+        return pw_src
     
-    def _set_pw_source_ex_plus_z(self, material_ex, space, cosine):
+    def _get_pw_source_ex_plus_z(self, ex_field, space, cosine):
         if 2 * space.half_size[2] > space.dz:
             low = self.center - self.half_size * (1, 1, -1)
             high = self.center + self.half_size
@@ -589,22 +675,41 @@ class TotalFieldScatteredField(Src):
             
             i2s = lambda i, j, k: space.hy_index_to_space(i + 1, j, k + 1)
             
-            self._set_pw_source(space, const.Ex, cosine, material_ex,
-                                low_idx, high_idx, TransparentEx, 
-                                i2s, const.PlusZ)
+            pw_src = self._get_pw_source(space, const.Ex, cosine, ex_field,
+                                         low_idx, high_idx, TransparentEx, 
+                                         i2s, const.PlusZ)
+        else:
+            pw_src = None
+
+        return pw_src
         
-    def set_pointwise_source_ey(self, material_ey, space):
+    def get_pw_source_ey(self, ey_field, space):
+        pw_src = TransparentEy()
+
         cosine = dot(self.h_direction, (1, 0, 0))
         if cosine != 0:
-            self._set_pw_source_ey_minus_z(material_ey, space, cosine)
-            self._set_pw_source_ey_plus_z(material_ey, space, cosine)
+            pw_src_tmp = self._get_pw_source_ey_minus_z(ey_field, space, cosine)
+            if pw_src_tmp != None: 
+                pw_src.merge(pw_src_tmp)
+            pw_src_tmp = self._get_pw_source_ey_plus_z(ey_field, space, cosine)
+            if pw_src_tmp != None: 
+                pw_src.merge(pw_src_tmp)
             
         cosine = dot(self.h_direction, (0, 0, 1))
         if cosine != 0:
-            self._set_pw_source_ey_minus_x(material_ey, space, cosine)
-            self._set_pw_source_ey_plus_x(material_ey, space, cosine)
+            pw_src_tmp = self._get_pw_source_ey_minus_x(ey_field, space, cosine)
+            if pw_src_tmp != None: 
+                pw_src.merge(pw_src_tmp)
+            pw_src_tmp = self._get_pw_source_ey_plus_x(ey_field, space, cosine)
+            if pw_src_tmp != None: 
+                pw_src.merge(pw_src_tmp)
         
-    def _set_pw_source_ey_minus_z(self, material_ey, space, cosine):
+        if len(pw_src._param) == 0:
+            return None
+        else:
+            return pw_src
+
+    def _get_pw_source_ey_minus_z(self, ey_field, space, cosine):
         if 2 * space.half_size[2] > space.dz:
             low = self.center - self.half_size
             high = self.center + self.half_size * (1, 1, -1)
@@ -614,11 +719,15 @@ class TotalFieldScatteredField(Src):
     
             hx_i2s = lambda i, j, k: space.hx_index_to_space(i, j + 1, k)
             
-            self._set_pw_source(space, const.Ey, cosine, material_ey,
-                                low_idx, high_idx, TransparentEy, 
-                                hx_i2s, const.MinusZ)
-    
-    def _set_pw_source_ey_plus_z(self, material_ey, space, cosine):
+            pw_src = self._get_pw_source(space, const.Ey, cosine, ey_field,
+                                         low_idx, high_idx, TransparentEy, 
+                                         hx_i2s, const.MinusZ)
+        else:
+            pw_src = None
+            
+        return pw_src
+
+    def _get_pw_source_ey_plus_z(self, ey_field, space, cosine):
         if 2 * space.half_size[2] > space.dz:
             low = self.center - self.half_size * (1, 1, -1)
             high = self.center + self.half_size
@@ -628,11 +737,15 @@ class TotalFieldScatteredField(Src):
     
             hx_i2s = lambda i, j, k: space.hx_index_to_space(i, j + 1, k + 1)
             
-            self._set_pw_source(space, const.Ey, cosine, material_ey,
-                                low_idx, high_idx, TransparentEy,
-                                hx_i2s, const.PlusZ)
-    
-    def _set_pw_source_ey_minus_x(self, material_ey, space, cosine):
+            pw_src = self._get_pw_source(space, const.Ey, cosine, ey_field,
+                                         low_idx, high_idx, TransparentEy,
+                                         hx_i2s, const.PlusZ)
+        else:
+            pw_src = None
+
+        return pw_src
+
+    def _get_pw_source_ey_minus_x(self, ey_field, space, cosine):
         if 2 * space.half_size[0] > space.dx:
             low = self.center - self.half_size
             high = self.center + self.half_size * (-1, 1, 1)
@@ -642,11 +755,15 @@ class TotalFieldScatteredField(Src):
     
             hz_i2s = lambda i, j, k: space.hz_index_to_space(i, j + 1, k)
             
-            self._set_pw_source(space, const.Ey, cosine, material_ey,  
-                                low_idx, high_idx, TransparentEy,
-                                hz_i2s, const.MinusX)
-    
-    def _set_pw_source_ey_plus_x(self, material_ey, space, cosine):
+            pw_src = self._get_pw_source(space, const.Ey, cosine, ey_field, 
+                                     low_idx, high_idx, TransparentEy,
+                                     hz_i2s, const.MinusX)
+        else:
+            pw_src = None
+            
+        return pw_src
+
+    def _get_pw_source_ey_plus_x(self, ey_field, space, cosine):
         if 2 * space.half_size[0] > space.dx:
             low = self.center - self.half_size * (-1, 1, 1)
             high = self.center + self.half_size
@@ -656,22 +773,41 @@ class TotalFieldScatteredField(Src):
     
             hz_i2s = lambda i, j, k: space.hz_index_to_space(i + 1, j + 1, k)
             
-            self._set_pw_source(space, const.Ey, cosine, material_ey,  
-                                low_idx, high_idx, TransparentEy,
-                                hz_i2s, const.PlusX)
-        
-    def set_pointwise_source_ez(self, material_ez, space):
+            pw_src = self._get_pw_source(space, const.Ey, cosine, ey_field, 
+                                         low_idx, high_idx, TransparentEy,
+                                         hz_i2s, const.PlusX)
+        else:
+            pw_src = None
+            
+        return pw_src
+
+    def get_pw_source_ez(self, ez_field, space):
+        pw_src = TransparentEz()
+
         cosine = dot(self.h_direction, (0, 1, 0))
         if cosine != 0:
-            self._set_pw_source_ez_minus_x(material_ez, space, cosine)
-            self._set_pw_source_ez_plus_x(material_ez, space, cosine)
+            pw_src_tmp = self._get_pw_source_ez_minus_x(ez_field, space, cosine)
+            if pw_src_tmp != None: 
+                pw_src.merge(pw_src_tmp)
+            pw_src_tmp = self._get_pw_source_ez_plus_x(ez_field, space, cosine)
+            if pw_src_tmp != None: 
+                pw_src.merge(pw_src_tmp)
             
         cosine = dot(self.h_direction, (1, 0, 0))
         if cosine != 0:
-            self._set_pw_source_ez_minus_y(material_ez, space, cosine)
-            self._set_pw_source_ez_plus_y(material_ez, space, cosine)
+            pw_src_tmp = self._get_pw_source_ez_minus_y(ez_field, space, cosine)
+            if pw_src_tmp != None: 
+                pw_src.merge(pw_src_tmp)
+            pw_src_tmp = self._get_pw_source_ez_plus_y(ez_field, space, cosine)
+            if pw_src_tmp != None: 
+                pw_src.merge(pw_src_tmp)
         
-    def _set_pw_source_ez_minus_x(self, material_ez, space, cosine):
+        if len(pw_src._param) == 0:
+            return None
+        else:
+            return pw_src
+
+    def _get_pw_source_ez_minus_x(self, ez_field, space, cosine):
         if 2 * space.half_size[0] > space.dx:
             low = self.center - self.half_size
             high = self.center + self.half_size * (-1, 1, 1)
@@ -681,11 +817,15 @@ class TotalFieldScatteredField(Src):
 
             hy_i2s = lambda i, j, k: space.hy_index_to_space(i, j, k + 1)
             
-            self._set_pw_source(space, const.Ez, cosine, material_ez,  
-                                low_idx, high_idx, TransparentEz, 
-                                hy_i2s, const.MinusX)
+            pw_src = self._get_pw_source(space, const.Ez, cosine, ez_field, 
+                                         low_idx, high_idx, TransparentEz, 
+                                         hy_i2s, const.MinusX)
+        else: 
+            pw_src = None
 
-    def _set_pw_source_ez_plus_x(self, material_ez, space, cosine):
+        return pw_src
+
+    def _get_pw_source_ez_plus_x(self, ez_field, space, cosine):
         if 2 * space.half_size[0] > space.dx:
             low = self.center - self.half_size * (-1, 1, 1)
             high = self.center + self.half_size
@@ -695,11 +835,15 @@ class TotalFieldScatteredField(Src):
 
             hy_i2s = lambda i, j, k: space.hy_index_to_space(i + 1, j, k + 1)
             
-            self._set_pw_source(space, const.Ez, cosine, material_ez,
-                                low_idx, high_idx, TransparentEz,
-                                hy_i2s, const.PlusX)
-    
-    def _set_pw_source_ez_minus_y(self, material_ez, space, cosine):
+            pw_src = self._get_pw_source(space, const.Ez, cosine, ez_field,
+                                         low_idx, high_idx, TransparentEz,
+                                         hy_i2s, const.PlusX)
+        else: 
+            pw_src = None
+
+        return pw_src
+
+    def _get_pw_source_ez_minus_y(self, ez_field, space, cosine):
         if 2 * space.half_size[1] > space.dy:
             low = self.center - self.half_size
             high = self.center + self.half_size * (1, -1, 1)
@@ -709,11 +853,15 @@ class TotalFieldScatteredField(Src):
 
             hx_i2s = lambda i, j, k: space.hx_index_to_space(i, j, k + 1)
 
-            self._set_pw_source(space, const.Ez, cosine, material_ez,
-                                low_idx, high_idx, TransparentEz, 
-                                hx_i2s, const.MinusY)
-    
-    def _set_pw_source_ez_plus_y(self, material_ez, space, cosine):
+            pw_src = self._get_pw_source(space, const.Ez, cosine, ez_field,
+                                         low_idx, high_idx, TransparentEz, 
+                                         hx_i2s, const.MinusY)
+        else: 
+            pw_src = None
+
+        return pw_src
+
+    def _get_pw_source_ez_plus_y(self, ez_field, space, cosine):
         if 2 * space.half_size[1] > space.dy:
             low = self.center - self.half_size * (1, -1, 1)
             high = self.center + self.half_size
@@ -723,22 +871,41 @@ class TotalFieldScatteredField(Src):
 
             hx_i2s = lambda i, j, k: space.hx_index_to_space(i, j + 1, k + 1)
 
-            self._set_pw_source(space, const.Ez, cosine, material_ez,  
-                                low_idx, high_idx, TransparentEz, 
-                                hx_i2s, const.PlusY)
-        
-    def set_pointwise_source_hx(self, material_hx, space):
+            pw_src = self._get_pw_source(space, const.Ez, cosine, ez_field,  
+                                         low_idx, high_idx, TransparentEz, 
+                                         hx_i2s, const.PlusY)
+        else: 
+            pw_src = None
+
+        return pw_src
+
+    def get_pw_source_hx(self, hx_field, space):
+        pw_src = TransparentHx()
+
         cosine = dot(self.e_direction, (0, 0, 1))
         if cosine != 0:
-            self._set_pw_source_hx_minus_y(material_hx, space, cosine)
-            self._set_pw_source_hx_plus_y(material_hx, space, cosine)
+            pw_src_tmp = self._get_pw_source_hx_minus_y(hx_field, space, cosine)
+            if pw_src_tmp != None: 
+                pw_src.merge(pw_src_tmp)
+            pw_src_tmp = self._get_pw_source_hx_plus_y(hx_field, space, cosine)
+            if pw_src_tmp != None: 
+                pw_src.merge(pw_src_tmp)
             
         cosine = dot(self.e_direction, (0, 1, 0))
         if cosine != 0:   
-            self._set_pw_source_hx_minus_z(material_hx, space, cosine)
-            self._set_pw_source_hx_plus_z(material_hx, space, cosine)
+            pw_src_tmp = self._get_pw_source_hx_minus_z(hx_field, space, cosine)
+            if pw_src_tmp != None: 
+                pw_src.merge(pw_src_tmp)
+            pw_src_tmp = self._get_pw_source_hx_plus_z(hx_field, space, cosine)
+            if pw_src_tmp != None: 
+                pw_src.merge(pw_src_tmp)
         
-    def _set_pw_source_hx_minus_y(self, material_hx, space, cosine):
+        if len(pw_src._param) == 0:
+            return None
+        else:
+            return pw_src
+
+    def _get_pw_source_hx_minus_y(self, hx_field, space, cosine):
         if 2 * space.half_size[1] > space.dy:
             low = self.center - self.half_size
             high = self.center + self.half_size * (1, -1, 1)
@@ -751,11 +918,15 @@ class TotalFieldScatteredField(Src):
             
             ez_i2s = lambda i, j, k: space.ez_index_to_space(i, j, k - 1)
             
-            self._set_pw_source(space, const.Hx, cosine, material_hx,
-                                low_idx, high_idx, TransparentHx, 
-                                ez_i2s, const.MinusY)
-    
-    def _set_pw_source_hx_plus_y(self, material_hx, space, cosine):
+            pw_src = self._get_pw_source(space, const.Hx, cosine, hx_field,
+                                         low_idx, high_idx, TransparentHx, 
+                                         ez_i2s, const.MinusY)
+        else: 
+            pw_src = None
+
+        return pw_src
+
+    def _get_pw_source_hx_plus_y(self, hx_field, space, cosine):
         if 2 * space.half_size[1] > space.dy:
             low = self.center - self.half_size * (1, -1, 1)
             high = self.center + self.half_size
@@ -768,11 +939,16 @@ class TotalFieldScatteredField(Src):
             
             ez_i2s = lambda i, j, k: space.ez_index_to_space(i, j - 1, k - 1)
             
-            self._set_pw_source(space, const.Hx, cosine, material_hx,  
-                                low_idx, high_idx, TransparentHx,
-                                ez_i2s, const.PlusY)
+            pw_src = self._get_pw_source(space, const.Hx, cosine, hx_field, 
+                                         low_idx, high_idx, TransparentHx,
+                                         ez_i2s, const.PlusY)
     
-    def _set_pw_source_hx_minus_z(self, material_hx, space, cosine):
+        else: 
+            pw_src = None
+
+        return pw_src
+
+    def _get_pw_source_hx_minus_z(self, hx_field, space, cosine):
         if 2 * space.half_size[2] > space.dz:
             low = self.center - self.half_size
             high = self.center + self.half_size * (1, 1, -1)
@@ -785,11 +961,15 @@ class TotalFieldScatteredField(Src):
             
             ey_i2s = lambda i, j, k: space.ey_index_to_space(i, j - 1, k - 1)
             
-            self._set_pw_source(space, const.Hx, cosine, material_hx,
-                                low_idx, high_idx, TransparentHx,
-                                ey_i2s, const.MinusZ)
-    
-    def _set_pw_source_hx_plus_z(self, material_hx, space, cosine):
+            pw_src = self._get_pw_source(space, const.Hx, cosine, hx_field,
+                                         low_idx, high_idx, TransparentHx,
+                                         ey_i2s, const.MinusZ)
+        else: 
+            pw_src = None
+
+        return pw_src
+
+    def _get_pw_source_hx_plus_z(self, hx_field, space, cosine):
         if 2 * space.half_size[2] > space.dz:
             low = self.center - self.half_size * (1, 1, -1)
             high = self.center + self.half_size
@@ -802,22 +982,41 @@ class TotalFieldScatteredField(Src):
             
             ey_i2s = lambda i, j, k: space.ey_index_to_space(i, j - 1, k)
             
-            self._set_pw_source(space, const.Hx, cosine, material_hx,
-                                low_idx, high_idx, TransparentHx,
-                                ey_i2s, const.PlusZ)
-        
-    def set_pointwise_source_hy(self, material_hy, space):
+            pw_src = self._get_pw_source(space, const.Hx, cosine, hx_field,
+                                         low_idx, high_idx, TransparentHx,
+                                         ey_i2s, const.PlusZ)
+        else: 
+            pw_src = None
+
+        return pw_src
+
+    def get_pw_source_hy(self, hy_field, space):
+        pw_src = TransparentHy()
+
         cosine = dot(self.e_direction, (1, 0, 0))
         if cosine != 0:
-            self._set_pw_source_hy_minus_z(material_hy, space, cosine)
-            self._set_pw_source_hy_plus_z(material_hy, space, cosine)
-         
+            pw_src_tmp = self._get_pw_source_hy_minus_z(hy_field, space, cosine)
+            if pw_src_tmp != None: 
+                pw_src.merge(pw_src_tmp)
+            pw_src_tmp = self._get_pw_source_hy_plus_z(hy_field, space, cosine)
+            if pw_src_tmp != None: 
+                pw_src.merge(pw_src_tmp)
+
         cosine = dot(self.e_direction, (0, 0, 1))
         if cosine != 0:   
-            self._set_pw_source_hy_minus_x(material_hy, space, cosine)
-            self._set_pw_source_hy_plus_x(material_hy, space, cosine)
-                
-    def _set_pw_source_hy_minus_z(self, material_hy, space, cosine):
+            pw_src_tmp = self._get_pw_source_hy_minus_x(hy_field, space, cosine)
+            if pw_src_tmp != None: 
+                pw_src.merge(pw_src_tmp)
+            pw_src_tmp = self._get_pw_source_hy_plus_x(hy_field, space, cosine)
+            if pw_src_tmp != None: 
+                pw_src.merge(pw_src_tmp)
+
+        if len(pw_src._param) == 0:
+            return None
+        else:
+            return pw_src
+
+    def _get_pw_source_hy_minus_z(self, hy_field, space, cosine):
         if 2 * space.half_size[2] > space.dz:
             low = self.center - self.half_size
             high = self.center + self.half_size * (1, 1, -1)
@@ -830,11 +1029,15 @@ class TotalFieldScatteredField(Src):
             
             ex_i2s = lambda i, j, k: space.ex_index_to_space(i - 1, j, k)
             
-            self._set_pw_source(space, const.Hy, cosine, material_hy,
-                                low_idx, high_idx, TransparentHy,
-                                ex_i2s, const.MinusZ)
-    
-    def _set_pw_source_hy_plus_z(self, material_hy, space, cosine):
+            pw_src = self._get_pw_source(space, const.Hy, cosine, hy_field,
+                                         low_idx, high_idx, TransparentHy,
+                                         ex_i2s, const.MinusZ)
+        else:
+            pw_src = None
+        
+        return pw_src
+
+    def _get_pw_source_hy_plus_z(self, hy_field, space, cosine):
         if 2 * space.half_size[2] > space.dz:
             low = self.center - self.half_size * (1, 1, -1)
             high = self.center + self.half_size
@@ -847,11 +1050,15 @@ class TotalFieldScatteredField(Src):
             
             ex_i2s = lambda i, j, k: space.ex_index_to_space(i - 1, j, k - 1)
             
-            self._set_pw_source(space, const.Hy, cosine, material_hy,
-                                low_idx, high_idx, TransparentHy,
-                                ex_i2s, const.PlusZ)
-    
-    def _set_pw_source_hy_minus_x(self, material_hy, space, cosine):
+            pw_src = self._get_pw_source(space, const.Hy, cosine, hy_field,
+                                         low_idx, high_idx, TransparentHy,
+                                         ex_i2s, const.PlusZ)
+        else:
+            pw_src = None
+        
+        return pw_src
+
+    def _get_pw_source_hy_minus_x(self, hy_field, space, cosine):
         if 2 * space.half_size[0] > space.dx:
             low = self.center - self.half_size
             high = self.center + self.half_size * (-1, 1, 1)
@@ -864,11 +1071,15 @@ class TotalFieldScatteredField(Src):
             
             ez_i2s = lambda i, j, k: space.ez_index_to_space(i, j, k - 1)
             
-            self._set_pw_source(space, const.Hy, cosine, material_hy,
-                                low_idx, high_idx, TransparentHy,
-                                ez_i2s, const.MinusX)
-    
-    def _set_pw_source_hy_plus_x(self, material_hy, space, cosine):
+            pw_src = self._get_pw_source(space, const.Hy, cosine, hy_field,
+                                         low_idx, high_idx, TransparentHy,
+                                         ez_i2s, const.MinusX)
+        else:
+            pw_src = None
+        
+        return pw_src
+
+    def _get_pw_source_hy_plus_x(self, hy_field, space, cosine):
         if 2 * space.half_size[0] > space.dx:
             low = self.center - self.half_size * (-1, 1, 1)
             high = self.center + self.half_size
@@ -881,22 +1092,41 @@ class TotalFieldScatteredField(Src):
             
             ez_i2s = lambda i, j, k: space.ez_index_to_space(i - 1, j, k - 1)
             
-            self._set_pw_source(space, const.Hy, cosine, material_hy,
-                                low_idx, high_idx, TransparentHy,
-                                ez_i2s, const.PlusX)
+            pw_src = self._get_pw_source(space, const.Hy, cosine, hy_field,
+                                         low_idx, high_idx, TransparentHy,
+                                         ez_i2s, const.PlusX)
+        else:
+            pw_src = None
         
-    def set_pointwise_source_hz(self, material_hz, space):
+        return pw_src
+
+    def get_pw_source_hz(self, hz_field, space):
+        pw_src = TransparentHz()
+
         cosine = dot(self.e_direction, (0, 1, 0))
         if cosine != 0:
-            self._set_pw_source_hz_minus_x(material_hz, space, cosine)
-            self._set_pw_source_hz_plus_x(material_hz, space, cosine)
+            pw_src_tmp = self._get_pw_source_hz_minus_x(hz_field, space, cosine)
+            if pw_src_tmp != None: 
+                pw_src.merge(pw_src_tmp)
+            pw_src_tmp = self._get_pw_source_hz_plus_x(hz_field, space, cosine)
+            if pw_src_tmp != None: 
+                pw_src.merge(pw_src_tmp)
             
         cosine = dot(self.e_direction, (1, 0, 0))
         if cosine != 0:
-            self._set_pw_source_hz_minus_y(material_hz, space, cosine)
-            self._set_pw_source_hz_plus_y(material_hz, space, cosine)
+            pw_src_tmp = self._get_pw_source_hz_minus_y(hz_field, space, cosine)
+            if pw_src_tmp != None: 
+                pw_src.merge(pw_src_tmp)
+            pw_src_tmp = self._get_pw_source_hz_plus_y(hz_field, space, cosine)
+            if pw_src_tmp != None: 
+                pw_src.merge(pw_src_tmp)
         
-    def _set_pw_source_hz_minus_x(self, material_hz, space, cosine):
+        if len(pw_src._param) == 0:
+            return None
+        else:
+            return pw_src
+
+    def _get_pw_source_hz_minus_x(self, hz_field, space, cosine):
         if 2 * space.half_size[0] > space.dx:
             low = self.center - self.half_size
             high = self.center + self.half_size * (-1, 1, 1)
@@ -909,11 +1139,15 @@ class TotalFieldScatteredField(Src):
             
             ey_i2s = lambda i, j, k: space.ey_index_to_space(i, j - 1, k)
             
-            self._set_pw_source(space, const.Hz, cosine, material_hz,
-                                low_idx, high_idx, TransparentHz,
-                                ey_i2s, const.MinusX)
-    
-    def _set_pw_source_hz_plus_x(self, material_hz, space, cosine):
+            pw_src = self._get_pw_source(space, const.Hz, cosine, hz_field,
+                                         low_idx, high_idx, TransparentHz,
+                                         ey_i2s, const.MinusX)
+        else:
+            pw_src = None
+        
+        return pw_src
+
+    def _get_pw_source_hz_plus_x(self, hz_field, space, cosine):
         if 2 * space.half_size[0] > space.dx:
             low = self.center - self.half_size * (-1, 1, 1)
             high = self.center + self.half_size
@@ -926,11 +1160,15 @@ class TotalFieldScatteredField(Src):
             
             ey_i2s = lambda i, j, k: space.ey_index_to_space(i - 1, j - 1, k)
             
-            self._set_pw_source(space, const.Hz, cosine, material_hz,
-                                low_idx, high_idx, TransparentHz,
-                                ey_i2s, const.PlusX)
-    
-    def _set_pw_source_hz_minus_y(self, material_hz, space, cosine):
+            pw_src = self._get_pw_source(space, const.Hz, cosine, hz_field,
+                                         low_idx, high_idx, TransparentHz,
+                                         ey_i2s, const.PlusX)
+        else:
+            pw_src = None
+        
+        return pw_src
+
+    def _get_pw_source_hz_minus_y(self, hz_field, space, cosine):
         if 2 * space.half_size[1] > space.dy:
             low = self.center - self.half_size
             high = self.center + self.half_size * (1, -1, 1)
@@ -943,11 +1181,15 @@ class TotalFieldScatteredField(Src):
             
             ex_i2s = lambda i, j, k: space.ex_index_to_space(i, j - 1, k)
             
-            self._set_pw_source(space, const.Hz, cosine, material_hz,
-                                low_idx, high_idx, TransparentHz,
-                                ex_i2s, const.MinusY)
-    
-    def _set_pw_source_hz_plus_y(self, material_hz, space, cosine):
+            pw_src = self._get_pw_source(space, const.Hz, cosine, hz_field,
+                                         low_idx, high_idx, TransparentHz,
+                                         ex_i2s, const.MinusY)
+        else:
+            pw_src = None
+        
+        return pw_src
+
+    def _get_pw_source_hz_plus_y(self, hz_field, space, cosine):
         if 2 * space.half_size[1] > space.dy:
             low = self.center - self.half_size * (1, -1, 1)
             high = self.center + self.half_size
@@ -960,11 +1202,15 @@ class TotalFieldScatteredField(Src):
             
             ex_2s = lambda i, j, k: space.ex_index_to_space(i - 1, j - 1, k)
             
-            self._set_pw_source(space, const.Hz, cosine, material_hz,
-                                low_idx, high_idx, TransparentHz,
-                                ex_i2s, const.PlusY)
+            pw_src = self._get_pw_source(space, const.Hz, cosine, hz_field,
+                                         low_idx, high_idx, TransparentHz,
+                                         ex_i2s, const.PlusY)
+        else:
+            pw_src = None
         
+        return pw_src
         
+
 class GaussianBeam(TotalFieldScatteredField):
     """Launch a transparent Gaussian beam.
     
@@ -979,7 +1225,7 @@ class GaussianBeam(TotalFieldScatteredField):
         
         Keyword arguments:
         directivity -- directivity of the incidence interface.
-           type: a child class of constants.Directional.
+           type: a child class of constant.Directional.
         center -- center of the incidence interface. The beam axis crosses
                   this point.
            type: a tuple with three real numbers.
@@ -1017,9 +1263,9 @@ class GaussianBeam(TotalFieldScatteredField):
         dist = 2 * aux_fdtd.space.half_size[2]
         default_medium = (i for i in aux_fdtd.geom_list 
                             if isinstance(i, DefaultMedium)).next()
-        eps = default_medium.material.epsilon
-        mu = default_medium.material.mu
-        v_p = 1 / sqrt(eps * mu)
+        eps_inf = default_medium.material.eps_inf
+        mu_inf = default_medium.material.mu_inf
+        v_p = 1 / sqrt(eps_inf * mu_inf)
         passby = raising + dist / v_p
 
         while aux_fdtd.time_step.t < 2 * passby:
@@ -1042,123 +1288,123 @@ class GaussianBeam(TotalFieldScatteredField):
         r = self._dist_from_beam_axis(x, y, z)
         return exp(-(r / self.waist)**2)
         
-    def set_pointwise_source_ex(self, material_ex, space):
+    def get_pw_source_ex(self, ex_field, space):
         if self.directivity is const.PlusY:
             cosine = dot(self.h_direction, (0, 0, 1))
-            self._set_pw_source_ex_minus_y(material_ex, space, cosine)
+            return self._get_pw_source_ex_minus_y(ex_field, space, cosine)
             
         elif self.directivity is const.MinusY:
             cosine = dot(self.h_direction, (0, 0, 1))
-            self._set_pw_source_ex_plus_y(material_ex, space, cosine)
-            
+            return self._get_pw_source_ex_plus_y(ex_field, space, cosine)
+
         elif self.directivity is const.PlusZ:
             cosine = dot(self.h_direction, (0, 1, 0))
-            self._set_pw_source_ex_minus_z(material_ex, space, cosine)
-            
+            return self._get_pw_source_ex_minus_z(ex_field, space, cosine)
+
         elif self.directivity is const.MinusZ:
             cosine = dot(self.h_direction, (0, 1, 0))
-            self._set_pw_source_ex_plus_z(material_ex, space, cosine)
-            
+            return self._get_pw_source_ex_plus_z(ex_field, space, cosine)
+
         else:
             return None
-        
-    def set_pointwise_source_ey(self, material_ey, space):
+
+    def get_pw_source_ey(self, ey_field, space):
         if self.directivity is const.PlusZ:
             cosine = dot(self.h_direction, (1, 0, 0))
-            self._set_pw_source_ey_minus_z(material_ey, space, cosine)
+            return self._get_pw_source_ey_minus_z(ey_field, space, cosine)
             
         elif self.directivity is const.MinusZ:
             cosine = dot(self.h_direction, (1, 0, 0))
-            self._set_pw_source_ey_plus_z(material_ey, space, cosine)
-            
+            return self._get_pw_source_ey_plus_z(ey_field, space, cosine)
+
         elif self.directivity is const.PlusX:
             cosine = dot(self.h_direction, (0, 0, 1))
-            self._set_pw_source_ey_minus_x(material_ey, space, cosine)
-            
+            return self._get_pw_source_ey_minus_x(ey_field, space, cosine)
+
         elif self.directivity is const.MinusX:
             cosine = dot(self.h_direction, (0, 0, 1))
-            self._set_pw_source_ey_plus_x(material_ey, space, cosine)
-            
+            return self._get_pw_source_ey_plus_x(ey_field, space, cosine)
+
         else:
             return None
-        
-    def set_pointwise_source_ez(self, material_ez, space):
+
+    def get_pw_source_ez(self, ez_field, space):
         if self.directivity is const.PlusX:
             cosine = dot(self.h_direction, (0, 1, 0))
-            self._set_pw_source_ez_minus_x(material_ez, space, cosine)
+            return self._get_pw_source_ez_minus_x(ez_field, space, cosine)
             
         elif self.directivity is const.MinusX:
             cosine = dot(self.h_direction, (0, 1, 0))
-            self._set_pw_source_ez_plus_x(material_ez, space, cosine)
-            
+            return self._get_pw_source_ez_plus_x(ez_field, space, cosine)
+
         elif self.directivity is const.PlusY:
             cosine = dot(self.h_direction, (1, 0, 0))
-            self._set_pw_source_ez_minus_y(material_ez, space, cosine)
-            
+            return self._get_pw_source_ez_minus_y(ez_field, space, cosine)
+
         elif self.directivity is const.MinusY:
             cosine = dot(self.h_direction, (1, 0, 0))
-            self._set_pw_source_ez_plus_y(material_ez, space, cosine)
-            
+            return self._get_pw_source_ez_plus_y(ez_field, space, cosine)
+
         else:
             return None
         
-    def set_pointwise_source_hx(self, material_hx, space):
+    def get_pw_source_hx(self, hx_field, space):
         if self.directivity is const.PlusY:
             cosine = dot(self.e_direction, (0, 0, 1))
-            self._set_pw_source_hx_minus_y(material_hx, space, cosine)
-            
+            return self._get_pw_source_hx_minus_y(hx_field, space, cosine)
+
         elif self.directivity is const.MinusY:
             cosine = dot(self.e_direction, (0, 0, 1))
-            self._set_pw_source_hx_plus_y(material_hx, space, cosine)
-            
+            return self._get_pw_source_hx_plus_y(hx_field, space, cosine)
+
         elif self.directivity is const.PlusZ:
             cosine = dot(self.e_direction, (0, 1, 0))
-            self._set_pw_source_hx_minus_z(material_hx, space, cosine)
-            
+            return self._get_pw_source_hx_minus_z(hx_field, space, cosine)
+
         elif self.directivity is const.MinusZ:
             cosine = dot(self.e_direction, (0, 1, 0))
-            self._set_pw_source_hx_plus_z(material_hx, space, cosine)
-            
+            return self._get_pw_source_hx_plus_z(hx_field, space, cosine)
+
         else:
             return None
         
-    def set_pointwise_source_hy(self, material_hy, space):
+    def get_pw_source_hy(self, hy_field, space):
         if self.directivity is const.PlusZ:
             cosine = dot(self.e_direction, (1, 0, 0))
-            self._set_pw_source_hy_minus_z(material_hy, space, cosine)
-            
+            return self._get_pw_source_hy_minus_z(hy_field, space, cosine)
+
         elif self.directivity is const.MinusZ:
             cosine = dot(self.e_direction, (1, 0, 0))
-            self._set_pw_source_hy_plus_z(material_hy, space, cosine)
-            
+            return self._get_pw_source_hy_plus_z(hy_field, space, cosine)
+
         elif self.directivity is const.PlusX:
             cosine = dot(self.e_direction, (0, 0, 1))
-            self._set_pw_source_hy_minus_x(material_hy, space, cosine)
-            
+            return self._get_pw_source_hy_minus_x(hy_field, space, cosine)
+
         elif self.directivity is const.MinusX:
             cosine = dot(self.e_direction, (0, 0, 1))
-            self._set_pw_source_hy_plus_x(material_hy, space, cosine)
-            
+            return self._get_pw_source_hy_plus_x(hy_field, space, cosine)
+
         else:
             return None
         
-    def set_pointwise_source_hz(self, material_hz, space):
+    def get_pw_source_hz(self, hz_field, space):
         if self.directivity is const.PlusX:
             cosine = dot(self.e_direction, (0, 1, 0))
-            self._set_pw_source_hz_minus_x(material_hz, space, cosine)
-            
+            return self._get_pw_source_hz_minus_x(hz_field, space, cosine)
+
         elif self.directivity is const.MinusX:
             cosine = dot(self.e_direction, (0, 1, 0))
-            self._set_pw_source_hz_plus_x(material_hz, space, cosine)
-            
+            return self._get_pw_source_hz_plus_x(hz_field, space, cosine)
+
         elif self.directivity is const.PlusY:
             cosine = dot(self.e_direction, (1, 0, 0))
-            self._set_pw_source_hz_minus_y(material_hz, space, cosine)
-            
+            return self._get_pw_source_hz_minus_y(hz_field, space, cosine)
+
         elif self.directivity is const.MinusY:
             cosine = dot(self.e_direction, (1, 0, 0))
-            self._set_pw_source_hz_plus_y(material_hz, space, cosine)
-            
+            return self._get_pw_source_hz_plus_y(hz_field, space, cosine)
+
         else:
             return None
 
@@ -1183,7 +1429,7 @@ class _GaussianBeamSrcTime(object):
         self.space = self.aux_fdtd.space
         self.ex = self.EX(self)
         self.hy = self.HY(self)
-
+        
         self.n = 0
         self.t = 0
 

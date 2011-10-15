@@ -31,7 +31,7 @@ Modules:
     fdtd --- Provide various simulation classes suitable for 1, 2, and 3-d.
     geometry --- Provide coordinate and geometric primitives.
     show --- Real-time display classes
-    constants --- Physical and simulation constants
+    constant --- Physical and simulation constants
     source --- Define the input sources
     pw_source --- Source update mechanism
     material --- Define the propagating medium
@@ -54,8 +54,8 @@ except ImportError:
     stderr.write('No module named mpi4py. MPI support will not be available.\n')
 
 # List here only the objects we want to be publicly available
-__all__ = ['fdtd', 'geometry', 'show', 'constants', 'source', 'pw_source', 
+__all__ = ['fdtd', 'geometry', 'show', 'constant', 'source', 'pw_source', 
            'material', 'pw_material']
 
-import fdtd, geometry, show, constants, source, material
+import fdtd, geometry, show, constant, source, material
 import pw_material, pw_source

@@ -1,5 +1,5 @@
-#ifndef CONSTANTS_HH_
-#define CONSTANTS_HH_
+#ifndef CONSTANT_HH_
+#define CONSTANT_HH_
 
 #include <cmath>
 
@@ -17,10 +17,10 @@ namespace gmes
   const double mu0 = 4 * pi * 1e-7; // in Henry/Meter
 
   // Vacuum permittivity
-  const double epsilon0 = 1 / (c0 * c0 * mu0); // in Farad/Meter
+  const double eps0 = 1 / (c0 * c0 * mu0); // in Farad/Meter
 
   // vacuum impedance
-  const double Z0 = sqrt(mu0 / epsilon0);
+  const double Z0 = sqrt(mu0 / eps0);
 
   // decimal factors
   const double PETA = 1e15;
@@ -38,12 +38,12 @@ namespace gmes
   class Component
   {
   public:
-    Component();
     static int get_tag()
     {
       return tag;
     }
   private:
+    Component();
     static const int tag = 0;
   };
 
@@ -138,12 +138,12 @@ namespace gmes
   class Directional
   {
   public:
-    Directional();
     static int get_tag()
     {
       return tag;
     }
   private:
+    Directional();
     static const int tag = 10;
   };
 
@@ -260,4 +260,4 @@ namespace gmes
 
 }
 
-#endif /*CONSTANTS_HH_*/
+#endif /*CONSTANT_HH_*/

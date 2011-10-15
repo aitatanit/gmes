@@ -23,7 +23,7 @@ from file_io import Probe
 #from file_io import write_hdf5, snapshot
 from show import ShowLine, ShowPlane, Snapshot
 from material import Dummy
-import constants as const
+import constant as const
 
 
 class TimeStep(object):
@@ -42,7 +42,7 @@ class TimeStep(object):
         dt -- time-step size (no default)
         n -- initial value of the time-step (default 0.0)
         t -- initial value of the time (default 0.0)
-
+        
         """
         self.n = float(n)
         self.t = float(t)
@@ -108,6 +108,9 @@ class FDTD(object):
                          const.Hy: self.talk_with_hy_neighbors,
                          const.Hz: self.talk_with_hz_neighbors}
         
+        self.e_recorder = []
+        self.h_recorder = []
+
         self.verbose = bool(verbose)
 
         self.space = space
@@ -119,10 +122,10 @@ class FDTD(object):
         self.dz = float(space.dz)
 
         default_medium = (i for i in geom_list 
-                            if isinstance(i, DefaultMedium)).next()
-        eps = default_medium.material.epsilon
-        mu = default_medium.material.mu
-        dt_limit = self._dt_limit(space, eps, mu)
+                          if isinstance(i, DefaultMedium)).next()
+        eps_inf = default_medium.material.eps_inf
+        mu_inf = default_medium.material.mu_inf
+        dt_limit = self._dt_limit(space, eps_inf, mu_inf)
 
         if dt is None:
             self.courant_ratio = float(courant_ratio)
@@ -178,11 +181,11 @@ class FDTD(object):
             ds = np.array((self.dx, self.dy, self.dz))
             default_medium = (i for i in geom_list 
                                 if isinstance(i, DefaultMedium)).next()
-            eps = default_medium.material.epsilon
-            mu = default_medium.material.mu
-            c = 1 / sqrt(eps * mu)
+            eps_inf = default_medium.material.eps_inf
+            mu_inf = default_medium.material.mu_inf
+            c = 1 / sqrt(eps_inf * mu_inf)
             S = c * time_step_size / ds
-            ref_n = sqrt(eps)
+            ref_n = sqrt(eps_inf)
             self.bloch = np.array(bloch, float)
             self.bloch = 2 * ref_n / ds \
                 * np.arcsin(np.sin(self.bloch * S * ds / 2) / S)
@@ -228,53 +231,83 @@ class FDTD(object):
             print 'hz field:', self.hz.dtype, self.hz.shape
         
         if verbose:
-            print 'Mapping the pointwise material...',
-            
-        self.material_ex = self.material_ey = self.material_ez = None
-        self.material_hx = self.material_hy = self.material_hz = None
+            print 'Mapping the piecewise material.',
+            print 'This will take some times...'
+
+        self.material_ex = {}
+        self.material_ey = {}
+        self.material_ez = {}
+        self.material_hx = {}
+        self.material_hy = {}
+        self.material_hz = {}
 
         self.init_material()
         
         if verbose:
             print 'done.'
 
-        # medium information for electric & magnetic fields
+        # pw_material information for electromagnetic fields
         if verbose:
             print 'ex material:',
-            if self.material_ex is None: print None
-            else: print self.material_ex.dtype, self.material_ex.shape
-                
-            print 'ey material:', 
-            if self.material_ey is None: print None
-            else: print self.material_ey.dtype, self.material_ey.shape
-                
-            print 'ez material:', 
-            if self.material_ez is None: print None
-            else: print self.material_ez.dtype, self.material_ez.shape
-            
-            print 'hx material:', 
-            if self.material_hx is None: print None
-            else: print self.material_hx.dtype, self.material_hx.shape
-                
-            print 'hy material:', 
-            if self.material_hy is None: print None
-            else: print self.material_hy.dtype, self.material_hy.shape
-                
-            print 'hz material:', 
-            if self.material_hz is None: print None
-            else: print self.material_hz.dtype, self.material_hz.shape
-		
-        if verbose:
-            print 'done.'
-            
+            self._print_pw_obj(self.material_ex)
+
+            print 'ey material:',
+            self._print_pw_obj(self.material_ey)
+
+            print 'ez material:',
+            self._print_pw_obj(self.material_ez)
+
+            print 'hx material:',
+            self._print_pw_obj(self.material_hx)
+
+            print 'hy material:',
+            self._print_pw_obj(self.material_hy)
+
+            print 'hz material:',
+            self._print_pw_obj(self.material_hz)
+
         if verbose:
             print 'Mapping the pointwise source...',
             
+        self.source_ex = {}
+        self.source_ey = {}
+        self.source_ez = {}
+        self.source_hx = {}
+        self.source_hy = {}
+        self.source_hz = {}
+
         self.init_source()
 
         if verbose:
             print 'done.'
     
+        # pw_source information for electromagnetic fields
+        if verbose:
+            print 'ex source:',
+            self._print_pw_obj(self.source_ex)
+
+            print 'ey source:',
+            self._print_pw_obj(self.source_ey)
+
+            print 'ez source:',
+            self._print_pw_obj(self.source_ez)
+
+            print 'hx source:',
+            self._print_pw_obj(self.source_hx)
+
+            print 'hy source:',
+            self._print_pw_obj(self.source_hy)
+
+            print 'hz source:',
+            self._print_pw_obj(self.source_hz)
+
+    def _print_pw_obj(self, pw_obj):
+        print_count = 0
+        for o in pw_obj.itervalues():
+            print type(o), 'with', o.idx_size(), 'point(s).'
+            print_count += 1
+        if print_count == 0: print
+
     def _init_field_compnt(self):
         """Set the significant electromagnetic field components.
         
@@ -282,7 +315,7 @@ class FDTD(object):
         self.e_field_compnt = (const.Ex, const.Ey, const.Ez)
         self.h_field_compnt = (const.Hx, const.Hy, const.Hz)
 
-    def _dt_limit(self, space, epsilon, mu):
+    def _dt_limit(self, space, eps_inf, mu_inf):
         """Courant stability bound of a time-step.
 
         Equation 4.54b at p.131 of A. Taflove and S. C. Hagness, Computational
@@ -308,7 +341,7 @@ class FDTD(object):
         for i in range(3):
             if i not in non_inf: dr[i] = inf
         
-        c = 1 / sqrt(epsilon * mu)
+        c = 1 / sqrt(eps_inf * mu_inf)
         return 1 / c / sqrt(sum(dr**-2))
         
     def _step_aux_fdtd(self):
@@ -345,16 +378,19 @@ class FDTD(object):
         at self.material_ex.
         
         """
-        self.material_ex = self.space.get_material_ex_storage()
         shape = self.ex.shape
         for idx in ndindex(shape):
             spc = self.space.ex_index_to_space(*idx)
             mat_obj, underneath = self.geom_tree.material_of_point(spc)
             if idx[1] == shape[1] - 1 or idx[2] == shape[2] - 1:
-                mat_obj = Dummy(mat_obj.epsilon, mat_obj.mu)
-            self.material_ex[idx] = \
-            mat_obj.get_pw_material_ex(idx, spc, underneath, self.cmplx)
-        
+                mat_obj = Dummy(mat_obj.eps_inf, mat_obj.mu_inf)
+            pw_obj = mat_obj.get_pw_material_ex(idx, spc, underneath, self.cmplx)
+            
+            if self.material_ex.has_key(type(pw_obj)):
+                self.material_ex[type(pw_obj)].merge(pw_obj)
+            else:
+                self.material_ex[type(pw_obj)] = pw_obj
+
     def init_material_ey(self):
         """Set up the update mechanism for Ey field.
         
@@ -362,16 +398,19 @@ class FDTD(object):
         at self.material_ey.
         
         """
-        self.material_ey = self.space.get_material_ey_storage()
         shape = self.ey.shape
         for idx in ndindex(shape):
             spc = self.space.ey_index_to_space(*idx)
             mat_obj, underneath = self.geom_tree.material_of_point(spc)
             if idx[2] == shape[2] - 1 or idx[0] == shape[0] - 1:
-                mat_obj = Dummy(mat_obj.epsilon, mat_obj.mu)
-            self.material_ey[idx] = \
-            mat_obj.get_pw_material_ey(idx, spc, underneath, self.cmplx)
-            
+                mat_obj = Dummy(mat_obj.eps_inf, mat_obj.mu_inf)
+            pw_obj = mat_obj.get_pw_material_ey(idx, spc, underneath, self.cmplx)
+
+            if self.material_ey.has_key(type(pw_obj)):
+                self.material_ey[type(pw_obj)].merge(pw_obj)
+            else:
+                self.material_ey[type(pw_obj)] = pw_obj
+
     def init_material_ez(self):
         """Set up the update mechanism for Ez field.
         
@@ -379,16 +418,19 @@ class FDTD(object):
         at self.material_ez.
         
         """
-        self.material_ez = self.space.get_material_ez_storage()
         shape = self.ez.shape
         for idx in ndindex(shape):
             spc = self.space.ez_index_to_space(*idx)
             mat_obj, underneath = self.geom_tree.material_of_point(spc)
             if idx[0] == shape[0] - 1 or idx[1] == shape[1] - 1:
-                mat_obj = Dummy(mat_obj.epsilon, mat_obj.mu)
-            self.material_ez[idx] = \
-            mat_obj.get_pw_material_ez(idx, spc, underneath, self.cmplx)
-            
+                mat_obj = Dummy(mat_obj.eps_inf, mat_obj.mu_inf)
+            pw_obj = mat_obj.get_pw_material_ez(idx, spc, underneath, self.cmplx)
+
+            if self.material_ez.has_key(type(pw_obj)):
+                self.material_ez[type(pw_obj)].merge(pw_obj)
+            else:
+                self.material_ez[type(pw_obj)] = pw_obj
+
     def init_material_hx(self):
         """Set up the update mechanism for Hx field.
         
@@ -396,16 +438,19 @@ class FDTD(object):
         at self.material_hx.
         
         """
-        self.material_hx = self.space.get_material_hx_storage()
         shape = self.hx.shape
         for idx in ndindex(shape):
             spc = self.space.hx_index_to_space(*idx)
             mat_obj, underneath = self.geom_tree.material_of_point(spc)
             if idx[1] == 0 or idx[2] == 0:
-                mat_obj = Dummy(mat_obj.epsilon, mat_obj.mu)
-            self.material_hx[idx] = \
-            mat_obj.get_pw_material_hx(idx, spc, underneath, self.cmplx)
-                
+                mat_obj = Dummy(mat_obj.eps_inf, mat_obj.mu_inf)
+            pw_obj = mat_obj.get_pw_material_hx(idx, spc, underneath, self.cmplx)
+
+            if self.material_hx.has_key(type(pw_obj)):
+                self.material_hx[type(pw_obj)].merge(pw_obj)
+            else:
+                self.material_hx[type(pw_obj)] = pw_obj
+
     def init_material_hy(self):
         """Set up the update mechanism for Hy field.
         
@@ -413,16 +458,19 @@ class FDTD(object):
         at self.material_hy.
         
         """
-        self.material_hy = self.space.get_material_hy_storage()
         shape = self.hy.shape
         for idx in ndindex(shape):
             spc = self.space.hy_index_to_space(*idx)
             mat_obj, underneath = self.geom_tree.material_of_point(spc)
             if idx[2] == 0 or idx[0] == 0:
-                mat_obj = Dummy(mat_obj.epsilon, mat_obj.mu)
-            self.material_hy[idx] = \
-            mat_obj.get_pw_material_hy(idx, spc, underneath, self.cmplx)
-            
+                mat_obj = Dummy(mat_obj.eps_inf, mat_obj.mu_inf)
+            pw_obj = mat_obj.get_pw_material_hy(idx, spc, underneath, self.cmplx)
+
+            if self.material_hy.has_key(type(pw_obj)):
+                self.material_hy[type(pw_obj)].merge(pw_obj)
+            else:
+                self.material_hy[type(pw_obj)] = pw_obj
+
     def init_material_hz(self):
         """Set up the update mechanism for Hz field.
         
@@ -430,16 +478,19 @@ class FDTD(object):
         at self.material_hz.
         
         """
-        self.material_hz = self.space.get_material_hz_storage()
         shape = self.hz.shape
         for idx in ndindex(shape):
             spc = self.space.hz_index_to_space(*idx)
             mat_obj, underneath = self.geom_tree.material_of_point(spc)
             if idx[0] == 0 or idx[1] == 0:
-                mat_obj = Dummy(mat_obj.epsilon, mat_obj.mu)
-            self.material_hz[idx] = \
-            mat_obj.get_pw_material_hz(idx, spc, underneath, self.cmplx)
-            
+                mat_obj = Dummy(mat_obj.eps_inf, mat_obj.mu_inf)
+            pw_obj = mat_obj.get_pw_material_hz(idx, spc, underneath, self.cmplx)
+
+            if self.material_hz.has_key(type(pw_obj)):
+                self.material_hz[type(pw_obj)].merge(pw_obj)
+            else:
+                self.material_hz[type(pw_obj)] = pw_obj
+
     def init_material(self):
         init_mat_func = {const.Ex: self.init_material_ex,
                          const.Ey: self.init_material_ey,
@@ -449,35 +500,87 @@ class FDTD(object):
                          const.Hz: self.init_material_hz}
         
         for comp in self.e_field_compnt:
+            if self.verbose:
+                print 'Mapping materials for', comp.__name__, 'field'
             init_mat_func[comp]()
 
         for comp in self.h_field_compnt:
+            if self.verbose:
+                print 'Mapping materials for', comp.__name__, 'field'
             init_mat_func[comp]()
 
     def init_source_ex(self):
         for so in self.src_list:
-            so.set_pointwise_source_ex(self.material_ex, self.space)
+            pw_src = so.get_pw_source_ex(self.ex, self.space)
+
+            if pw_src is None:
+                continue
+
+            if self.source_ex.has_key(type(pw_src)):
+                self.source_ex[type(pw_src)].merge(pw_src)
+            else:
+                self.source_ex[type(pw_src)] = pw_src
             
     def init_source_ey(self):
         for so in self.src_list:
-            so.set_pointwise_source_ey(self.material_ey, self.space)
-			
+            pw_src = so.get_pw_source_ey(self.ey, self.space)
+            
+            if pw_src is None:
+                continue
+
+            if self.source_ey.has_key(type(pw_src)):
+                self.source_ey[type(pw_src)].merge(pw_src)
+            else:
+                self.source_ey[type(pw_src)] = pw_src
+
     def init_source_ez(self):
         for so in self.src_list:
-            so.set_pointwise_source_ez(self.material_ez, self.space)
-			
+            pw_src = so.get_pw_source_ez(self.ez, self.space)
+
+            if pw_src is None:
+                continue
+
+            if self.source_ez.has_key(type(pw_src)):
+                self.source_ez[type(pw_src)].merge(pw_src)
+            else:
+                self.source_ez[type(pw_src)] = pw_src
+
     def init_source_hx(self):
         for so in self.src_list:
-            so.set_pointwise_source_hx(self.material_hx, self.space)
-			
+            pw_src = so.get_pw_source_hx(self.hx, self.space)
+
+            if pw_src is None:
+                continue
+
+            if self.source_hx.has_key(type(pw_src)):
+                self.source_hx[type(pw_src)].merge(pw_src)
+            else:
+                self.source_hx[type(pw_src)] = pw_src
+            
     def init_source_hy(self):
         for so in self.src_list:
-            so.set_pointwise_source_hy(self.material_hy, self.space)
-			
+            pw_src = so.get_pw_source_hy(self.hy, self.space)
+
+            if pw_src is None:
+                continue
+
+            if self.source_hy.has_key(type(pw_src)):
+                self.source_hy[type(pw_src)].merge(pw_src)
+            else:
+                self.source_hy[type(pw_src)] = pw_src
+            
     def init_source_hz(self):
         for so in self.src_list:
-            so.set_pointwise_source_hz(self.material_hz, self.space)
-			
+            pw_src = so.get_pw_source_hz(self.hz, self.space)
+
+            if pw_src is None:
+                continue
+
+            if self.source_hz.has_key(type(pw_src)):
+                self.source_hz[type(pw_src)].merge(pw_src)
+            else:
+                self.source_hz[type(pw_src)] = pw_src
+            
     def init_source(self):
         init_src_func = {const.Ex: self.init_source_ex,
                          const.Ey: self.init_source_ey,
@@ -491,103 +594,118 @@ class FDTD(object):
             
         for comp in self.h_field_compnt:
             init_src_func[comp]()
-            
-    def set_probe(self, x, y, z, prefix):
-        if self.material_ex is not None:
-            idx = self.space.space_to_ex_index(x, y, z)
-            if in_range(idx, self.material_ex, const.Ex):
-                self.material_ex[idx] = Probe(prefix + '_ex.dat', 
-                                              self.material_ex[idx])
-                loc = self.space.ex_index_to_space(*idx)
-                self.material_ex[idx].f.write('# location=' + str(loc) + '\n')
-                self.material_ex[idx].f.write('# dt=' + str(self.time_step.dt)
-                                              + '\n')
         
-        if self.material_ey is not None:
-            idx = self.space.space_to_ey_index(x, y, z)
-            if in_range(idx, self.material_ey, const.Ey):
-                self.material_ey[idx] = Probe(prefix + '_ey.dat', 
-                                              self.material_ey[idx])
-                loc = self.space.ey_index_to_space(*idx)
-                self.material_ey[idx].f.write('# location=' + str(loc) + '\n')
-                self.material_ey[idx].f.write('# dt=' + str(self.time_step.dt)
-                                              + '\n')
+    def set_probe(self, p, prefix):
+        """
+        p: space coordinates. type: tuple-3
+        prefix: prefix of the recording file name. type: str
         
-        if self.material_ez is not None:
-            idx = self.space.space_to_ez_index(x, y, z)
-            if in_range(idx, self.material_ez, const.Ez):
-                self.material_ez[idx] = Probe(prefix + '_ez.dat', 
-                                              self.material_ez[idx])
-                loc = self.space.ez_index_to_space(*idx)
-                self.material_ez[idx].f.write('# location=' + str(loc) + '\n')
-                self.material_ez[idx].f.write('# dt=' + str(self.time_step.dt)
-                                              + '\n')
+        """
+        spc2idx = {const.Ex: self.space.space_to_ex_index,
+                   const.Ey: self.space.space_to_ey_index,
+                   const.Ez: self.space.space_to_ez_index,
+                   const.Hx: self.space.space_to_hx_index,
+                   const.Hy: self.space.space_to_hy_index,
+                   const.Hz: self.space.space_to_hz_index}
         
-        if self.material_hx is not None:
-            idx = self.space.space_to_hx_index(x, y, z)
-            if in_range(idx, self.material_hx, const.Hx):
-                self.material_hx[idx] = Probe(prefix + '_hx.dat', 
-                                              self.material_hx[idx])
-                loc = self.space.hx_index_to_space(*idx)
-                self.material_hx[idx].f.write('# location=' + str(loc) + '\n')
-                self.material_hx[idx].f.write('# dt=' + str(self.time_step.dt)
-                                              + '\n')
+        idx2spc = {const.Ex: self.space.ex_index_to_space,
+                   const.Ey: self.space.ey_index_to_space,
+                   const.Ez: self.space.ez_index_to_space,
+                   const.Hx: self.space.hx_index_to_space,
+                   const.Hy: self.space.hy_index_to_space,
+                   const.Hz: self.space.hz_index_to_space}
+
+        validity = {const.Ex: 
+                    (lambda idx: in_range(idx, self.ex.shape, const.Ex)),
+                    const.Ey: 
+                    (lambda idx: in_range(idx, self.ey.shape, const.Ey)),
+                    const.Ez: 
+                    (lambda idx: in_range(idx, self.ez.shape, const.Ez)),
+                    const.Hx:
+                    (lambda idx: in_range(idx, self.hx.shape, const.Hx)),
+                    const.Hy: 
+                    (lambda idx: in_range(idx, self.hy.shape, const.Hy)),
+                    const.Hz: 
+                    (lambda idx: in_range(idx, self.hz.shape, const.Hz))}
+
+        field = {const.Ex: self.ex, const.Ey: self.ey, const.Ez: self.ez,
+                 const.Hx: self.hy, const.Hy: self.hy, const.Hz: self.hz}
+
+        postfix = {const.Ex: '_ex.dat', const.Ey: '_ey.dat',
+                   const.Ez: '_ez.dat', const.Hx: '_hx.dat',
+                   const.Hy: '_hy.dat', const.Hz: '_hz.dat'}
         
-        if self.material_hy is not None:
-            idx = self.space.space_to_hy_index(x, y, z)
-            if in_range(idx, self.material_hy, const.Hy):
-                self.material_hy[idx] = Probe(prefix + '_hy.dat', 
-                                              self.material_hy[idx])
-                loc = self.space.hy_index_to_space(*idx)
-                self.material_hy[idx].f.write('# location=' + str(loc) + '\n')
-                self.material_hy[idx].f.write('# dt=' + str(self.time_step.dt)
-                                              + '\n')
-        
-        if self.material_hz is not None:
-            idx = self.space.space_to_hz_index(x, y, z)
-            if in_range(idx, self.material_hz, const.Hz):
-                self.material_hz[idx] = Probe(prefix + '_hz.dat', 
-                                              self.material_hz[idx])
-                loc = self.space.hz_index_to_space(*idx)
-                self.material_hz[idx].f.write('# location=' + str(loc) + '\n')
-                self.material_hz[idx].f.write('# dt=' + str(self.time_step.dt)
-                                              + '\n')
-            
+        for comp in self.e_field_compnt:
+            idx = spc2idx[comp](*p)
+            if validity[comp](idx):
+                filename = prefix + postfix[comp]
+                recorder = Probe(idx, field[comp], filename)
+                loc = idx2spc[comp](*idx)
+                recorder.write_header(loc, self.time_step.dt)
+                self.e_recorder.append(recorder)
+
+        for comp in self.h_field_compnt:
+            idx = spc2idx[comp](*p)
+            if validity[comp](idx):
+                filename = prefix + postfix[comp]
+                recorder = Probe(idx, field[comp], filename)
+                loc = idx2spc[comp](*idx)
+                recorder.write_header(loc, self.time_step.dt)
+                self.h_recorder.append(recorder)
+
     def update_ex(self):
-        for idx in ndindex(self.material_ex.shape):
-            self.material_ex[idx].update(self.ex, self.hz, self.hy, 
-                                         self.dy, self.dz, self.time_step.dt, 
-                                         self.time_step.n, *idx)
+        for pw_obj in self.material_ex.itervalues():
+            pw_obj.update_all(self.ex, self.hz, self.hy, self.dy, self.dz, 
+                              self.time_step.dt, self.time_step.n)
 
+        for pw_obj in self.source_ex.itervalues():
+            pw_obj.update_all(self.ex, self.hz, self.hy, self.dy, self.dz, 
+                              self.time_step.dt, self.time_step.n)
+        
     def update_ey(self):
-        for idx in ndindex(self.material_ey.shape):
-            self.material_ey[idx].update(self.ey, self.hx, self.hz, 
-                                         self.dz, self.dx, self.time_step.dt, 
-                                         self.time_step.n, *idx)
+        for pw_obj in self.material_ey.itervalues():
+            pw_obj.update_all(self.ey, self.hx, self.hz, self.dz, self.dx,
+                              self.time_step.dt, self.time_step.n)
 		
+        for pw_obj in self.source_ey.itervalues():
+            pw_obj.update_all(self.ey, self.hx, self.hz, self.dz, self.dx,
+                              self.time_step.dt, self.time_step.n)
+
     def update_ez(self):
-        for idx in ndindex(self.material_ez.shape):
-            self.material_ez[idx].update(self.ez, self.hy, self.hx,
-                                         self.dx, self.dy, self.time_step.dt,
-                                         self.time_step.n, *idx)
+        for pw_obj in self.material_ez.itervalues():
+            pw_obj.update_all(self.ez, self.hy, self.hx, self.dx, self.dy,
+                              self.time_step.dt, self.time_step.n)
 
+        for pw_obj in self.source_ez.itervalues():
+            pw_obj.update_all(self.ez, self.hy, self.hx, self.dx, self.dy,
+                              self.time_step.dt, self.time_step.n)
+        
     def update_hx(self):
-        for idx in ndindex(self.material_hx.shape):
-            self.material_hx[idx].update(self.hx, self.ez, self.ey, 
-                                         self.dy, self.dz, self.time_step.dt, 
-                                         self.time_step.n, *idx)
+        for pw_obj in self.material_hx.itervalues():
+            pw_obj.update_all(self.hx, self.ez, self.ey, self.dy, self.dz, 
+                              self.time_step.dt, self.time_step.n)
 
+        for pw_obj in self.source_hx.itervalues():
+            pw_obj.update_all(self.hx, self.ez, self.ey, self.dy, self.dz, 
+                              self.time_step.dt, self.time_step.n)
+		
     def update_hy(self):
-        for idx in ndindex(self.material_hy.shape):
-            self.material_hy[idx].update(self.hy, self.ex, self.ez,
-                                         self.dz, self.dx, self.time_step.dt,
-                                         self.time_step.n, *idx)
+        for pw_obj in self.material_hy.itervalues():
+            pw_obj.update_all(self.hy, self.ex, self.ez, self.dz, self.dx,
+                              self.time_step.dt, self.time_step.n)
 
+        for pw_obj in self.source_hy.itervalues():
+            pw_obj.update_all(self.hy, self.ex, self.ez, self.dz, self.dx,
+                              self.time_step.dt, self.time_step.n)
+		
     def update_hz(self):
-        for idx in ndindex(self.material_hz.shape):
-            self.material_hz[idx].update(self.hz, self.ey, self.ex,
-                                         self.dx, self.dy, self.time_step.dt,
-                                         self.time_step.n, *idx)
+        for pw_obj in self.material_hz.itervalues():
+            pw_obj.update_all(self.hz, self.ey, self.ex, self.dx, self.dy, 
+                              self.time_step.dt, self.time_step.n)
+
+        for pw_obj in self.source_hz.itervalues():
+            pw_obj.update_all(self.hz, self.ey, self.ex, self.dx, self.dy, 
+                              self.time_step.dt, self.time_step.n)
 
     def talk_with_ex_neighbors(self):
         """Synchronize ex data.
@@ -595,7 +713,7 @@ class FDTD(object):
         This method uses the object serialization interface of MPI4Python.
         
         """
-        # send ex field data to -y direction and receive from +y direction.
+        # Send ex field data to -y direction and receive from +y direction.
         src, dest = self.space.cart_comm.Shift(1, -1)
         
         if self.cmplx:
@@ -607,18 +725,17 @@ class FDTD(object):
             
             phase_shift = exp(1j * self.bloch[1] * (dest_spc - src_spc))
         else:
-            phase_shift = 0
+            phase_shift = 1
         
         self.ex[:, -1, :] = phase_shift * \
         self.space.cart_comm.sendrecv(self.ex[:, 0, :], dest, const.Ex.tag,
                                       None, src, const.Ex.tag)
         
-        # send ex field data to -z direction and receive from +z direction.
+        # Send ex field data to -z direction and receive from +z direction.
         src, dest = self.space.cart_comm.Shift(2, -1)
         
         if self.cmplx:
-            dest_spc = self.space.ex_index_to_space(0, 0, 
-                                                    self.ex.shape[2] - 1)[2]
+            dest_spc = self.space.ex_index_to_space(0, 0, self.ex.shape[2] - 1)[2]
         
             src_spc = self.space.ex_index_to_space(0, 0, 0)[2]
             src_spc = self.space.cart_comm.sendrecv(src_spc, dest, const.Ex.tag,
@@ -626,7 +743,7 @@ class FDTD(object):
         
             phase_shift = exp(1j * self.bloch[2] * (dest_spc - src_spc))
         else:
-            phase_shift = 0
+            phase_shift = 1
         
         self.ex[:, :, -1] = phase_shift * \
         self.space.cart_comm.sendrecv(self.ex[:, :, 0], dest, const.Ex.tag,
@@ -638,12 +755,11 @@ class FDTD(object):
         This method uses the object serialization interface of MPI4Python.
         
         """
-        # send ey field data to -z direction and receive from +z direction.
+        # Send ey field data to -z direction and receive from +z direction.
         src, dest = self.space.cart_comm.Shift(2, -1)
         
         if self.cmplx:
-            dest_spc = self.space.ey_index_to_space(0, 0, 
-                                                    self.ey.shape[2] - 1)[2]
+            dest_spc = self.space.ey_index_to_space(0, 0, self.ey.shape[2] - 1)[2]
         
             src_spc = self.space.ey_index_to_space(0, 0, 0)[2]
             src_spc = self.space.cart_comm.sendrecv(src_spc, dest, const.Ey.tag,
@@ -651,18 +767,17 @@ class FDTD(object):
         
             phase_shift = exp(1j * self.bloch[2] * (dest_spc - src_spc))
         else:
-            phase_shift = 0
+            phase_shift = 1
             
         self.ey[:, :, -1] = phase_shift * \
         self.space.cart_comm.sendrecv(self.ey[:, :, 0], dest, const.Ey.tag,
                                       None, src, const.Ey.tag)
         
-        # send ey field data to -x direction and receive from +x direction.
+        # Send ey field data to -x direction and receive from +x direction.
         src, dest = self.space.cart_comm.Shift(0, -1)
 
         if self.cmplx:
-            dest_spc = self.space.ey_index_to_space(self.ey.shape[0] - 1, 
-                                                    0, 0)[0]
+            dest_spc = self.space.ey_index_to_space(self.ey.shape[0] - 1, 0, 0)[0]
         
             src_spc = self.space.ey_index_to_space(0, 0, 0)[0]
             src_spc = self.space.cart_comm.sendrecv(src_spc, dest, const.Ey.tag,
@@ -670,7 +785,7 @@ class FDTD(object):
             
             phase_shift = exp(1j * self.bloch[0] * (dest_spc - src_spc))
         else:
-            phase_shift = 0
+            phase_shift = 1
             
         self.ey[-1, :, :] = phase_shift * \
         self.space.cart_comm.sendrecv(self.ey[0, :, :], dest, const.Ey.tag,
@@ -682,12 +797,11 @@ class FDTD(object):
         This method uses the object serialization interface of MPI4Python.
         
         """
-        # send ez field data to -x direction and receive from +x direction.
+        # Send ez field data to -x direction and receive from +x direction.
         src, dest = self.space.cart_comm.Shift(0, -1)
         
         if self.cmplx:
-            dest_spc = self.space.ez_index_to_space(self.ez.shape[0] - 1, 
-                                                    0, 0)[0]
+            dest_spc = self.space.ez_index_to_space(self.ez.shape[0] - 1, 0, 0)[0]
         
             src_spc = self.space.ez_index_to_space(0, 0, 0)[0]
             src_spc = self.space.cart_comm.sendrecv(src_spc, dest, const.Ez.tag,
@@ -695,18 +809,17 @@ class FDTD(object):
             
             phase_shift = exp(1j * self.bloch[0] * (dest_spc - src_spc))
         else:
-            phase_shift = 0
+            phase_shift = 1
         
         self.ez[-1, :, :] = phase_shift * \
         self.space.cart_comm.sendrecv(self.ez[0, :, :], dest, const.Ez.tag,
                                       None, src, const.Ez.tag)
         
-        # send ez field data to -y direction and receive from +y direction.
+        # Send ez field data to -y direction and receive from +y direction.
         src, dest = self.space.cart_comm.Shift(1, -1)
 
         if self.cmplx:
-            dest_spc = self.space.ez_index_to_space(0, 
-                                                    self.ez.shape[1] - 1, 0)[1]
+            dest_spc = self.space.ez_index_to_space(0, self.ez.shape[1] - 1, 0)[1]
         
             src_spc = self.space.ez_index_to_space(0, 0, 0)[1]
             src_spc = self.space.cart_comm.sendrecv(src_spc, dest, const.Ez.tag,
@@ -714,7 +827,7 @@ class FDTD(object):
             
             phase_shift = exp(1j * self.bloch[1] * (dest_spc - src_spc))
         else:
-            phase_shift = 0
+            phase_shift = 1
 
         self.ez[:, -1, :] = phase_shift * \
         self.space.cart_comm.sendrecv(self.ez[:, 0, :], dest, const.Ez.tag,
@@ -726,39 +839,37 @@ class FDTD(object):
         This method uses the object serialization interface of MPI4Python.
         
         """
-        # send hx field data to +y direction and receive from -y direction.
+        # Send hx field data to +y direction and receive from -y direction.
         src, dest = self.space.cart_comm.Shift(1, 1)
 
         if self.cmplx:
             dest_spc = self.space.hx_index_to_space(0, 0, 0)[1]
         
-            src_spc = self.space.hx_index_to_space(0, 
-                                                   self.hx.shape[1] - 1, 0)[1]
+            src_spc = self.space.hx_index_to_space(0, self.hx.shape[1] - 1, 0)[1]
             src_spc = self.space.cart_comm.sendrecv(src_spc, dest, const.Hx.tag,
                                                     None, src, const.Hx.tag)
         
             phase_shift = exp(1j * self.bloch[1] * (dest_spc - src_spc))
         else:
-            phase_shift = 0
+            phase_shift = 1
         
         self.hx[:, 0, :] = phase_shift * \
         self.space.cart_comm.sendrecv(self.hx[:, -1, :], dest, const.Hx.tag,
                                       None, src, const.Hx.tag)
             
-        # send hx field data to +z direction and receive from -z direction.    
+        # Send hx field data to +z direction and receive from -z direction.    
         src, dest = self.space.cart_comm.Shift(2, 1)
         
         if self.cmplx:
             dest_spc = self.space.hx_index_to_space(0, 0, 0)[2]
         
-            src_spc = self.space.hx_index_to_space(0, 0, 
-                                                   self.hx.shape[2] - 1)[2]
+            src_spc = self.space.hx_index_to_space(0, 0, self.hx.shape[2] - 1)[2]
             src_spc = self.space.cart_comm.sendrecv(src_spc, dest, const.Hx.tag,
                                                     None, src, const.Hx.tag)
         
             phase_shift = exp(1j * self.bloch[2] * (dest_spc - src_spc))
         else:
-            phase_shift = 0
+            phase_shift = 1
         
         self.hx[:, :, 0] = phase_shift * \
         self.space.cart_comm.sendrecv(self.hx[:, :, -1], dest, const.Hx.tag,
@@ -770,39 +881,37 @@ class FDTD(object):
         This method uses the object serialization interface of MPI4Python.
         
         """
-        # send hy field data to +z direction and receive from -z direction.
+        # Send hy field data to +z direction and receive from -z direction.
         src, dest = self.space.cart_comm.Shift(2, 1)
         
         if self.cmplx:
             dest_spc = self.space.hy_index_to_space(0, 0, 0)[2]
         
-            src_spc = self.space.hy_index_to_space(0, 0, 
-                                                   self.hy.shape[2] - 1)[2]
+            src_spc = self.space.hy_index_to_space(0, 0, self.hy.shape[2] - 1)[2]
             src_spc = self.space.cart_comm.sendrecv(src_spc, dest, const.Hy.tag,
                                                     None, src, const.Hy.tag)
         
             phase_shift = exp(1j * self.bloch[2] * (dest_spc - src_spc))
         else:
-            phase_shift = 0
+            phase_shift = 1
         
         self.hy[:, :, 0] = phase_shift * \
         self.space.cart_comm.sendrecv(self.hy[:, :, -1], dest, const.Hy.tag,
                                       None, src, const.Hy.tag)
             
-        # send hy field data to +x direction and receive from -x direction.
+        # Send hy field data to +x direction and receive from -x direction.
         src, dest = self.space.cart_comm.Shift(0, 1)
         
         if self.cmplx:
             dest_spc = self.space.hy_index_to_space(0, 0, 0)[0]
         
-            src_spc = self.space.hy_index_to_space(self.hy.shape[0] - 1, 
-                                                   0, 0)[0]
+            src_spc = self.space.hy_index_to_space(self.hy.shape[0] - 1, 0, 0)[0]
             src_spc = self.space.cart_comm.sendrecv(src_spc, dest, const.Hy.tag,
                                                     None, src, const.Hy.tag)
         
             phase_shift = exp(1j * self.bloch[0] * (dest_spc - src_spc))
         else:
-            phase_shift = 0
+            phase_shift = 1
         
         self.hy[0, :, :] = phase_shift * \
         self.space.cart_comm.sendrecv(self.hy[-1, :, :], dest, const.Hy.tag,
@@ -814,7 +923,7 @@ class FDTD(object):
         This method uses the object serialization interface of MPI4Python.
         
         """
-        # send hz field data to +x direction and receive from -x direction.
+        # Send hz field data to +x direction and receive from -x direction.
         src, dest = self.space.cart_comm.Shift(0, 1)
         
         if self.cmplx:
@@ -826,13 +935,13 @@ class FDTD(object):
         
             phase_shift = exp(1j * self.bloch[0] * (dest_spc - src_spc))
         else:
-            phase_shift = 0
+            phase_shift = 1
         
         self.hz[0, :, :] = phase_shift * \
         self.space.cart_comm.sendrecv(self.hz[-1, :, :], dest, const.Hz.tag,
                                       None, src, const.Hz.tag)
             
-        # send hz field data to +y direction and receive from -y direction.
+        # Send hz field data to +y direction and receive from -y direction.
         src, dest = self.space.cart_comm.Shift(1, 1)
         
         if self.cmplx:
@@ -844,7 +953,7 @@ class FDTD(object):
         
             phase_shift = exp(1j * self.bloch[1] * (dest_spc - src_spc))
         else:
-            phase_shift = 0
+            phase_shift = 1
         
         self.hz[:, 0, :] = phase_shift * \
         self.space.cart_comm.sendrecv(self.hz[:, -1, :], dest, const.Hz.tag,
@@ -859,6 +968,9 @@ class FDTD(object):
         for comp in self.e_field_compnt:
             self._updater[comp]()
 
+        for probe in self.e_recorder:
+            probe.write(self.time_step.n)
+            
         self.time_step.half_step_up()
 
         self._step_aux_fdtd()
@@ -869,12 +981,15 @@ class FDTD(object):
         for comp in self.h_field_compnt:
             self._updater[comp]()
 
+        for probe in self.h_recorder:
+            probe.write(self.time_step.n)
+
     def step_while_zero(self, component, point, modulus=inf):
         """Run self.step() while the field value at the given point is 0.
         
         Keyword arguments:
         component: filed component to check.
-            one of gmes.constants.{Ex, Ey, Ez, Hx, Hy, Hz}.
+            one of gmes.constant.{Ex, Ey, Ez, Hx, Hy, Hz}.
         point: coordinates of the location to check the field. 
             tuple of three scalars
         modulus: print n and t at every modulus steps.
@@ -893,7 +1008,7 @@ class FDTD(object):
 
         idx = spc_to_idx[component](*point)
 
-        if in_range(idx, field[component], component):
+        if in_range(idx, field[component].shape, component):
             hot_node = self.space.my_id
         else:
             hot_node = None
@@ -1022,7 +1137,7 @@ class FDTD(object):
         """Show the real value of the ex on the plone.
 
         axis: Specify the normal axis to the show plane.
-            This should be one of the gmes.constants.Directional.
+            This should be one of the gmes.constant.Directional.
         cut: A scalar value which specifies the cut position on the 
             axis. 
         vrange: Specify the colorbar range.
@@ -1039,7 +1154,7 @@ class FDTD(object):
         """Show the real value of the ey on the plone.
 
         axis: Specify the normal axis to the show plane.
-            This should be one of the gmes.constants.Directional.
+            This should be one of the gmes.constant.Directional.
         cut: A scalar value which specifies the cut position on the 
             axis. 
         vrange: Specify the colorbar range.
@@ -1056,7 +1171,7 @@ class FDTD(object):
         """Show the real value of the ez on the plone.
 
         axis: Specify the normal axis to the show plane.
-            This should be one of the gmes.constants.Directional.
+            This should be one of the gmes.constant.Directional.
         cut: A scalar value which specifies the cut position on the 
             axis. 
         vrange: Specify the colorbar range.
@@ -1073,7 +1188,7 @@ class FDTD(object):
         """Show the real value of the hx on the plone.
 
         axis: Specify the normal axis to the show plane.
-            This should be one of the gmes.constants.Directional.
+            This should be one of the gmes.constant.Directional.
         cut: A scalar value which specifies the cut position on the 
             axis. 
         vrange: Specify the colorbar range.
@@ -1090,7 +1205,7 @@ class FDTD(object):
         """Show the real value of the hy on the plone.
 
         axis: Specify the normal axis to the show plane.
-            This should be one of the gmes.constants.Directional.
+            This should be one of the gmes.constant.Directional.
         cut: A scalar value which specifies the cut position on the 
             axis. 
         vrange: Specify the colorbar range.
@@ -1107,7 +1222,7 @@ class FDTD(object):
         """Show the real value of the hz on the plone.
 
         axis: Specify the normal axis to the show plane.
-            This should be one of the gmes.constants.Directional.
+            This should be one of the gmes.constant.Directional.
         cut: A scalar value which specifies the cut position on the 
             axis. 
         vrange: Specify the colorbar range.
@@ -1125,7 +1240,7 @@ class FDTD(object):
 
         Keyword arguments:
         axis: Specify the normal axis to the show plane.
-            This should be one of the gmes.constants.Directional.
+            This should be one of the gmes.constant.Directional.
         cut: A scalar value which specifies the cut position on the 
             axis.
         vrange: Specify the colorbar range. A tuple of length two.
@@ -1142,7 +1257,7 @@ class FDTD(object):
 
         Keyword arguments:
         axis: Specify the normal axis to the show plane.
-            This should be one of the gmes.constants.Directional.
+            This should be one of the gmes.constant.Directional.
         cut: A scalar value which specifies the cut position on the 
             axis.
         vrange: Specify the colorbar range. A tuple of length two.
@@ -1159,7 +1274,7 @@ class FDTD(object):
 
         Keyword arguments:
         axis: Specify the normal axis to the show plane.
-            This should be one of the gmes.constants.Directional.
+            This should be one of the gmes.constant.Directional.
         cut: A scalar value which specifies the cut position on the 
             axis.
         vrange: Specify the colorbar range. A tuple of length two.
@@ -1176,7 +1291,7 @@ class FDTD(object):
 
         Keyword arguments:
         axis: Specify the normal axis to the show plane.
-            This should be one of the gmes.constants.Directional.
+            This should be one of the gmes.constant.Directional.
         cut: A scalar value which specifies the cut position on the 
             axis.
         vrange: Specify the colorbar range. A tuple of length two.
@@ -1193,7 +1308,7 @@ class FDTD(object):
 
         Keyword arguments:
         axis: Specify the normal axis to the show plane.
-            This should be one of the gmes.constants.Directional.
+            This should be one of the gmes.constant.Directional.
         cut: A scalar value which specifies the cut position on the 
             axis.
         vrange: Specify the colorbar range. A tuple of length two.
@@ -1210,7 +1325,7 @@ class FDTD(object):
 
         Keyword arguments:
         axis: Specify the normal axis to the show plane.
-            This should be one of the gmes.constants.Directional.
+            This should be one of the gmes.constant.Directional.
         cut: A scalar value which specifies the cut position on the 
             axis.
         vrange: Specify the colorbar range. a tuple of length two.
@@ -1408,7 +1523,7 @@ if __name__ == '__main__':
     
     low = Dielectric(index=1)
     hi = Dielectric(index=3)
-    width_hi = low.epsilon / (low.epsilon + hi.epsilon)
+    width_hi = low.eps_inf / (low.eps_inf + hi.eps_inf)
     space = Cartesian(size=[1, 1, 1])
     geom_list = [DefaultMedium(material=low), 
                  Cylinder(material=hi, 

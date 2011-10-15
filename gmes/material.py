@@ -10,24 +10,119 @@ try:
 except ImportError:
     stderr.write('No module named psyco. Execution speed might be slow.\n')
 
-from numpy import *
+from math import sqrt, sin, cos
+from numpy import array, inf, empty, exp
+import numpy as np
 
-from pw_material import *
-import constants as const
+# Dummy
+from pw_material import DummyElectricParamReal, DummyElectricParamCmplx
+from pw_material import DummyMagneticParamReal, DummyMagneticParamCmplx
+from pw_material import DummyExReal, DummyExCmplx
+from pw_material import DummyEyReal, DummyEyCmplx
+from pw_material import DummyEzReal, DummyEzCmplx
+from pw_material import DummyHxReal, DummyHxCmplx
+from pw_material import DummyHyReal, DummyHyCmplx
+from pw_material import DummyHzReal, DummyHzCmplx
+
+# Const
+from pw_material import ConstElectricParamReal, ConstElectricParamCmplx
+from pw_material import ConstMagneticParamReal, ConstMagneticParamCmplx
+from pw_material import ConstExReal, ConstExCmplx
+from pw_material import ConstEyReal, ConstEyCmplx
+from pw_material import ConstEzReal, ConstEzCmplx
+from pw_material import ConstHxReal, ConstHxCmplx
+from pw_material import ConstHyReal, ConstHyCmplx
+from pw_material import ConstHzReal, ConstHzCmplx
+
+# Dielectric
+from pw_material import DielectricElectricParamReal, DielectricElectricParamCmplx
+from pw_material import DielectricMagneticParamReal, DielectricMagneticParamCmplx
+from pw_material import DielectricExReal, DielectricExCmplx
+from pw_material import DielectricEyReal, DielectricEyCmplx
+from pw_material import DielectricEzReal, DielectricEzCmplx
+from pw_material import DielectricHxReal, DielectricHxCmplx
+from pw_material import DielectricHyReal, DielectricHyCmplx
+from pw_material import DielectricHzReal, DielectricHzCmplx
+
+# Upml
+from pw_material import UpmlElectricParamReal, UpmlElectricParamCmplx
+from pw_material import UpmlMagneticParamReal, UpmlMagneticParamCmplx
+from pw_material import UpmlExReal, UpmlExCmplx
+from pw_material import UpmlEyReal, UpmlEyCmplx
+from pw_material import UpmlEzReal, UpmlEzCmplx
+from pw_material import UpmlHxReal, UpmlHxCmplx
+from pw_material import UpmlHyReal, UpmlHyCmplx
+from pw_material import UpmlHzReal, UpmlHzCmplx
+
+# Cpml
+from pw_material import CpmlElectricParamReal, CpmlElectricParamCmplx
+from pw_material import CpmlMagneticParamReal, CpmlMagneticParamCmplx
+from pw_material import CpmlExReal, CpmlExCmplx
+from pw_material import CpmlEyReal, CpmlEyCmplx
+from pw_material import CpmlEzReal, CpmlEzCmplx
+from pw_material import CpmlHxReal, CpmlHxCmplx
+from pw_material import CpmlHyReal, CpmlHyCmplx
+from pw_material import CpmlHzReal, CpmlHzCmplx
+
+# Drude
+from pw_material import DrudeElectricParamReal, DrudeElectricParamCmplx
+from pw_material import DrudeMagneticParamReal, DrudeMagneticParamCmplx
+from pw_material import DrudeExReal, DrudeExCmplx
+from pw_material import DrudeEyReal, DrudeEyCmplx
+from pw_material import DrudeEzReal, DrudeEzCmplx
+from pw_material import DrudeHxReal, DrudeHxCmplx
+from pw_material import DrudeHyReal, DrudeHyCmplx
+from pw_material import DrudeHzReal, DrudeHzCmplx
+
+# Lorentz
+from pw_material import LorentzElectricParamReal, LorentzElectricParamCmplx
+from pw_material import LorentzMagneticParamReal, LorentzMagneticParamCmplx
+from pw_material import LorentzExReal, LorentzExCmplx
+from pw_material import LorentzEyReal, LorentzEyCmplx
+from pw_material import LorentzEzReal, LorentzEzCmplx
+from pw_material import LorentzHxReal, LorentzHxCmplx
+from pw_material import LorentzHyReal, LorentzHyCmplx
+from pw_material import LorentzHzReal, LorentzHzCmplx
+
+# ADE implementation of DCP
+from pw_material import DcpAdeElectricParamReal, DcpAdeElectricParamCmplx
+from pw_material import DcpAdeMagneticParamReal, DcpAdeMagneticParamCmplx
+from pw_material import DcpAdeExReal, DcpAdeExCmplx
+from pw_material import DcpAdeEyReal, DcpAdeEyCmplx
+from pw_material import DcpAdeEzReal, DcpAdeEzCmplx
+from pw_material import DcpAdeHxReal, DcpAdeHxCmplx
+from pw_material import DcpAdeHyReal, DcpAdeHyCmplx
+from pw_material import DcpAdeHzReal, DcpAdeHzCmplx
+
+# PLRC implementation of DCP
+from pw_material import DcpPlrcElectricParamReal, DcpPlrcElectricParamCmplx
+from pw_material import DcpPlrcMagneticParamReal, DcpPlrcMagneticParamCmplx
+from pw_material import DcpPlrcExReal, DcpPlrcExCmplx
+from pw_material import DcpPlrcEyReal, DcpPlrcEyCmplx
+from pw_material import DcpPlrcEzReal, DcpPlrcEzCmplx
+from pw_material import DcpPlrcHxReal, DcpPlrcHxCmplx
+from pw_material import DcpPlrcHyReal, DcpPlrcHyCmplx
+from pw_material import DcpPlrcHzReal, DcpPlrcHzCmplx
+
+from constant import c0
 
 
 class Material(object):
-    """A super class for material types.
+    """A base class for material types.
     
     """
-    def display_info(self, indentby=0):
+    def __init__(self, eps_inf=1, mu_inf=1):
+        self.eps_inf = float(eps_inf)
+        self.mu_inf = float(mu_inf)
+
+    def display_info(self, indent=0):
         """Display the parameter values.
         
         """
-        print " " * indentby, "material type object"
+        raise NotImplementedError
 
     def get_pw_material_ex(self, idx, coords, underneath=None, cmplx=False):
-        """Return PointwiseMaterial object of the given point.
+        """Return an ElectricParam structure of the given point.
         
         Arguments:
             idx -- (local) array index of the target point
@@ -39,7 +134,7 @@ class Material(object):
         raise NotImplementedError
     
     def get_pw_material_ey(self, idx, coords, underneath=None, cmplx=False):
-        """Return PointwiseMaterial object of the given point.
+        """Return an ElectricParam structure of the given point.
         
         Arguments:
             idx -- (local) array index of the target point
@@ -51,7 +146,7 @@ class Material(object):
         raise NotImplementedError
     
     def get_pw_material_ez(self, idx, coords, underneath=None, cmplx=False):
-        """Return PointwiseMaterial object of the given point.
+        """Return an ElectricParam structure of the given point.
         
         Arguments:
             idx -- (local) array index of the target point
@@ -63,7 +158,7 @@ class Material(object):
         raise NotImplementedError
     
     def get_pw_material_hx(self, idx, coords, underneath=None, cmplx=False):
-        """Return PointwiseMaterial object of the given point.
+        """Return a MagneticParam structure of the given point.
         
         Arguments:
             idx -- (local) array index of the target point
@@ -75,7 +170,7 @@ class Material(object):
         raise NotImplementedError
     
     def get_pw_material_hy(self, idx, coords, underneath=None, cmplx=False):
-        """Return PointwiseMaterial object of the given point.
+        """Return a MagneticParam structure of the given point.
         
         Arguments:
             idx -- (local) array index of the target point
@@ -87,7 +182,7 @@ class Material(object):
         raise NotImplementedError
     
     def get_pw_material_hz(self, idx, coords, underneath=None, cmplx=False):
-        """Return PointwiseMaterial object of the given point.
+        """Return a MagneticParam structure of the given point.
         
         Arguments:
             idx -- (local) array index of the target point
@@ -97,220 +192,275 @@ class Material(object):
             
         """
         raise NotImplementedError
-    
+
     def init(self, space, param=None):
-        pass
+        raise NotImplementedError
         
         
 class Dummy(Material):
     """A dummy material type which dosen't update the field component.
     
     """
-    def __init__(self, epsilon=1, mu=1):
-        self.epsilon = float(epsilon)
-        self.mu = float(mu)
+    def __init__(self, eps_inf=1, mu_inf=1):
+        Material.__init__(self, eps_inf, mu_inf)
         
-    def display_info(self, indentby=0):
+    def init(self, space, param=None):
+        pass
+
+    def display_info(self, indent=0):
         """Display the parameter values.
         
         """
-        print " " * indentby, "dummy object"
+        print " " * indent, "dummy object"
         print " " * indent, 
-        print "permittivity:", self.epsilon,
-        print "permeability:", self.mu
+        print "frequency independent permittivity:", self.eps_inf,
+        print "frequency independent permeability:", self.mu_inf
         
     def get_pw_material_ex(self, idx, coords, underneath=None, cmplx=False):
         if cmplx:
-            pw_obj = DummyExCmplx(self.epsilon)
+            pw_obj = DummyExCmplx()
+            pw_param = DummyElectricParamCmplx()
         else:
-            pw_obj = DummyExReal(self.epsilon)
-            
-        return pw_obj
-    
-    def get_pw_material_ey(self, idx, coords, underneath=None, cmplx=False):
-        if cmplx:
-            pw_obj = DummyEyCmplx(self.epsilon)
+            pw_obj = DummyExReal()
+            pw_param = DummyElectricParamReal()
+
+        if underneath is None:
+            pw_param.eps_inf = self.eps_inf
         else:
-            pw_obj = DummyEyReal(self.epsilon)
-            
-        return pw_obj
-    
-    def get_pw_material_ez(self, idx, coords, underneath=None, cmplx=False):
-        if cmplx:
-            pw_obj = DummyEzCmplx(self.epsilon)
-        else:
-            pw_obj = DummyEzReal(self.epsilon)
+            pw_param.eps_inf = underneath.eps_inf
         
-        return pw_obj
-    
-    def get_pw_material_hx(self, idx, coords, underneath=None, cmplx=False):
-        if cmplx:
-            pw_obj = DummyHxCmplx(self.mu)
-        else:
-            pw_obj = DummyHxReal(self.mu)
-        
-        return pw_obj
-    
-    def get_pw_material_hy(self, idx, coords, underneath=None, cmplx=False):
-        if cmplx:
-            pw_obj = DummyHyCmplx(self.mu)
-        else:
-            pw_obj = DummyHyReal(self.mu)
-        
-        return pw_obj
-    
-    def get_pw_material_hz(self, idx, coords, underneath=None, cmplx=False):
-        if cmplx:
-            pw_obj = DummyHzCmplx(self.mu)
-        else:
-            pw_obj = DummyHzReal(self.mu)
-        
+        pw_obj.attach(idx, pw_param)
         return pw_obj
 
-    
-class Zero(Material):
-    """A material type which sets the field value zero.
-    
-    """
-    def __init__(self, epsilon=1, mu=1):
-        self.epsilon = float(epsilon)
-        self.mu = float(mu)
-        
-    def display_info(self, indentby=0):
-        """Display the parameter values.
-        
-        """
-        print " " * indentby, "zero object"
-        print " " * indent, 
-        print "permittivity:", self.epsilon,
-        print "permeability:", self.mu
-        
-    def get_pw_material_ex(self, idx, coords, underneath=None, cmplx=False):
-        if cmplx:
-            pw_obj = ZeroExCmplx(self.epsilon)
-        else:
-            pw_obj = ZeroExReal(self.epsilon)
-            
-        return pw_obj
-    
     def get_pw_material_ey(self, idx, coords, underneath=None, cmplx=False):
         if cmplx:
-            pw_obj = ZeroEyCmplx(self.epsilon)
+            pw_obj = DummyEyCmplx()
+            pw_param = DummyElectricParamCmplx()
         else:
-            pw_obj = ZeroEyReal(self.epsilon)
-            
-        return pw_obj
-    
-    def get_pw_material_ez(self, idx, coords, underneath=None, cmplx=False):
-        if cmplx:
-            pw_obj = ZeroEzCmplx(self.epsilon)
-        else:
-            pw_obj = ZeroEzReal(self.epsilon)
-            
-        return pw_obj
-    
-    def get_pw_material_hx(self, idx, coords, underneath=None, cmplx=False):
-        if cmplx:
-            pw_obj = ZeroHxCmplx(self.mu)
-        else:
-            pw_obj = ZeroHxReal(self.mu)
-            
-        return pw_obj
-    
-    def get_pw_material_hy(self, idx, coords, underneath=None, cmplx=False):
-        if cmplx:
-            pw_obj = ZeroHyCmplx(self.mu)
-        else:
-            pw_obj = ZeroHyReal(self.mu)
-            
-        return pw_obj
-    
-    def get_pw_material_hz(self, idx, coords, underneath=None, cmplx=False):
-        if cmplx:
-            pw_obj = ZeroHzCmplx(self.mu)
-        else:
-            pw_obj = ZeroHzReal(self.mu)
-            
-        return pw_obj
-    
+            pw_obj = DummyEyReal()
+            pw_param = DummyElectricParamReal()
 
-class One(Material):
-    """A material type which sets the field value one.
-    
-    """
-    def __init__(self, epsilon=1, mu=1):
-        self.epsilon = float(epsilon)
-        self.mu = float(mu)
-        
-    def display_info(self, indentby=0):
-        """Display the parameter values.
-        
-        """
-        print " " * indentby, "one object"
-        print " " * indent, 
-        print "permittivity:", self.epsilon,
-        print "permeability:", self.mu
-        
-    def get_pw_material_ex(self, idx, coords, underneath=None, cmplx=False):
-        if cmplx:
-            pw_obj = OneExCmplx(self.epsilon)
+        if underneath is None:
+            pw_param.eps_inf = self.eps_inf
         else:
-            pw_obj = OneExReal(self.epsilon)
-            
+            pw_param.eps_inf = underneath.eps_inf
+        
+        pw_obj.attach(idx, pw_param)
         return pw_obj
-    
-    def get_pw_material_ey(self, idx, coords, underneath=None, cmplx=False):
-        if cmplx:
-            pw_obj = OneEyCmplx(self.epsilon)
-        else:
-            pw_obj = OneEyReal(self.epsilon)
-            
-        return pw_obj
-    
+
     def get_pw_material_ez(self, idx, coords, underneath=None, cmplx=False):
         if cmplx:
-            pw_obj = OneEzCmplx(self.epsilon)
+            pw_obj = DummyEzCmplx()
+            pw_param = DummyElectricParamCmplx()
         else:
-            pw_obj = OneEzReal(self.epsilon)
-            
+            pw_obj = DummyEzReal()
+            pw_param = DummyElectricParamReal()
+
+        if underneath is None:
+            pw_param.eps_inf = self.eps_inf
+        else:
+            pw_param.eps_inf = underneath.eps_inf
+        
+        pw_obj.attach(idx, pw_param)
         return pw_obj
-    
+
     def get_pw_material_hx(self, idx, coords, underneath=None, cmplx=False):
         if cmplx:
-            pw_obj = OneHxCmplx(self.mu)
+            pw_obj = DummyHxCmplx()
+            pw_param = DummyMagneticParamCmplx()
         else:
-            pw_obj = OneHxReal(self.mu)
-            
+            pw_obj = DummyHxReal()
+            pw_param = DummyMagneticParamReal()
+
+        if underneath is None:
+            pw_param.mu_inf = self.mu_inf
+        else:
+            pw_param.mu_inf = underneath.mu_inf
+        
+        pw_obj.attach(idx, pw_param)
         return pw_obj
     
     def get_pw_material_hy(self, idx, coords, underneath=None, cmplx=False):
         if cmplx:
-            pw_obj = OneHyCmplx(self.mu)
+            pw_obj = DummyHyCmplx()
+            pw_param = DummyMagneticParamCmplx()
         else:
-            pw_obj = OneHyReal(self.mu)
-            
+            pw_obj = DummyHyReal()
+            pw_param = DummyMagneticParamReal()
+
+        if underneath is None:
+            pw_param.mu_inf = self.mu_inf
+        else:
+            pw_param.mu_inf = underneath.mu_inf
+        
+        pw_obj.attach(idx, pw_param)
         return pw_obj
-    
+
     def get_pw_material_hz(self, idx, coords, underneath=None, cmplx=False):
         if cmplx:
-            pw_obj = OneHzCmplx(self.mu)
+            pw_obj = DummyHzCmplx()
+            pw_param = DummyMagneticParamCmplx()
         else:
-            pw_obj = OneHzReal(self.mu)
-            
+            pw_obj = DummyHzReal()
+            pw_param = DummyMagneticParamReal()
+
+        if underneath is None:
+            pw_param.mu_inf = self.mu_inf
+        else:
+            pw_param.mu_inf = underneath.mu_inf
+        
+        pw_obj.attach(idx, pw_param)
+        return pw_obj
+
+
+class Const(Material):
+    """A material type which sets the field to the given value.
+    
+    """
+    def __init__(self, value, eps_inf=1, mu_inf=1):
+        """Arguments:
+            value -- field value
+            eps_inf -- frequency independent permittivity
+            mu_inf -- frequency independent permeability
+        
+        """
+        Material.__init__(self, eps_inf, mu_inf)
+
+        if type(value) is complex:
+            self.value = value
+        else:
+            self.value = float(value)
+        
+    def init(self, space, param=None):
+        pass
+
+    def display_info(self, indent=0):
+        """Display the parameter values.
+        
+        """
+        print " " * indent, "const object"
+        print " " * indent, 
+        print "value:", self.value,
+        print "frequency independent permittivity:", self.eps_inf,
+        print "frequency independent permeability:", self.mu_inf
+        
+    def get_pw_material_ex(self, idx, coords, underneath=None, cmplx=False):
+        if cmplx:
+            pw_obj = ConstExCmplx()
+            pw_param = ConstElectricParamCmplx()
+        else:
+            pw_obj = ConstExReal()
+            pw_param = ConstElectricParamReal()
+        
+        pw_param.value = self.value
+        if underneath is None:
+            pw_param.eps_inf = self.eps_inf
+        else:
+            pw_param.eps_inf = underneath.eps_inf
+        
+        pw_obj.attach(idx, pw_param)
         return pw_obj
     
-            
+    def get_pw_material_ey(self, idx, coords, underneath=None, cmplx=False):
+        if cmplx:
+            pw_obj = ConstEyCmplx()
+            pw_param = ConstElectricParamCmplx()
+        else:
+            pw_obj = ConstEyReal()
+            pw_param = ConstElectricParamReal()
+        
+        pw_param.value = self.value
+        if underneath is None:
+            pw_param.eps_inf = self.eps_inf
+        else:
+            pw_param.eps_inf = underneath.eps_inf
+        
+        pw_obj.attach(idx, pw_param)
+        return pw_obj
+
+    def get_pw_material_ez(self, idx, coords, underneath=None, cmplx=False):
+        if cmplx:
+            pw_obj = ConstEzCmplx()
+            pw_param = ConstElectricParamCmplx()
+        else:
+            pw_obj = ConstEzReal()
+            pw_param = ConstElectricParamReal()
+        
+        pw_param.value = self.value
+        if underneath is None:
+            pw_param.eps_inf = self.eps_inf
+        else:
+            pw_param.eps_inf = underneath.eps_inf
+        
+        pw_obj.attach(idx, pw_param)
+        return pw_obj
+
+    def get_pw_material_hx(self, idx, coords, underneath=None, cmplx=False):
+        if cmplx:
+            pw_obj = ConstHxCmplx()
+            pw_param = ConstMagneticParamCmplx()
+        else:
+            pw_obj = ConstHxReal()
+            pw_param = ConstMagneticParamReal()
+
+        pw_param.value = self.value
+        if underneath is None:
+            pw_param.mu_inf = self.mu_inf
+        else:
+            pw_param.mu_inf = underneath.mu_inf
+        
+        pw_obj.attach(idx, pw_param)
+        return pw_obj
+    
+    def get_pw_material_hy(self, idx, coords, underneath=None, cmplx=False):
+        if cmplx:
+            pw_obj = ConstHyCmplx()
+            pw_param = ConstMagneticParamCmplx()
+        else:
+            pw_obj = ConstHyReal()
+            pw_param = ConstMagneticParamReal()
+
+        pw_param.value = self.value
+        if underneath is None:
+            pw_param.mu_inf = self.mu_inf
+        else:
+            pw_param.mu_inf = underneath.mu_inf
+        
+        pw_obj.attach(idx, pw_param)
+        return pw_obj
+
+    def get_pw_material_hz(self, idx, coords, underneath=None, cmplx=False):
+        if cmplx:
+            pw_obj = ConstHzCmplx()
+            pw_param = ConstMagneticParamCmplx()
+        else:
+            pw_obj = ConstHzReal()
+            pw_param = ConstMagneticParamReal()
+
+        pw_param.value = self.value
+        if underneath is None:
+            pw_param.mu_inf = self.mu_inf
+        else:
+            pw_param.mu_inf = underneath.mu_inf
+        
+        pw_obj.attach(idx, pw_param)
+        return pw_obj
+
+
 class Dielectric(Material):
-    def __init__(self, epsilon=1, mu=1):
-        """Representation of dielectric medium.
+    """Representation of non-dispersive isotropic dielectric medium.
         
-        Arguments:
-            epsilon -- permittivity
-            mu -- permeability
+    """
+    def __init__(self, eps_inf=1, mu_inf=1):
+        """Arguments:
+            eps_inf -- frequency independent permittivity
+            mu_inf -- frequency independent permeability
         
         """
-        self.epsilon = float(epsilon)
-        self.mu = float(mu)
+        Material.__init__(self, eps_inf, mu_inf)
+
+    def init(self, space, param=None):
+        pass
 
     def display_info(self, indent=0):
         """Display the parameter values.
@@ -318,55 +468,103 @@ class Dielectric(Material):
         """
         print " " * indent, "dielectric"
         print " " * indent, 
-        print "permittivity:", self.epsilon,
-        print "permeability:", self.mu
+        print "frequency independent permittivity:", self.eps_inf,
+        print "frequency independent permeability:", self.mu_inf
 
     def get_pw_material_ex(self, idx, coords, underneath=None, cmplx=False):
         if cmplx:
-            pw_obj = DielectricExCmplx(self.epsilon)
+            pw_obj = DielectricExCmplx()
+            pw_param = DielectricElectricParamCmplx()
         else:
-            pw_obj = DielectricExReal(self.epsilon)
-            
+            pw_obj = DielectricExReal()
+            pw_param = DielectricElectricParamReal()
+
+        if underneath is None:
+            pw_param.eps_inf = self.eps_inf
+        else:
+            pw_param.eps_inf = underneath.eps_inf
+        
+        pw_obj.attach(idx, pw_param)
         return pw_obj
 
     def get_pw_material_ey(self, idx, coords, underneath=None, cmplx=False):
         if cmplx:
-            pw_obj = DielectricEyCmplx(self.epsilon)
+            pw_obj = DielectricEyCmplx()
+            pw_param = DielectricElectricParamCmplx()
         else:
-            pw_obj = DielectricEyReal(self.epsilon)
-            
+            pw_obj = DielectricEyReal()
+            pw_param = DielectricElectricParamReal()
+
+        if underneath is None:
+            pw_param.eps_inf = self.eps_inf
+        else:
+            pw_param.eps_inf = underneath.eps_inf
+        
+        pw_obj.attach(idx, pw_param)
         return pw_obj
-    
+
     def get_pw_material_ez(self, idx, coords, underneath=None, cmplx=False):
         if cmplx:
-            pw_obj = DielectricEzCmplx(self.epsilon)
+            pw_obj = DielectricEzCmplx()
+            pw_param = DielectricElectricParamCmplx()
         else:
-            pw_obj = DielectricEzReal(self.epsilon)
-            
+            pw_obj = DielectricEzReal()
+            pw_param = DielectricElectricParamReal()
+
+        if underneath is None:
+            pw_param.eps_inf = self.eps_inf
+        else:
+            pw_param.eps_inf = underneath.eps_inf
+        
+        pw_obj.attach(idx, pw_param)
         return pw_obj
-    
+
     def get_pw_material_hx(self, idx, coords, underneath=None, cmplx=False):
         if cmplx:
-            pw_obj = DielectricHxCmplx(self.mu)
+            pw_obj = DielectricHxCmplx()
+            pw_param = DielectricMagneticParamCmplx()
         else:
-            pw_obj = DielectricHxReal(self.mu)
+            pw_obj = DielectricHxReal()
+            pw_param = DielectricMagneticParamReal()
             
+        if underneath is None:
+            pw_param.mu_inf = self.mu_inf
+        else:
+            pw_param.mu_inf = underneath.mu_inf
+        
+        pw_obj.attach(idx, pw_param)
         return pw_obj
     
     def get_pw_material_hy(self, idx, coords, underneath=None, cmplx=False):
         if cmplx:
-            pw_obj = DielectricHyCmplx(self.mu)
+            pw_obj = DielectricHyCmplx()
+            pw_param = DielectricMagneticParamCmplx()
         else:
-            pw_obj = DielectricHyReal(self.mu)
+            pw_obj = DielectricHyReal()
+            pw_param = DielectricMagneticParamReal()
             
+        if underneath is None:
+            pw_param.mu_inf = self.mu_inf
+        else:
+            pw_param.mu_inf = underneath.mu_inf
+        
+        pw_obj.attach(idx, pw_param)
         return pw_obj
-    
+
     def get_pw_material_hz(self, idx, coords, underneath=None, cmplx=False):
         if cmplx:
-            pw_obj = DielectricHzCmplx(self.mu)
+            pw_obj = DielectricHzCmplx()
+            pw_param = DielectricMagneticParamCmplx()
         else:
-            pw_obj = DielectricHzReal(self.mu)
+            pw_obj = DielectricHzReal()
+            pw_param = DielectricMagneticParamReal()
             
+        if underneath is None:
+            pw_param.mu_inf = self.mu_inf
+        else:
+            pw_param.mu_inf = underneath.mu_inf
+        
+        pw_obj.attach(idx, pw_param)
         return pw_obj
 
 
@@ -379,7 +577,8 @@ class Compound(object):
     """
     pass
 
-class PML(Material, Compound):
+
+class Pml(Material, Compound):
     """Base class of PML materials.
     
     Attributes:
@@ -391,14 +590,22 @@ class PML(Material, Compound):
         initialized -- initialization semaphore 
         
     """
-    def init(self, space, thickness):
+    def __init__(self, eps_inf, mu_inf):
+        Material.__init__(self, eps_inf, mu_inf)
+
+    def init(self, space, param=None):
         """
         The thickness of PML layer is provided from the boundary instance 
         which contain the PML. Also, the differential of space and time 
         should get from the space instance.
         
+        param: thickness of the PML layer.
+
         """
-        self.d = float(thickness)
+        if param is None:
+            self.d = 0
+        else:
+            self.d = float(param)
         
         half_size = []
         for i in space.half_size:
@@ -416,7 +623,7 @@ class PML(Material, Compound):
         """Calculate the optimal value of conductivity.
         
         """
-        eta = sqrt(self.effective_mu / self.effective_epsilon)
+        eta = sqrt(self.mu_inf / self.eps_inf)
         return .8 * (self.m + 1) / (eta * self.dw)
     
     def sigma(self, w, component):
@@ -442,8 +649,8 @@ class PML(Material, Compound):
             return 1.0
         
         
-class UPML(PML):
-    """Form Uniaxial Perfectly Matched Layer (UPML).
+class Upml(Pml):
+    """Form Uniaxial Perfectly Matched Layer (Upml).
     
     This class implements CFS PML represented in
     S. Gedney, "Perfectly Matched Layer Absorbing Boundary Conditions,"
@@ -454,22 +661,19 @@ class UPML(PML):
     Attributes:
         m -- 
         kappa_max -- maximum of kappa
-        effective_epsilon -- the effective permittivity of incident mode impinging on the PML boundary
-        effective_mu -- the effective permeability of incident mode impinging on the PML boundary
+        eps_inf -- the permittivity for incident mode impinging on the PML boundary with infinite frequency
+        mu_inf -- the permeability for incident mode impinging on the PML boundary with infinite frequency
         sigma_max_ratio -- the ratio between sigma_max and sigma_opt
 
     """    
-    def __init__(self, effective_epsilon=1, effective_mu=1, m=3.5, kappa_max=1, sigma_max_ratio=.75):
+    def __init__(self, eps_inf=1, mu_inf=1, m=3.5, kappa_max=1, sigma_max_ratio=.75):
+        Pml.__init__(self, eps_inf, mu_inf)
+
         self.initialized = False
         
         self.m = float(m)
         self.kappa_max = float(kappa_max)
-        self.effective_epsilon = float(effective_epsilon)
-        self.effective_mu = float(effective_epsilon)
         self.sigma_max_ratio = float(sigma_max_ratio)
-        
-        self.epsilon = self.effective_epsilon
-        self.mu = self.effective_mu
         
     def display_info(self, indent=0):
         """Display the parameter values.
@@ -479,8 +683,8 @@ class UPML(PML):
         """
         print " " * indent, "UPML"
         print " " * indent, 
-        print "effective permittivity:", self.effective_epsilon,
-        print "effective permeability:", self.effective_mu,
+        print "frequency independent permittivity:", self.eps_inf,
+        print "frequency independent permeability:", self.mu_inf,
         print "sigma_max:", self.sigma_max,
         print "m:", self.m,
         print "kappa_max:", self.kappa_max,
@@ -521,97 +725,145 @@ class UPML(PML):
         return numerator
     
     def get_pw_material_ex(self, idx, coords, underneath=None, cmplx=False):
-        c1 = self.c1(coords[1], 1)
-        c2 = self.c2(coords[1], 1)
-        c3 = self.c3(coords[2], 2)
-        c4 = self.c4(coords[2], 2)
-        c5 = self.c5(coords[0], 0)
-        c6 = self.c6(coords[0], 0)
-        
         if cmplx:
-            pw_obj = UpmlExCmplx(underneath.epsilon, c1, c2, c3, c4, c5, c6)
+            pw_obj = UpmlExCmplx()
+            pw_param = UpmlElectricParamCmplx()
         else:
-            pw_obj = UpmlExReal(underneath.epsilon, c1, c2, c3, c4, c5, c6)
+            pw_obj = UpmlExReal()
+            pw_param = UpmlElectricParamReal()
             
+        if underneath is None:
+            pw_param.eps_inf = self.eps_inf
+        else:
+            pw_param.eps_inf = underneath.eps_inf
+        
+        pw_param.c1 = self.c1(coords[1], 1)
+        pw_param.c2 = self.c2(coords[1], 1)
+        pw_param.c3 = self.c3(coords[2], 2)
+        pw_param.c4 = self.c4(coords[2], 2)
+        pw_param.c5 = self.c5(coords[0], 0)
+        pw_param.c6 = self.c6(coords[0], 0)
+        
+        pw_obj.attach(idx, pw_param)
         return pw_obj
     
     def get_pw_material_ey(self, idx, coords, underneath=None, cmplx=False):
-        c1 = self.c1(coords[2], 2)
-        c2 = self.c2(coords[2], 2)
-        c3 = self.c3(coords[0], 0)
-        c4 = self.c4(coords[0], 0)
-        c5 = self.c5(coords[1], 1)
-        c6 = self.c6(coords[1], 1)
-        
         if cmplx:
-            pw_obj = UpmlEyCmplx(underneath.epsilon, c1, c2, c3, c4, c5, c6)
+            pw_obj = UpmlEyCmplx()
+            pw_param = UpmlElectricParamCmplx()
         else:
-            pw_obj = UpmlEyReal(underneath.epsilon, c1, c2, c3, c4, c5, c6)
-            
+            pw_obj = UpmlEyReal()
+            pw_param = UpmlElectricParamReal()
+         
+        if underneath is None:
+            pw_param.eps_inf = self.eps_inf
+        else:
+            pw_param.eps_inf = underneath.eps_inf
+        
+        pw_param.c1 = self.c1(coords[2], 2)
+        pw_param.c2 = self.c2(coords[2], 2)
+        pw_param.c3 = self.c3(coords[0], 0)
+        pw_param.c4 = self.c4(coords[0], 0)
+        pw_param.c5 = self.c5(coords[1], 1)
+        pw_param.c6 = self.c6(coords[1], 1)
+        
+        pw_obj.attach(idx, pw_param)
         return pw_obj
     
     def get_pw_material_ez(self, idx, coords, underneath=None, cmplx=False):
-        c1 = self.c1(coords[0], 0)
-        c2 = self.c2(coords[0], 0)
-        c3 = self.c3(coords[1], 1)
-        c4 = self.c4(coords[1], 1)
-        c5 = self.c5(coords[2], 2)
-        c6 = self.c6(coords[2], 2)
-        
         if cmplx:
-            pw_obj = UpmlEzCmplx(underneath.epsilon, c1, c2, c3, c4, c5, c6)
+            pw_obj = UpmlEzCmplx()
+            pw_param = UpmlElectricParamCmplx()
         else:
-            pw_obj = UpmlEzReal(underneath.epsilon, c1, c2, c3, c4, c5, c6)
-            
+            pw_obj = UpmlEzReal()
+            pw_param = UpmlElectricParamReal()
+
+        if underneath is None:
+            pw_param.eps_inf = self.eps_inf
+        else:
+            pw_param.eps_inf = underneath.eps_inf
+        
+        pw_param.c1 = self.c1(coords[0], 0)
+        pw_param.c2 = self.c2(coords[0], 0)
+        pw_param.c3 = self.c3(coords[1], 1)
+        pw_param.c4 = self.c4(coords[1], 1)
+        pw_param.c5 = self.c5(coords[2], 2)
+        pw_param.c6 = self.c6(coords[2], 2)
+
+        pw_obj.attach(idx, pw_param)
         return pw_obj
     
     def get_pw_material_hx(self, idx, coords, underneath=None, cmplx=False):
-        c1 = self.c1(coords[1], 1)
-        c2 = self.c2(coords[1], 1)
-        c3 = self.c3(coords[2], 2)
-        c4 = self.c4(coords[2], 2)
-        c5 = self.c5(coords[0], 0)
-        c6 = self.c6(coords[0], 0)
-        
         if cmplx:
-            pw_obj = UpmlHxCmplx(underneath.mu, c1, c2, c3, c4, c5, c6)
+            pw_obj = UpmlHxCmplx()
+            pw_param = UpmlMagneticParamCmplx()
         else:
-            pw_obj = UpmlHxReal(underneath.mu, c1, c2, c3, c4, c5, c6)
-            
+            pw_obj = UpmlHxReal()
+            pw_param = UpmlMagneticParamReal()
+
+        if underneath is None:
+            pw_param.mu_inf = self.mu_inf
+        else:
+            pw_param.mu_inf = underneath.mu_inf
+        
+        pw_param.c1 = self.c1(coords[1], 1)
+        pw_param.c2 = self.c2(coords[1], 1)
+        pw_param.c3 = self.c3(coords[2], 2)
+        pw_param.c4 = self.c4(coords[2], 2)
+        pw_param.c5 = self.c5(coords[0], 0)
+        pw_param.c6 = self.c6(coords[0], 0)
+        
+        pw_obj.attach(idx, pw_param)
         return pw_obj
     
     def get_pw_material_hy(self, idx, coords, underneath=None, cmplx=False):
-        c1 = self.c1(coords[2], 2)
-        c2 = self.c2(coords[2], 2)
-        c3 = self.c3(coords[0], 0)
-        c4 = self.c4(coords[0], 0)
-        c5 = self.c5(coords[1], 1)
-        c6 = self.c6(coords[1], 1)
-        
         if cmplx:
-            pw_obj = UpmlHyCmplx(underneath.mu, c1, c2, c3, c4, c5, c6)
+            pw_obj = UpmlHyCmplx()
+            pw_param = UpmlMagneticParamCmplx()
         else:
-            pw_obj = UpmlHyReal(underneath.mu, c1, c2, c3, c4, c5, c6)
+            pw_obj = UpmlHyReal()
+            pw_param = UpmlMagneticParamReal()
+
+        if underneath is None:
+            pw_param.mu_inf = self.mu_inf
+        else:
+            pw_param.mu_inf = underneath.mu_inf
             
+        pw_param.c1 = self.c1(coords[2], 2)
+        pw_param.c2 = self.c2(coords[2], 2)
+        pw_param.c3 = self.c3(coords[0], 0)
+        pw_param.c4 = self.c4(coords[0], 0)
+        pw_param.c5 = self.c5(coords[1], 1)
+        pw_param.c6 = self.c6(coords[1], 1)
+        
+        pw_obj.attach(idx, pw_param)
         return pw_obj
     
     def get_pw_material_hz(self, idx, coords, underneath=None, cmplx=False):
-        c1 = self.c1(coords[0], 0)
-        c2 = self.c2(coords[0], 0)
-        c3 = self.c3(coords[1], 1)
-        c4 = self.c4(coords[1], 1)
-        c5 = self.c5(coords[2], 2)
-        c6 = self.c6(coords[2], 2)
-        
         if cmplx:
-            pw_obj = UpmlHzCmplx(underneath.mu, c1, c2, c3, c4, c5, c6)
+            pw_obj = UpmlHzCmplx()
+            pw_param = UpmlMagneticParamCmplx()
         else:
-            pw_obj = UpmlHzReal(underneath.mu, c1, c2, c3, c4, c5, c6)
-            
+            pw_obj = UpmlHzReal()
+            pw_param = UpmlMagneticParamReal()
+
+        if underneath is None:
+            pw_param.mu_inf = self.mu_inf
+        else:
+            pw_param.mu_inf = underneath.mu_inf
+        
+        pw_param.c1 = self.c1(coords[0], 0)
+        pw_param.c2 = self.c2(coords[0], 0)
+        pw_param.c3 = self.c3(coords[1], 1)
+        pw_param.c4 = self.c4(coords[1], 1)
+        pw_param.c5 = self.c5(coords[2], 2)
+        pw_param.c6 = self.c6(coords[2], 2)
+        
+        pw_obj.attach(idx, pw_param)
         return pw_obj
     
     
-class CPML(PML):
+class Cpml(Pml):
     """Form Complex Frequency Shifted (CFS) Perfectly Matched Layer (PML).
     
     This class implements CFS PML represented in
@@ -624,35 +876,32 @@ class CPML(PML):
         m -- default 3
         kappa_max -- default 15
         a_max -- default 0. CPML works like UPML when a_max = 0.
-        effective_epsilon -- the effective permittivity of incident mode impinging on the PML boundary
-        effective_mu -- the effective permeability of incident mode impinging on the PML boundary
+        eps_inf -- the permittivity for incident mode impinging on the PML boundary with infinite frequency
+        mu_inf -- the permeability of incident mode impinging on the PML boundary with infinite frequency
         sigma_max_ratio -- default 1
     
     """
-    def __init__(self, effective_epsilon=1, effective_mu=1, m=3, kappa_max=2, m_a=1, a_max=0, sigma_max_ratio=2):
+    def __init__(self, eps_inf=1, mu_inf=1, m=3, kappa_max=2, m_a=1, a_max=0, sigma_max_ratio=2):
+        Pml.__init__(self, eps_inf, mu_inf)
+
         self.initialized = False
         
         self.m = float(m)
         self.kappa_max = float(kappa_max)
         self.m_a = float(m_a)
         self.a_max = float(a_max)
-        self.effective_epsilon = float(effective_epsilon)
-        self.effective_mu = float(effective_mu)
         self.sigma_max_ratio = float(sigma_max_ratio)
-        
-        self.epsilon = self.effective_epsilon
-        self.mu = self.effective_mu
         
     def display_info(self, indent=0):
         """Display the parameter values.
 
-        Override PML.display_info.
+        Override Pml.display_info.
 
         """
         print " " * indent, "CPML"
         print " " * indent, 
-        print "effective permittivity:", self.effective_epsilon,
-        print "effective permeability:", self.effective_mu
+        print "frequency independent permittivity:", self.eps_inf,
+        print "frequency independent permeability:", self.mu_inf
         
         print " " * indent,
         print "sigma_max:", self.sigma_max,
@@ -682,93 +931,137 @@ class CPML(PML):
         return numerator / denominator
     
     def get_pw_material_ex(self, idx, coords, underneath=None, cmplx=False):
-        by = self.b(coords[1], 1)
-        bz = self.b(coords[2], 2)
-        cy = self.c(coords[1], 1)
-        cz = self.c(coords[2], 2)
-        kappay = self.kappa(coords[1], 1)
-        kappaz = self.kappa(coords[2], 2)
-        
         if cmplx:
-            pw_obj = CpmlExCmplx(underneath.epsilon, by, bz, cy, cz, kappay, kappaz)
+            pw_obj = CpmlExCmplx()
+            pw_param = CpmlElectricParamCmplx()
         else:
-            pw_obj = CpmlExReal(underneath.epsilon, by, bz, cy, cz, kappay, kappaz)
-            
+            pw_obj = CpmlExReal()
+            pw_param = CpmlElectricParamReal()
+
+        if underneath is None:
+            pw_param.eps_inf = self.eps_inf
+        else:
+            pw_param.eps_inf = underneath.eps_inf
+        
+        pw_param.b1 = self.b(coords[1], 1)
+        pw_param.b2 = self.b(coords[2], 2)
+        pw_param.c1 = self.c(coords[1], 1)
+        pw_param.c2 = self.c(coords[2], 2)
+        pw_param.kappa1 = self.kappa(coords[1], 1)
+        pw_param.kappa2 = self.kappa(coords[2], 2)
+
+        pw_obj.attach(idx, pw_param)
         return pw_obj
     
     def get_pw_material_ey(self, idx, coords, underneath=None, cmplx=False):
-        bz = self.b(coords[2], 2)
-        bx = self.b(coords[0], 0)
-        cz = self.c(coords[2], 2)
-        cx = self.c(coords[0], 0)
-        kappaz = self.kappa(coords[2], 2)
-        kappax = self.kappa(coords[0], 0)
-        
         if cmplx:
-            pw_obj = CpmlEyCmplx(underneath.epsilon, bz, bx, cz, cx, kappaz, kappax)
+            pw_obj = CpmlEyCmplx()
+            pw_param = CpmlElectricParamCmplx()
         else:
-            pw_obj = CpmlEyReal(underneath.epsilon, bz, bx, cz, cx, kappaz, kappax)
-            
+            pw_obj = CpmlEyReal()
+            pw_param = CpmlElectricParamReal()
+
+        if underneath is None:
+            pw_param.eps_inf = self.eps_inf
+        else:
+            pw_param.eps_inf = underneath.eps_inf
+        
+        pw_param.b1 = self.b(coords[2], 2)
+        pw_param.b2 = self.b(coords[0], 0)
+        pw_param.c1 = self.c(coords[2], 2)
+        pw_param.c2 = self.c(coords[0], 0)
+        pw_param.kappa1 = self.kappa(coords[2], 2)
+        pw_param.kappa2 = self.kappa(coords[0], 0)
+        
+        pw_obj.attach(idx, pw_param)
         return pw_obj
     
     def get_pw_material_ez(self, idx, coords, underneath=None, cmplx=False):
-        bx = self.b(coords[0], 0)
-        by = self.b(coords[1], 1)
-        cx = self.c(coords[0], 0)
-        cy = self.c(coords[1], 1)
-        kappax = self.kappa(coords[0], 0)
-        kappay = self.kappa(coords[1], 1)
-        
         if cmplx:
-            pw_obj = CpmlEzCmplx(underneath.epsilon, bx, by, cx, cy, kappax, kappay)
+            pw_obj = CpmlEzCmplx()
+            pw_param = CpmlElectricParamCmplx()
         else:
-            pw_obj = CpmlEzReal(underneath.epsilon, bx, by, cx, cy, kappax, kappay)
-            
+            pw_obj = CpmlEzReal()
+            pw_param = CpmlElectricParamReal()
+
+        if underneath is None:
+            pw_param.eps_inf = self.eps_inf
+        else:
+            pw_param.eps_inf = underneath.eps_inf
+        
+        pw_param.b1 = self.b(coords[0], 0)
+        pw_param.b2 = self.b(coords[1], 1)
+        pw_param.c1 = self.c(coords[0], 0)
+        pw_param.c2 = self.c(coords[1], 1)
+        pw_param.kappa1 = self.kappa(coords[0], 0)
+        pw_param.kappa2 = self.kappa(coords[1], 1)
+        pw_obj.attach(idx, pw_param)
         return pw_obj
     
     def get_pw_material_hx(self, idx, coords, underneath=None, cmplx=False):
-        by = self.b(coords[1], 1)
-        bz = self.b(coords[2], 2)
-        cy = self.c(coords[1], 1)
-        cz = self.c(coords[2], 2)
-        kappay = self.kappa(coords[1], 1)
-        kappaz = self.kappa(coords[2], 2)
-        
         if cmplx:
-            pw_obj = CpmlHxCmplx(underneath.mu, by, bz, cy, cz, kappay, kappaz)
+            pw_obj = CpmlHxCmplx()
+            pw_param = CpmlMagneticParamCmplx()
         else:
-            pw_obj = CpmlHxReal(underneath.mu, by, bz, cy, cz, kappay, kappaz)
-            
+            pw_obj = CpmlHxReal()
+            pw_param = CpmlMagneticParamReal()
+
+        if underneath is None:
+            pw_param.mu_inf = self.mu_inf
+        else:
+            pw_param.mu_inf = underneath.mu_inf
+        
+        pw_param.b1 = self.b(coords[1], 1)
+        pw_param.b2 = self.b(coords[2], 2)
+        pw_param.c1 = self.c(coords[1], 1)
+        pw_param.c2 = self.c(coords[2], 2)
+        pw_param.kappa1 = self.kappa(coords[1], 1)
+        pw_param.kappa2 = self.kappa(coords[2], 2)
+        pw_obj.attach(idx, pw_param)
         return pw_obj
     
     def get_pw_material_hy(self, idx, coords, underneath=None, cmplx=False):
-        bz = self.b(coords[2], 2)
-        bx = self.b(coords[0], 0)
-        cz = self.c(coords[2], 2)
-        cx = self.c(coords[0], 0)
-        kappaz = self.kappa(coords[2], 2)
-        kappax = self.kappa(coords[0], 0)
-        
         if cmplx:
-            pw_obj = CpmlHyCmplx(underneath.mu, bz, bx, cz, cx, kappaz, kappax)
+            pw_obj = CpmlHyCmplx()
+            pw_param = CpmlMagneticParamCmplx()
         else:
-            pw_obj = CpmlHyReal(underneath.mu, bz, bx, cz, cx, kappaz, kappax)
-            
+            pw_obj = CpmlHyReal()
+            pw_param = CpmlMagneticParamReal()
+
+        if underneath is None:
+            pw_param.mu_inf = self.mu_inf
+        else:
+            pw_param.mu_inf = underneath.mu_inf
+        
+        pw_param.b1 = self.b(coords[2], 2)
+        pw_param.b2 = self.b(coords[0], 0)
+        pw_param.c1 = self.c(coords[2], 2)
+        pw_param.c2 = self.c(coords[0], 0)
+        pw_param.kappa1 = self.kappa(coords[2], 2)
+        pw_param.kappa2 = self.kappa(coords[0], 0)
+        pw_obj.attach(idx, pw_param)
         return pw_obj
     
     def get_pw_material_hz(self, idx, coords, underneath=None, cmplx=False):
-        bx = self.b(coords[0], 0)
-        by = self.b(coords[1], 1)
-        cx = self.c(coords[0], 0)
-        cy = self.c(coords[1], 1)
-        kappax = self.kappa(coords[0], 0)
-        kappay = self.kappa(coords[1], 1)
-        
         if cmplx:
-            pw_obj = CpmlHzCmplx(underneath.mu, bx, by, cx, cy, kappax, kappay)
+            pw_obj = CpmlHzCmplx()
+            pw_param = CpmlMagneticParamCmplx()
         else:
-            pw_obj = CpmlHzReal(underneath.mu, bx, by, cx, cy, kappax, kappay)
-            
+            pw_obj = CpmlHzReal()
+            pw_param = CpmlMagneticParamReal()
+
+        if underneath is None:
+            pw_param.mu_inf = self.mu_inf
+        else:
+            pw_param.mu_inf = underneath.mu_inf
+        
+        pw_param.b1 = self.b(coords[0], 0)
+        pw_param.b2 = self.b(coords[1], 1)
+        pw_param.c1 = self.c(coords[0], 0)
+        pw_param.c2 = self.c(coords[1], 1)
+        pw_param.kappa1 = self.kappa(coords[0], 0)
+        pw_param.kappa2 = self.kappa(coords[1], 1)
+        pw_obj.attach(idx, pw_param)
         return pw_obj
         
 
@@ -844,30 +1137,31 @@ class CriticalPoint(object):
         print "broadening:", self.gamma
         
         
-class DCP(Dielectric):
+class DcpAde(Dielectric):
     """
     The auxiliary differential equation implementation of Drude-critical points model 
     based on the following references.
     * P. G. Etchegoin, E. C. Le Ru, and M. Meyer, "An analytic model for the optical 
       properties of gold," The Journal of Chemical Physics, vol. 125, no. 16, 
       pp. 164705-3, Oct. 2006.
+
+    * P. G. Etchegoin, E. C. Le Ru, and M. Meyer, "Erratum: An analytic model
+      for the optical properties of gold" [J. Chem. Phys. 125, 164705 (2006)]," 
     * A. Taflove and S. C. Hagness, Computational Electrodynamics: The Finite-
       Difference Time-Domain Method, Third Edition, 3rd ed. Artech House Publishers, 
       2005.
-    * P. G. Etchegoin, E. C. Le Ru, and M. Meyer, "An analytic model for the
-      optical properties of gold," J. Chem. Phys. 125, 164705, 2001.
-      
+
     """
-    def __init__(self, epsilon=1, mu=1, sigma=0, dps=(), cps=()):
+    def __init__(self, eps_inf=1, mu_inf=1, sigma=0, dps=(), cps=()):
         """
-        epsilon: The (frequency-independent) isotropic relative permittivity. Default is 1.
-        mu: The (frequency-independent) isotropic relative permeability. Default is 1.
+        eps_inf: The (frequency-independent) isotropic relative permittivity. Default is 1.
+        mu_inf: The (frequency-independent) isotropic relative permeability. Default is 1.
         sigma: The (frequency-independent) isotropic conductivity. Default is 0.
         dps: list of Drude poles. Default is ().
         cps: list of critical points. Default is ().
         
         """
-        Dielectric.__init__(self, epsilon=epsilon, mu=mu)
+        Dielectric.__init__(self, eps_inf, mu_inf)
         self.sigma = float(sigma) # instant conductivity
         self.dps = tuple(dps) # tuple of Drude poles
         self.cps = tuple(cps) # tuple of critical points
@@ -892,16 +1186,15 @@ class DCP(Dielectric):
             self.b[i,0] = (self.dt * pnt.gamma - 1) / denom
             self.b[i,1] = (2 - self.dt**2 * (pnt.gamma**2 + pnt.omega**2)) / denom
             self.b[i,2] = self.dt * sin(pnt.phi) * pnt.amp * pnt.omega / denom
-            self.b[i,3] = 2 * self.dt**2 * pnt.amp * pnt.omega * \
-            (cos(pnt.phi) * pnt.omega - sin(pnt.phi) * pnt.gamma) / denom
+            self.b[i,3] = 2 * self.dt**2 * pnt.amp * pnt.omega * (cos(pnt.phi) * pnt.omega - sin(pnt.phi) * pnt.gamma) / denom
             
         # parameters for the electric field update equations.
         self.c = empty(4, float)
-        denom = self.dt * self.sigma + 2. * (self.epsilon - sum(self.b[:,2]))
+        denom = self.dt * self.sigma + 2. * (self.eps_inf - sum(self.b[:,2]))
         self.c[0] = 2 * self.dt / denom
         self.c[1] = -2 / denom
         self.c[2] = -2 * sum(self.b[:,2]) / denom
-        self.c[3] = (2 * (self.epsilon - sum(self.a[:,2]) - sum(self.b[:,3])) - self.dt * self.sigma) / denom
+        self.c[3] = (2 * (self.eps_inf - sum(self.a[:,2]) - sum(self.b[:,3])) - self.dt * self.sigma) / denom
         
     def display_info(self, indent=0):
         """Display the parameter values.
@@ -909,8 +1202,8 @@ class DCP(Dielectric):
         """
         print " " * indent, "Drude-critical points dispersive media"
         print " " * indent,
-        print "permittivity:", self.epsilon,
-        print "permeability:", self.mu,
+        print "frequency independent permittivity:", self.eps_inf,
+        print "frequency independent permeability:", self.mu_inf,
         print "conductivity:", self.sigma
         
         print " " * indent, "Drude pole(s):"
@@ -922,54 +1215,108 @@ class DCP(Dielectric):
         
     def get_pw_material_ex(self, idx, coords, underneath=None, cmplx=False):
         if cmplx:
-            pw_obj = DCPExCmplx(self.epsilon, self.a, self.b, self.c)
+            pw_obj = DcpAdeExCmplx()
+            pw_param = DcpAdeElectricParamCmplx()
         else:
-            pw_obj = DCPExReal(self.epsilon, self.a, self.b, self.c)
+            pw_obj = DcpAdeExReal()
+            pw_param = DcpAdeElectricParamReal()
                 
+        if underneath is None:
+            pw_param.eps_inf = self.eps_inf
+        else:
+            pw_param.eps_inf = underneath.eps_inf
+        
+        pw_param.set(self.a, self.b, self.c)
+        
+        pw_obj.attach(idx, pw_param)
         return pw_obj
     
     def get_pw_material_ey(self, idx, coords, underneath=None, cmplx=False):
         if cmplx:
-            pw_obj = DCPEyCmplx(self.epsilon, self.a, self.b, self.c)
+            pw_obj = DcpAdeEyCmplx()
+            pw_param = DcpAdeElectricParamCmplx()
         else:
-            pw_obj = DCPEyReal(self.epsilon, self.a, self.b, self.c)
+            pw_obj = DcpAdeEyReal()
+            pw_param = DcpAdeElectricParamReal()
                 
+        if underneath is None:
+            pw_param.eps_inf = self.eps_inf
+        else:
+            pw_param.eps_inf = underneath.eps_inf
+        
+        pw_param.set(self.a, self.b, self.c)
+        
+        pw_obj.attach(idx, pw_param)
         return pw_obj
     
     def get_pw_material_ez(self, idx, coords, underneath=None, cmplx=False):
         if cmplx:
-            pw_obj = DCPEzCmplx(self.epsilon, self.a, self.b, self.c)
+            pw_obj = DcpAdeEzCmplx()
+            pw_param = DcpAdeElectricParamCmplx()
         else:
-            pw_obj = DCPEzReal(self.epsilon, self.a, self.b, self.c)
+            pw_obj = DcpAdeEzReal()
+            pw_param = DcpAdeElectricParamReal()
+                
+        if underneath is None:
+            pw_param.eps_inf = self.eps_inf
+        else:
+            pw_param.eps_inf = underneath.eps_inf
         
+        pw_param.set(self.a, self.b, self.c)
+        
+        pw_obj.attach(idx, pw_param)
         return pw_obj
     
     def get_pw_material_hx(self, idx, coords, underneath=None, cmplx=False):
         if cmplx:
-            pw_obj = DCPHxCmplx(self.mu)
+            pw_obj = DcpAdeHxCmplx()
+            pw_param = DcpAdeMagneticParamCmplx()
         else:
-            pw_obj = DCPHxReal(self.mu)
+            pw_obj = DcpAdeHxReal()
+            pw_param = DcpAdeMagneticParamReal()
             
+        if underneath is None:
+            pw_param.mu_inf = self.mu_inf
+        else:
+            pw_param.mu_inf = underneath.mu_inf
+        
+        pw_obj.attach(idx, pw_param)
         return pw_obj
     
     def get_pw_material_hy(self, idx, coords, underneath=None, cmplx=False):
         if cmplx:
-            pw_obj = DCPHyCmplx(self.mu)
+            pw_obj = DcpAdeHyCmplx()
+            pw_param = DcpAdeMagneticParamCmplx()
         else:
-            pw_obj = DCPHyReal(self.mu)
+            pw_obj = DcpAdeHyReal()
+            pw_param = DcpAdeMagneticParamReal()
             
+        if underneath is None:
+            pw_param.mu_inf = self.mu_inf
+        else:
+            pw_param.mu_inf = underneath.mu_inf
+        
+        pw_obj.attach(idx, pw_param)
         return pw_obj
     
     def get_pw_material_hz(self, idx, coords, underneath=None, cmplx=False):
         if cmplx:
-            pw_obj = DCPHzCmplx(self.mu)
+            pw_obj = DcpAdeHzCmplx()
+            pw_param = DcpAdeMagneticParamCmplx()
         else:
-            pw_obj = DCPHzReal(self.mu)
+            pw_obj = DcpAdeHzReal()
+            pw_param = DcpAdeMagneticParamReal()
             
+        if underneath is None:
+            pw_param.mu_inf = self.mu_inf
+        else:
+            pw_param.mu_inf = underneath.mu_inf
+        
+        pw_obj.attach(idx, pw_param)
         return pw_obj
     
 
-class DCPPLRC(Dielectric):
+class DcpPlrc(Dielectric):
     """
     The piecewise-linear recursive-convolution implementation of 
     Drude-critical points model based on the following references.
@@ -981,16 +1328,16 @@ class DCPPLRC(Dielectric):
       2005.
 
     """
-    def __init__(self, epsilon=1, mu=1, sigma=0, dps=(), cps=()):
+    def __init__(self, eps_inf=1, mu_inf=1, sigma=0, dps=(), cps=()):
         """
-        epsilon: The (frequency-independent) isotropic relative permittivity. Default is 1.
-        mu: The (frequency-independent) isotropic relative permeability. Default is 1.
+        eps_inf: The (frequency-independent) isotropic relative permittivity. Default is 1.
+        mu_inf: The (frequency-independent) isotropic relative permeability. Default is 1.
         sigma: The (frequency-independent) isotropic conductivity. Default is 0.
         dps: list of Drude poles. Default is ().
         cps: list of critical points. Default is ().
         
         """
-        Dielectric.__init__(self, epsilon=epsilon, mu=mu)
+        Dielectric.__init__(self, eps_inf=eps_inf, mu_inf=mu_inf)
         self.sigma = float(sigma) # instant conductivity
         self.dps = tuple(dps) # tuple of Drude poles
         self.cps = tuple(cps) # tuple of critical points
@@ -999,7 +1346,7 @@ class DCPPLRC(Dielectric):
         self.dt = space.dt
 
         # parameters of the recursion relation for the Drude pole recursive accumulator.
-        self.a = empty((len(self.dps),3), float)
+        self.a = empty((len(self.dps), 3), float)
         for i in xrange(len(self.dps)):
             pole = self.dps[i]
             self.a[i,0] = self.delta_chi_dp_0(pole) - self.delta_xi_dp_0(pole)
@@ -1007,7 +1354,7 @@ class DCPPLRC(Dielectric):
             self.a[i,2] = exp(-pole.gamma * self.dt)
         
         # parameters of the recursion relation for the critical point recursive accumulator.
-        self.b = empty((len(self.cps),3), complex)
+        self.b = empty((len(self.cps), 3), complex)
         for i in xrange(len(self.cps)):
             pnt = self.cps[i]
             self.b[i,0] = self.delta_chi_cp_0(pnt) - self.delta_xi_cp_0(pnt)
@@ -1019,8 +1366,8 @@ class DCPPLRC(Dielectric):
         xi_0 = sum(map(self.xi_dp_0, self.dps) + map(self.xi_cp_0, self.cps)).real
         
         self.c = empty(3, float)
-        denom = self.epsilon - xi_0 + chi_0
-        self.c[0] = (self.epsilon - xi_0) / denom
+        denom = self.eps_inf - xi_0 + chi_0
+        self.c[0] = (self.eps_inf - xi_0) / denom
         self.c[1] = self.dt / denom
         self.c[2] = 1 / denom
         
@@ -1077,8 +1424,8 @@ class DCPPLRC(Dielectric):
         """
         print " " * indent, "Drude-critical points dispersive media"
         print " " * indent,
-        print "permittivity:", self.epsilon,
-        print "permeability:", self.mu,
+        print "frequency independent permittivity:", self.eps_inf,
+        print "frequency independent permeability:", self.mu_inf,
         print "conductivity:", self.sigma
         
         print " " * indent, "Drude pole(s):"
@@ -1090,54 +1437,105 @@ class DCPPLRC(Dielectric):
         
     def get_pw_material_ex(self, idx, coords, underneath=None, cmplx=False):
         if cmplx:
-            pw_obj = DCPPLRCExCmplx(self.epsilon, self.a, self.b, self.c)
+            pw_obj = DcpPlrcExCmplx()
+            pw_param = DcpPlrcElectricParamCmplx()
         else:
-            pw_obj = DCPPLRCExReal(self.epsilon, self.a, self.b, self.c)
-                
+            pw_obj = DcpPlrcExReal()
+            pw_param = DcpPlrcElectricParamReal()
+            
+        if underneath is None:
+            pw_param.eps_inf = self.eps_inf
+        else:
+            pw_param.eps_inf = underneath.eps_inf
+        
+        pw_param.set(self.a, self.b, self.c)
+        pw_obj.attach(idx, pw_param)
         return pw_obj
     
     def get_pw_material_ey(self, idx, coords, underneath=None, cmplx=False):
         if cmplx:
-            pw_obj = DCPPLRCEyCmplx(self.epsilon, self.a, self.b, self.c)
+            pw_obj = DcpPlrcEyCmplx()
+            pw_param = DcpPlrcElectricParamCmplx()
         else:
-            pw_obj = DCPPLRCEyReal(self.epsilon, self.a, self.b, self.c)
-                
+            pw_obj = DcpPlrcEyReal()
+            pw_param = DcpPlrcElectricParamReal()
+            
+        if underneath is None:
+            pw_param.eps_inf = self.eps_inf
+        else:
+            pw_param.eps_inf = underneath.eps_inf
+        
+        pw_param.set(self.a, self.b, self.c)
+        pw_obj.attach(idx, pw_param)
         return pw_obj
     
     def get_pw_material_ez(self, idx, coords, underneath=None, cmplx=False):
         if cmplx:
-            pw_obj = DCPPLRCEzCmplx(self.epsilon, self.a, self.b, self.c)
+            pw_obj = DcpPlrcEzCmplx()
+            pw_param = DcpPlrcElectricParamCmplx()
         else:
-            pw_obj = DCPPLRCEzReal(self.epsilon, self.a, self.b, self.c)
+            pw_obj = DcpPlrcEzReal()
+            pw_param = DcpPlrcElectricParamReal()
+            
+        if underneath is None:
+            pw_param.eps_inf = self.eps_inf
+        else:
+            pw_param.eps_inf = underneath.eps_inf
         
+        pw_param.set(self.a, self.b, self.c)
+        pw_obj.attach(idx, pw_param)
         return pw_obj
     
     def get_pw_material_hx(self, idx, coords, underneath=None, cmplx=False):
         if cmplx:
-            pw_obj = DCPPLRCHxCmplx(self.mu)
+            pw_obj = DcpPlrcHxCmplx()
+            pw_param = DcpPlrcMagneticParamCmplx()
         else:
-            pw_obj = DCPPLRCHxReal(self.mu)
+            pw_obj = DcpPlrcHxReal()
+            pw_param = DcpPlrcMagneticParamReal()
             
+        if underneath is None:
+            pw_param.mu_inf = self.mu_inf
+        else:
+            pw_param.mu_inf = underneath.mu_inf
+        
+        pw_obj.attach(idx, pw_param)
         return pw_obj
-    
+
     def get_pw_material_hy(self, idx, coords, underneath=None, cmplx=False):
         if cmplx:
-            pw_obj = DCPPLRCHyCmplx(self.mu)
+            pw_obj = DcpPlrcHyCmplx()
+            pw_param = DcpPlrcMagneticParamCmplx()
         else:
-            pw_obj = DCPPLRCHyReal(self.mu)
+            pw_obj = DcpPlrcHyReal()
+            pw_param = DcpPlrcMagneticParamReal()
             
+        if underneath is None:
+            pw_param.mu_inf = self.mu_inf
+        else:
+            pw_param.mu_inf = underneath.mu_inf
+        
+        pw_obj.attach(idx, pw_param)
         return pw_obj
-    
+
     def get_pw_material_hz(self, idx, coords, underneath=None, cmplx=False):
         if cmplx:
-            pw_obj = DCPPLRCHzCmplx(self.mu)
+            pw_obj = DcpPlrcHzCmplx()
+            pw_param = DcpPlrcMagneticParamCmplx()
         else:
-            pw_obj = DCPPLRCHzReal(self.mu)
+            pw_obj = DcpPlrcHzReal()
+            pw_param = DcpPlrcMagneticParamReal()
             
+        if underneath is None:
+            pw_param.mu_inf = self.mu_inf
+        else:
+            pw_param.mu_inf = underneath.mu_inf
+        
+        pw_obj.attach(idx, pw_param)
         return pw_obj
+
     
-    
-class DCPRC(DCPPLRC):
+class DcpRc(DcpPlrc):
     """
     The recursive convolution implementation of Drude-critical points model
     based on the following articles.
@@ -1171,16 +1569,16 @@ class Drude(Dielectric):
     Electron. Lett., vol. 42, no. 9, pp. 503-504, 2006.
     
     """
-    def __init__(self, epsilon=1, mu=1, sigma=0, dps=()):
+    def __init__(self, eps_inf=1, mu_inf=1, sigma=0, dps=()):
         """
         Arguments:
-            epsilon: The (frequency-independent) isotropic relative permittivity. Default is 1.
-            mu: The (frequency-independent) isotropic relative permeability. Default is 1.
+            eps_inf: The (frequency-independent) isotropic relative permittivity. Default is 1.
+            mu_inf: The (frequency-independent) isotropic relative permeability. Default is 1.
             sigma: The (frequency-independent) isotropic conductivity. Default is 0.
             dps: list of Drude poles. Default is().
             
         """
-        Dielectric.__init__(self, epsilon=epsilon, mu=mu)
+        Dielectric.__init__(self, eps_inf=eps_inf, mu_inf=mu_inf)
         self.sigma = float(sigma)
         self.dps = tuple(dps)
         
@@ -1188,7 +1586,7 @@ class Drude(Dielectric):
         self.dt = space.dt
         
         # parameters for the ADE of the Drude model.
-        self.a = empty((len(self.dps),3), float)
+        self.a = empty((len(self.dps), 3), float)
         for i in xrange(len(self.dps)):
             pole = self.dps[i]
             denom = self.dt * pole.gamma + 2.
@@ -1198,10 +1596,10 @@ class Drude(Dielectric):
         
         # parameters for the electric field update equations.
         self.c = empty(3, float)
-        denom = 2. * self.epsilon + self.dt * self.sigma 
+        denom = 2. * self.eps_inf + self.dt * self.sigma 
         self.c[0] = 2 * self.dt / denom
         self.c[1] = -2 / denom
-        self.c[2] = (2 * self.epsilon - self.dt * self.sigma) / denom
+        self.c[2] = (2 * self.eps_inf - self.dt * self.sigma) / denom
         
     def display_info(self, indent=0):
         """Display the parameter values.
@@ -1209,8 +1607,8 @@ class Drude(Dielectric):
         """
         print " " * indent, "Drude dispersion media"
         print " " * indent, 
-        print "permittivity:", self.epsilon,
-        print "permeability:", self.mu,
+        print "frequency independent permittivity:", self.eps_inf,
+        print "frequency independent permeability:", self.mu_inf,
         print "conductivity:", self.sigma
         
         print " "* indent, "Drude pole(s):"
@@ -1219,68 +1617,122 @@ class Drude(Dielectric):
         
     def get_pw_material_ex(self, idx, coords, underneath=None, cmplx=False):
         if cmplx:
-            pw_obj = DrudeExCmplx(self.epsilon, self.a, self.c)
+            pw_obj = DrudeExCmplx()
+            pw_param = DrudeElectricParamCmplx()
         else:
-            pw_obj = DrudeExReal(self.epsilon, self.a, self.c)
-            
+            pw_obj = DrudeExReal()
+            pw_param = DrudeElectricParamReal()
+
+        if underneath is None:
+            pw_param.eps_inf = self.eps_inf
+        else:
+            pw_param.eps_inf = underneath.eps_inf
+        
+        pw_param.set(self.a, self.c)
+
+        pw_obj.attach(idx, pw_param)
         return pw_obj
     
     def get_pw_material_ey(self, idx, coords, underneath=None, cmplx=False):
         if cmplx:
-            pw_obj = DrudeEyCmplx(self.epsilon, self.a, self.c)
+            pw_obj = DrudeEyCmplx()
+            pw_param = DrudeElectricParamCmplx()
         else:
-            pw_obj = DrudeEyReal(self.epsilon, self.a, self.c)
-            
+            pw_obj = DrudeEyReal()
+            pw_param = DrudeElectricParamReal()
+
+        if underneath is None:
+            pw_param.eps_inf = self.eps_inf
+        else:
+            pw_param.eps_inf = underneath.eps_inf
+        
+        pw_param.set(self.a, self.c)
+
+        pw_obj.attach(idx, pw_param)
         return pw_obj
     
     def get_pw_material_ez(self, idx, coords, underneath=None, cmplx=False):
         if cmplx:
-            pw_obj = DrudeEzCmplx(self.epsilon, self.a, self.c)
+            pw_obj = DrudeEzCmplx()
+            pw_param = DrudeElectricParamCmplx()
         else:
-            pw_obj = DrudeEzReal(self.epsilon, self.a, self.c)
-            
+            pw_obj = DrudeEzReal()
+            pw_param = DrudeElectricParamReal()
+
+        if underneath is None:
+            pw_param.eps_inf = self.eps_inf
+        else:
+            pw_param.eps_inf = underneath.eps_inf
+        
+        pw_param.set(self.a, self.c)
+
+        pw_obj.attach(idx, pw_param)
         return pw_obj
     
     def get_pw_material_hx(self, idx, coords, underneath=None, cmplx=False):
         if cmplx:
-            pw_obj = DrudeHxCmplx(self.mu)
+            pw_obj = DrudeHxCmplx()
+            pw_param = DrudeMagneticParamCmplx()
         else:
-            pw_obj = DrudeHxReal(self.mu)
-            
+            pw_obj = DrudeHxReal()
+            pw_param = DrudeMagneticParamReal()
+
+        if underneath is None:
+            pw_param.mu_inf = self.mu_inf
+        else:
+            pw_param.mu_inf = underneath.mu_inf
+        
+        pw_obj.attach(idx, pw_param)
         return pw_obj
-    
+
     def get_pw_material_hy(self, idx, coords, underneath=None, cmplx=False):
         if cmplx:
-            pw_obj = DrudeHyCmplx(self.mu)
+            pw_obj = DrudeHyCmplx()
+            pw_param = DrudeMagneticParamCmplx()
         else:
-            pw_obj = DrudeHyReal(self.mu)
-            
+            pw_obj = DrudeHyReal()
+            pw_param = DrudeMagneticParamReal()
+
+        if underneath is None:
+            pw_param.mu_inf = self.mu_inf
+        else:
+            pw_param.mu_inf = underneath.mu_inf
+        
+        pw_obj.attach(idx, pw_param)
         return pw_obj
-    
+
     def get_pw_material_hz(self, idx, coords, underneath=None, cmplx=False):
         if cmplx:
-            pw_obj = DrudeHzCmplx(self.mu)
+            pw_obj = DrudeHzCmplx()
+            pw_param = DrudeMagneticParamCmplx()
         else:
-            pw_obj = DrudeHzReal(self.mu)
-            
-        return pw_obj
+            pw_obj = DrudeHzReal()
+            pw_param = DrudeMagneticParamReal()
+
+        if underneath is None:
+            pw_param.mu_inf = self.mu_inf
+        else:
+            pw_param.mu_inf = underneath.mu_inf
         
+        pw_obj.attach(idx, pw_param)
+        return pw_obj
+
 
 class Lorentz(Dielectric):
     """
     The auxiliary differential equation implementation of the Lorentz model.
     
     """
-    def __init__(self, epsilon=1, mu=1, sigma=0, lps=()):
+    def __init__(self, eps_inf=1, mu_inf=1, sigma=0, lps=()):
         """
         Arguments:
-            epsilon: The (frequency-independent) isotropic relative permittivity. Default is 1.
-            mu: The (frequency-independent) isotropic relative permeability. Default is 1.
+            eps_inf: The (frequency-independent) isotropic relative permittivity. Default is 1.
+            mu_inf: The (frequency-independent) isotropic relative permeability. Default is 1.
             sigma: The (frequency-independent) isotropic conductivity. Default is 0.
             lps: list of Lorentz poles. Default is().
             
         """
-        Dielectric.__init__(self, epsilon=epsilon, mu=mu)
+        Dielectric.__init__(self, eps_inf, mu_inf)
         self.sigma = float(sigma)
         self.lps = tuple(lps)
         
@@ -1298,10 +1750,10 @@ class Lorentz(Dielectric):
         
         # parameters for the electric field update equations.
         self.c = empty(3, float)
-        denom = 2. * self.epsilon + self.dt * self.sigma 
+        denom = 2. * self.eps_inf + self.dt * self.sigma 
         self.c[0] = 2 * self.dt / denom
         self.c[1] = -2 / denom
-        self.c[2] = (2 * self.epsilon - self.dt * self.sigma) / denom
+        self.c[2] = (2 * self.eps_inf - self.dt * self.sigma) / denom
         
     def display_info(self, indent=0):
         """Display the parameter values.
@@ -1309,8 +1761,8 @@ class Lorentz(Dielectric):
         """
         print " " * indent, "Lorentz dispersion media"
         print " " * indent, 
-        print "permittivity:", self.epsilon,
-        print "permeability:", self.mu,
+        print "frequency independent permittivity:", self.eps_inf,
+        print "frequency independent permeability:", self.mu_inf,
         print "conductivity:", self.sigma
         
         print " "* indent, "Lorentz pole(s):"
@@ -1319,54 +1771,105 @@ class Lorentz(Dielectric):
         
     def get_pw_material_ex(self, idx, coords, underneath=None, cmplx=False):
         if cmplx:
-            pw_obj = LorentzExCmplx(self.epsilon, self.a, self.c)
+            pw_obj = LorentzExCmplx()
+            pw_param = LorentzElectricParamCmplx()
         else:
-            pw_obj = LorentzExReal(self.epsilon, self.a, self.c)
+            pw_obj = LorentzExReal()
+            pw_param = LorentzElectricParamReal()
             
+        if underneath is None:
+            pw_param.eps_inf = self.eps_inf
+        else:
+            pw_param.eps_inf = underneath.eps_inf
+        
+        pw_param.set(self.a, self.c)
+        pw_obj.attach(idx, pw_param)
         return pw_obj
     
     def get_pw_material_ey(self, idx, coords, underneath=None, cmplx=False):
         if cmplx:
-            pw_obj = LorentzEyCmplx(self.epsilon, self.a, self.c)
+            pw_obj = LorentzEyCmplx()
+            pw_param = LorentzElectricParamCmplx()
         else:
-            pw_obj = LorentzEyReal(self.epsilon, self.a, self.c)
+            pw_obj = LorentzEyReal()
+            pw_param = LorentzElectricParamReal()
             
+        if underneath is None:
+            pw_param.eps_inf = self.eps_inf
+        else:
+            pw_param.eps_inf = underneath.eps_inf
+        
+        pw_param.set(self.a, self.c)
+        pw_obj.attach(idx, pw_param)
         return pw_obj
-    
+
     def get_pw_material_ez(self, idx, coords, underneath=None, cmplx=False):
         if cmplx:
-            pw_obj = LorentzEzCmplx(self.epsilon, self.a, self.c)
+            pw_obj = LorentzEzCmplx()
+            pw_param = LorentzElectricParamCmplx()
         else:
-            pw_obj = LorentzEzReal(self.epsilon, self.a, self.c)
+            pw_obj = LorentzEzReal()
+            pw_param = LorentzElectricParamReal()
             
+        if underneath is None:
+            pw_param.eps_inf = self.eps_inf
+        else:
+            pw_param.eps_inf = underneath.eps_inf
+        
+        pw_param.set(self.a, self.c)
+        pw_obj.attach(idx, pw_param)
         return pw_obj
-    
+
     def get_pw_material_hx(self, idx, coords, underneath=None, cmplx=False):
         if cmplx:
-            pw_obj = LorentzHxCmplx(self.mu)
+            pw_obj = LorentzHxCmplx()
+            pw_param = LorentzMagneticParamCmplx()
         else:
-            pw_obj = LorentzHxReal(self.mu)
+            pw_obj = LorentzHxReal()
+            pw_param = LorentzMagneticParamReal()
             
+        if underneath is None:
+            pw_param.mu_inf = self.mu_inf
+        else:
+            pw_param.mu_inf = underneath.mu_inf
+        
+        pw_obj.attach(idx, pw_param)
         return pw_obj
-    
+
     def get_pw_material_hy(self, idx, coords, underneath=None, cmplx=False):
         if cmplx:
-            pw_obj = LorentzHyCmplx(self.mu)
+            pw_obj = LorentzHyCmplx()
+            pw_param = LorentzMagneticParamCmplx()
         else:
-            pw_obj = LorentzHyReal(self.mu)
+            pw_obj = LorentzHyReal()
+            pw_param = LorentzMagneticParamReal()
             
+        if underneath is None:
+            pw_param.mu_inf = self.mu_inf
+        else:
+            pw_param.mu_inf = underneath.mu_inf
+        
+        pw_obj.attach(idx, pw_param)
         return pw_obj
-    
+
     def get_pw_material_hz(self, idx, coords, underneath=None, cmplx=False):
         if cmplx:
-            pw_obj = LorentzHzCmplx(self.mu)
+            pw_obj = LorentzHzCmplx()
+            pw_param = LorentzMagneticParamCmplx()
         else:
-            pw_obj = LorentzHzReal(self.mu)
+            pw_obj = LorentzHzReal()
+            pw_param = LorentzMagneticParamReal()
             
+        if underneath is None:
+            pw_param.mu_inf = self.mu_inf
+        else:
+            pw_param.mu_inf = underneath.mu_inf
+        
+        pw_obj.attach(idx, pw_param)
         return pw_obj
+
     
-            
-class Gold(DCP):
+class GoldAde(DcpAde):
     """
     The parameters are from the following article.
     * A. Vial and T. Laroche, "Comparison of gold and silver dispersion laws
@@ -1380,20 +1883,21 @@ class Gold(DCP):
         a: lattice constant in meters.
         
         """
-        dp1 = DrudePole(omega=1.3202e16 * a / const.c0, 
-                        gamma=1.0805e14 * a / const.c0)
+        dp1 = DrudePole(omega=1.3202e16 * a / c0, 
+                        gamma=1.0805e14 * a / c0)
         cp1 = CriticalPoint(amp=0.26698, 
                             phi=-1.2371, 
-                            omega=3.8711e15 * a / const.c0, 
-                            gamma=4.4642e14 * a / const.c0)
+                            omega=3.8711e15 * a / c0, 
+                            gamma=4.4642e14 * a / c0)
         cp2 = CriticalPoint(amp=3.0834, 
                             phi=-1.0968, 
-                            omega=4.1684e15 * a / const.c0, 
-                            gamma=2.3555e15 * a / const.c0)
-        DCP.__init__(self, epsilon=1.1431, mu=1, sigma=0, dps=(dp1,), cps=(cp1,cp2))
+                            omega=4.1684e15 * a / c0, 
+                            gamma=2.3555e15 * a / c0)
+        DcpAde.__init__(self, eps_inf=1.1431, mu_inf=1, sigma=0, 
+                        dps=(dp1,), cps=(cp1,cp2))
         
 
-class GoldPLRC(DCPPLRC):
+class GoldPlrc(DcpPlrc):
     """
     The parameters are from the following article.
     * A. Vial and T. Laroche, "Comparison of gold and silver dispersion laws
@@ -1407,20 +1911,21 @@ class GoldPLRC(DCPPLRC):
         a: lattice constant in meters.
         
         """
-        dp1 = DrudePole(omega=1.3202e16 * a / const.c0, 
-                        gamma=1.0805e14 * a / const.c0)
+        dp1 = DrudePole(omega=1.3202e16 * a / c0, 
+                        gamma=1.0805e14 * a / c0)
         cp1 = CriticalPoint(amp=0.26698, 
                             phi=-1.2371, 
-                            omega=3.8711e15 * a / const.c0, 
-                            gamma=4.4642e14 * a / const.c0)
+                            omega=3.8711e15 * a / c0, 
+                            gamma=4.4642e14 * a / c0)
         cp2 = CriticalPoint(amp=3.0834, 
                             phi=-1.0968, 
-                            omega=4.1684e15 * a / const.c0, 
-                            gamma=2.3555e15 * a / const.c0)
-        DCPPLRC.__init__(self, epsilon=1.1431, mu=1, sigma=0, dps=(dp1,), cps=(cp1,cp2))
+                            omega=4.1684e15 * a / c0, 
+                            gamma=2.3555e15 * a / c0)
+        DcpPlrc.__init__(self, eps_inf=1.1431, mu_inf=1, sigma=0, 
+                         dps=(dp1,), cps=(cp1,cp2))
         
 
-class GoldRC(DCPRC):
+class GoldRc(DcpRc):
     """
     The parameters are from the following article.
     * A. Vial and T. Laroche, "Comparison of gold and silver dispersion laws
@@ -1434,19 +1939,20 @@ class GoldRC(DCPRC):
         a: lattice constant in meters.
         
         """
-        dp1 = DrudePole(omega=1.3202e16 * a / const.c0, 
-                        gamma=1.0805e14 * a / const.c0)
+        dp1 = DrudePole(omega=1.3202e16 * a / c0, 
+                        gamma=1.0805e14 * a / c0)
         cp1 = CriticalPoint(amp=0.26698, 
                             phi=-1.2371, 
-                            omega=3.8711e15 * a / const.c0, 
-                            gamma=4.4642e14 * a / const.c0)
+                            omega=3.8711e15 * a / c0, 
+                            gamma=4.4642e14 * a / c0)
         cp2 = CriticalPoint(amp=3.0834, 
                             phi=-1.0968, 
-                            omega=4.1684e15 * a / const.c0, 
-                            gamma=2.3555e15 * a / const.c0)
-        DCPRC.__init__(self, epsilon=1.1431, mu=1, sigma=0, dps=(dp1,), cps=(cp1,cp2))
+                            omega=4.1684e15 * a / c0, 
+                            gamma=2.3555e15 * a / c0)
+        DcpRc.__init__(self, eps_inf=1.1431, mu_inf=1, sigma=0, 
+                       dps=(dp1,), cps=(cp1,cp2))
                         
-class Gold2(Drude):
+class GoldDrude(Drude):
     """
     The parameters are from the following article.
     * M. Okoniewski and E. Okoniewska, "Drude dispersion in ADE FDTD revisited,"
@@ -1458,9 +1964,9 @@ class Gold2(Drude):
         a: lattice constant in meters.
         
         """
-        dp1 = DrudePole(omega=1.196e16 * a / const.c0, 
-                        gamma=8.052e13 * a / const.c0)
-        Drude.__init__(self, epsilon=1, mu=1, sigma=0, dps=(dp1,))
+        dp1 = DrudePole(omega=1.196e16 * a / c0, 
+                        gamma=8.052e13 * a / c0)
+        Drude.__init__(self, eps_inf=1, mu_inf=1, sigma=0, dps=(dp1,))
         
 
 class Meep(Lorentz):
@@ -1468,7 +1974,7 @@ class Meep(Lorentz):
     The parameters are from the 'Meep Tutorial/Material dispersion'.
 
     """
-    def __init__(self):
+    def __init__(self, a):
         """
         
         """
@@ -1478,10 +1984,10 @@ class Meep(Lorentz):
         lp2 = LorentzPole(omega=0.5,
                           gamma=0.1,
                           amp=2e-5)
-        Lorentz.__init__(self, epsilon=2.25, mu=1, sigma=0, lps=(lp1,lp2))
+        Lorentz.__init__(self, eps_inf=2.25, mu_inf=1, sigma=0, lps=(lp1,lp2))
         
         
-class Silver(DCP):
+class Silver(DcpAde):
     """
     The parameters are from the following article.
     * A. Vial and T. Laroche, "Comparison of gold and silver dispersion laws
@@ -1495,20 +2001,21 @@ class Silver(DCP):
         a: lattice constant in meters.
         
         """
-        dp1 = DrudePole(omega=1.3861e16 * a / const.c0, 
-                        gamma=4.5841e13 * a / const.c0)
+        dp1 = DrudePole(omega=1.3861e16 * a / c0, 
+                        gamma=4.5841e13 * a / c0)
         cp1 = CriticalPoint(amp=1.0171, 
                             phi=-0.93935, 
-                            omega=6.6327e15 * a / const.c0, 
-                            gamma=1.6666e15 * a / const.c0)
+                            omega=6.6327e15 * a / c0, 
+                            gamma=1.6666e15 * a / c0)
         cp2 = CriticalPoint(amp=15.797, 
                             phi=1.8087, 
-                            omega=9.2726e17 * a / const.c0, 
-                            gamma=2.3716e17 * a / const.c0)
-        DCP.__init__(self, epsilon=15.833, mu=1, sigma=0, dps=(dp1,), cps=(cp1,cp2))
+                            omega=9.2726e17 * a / c0, 
+                            gamma=2.3716e17 * a / c0)
+        DcpAde.__init__(self, eps_inf=15.833, mu_inf=1, sigma=0, 
+                        dps=(dp1,), cps=(cp1,cp2))
         
 
-class Aluminum(DCP):
+class Aluminum(DcpAde):
     """
     The parameters are from the following article.
     * A. Vial and T. Laroche, "Comparison of gold and silver dispersion laws
@@ -1522,20 +2029,21 @@ class Aluminum(DCP):
         a: lattice constant in meters.
         
         """
-        dp1 = DrudePole(omega=2.0598e16 * a / const.c0, 
-                        gamma=2.2876e14 * a / const.c0)
+        dp1 = DrudePole(omega=2.0598e16 * a / c0, 
+                        gamma=2.2876e14 * a / c0)
         cp1 = CriticalPoint(amp=5.2306, 
                             phi=-0.51202, 
-                            omega=2.2694e15 * a / const.c0, 
-                            gamma=3.2867e14 * a / const.c0)
+                            omega=2.2694e15 * a / c0, 
+                            gamma=3.2867e14 * a / c0)
         cp2 = CriticalPoint(amp=5.2704, 
                             phi=0.42503, 
-                            omega=2.4668e15 * a / const.c0, 
-                            gamma=1.7731e15 * a / const.c0)
-        DCP.__init__(self, epsilon=1.0000, mu=1, sigma=0, dps=(dp1,), cps=(cp1,cp2))
+                            omega=2.4668e15 * a / c0, 
+                            gamma=1.7731e15 * a / c0)
+        DcpAde.__init__(self, eps_inf=1.0000, mu_inf=1, sigma=0, 
+                        dps=(dp1,), cps=(cp1,cp2))
         
 
-class Chromium(DCP):
+class Chromium(DcpAde):
     """
     The parameters are from the following article.
     * A. Vial and T. Laroche, "Comparison of gold and silver dispersion laws
@@ -1549,15 +2057,16 @@ class Chromium(DCP):
         a: lattice constant in meters.
         
         """
-        dp1 = DrudePole(omega=8.8128e15 * a / const.c0, 
-                        gamma=3.8828e14 * a / const.c0)
+        dp1 = DrudePole(omega=8.8128e15 * a / c0, 
+                        gamma=3.8828e14 * a / c0)
         cp1 = CriticalPoint(amp=33.086, 
                             phi=-0.25722, 
-                            omega=1.7398e15 * a / const.c0, 
-                            gamma=1.6329e15 * a / const.c0)
+                            omega=1.7398e15 * a / c0, 
+                            gamma=1.6329e15 * a / c0)
         cp2 = CriticalPoint(amp=1.6592, 
                             phi=0.83533, 
-                            omega=3.7925e15 * a / const.c0, 
-                            gamma=7.3567e14 * a / const.c0)
-        DCP.__init__(self, epsilon=1.1297, mu=1, sigma=0, dps=(dp1,), cps=(cp1,cp2))
+                            omega=3.7925e15 * a / c0, 
+                            gamma=7.3567e14 * a / c0)
+        DcpAde.__init__(self, eps_inf=1.1297, mu_inf=1, sigma=0, 
+                        dps=(dp1,), cps=(cp1,cp2))
         

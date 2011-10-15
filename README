@@ -6,10 +6,10 @@ You can download the latest release at the GMES project page of sourceforge:
 
 http://sourceforge.net/projects/gmes
 
-The current development version is always available from a subversion 
-repository:
+The latest development version can be checked out through SVN with the following
+instruction set:
 
-http://gmes.svn.sf.net/svnroot/gmes/trunk
+svn co https://gmes.svn.sourceforge.net/svnroot/gmes gmes 
 
 2. Compatibility
 
@@ -20,7 +20,13 @@ Ubuntu 10.04 LTS Lucid Lynx.
 
 2.2. Windows
 
-GMES has been tested on Windows 7 Enterprise K Service Pack 1.
+GMES has been tested on Windows 7 Enterprise K Service Pack 1. However, the 
+recent version of Enthought Python Distribution(EPD, >= 6.2-2) is hard to set 
+up suitable for GMES. Any contributions are welcomed.
+
+2.3. Mac
+
+GMES has not been tested on Mac. Any contributions are welcomed.
 
 3. Preliminaries
 
@@ -46,7 +52,9 @@ Enthought Python distribution provides all programs except MPICH2 and
 MPI4Python on which GMES depends. We didn't tested the MPI environment on 
 Windows.
 
-* Enthought Python Distribution (EPD) >= 6.0.0
+* Enthought Python Distribution (EPD) >= 6.2-2
+* MinGW with C++ compiler (to compile)
+* swig >= 2.0.4 (to compile)
 
 4. Compile and Install
 
@@ -59,7 +67,7 @@ should be executed as the root privilege.
 
 4.1.1. compile for the inplace test
 
-$ python setup.py build_ext -i
+$ python setup.py build_ext --inplace
 
 4.1.2. compile
 
@@ -73,15 +81,15 @@ $ python setup.py build_ext --swig-opts="-c++"
 
 4.2.1. compile for the inplace test
 
-$ python setup.py build_ext -i -c mingw32
+$ python setup.py build_ext --inplace --compile=mingw32
 
 4.2.2. compile
 
-$ python setup.py build_ext -c mingw32
+$ python setup.py build_ext --compile=mingw32
 
 4.2.3. compile & install
 
-# python setup.py install build_ext -c mingw32
+# python setup.py install build_ext --compile=mingw32
 
 5. Execution Commands
 
@@ -94,16 +102,15 @@ and your script which uses the GMES package.
  
 $ mpiexec -l -n <N> python <GMES SCRIPT>
 
-If you use SLURM process manager, a special Python interpreter is 
-required. Check the MPI for Python user manual at 
-http://mpi4py.scipy.org/docs/usrman/.
+If you use SLURM process manager, a special Python interpreter is required. 
+Check the MPI for Python user manual at http://mpi4py.scipy.org/docs/usrman/.
 
 6. Known Issues
 
 6.1. Matplotlib in Windows
 
 The EPD version of the Matplotlib package which is required by fdtd.show_* 
-methods seems to that it does not handle multiple plots in multiple windows.
+methods seems that it does not handle multiple plots in multiple windows.
 Thus, on Windows, the multiple real-time display windows using fdtd.show_* 
 methods could be freeze. The Linux version of matplotlib does not have this 
 problem.
@@ -115,7 +122,8 @@ value instead of numpy.inf.
 
 6.3. compile failure on Windows
 
-On Windows, the compile command may die with the following error.
+On Windows with EPD(<6.1) and MinGW, the compile command may die with the 
+following error.
 
 g++: build\temp.win32-2.5\Release\src\lib_pointwise_material.a: No such
 file or directory
@@ -129,4 +137,18 @@ if self.linker_dll == "dllwrap":
     # for dllwrap we have to use a special option
     extra_preargs.extend(["--def", def_file])
     
+6.4. compile failure on Windows
+
+If you use EPD(>=7.1-2) with MinGW on Windows 7, you will meet the following 
+error message when you compile GMES.
+
+In file included from c:\mingw\bin\../lib/gcc/mingw32/4.5.2/include/c++/cmath:629:0,
+                 from c:\mingw\bin\../lib/gcc/mingw32/4.5.2/include/c++/complex:46,
+                 from src\/pw_dcp.hh:19,
+                 from src\pw_material_wrap.cpp:3243:
+c:\mingw\bin\../lib/gcc/mingw32/4.5.2/include/c++/tr1_impl/cmath:203:11: error: '::hypot' has not been declared
+error: command 'gcc' failed with exit status 1
+
+This problem is not yet solved.
+
 Kyungwon Chun (kwchun@gist.ac.kr)

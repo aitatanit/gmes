@@ -9,13 +9,16 @@
 #include "pw_upml.hh"
 #include "pw_cpml.hh"
 #include "pw_drude.hh"
-#include "pw_dcp.hh"
 #include "pw_lorentz.hh"
+#include "pw_dcp.hh"
+#include "Python.h"
 %}
 
 %include "complex.i"
 %include "numpy.i"
+
 %numpy_typemaps(std::complex<double>, NPY_CDOUBLE, int)
+%apply size_t { gmes::MapType::size_type }; 
 
 %init %{
 import_array();
@@ -60,33 +63,11 @@ import_array();
 %apply_numpy_typemaps(double)
 %apply_numpy_typemaps(std::complex<double>)
 
-%apply (int* IN_ARRAY1, int DIM1) {(const int* const idx, int size)};
-%apply (double* IN_ARRAY2, int DIM1, int DIM2) {(const double* const a, int a_i_size, int a_j_size)};
-%apply (double* IN_ARRAY2, int DIM1, int DIM2) {(const double* const b, int b_i_size, int b_j_size)};
-%apply (std::complex<double>* IN_ARRAY2, int DIM1, int DIM2) {(const std::complex<double>* const b_c, int b_c_i_size, int b_c_j_size)};
+%apply (int* IN_ARRAY1, int DIM1) {(const int* const idx, int idx_size)};
+%apply (double* IN_ARRAY2, int DIM1, int DIM2) {(const double* const a, int a_size1, int a_size2)};
+%apply (double* IN_ARRAY2, int DIM1, int DIM2) {(const double* const b, int b_size1, int b_size2)};
+%apply (std::complex<double>* IN_ARRAY2, int DIM1, int DIM2) {(const std::complex<double>* const b, int b_size1, int b_size2)};
 %apply (double* IN_ARRAY1, int DIM1) {(const double* const c, int c_size)};
-
-// Declare the Pythonic interfaces.
-%define %property(py, cpp, prop, get, set)
-%feature("shadow") cpp::set %{ %}
-%feature("shadow") cpp::get %{
-__swig_setmethods__["prop"] = eval("_"+__name__.split('.')[-1]).##py##_##set
-__swig_getmethods__["prop"] = eval("_"+__name__.split('.')[-1]).##py##_##get
-if _newclass:prop = property(eval("_"+__name__.split('.')[-1]).##py##_##get, eval("_"+__name__.split('.')[-1]).##py##_##set)
-%}
-%enddef    /* property() macro */
-
-%property(MaterialElectricReal, gmes::MaterialElectric<double>, epsilon, get_epsilon, set_epsilon)
-%property(MaterialMagneticReal, gmes::MaterialMagnetic<double>, mu, get_mu, set_mu)
-
-%property(MaterialElectricCmplx, gmes::MaterialElectric<std::complex<double> >, epsilon, get_epsilon, set_epsilon)
-%property(MaterialMagneticCmplx, gmes::MaterialMagnetic<std::complex<double> >, mu, get_mu, set_mu)
-
-%property(ConstElectricReal, gmes::ConstElectric<double>, value, get_value, set_value)
-%property(ConstMagneticReal, gmes::ConstMagnetic<double>, value, get_value, set_value)
-
-%property(ConstElectricCmplx, gmes::ConstElectric<std::complex<double> >, value, get_value, set_value)
-%property(ConstMagneticCmplx, gmes::ConstMagnetic<std::complex<double> >, value, get_value, set_value)
 
 // Include the header file to be wrapped
 %include "pw_material.hh"
@@ -96,15 +77,63 @@ if _newclass:prop = property(eval("_"+__name__.split('.')[-1]).##py##_##get, eva
 %include "pw_upml.hh"
 %include "pw_cpml.hh"
 %include "pw_drude.hh"
-%include "pw_dcp.hh"
 %include "pw_lorentz.hh"
+%include "pw_dcp.hh"
 
 // Instantiate template classes
-%define %template_wrap(T, postfix) 
+%define %template_wrap(T, postfix)
+
+%template(ElectricParam ## postfix) gmes::ElectricParam<T >;
+%template(MagneticParam ## postfix) gmes::MagneticParam<T >;
 %template(PwMaterial ## postfix) gmes::PwMaterial<T >;
 %template(MaterialElectric ## postfix) gmes::MaterialElectric<T >;
 %template(MaterialMagnetic ## postfix) gmes::MaterialMagnetic<T >;
 
+%extend gmes::PwMaterial<T >
+{
+  gmes::MapType::const_iterator* 
+    _begin() 
+  {
+    return new gmes::MapType::const_iterator($self->begin());
+  }
+
+  gmes::MapType::const_iterator*
+    _end()
+  {
+    return new gmes::MapType::const_iterator($self->end());
+  }
+   
+  PyObject* 
+    _deref(gmes::MapType::const_iterator* it)
+  {
+    return Py_BuildValue("(i,i,i)", 
+			 (*it)->first[0], (*it)->first[1], (*it)->first[2]);
+  }
+
+  bool 
+    _compref(gmes::MapType::const_iterator* lhs,
+	     gmes::MapType::const_iterator* rhs)
+  {
+    return *lhs == *rhs;
+  }
+
+  void
+    _incref(gmes::MapType::const_iterator* it)
+  {
+    ++(*it);
+  }
+
+  %pythoncode %{
+    def iteridx(self):
+        it = self._begin()
+        while not self._compref(it, self._end()):
+            yield self._deref(it)
+            self._incref(it)
+  %}
+};
+
+%template(DummyElectricParam ## postfix) gmes::DummyElectricParam<T >;
+%template(DummyMagneticParam ## postfix) gmes::DummyMagneticParam<T >;
 %template(DummyElectric ## postfix) gmes::DummyElectric<T >;
 %template(DummyMagnetic ## postfix) gmes::DummyMagnetic<T >;
 %template(DummyEx ## postfix) gmes::DummyEx<T >;
@@ -114,6 +143,8 @@ if _newclass:prop = property(eval("_"+__name__.split('.')[-1]).##py##_##get, eva
 %template(DummyHy ## postfix) gmes::DummyHy<T >;
 %template(DummyHz ## postfix) gmes::DummyHz<T >;
 
+%template(ConstElectricParam ## postfix) gmes::ConstElectricParam<T >;
+%template(ConstMagneticParam ## postfix) gmes::ConstMagneticParam<T >;
 %template(ConstElectric ## postfix) gmes::ConstElectric<T >;
 %template(ConstMagnetic ## postfix) gmes::ConstMagnetic<T >;
 %template(ConstEx ## postfix) gmes::ConstEx<T >;
@@ -123,7 +154,9 @@ if _newclass:prop = property(eval("_"+__name__.split('.')[-1]).##py##_##get, eva
 %template(ConstHy ## postfix) gmes::ConstHy<T >;
 %template(ConstHz ## postfix) gmes::ConstHz<T >;
 
-// Non-dispersive linear dielectrics
+// Non-dispersive linear isotropic dielectrics
+%template(DielectricElectricParam ## postfix) gmes::DielectricElectricParam<T >;
+%template(DielectricMagneticParam ## postfix) gmes::DielectricMagneticParam<T >;
 %template(DielectricElectric ## postfix) gmes::DielectricElectric<T >;
 %template(DielectricMagnetic ## postfix) gmes::DielectricMagnetic<T >;
 %template(DielectricEx ## postfix) gmes::DielectricEx<T >;
@@ -134,6 +167,8 @@ if _newclass:prop = property(eval("_"+__name__.split('.')[-1]).##py##_##get, eva
 %template(DielectricHz ## postfix) gmes::DielectricHz<T >;
 
 // UPML
+%template(UpmlElectricParam ## postfix) gmes::UpmlElectricParam<T >;
+%template(UpmlMagneticParam ## postfix) gmes::UpmlMagneticParam<T >;
 %template(UpmlElectric ## postfix) gmes::UpmlElectric<T >;
 %template(UpmlMagnetic ## postfix) gmes::UpmlMagnetic<T >;
 %template(UpmlEx ## postfix) gmes::UpmlEx<T >;
@@ -144,6 +179,8 @@ if _newclass:prop = property(eval("_"+__name__.split('.')[-1]).##py##_##get, eva
 %template(UpmlHz ## postfix) gmes::UpmlHz<T >;
 
 // CPML
+%template(CpmlElectricParam ## postfix) gmes::CpmlElectricParam<T >;
+%template(CpmlMagneticParam ## postfix) gmes::CpmlMagneticParam<T >;
 %template(CpmlElectric ## postfix) gmes::CpmlElectric<T >;
 %template(CpmlMagnetic ## postfix) gmes::CpmlMagnetic<T >;
 %template(CpmlEx ## postfix) gmes::CpmlEx<T >;
@@ -154,6 +191,8 @@ if _newclass:prop = property(eval("_"+__name__.split('.')[-1]).##py##_##get, eva
 %template(CpmlHz ## postfix) gmes::CpmlHz<T >;
 
 // Drude model
+%template(DrudeElectricParam ## postfix) gmes::DrudeElectricParam<T >;
+%template(DrudeMagneticParam ## postfix) gmes::DrudeMagneticParam<T >;
 %template(DrudeElectric ## postfix) gmes::DrudeElectric<T >;
 %template(DrudeEx ## postfix) gmes::DrudeEx<T >;
 %template(DrudeEy ## postfix) gmes::DrudeEy<T >;
@@ -162,7 +201,27 @@ if _newclass:prop = property(eval("_"+__name__.split('.')[-1]).##py##_##get, eva
 %template(DrudeHy ## postfix) gmes::DrudeHy<T >;
 %template(DrudeHz ## postfix) gmes::DrudeHz<T >;
 
+%extend gmes::DrudeElectricParam<T >
+{
+  void set(const double* const a, int a_size1, int a_size2,
+	   const double* const c, int c_size)
+  {
+    for (int i = 0; i < a_size1; i++) {
+      std::array<double, 3> tmp;
+      std::copy(a + i * a_size2, a + i * a_size2 + 3, tmp.begin());
+      $self->a.push_back(tmp);
+    }
+    
+    std::copy(c, c + c_size, $self->c.begin());
+    
+    $self->q_now.resize(a_size1, T(0));
+    $self->q_new.resize(a_size1, T(0));
+  }
+};
+
 // Lerentz model
+%template(LorentzElectricParam ## postfix) gmes::LorentzElectricParam<T >;
+%template(LorentzMagneticParam ## postfix) gmes::LorentzMagneticParam<T >;
 %template(LorentzElectric ## postfix) gmes::LorentzElectric<T >;
 %template(LorentzEx ## postfix) gmes::LorentzEx<T >;
 %template(LorentzEy ## postfix) gmes::LorentzEy<T >;
@@ -171,23 +230,99 @@ if _newclass:prop = property(eval("_"+__name__.split('.')[-1]).##py##_##get, eva
 %template(LorentzHy ## postfix) gmes::LorentzHy<T >;
 %template(LorentzHz ## postfix) gmes::LorentzHz<T >;
 
-// Drude-critical points model
-%template(DCPElectric ## postfix) gmes::DCPElectric<T >;
-%template(DCPEx ## postfix) gmes::DCPEx<T >;
-%template(DCPEy ## postfix) gmes::DCPEy<T >;
-%template(DCPEz ## postfix) gmes::DCPEz<T >;
-%template(DCPHx ## postfix) gmes::DCPHx<T >;
-%template(DCPHy ## postfix) gmes::DCPHy<T >;
-%template(DCPHz ## postfix) gmes::DCPHz<T >;
+%extend gmes::LorentzElectricParam<T >
+{
+  void set(const double* const a, int a_size1, int a_size2,
+	   const double* const c, int c_size)
+  {
+    for (int i = 0; i < a_size1; i++) {
+      std::array<double, 3> tmp;
+      std::copy(a + i * a_size2, a + i * a_size2 + 3, tmp.begin());
+      $self->a.push_back(tmp);
+    }
 
-// Drude-critical points model
-%template(DCPPLRCElectric ## postfix) gmes::DCPPLRCElectric<T >;
-%template(DCPPLRCEx ## postfix) gmes::DCPPLRCEx<T >;
-%template(DCPPLRCEy ## postfix) gmes::DCPPLRCEy<T >;
-%template(DCPPLRCEz ## postfix) gmes::DCPPLRCEz<T >;
-%template(DCPPLRCHx ## postfix) gmes::DCPPLRCHx<T >;
-%template(DCPPLRCHy ## postfix) gmes::DCPPLRCHy<T >;
-%template(DCPPLRCHz ## postfix) gmes::DCPPLRCHz<T >;
+    std::copy(c, c + c_size, $self->c.begin());
+    
+    $self->l_now.resize(a_size1);
+    $self->l_new.resize(a_size1);
+  }
+};
+
+// ADE implementation of the Drude-critical points model
+%template(DcpAdeElectricParam ## postfix) gmes::DcpAdeElectricParam<T >;
+%template(DcpAdeMagneticParam ## postfix) gmes::DcpAdeMagneticParam<T >;
+%template(DcpAdeElectric ## postfix) gmes::DcpAdeElectric<T >;
+%template(DcpAdeEx ## postfix) gmes::DcpAdeEx<T >;
+%template(DcpAdeEy ## postfix) gmes::DcpAdeEy<T >;
+%template(DcpAdeEz ## postfix) gmes::DcpAdeEz<T >;
+%template(DcpAdeHx ## postfix) gmes::DcpAdeHx<T >;
+%template(DcpAdeHy ## postfix) gmes::DcpAdeHy<T >;
+%template(DcpAdeHz ## postfix) gmes::DcpAdeHz<T >;
+
+%extend gmes::DcpAdeElectricParam<T >
+{
+  void set(const double* const a, int a_size1, int a_size2,
+	   const double* const b, int b_size1, int b_size2,
+	   const double* const c, int c_size)
+  {
+    for (int i = 0; i < a_size1; i++) {
+      std::array<double, 3> tmp;
+      std::copy(a + i * a_size2, a + i * a_size2 + 3, tmp.begin());
+      $self->a.push_back(tmp);
+    }
+
+    for (int i = 0; i < b_size1; i++) {
+      std::array<double, 4> tmp;
+      std::copy(b + i * b_size2, b + i * b_size2 + 4, tmp.begin());
+      $self->b.push_back(tmp);
+    }
+
+    std::copy(c, c + c_size, $self->c.begin());
+    
+    $self->q_old.resize(a_size1);
+    $self->q_now.resize(a_size1);
+    $self->p_old.resize(b_size1);
+    $self->p_now.resize(b_size1);
+  }
+};
+
+// PLRC implementation of the Drude-critical points model
+%template(DcpPlrcElectricParam ## postfix) gmes::DcpPlrcElectricParam<T >;
+%template(DcpPlrcMagneticParam ## postfix) gmes::DcpPlrcMagneticParam<T >;
+%template(DcpPlrcElectric ## postfix) gmes::DcpPlrcElectric<T >;
+%template(DcpPlrcEx ## postfix) gmes::DcpPlrcEx<T >;
+%template(DcpPlrcEy ## postfix) gmes::DcpPlrcEy<T >;
+%template(DcpPlrcEz ## postfix) gmes::DcpPlrcEz<T >;
+%template(DcpPlrcHx ## postfix) gmes::DcpPlrcHx<T >;
+%template(DcpPlrcHy ## postfix) gmes::DcpPlrcHy<T >;
+%template(DcpPlrcHz ## postfix) gmes::DcpPlrcHz<T >;
+
+%extend gmes::DcpPlrcElectricParam<T >
+{
+  void set(const double* const a, int a_size1, int a_size2,
+	   const std::complex<double>* const b, int b_size1, int b_size2,
+	   const double* const c, int c_size)
+  {
+    for (int i = 0; i < a_size1; i++) {
+      std::array<double, 3> tmp;
+      std::copy(a + i * a_size2, a + i * a_size2 + 3, tmp.begin());
+      $self->a.push_back(tmp);
+    }
+
+    for (int i = 0; i < b_size1; i++) {
+      std::array<std::complex<double>, 3> tmp;
+      std::copy(b + i * b_size2, b + i * b_size2 + 3, tmp.begin());
+      $self->b.push_back(tmp);
+    }
+
+    std::copy(c, c + c_size, $self->c.begin());
+    
+    $self->psi_dp_re.resize(a_size1);
+    $self->psi_dp_re.resize(a_size1);
+    $self->psi_cp_re.resize(b_size1);
+    $self->psi_cp_re.resize(b_size1);
+  }
+};
 
 %enddef    /* template_wrap() macro */
 

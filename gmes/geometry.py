@@ -20,11 +20,12 @@ except ImportError:
 from copy import deepcopy
 
 import numpy as np
-from numpy import empty, zeros, inf, dot
+from numpy import empty, zeros, inf, dot, array
 from scipy.linalg import norm
 
-import constants as const
-from material import Compound, PML
+# GMES modules
+import constant as const
+from material import Compound, Pml
 
 
 class AuxiCartComm(object):
@@ -137,16 +138,16 @@ class Cartesian(object):
         
         try:
             if len(resolution) == 3:
-                self.res = np.array(resolution, float)
+                self.res = array(resolution, float)
         except TypeError:
-            self.res = np.array((resolution,)*3, float)
+            self.res = array((resolution,)*3, float)
         
         self.dx, self.dy, self.dz = 1 / self.res
 
         # local spatial differentials to calculate dt
         dx, dy, dz = self.dx, self.dy, self.dz
         
-        self.half_size = 0.5 * np.array(size, float)
+        self.half_size = 0.5 * array(size, float)
         
         for i, v in enumerate((self.dx, self.dy, self.dz)):
             if self.half_size[i] == 0:
@@ -154,7 +155,7 @@ class Cartesian(object):
             
         # the size of the whole field arrays 
         self.whole_field_size = \
-            np.array((2 * self.half_size * self.res).round(), int)
+            array((2 * self.half_size * self.res).round(), int)
         
         if parallel:
             self.my_id = MPI.COMM_WORLD.rank
@@ -260,7 +261,7 @@ class Cartesian(object):
                             self.whole_field_size[2] / n * self.whole_field_size[0] / l)
         
         return cpu_load + net_load
-        
+
     def _get_em_field_storage(self, shape, cmplx):
         if cmplx:
             return zeros(shape, complex)
@@ -299,8 +300,7 @@ class Cartesian(object):
             shape = (self.my_field_size[0] + 1, self.my_field_size[1] + 1,
                      self.my_field_size[2])
         else:
-            shape = (self.my_field_size[0] + 1, self.my_field_size[1] + 1,
-                     self.my_field_size[2])
+            shape = (1, 1, 1)
 
         return self._get_em_field_storage(shape, cmplx)
         
@@ -312,8 +312,7 @@ class Cartesian(object):
             shape = (self.my_field_size[0], self.my_field_size[1] + 1,
                      self.my_field_size[2] + 1)
         else:
-            shape = (self.my_field_size[0], self.my_field_size[1] + 1,
-                     self.my_field_size[2] + 1)
+            shape = (1, 1, 1)
 
         return self._get_em_field_storage(shape, cmplx)
         
@@ -325,8 +324,7 @@ class Cartesian(object):
             shape = (self.my_field_size[0] + 1, self.my_field_size[1],
                      self.my_field_size[2] + 1)
         else:
-            shape = (self.my_field_size[0] + 1, self.my_field_size[1],
-                     self.my_field_size[2] + 1)
+            shape = (1, 1, 1)
         
         return self._get_em_field_storage(shape, cmplx)
         
@@ -338,59 +336,10 @@ class Cartesian(object):
             shape = (self.my_field_size[0] + 1, self.my_field_size[1] + 1,
                      self.my_field_size[2])
         else:
-            shape = (self.my_field_size[0] + 1, self.my_field_size[1] + 1,
-                     self.my_field_size[2])
+            shape = (1, 1, 1)
         
         return self._get_em_field_storage(shape, cmplx)
-    
-    def get_material_ex_storage(self):
-        """Return an array for Ex pointwise materials.
-        
-        """
-        ex_shape = (self.my_field_size[0], self.my_field_size[1] + 1,
-                    self.my_field_size[2] + 1)
-        return empty(ex_shape, object)
-        
-    def get_material_ey_storage(self):
-        """Return an array for Ey pointwise materials.
-        
-        """
-        ey_shape = (self.my_field_size[0] + 1, self.my_field_size[1],
-                    self.my_field_size[2] + 1)
-        return empty(ey_shape, object)
-        
-    def get_material_ez_storage(self):
-        """Return an array for Ez pointwise materials.
-        
-        """
-        ez_shape = (self.my_field_size[0] + 1, self.my_field_size[1] + 1,
-                    self.my_field_size[2])
-        return empty(ez_shape, object)
-    
-    def get_material_hx_storage(self):
-        """Return an array for Hx pointwise materials.
-        
-        """
-        hx_shape = (self.my_field_size[0], self.my_field_size[1] + 1,
-                    self.my_field_size[2] + 1)
-        return empty(hx_shape, object)
-        
-    def get_material_hy_storage(self):
-        """Return an array for Hy pointwise materials.
-        
-        """
-        hy_shape = (self.my_field_size[0] + 1, self.my_field_size[1],
-                    self.my_field_size[2] + 1)
-        return empty(hy_shape, object)
-        
-    def get_material_hz_storage(self):
-        """Return an array for Hz pointwise materials.
-        
-        """
-        hz_shape = (self.my_field_size[0] + 1, self.my_field_size[1] + 1,
-                    self.my_field_size[2])
-        return empty(hz_shape, object)
-    
+
     def ex_index_to_space(self, i, j, k):
         """Return space coordinate of the given index.
         
@@ -401,7 +350,7 @@ class Cartesian(object):
         i, j, k -- array index
         
         """
-        idx = np.array((i, j, k), int)  
+        idx = array((i, j, k), int)  
         global_idx = idx + self.general_field_size * self.my_cart_idx
         
         spc_0 = (global_idx[0] + .5) * self.dx - self.half_size[0]
@@ -421,7 +370,7 @@ class Cartesian(object):
             x, y, z -- (global) space coordinate
         
         """
-        coords = np.array((x,y,z), float)
+        coords = array((x,y,z), float)
 
         global_idx = empty(3, float)
         global_idx[0] = (coords[0] + self.half_size[0]) / self.dx - .5
@@ -449,7 +398,7 @@ class Cartesian(object):
         x, y, z -- (global) space coordinate
         
         """
-        spc = np.array((x,y,z), float)
+        spc = array((x,y,z), float)
 
         global_idx = empty(3, int)
         global_idx[0] = (spc[0] + self.half_size[0]) / self.dx
@@ -476,7 +425,7 @@ class Cartesian(object):
         i, j, k -- array index
         
         """
-        idx = np.array((i,j,k), int)
+        idx = array((i,j,k), int)
             
         global_idx = idx + self.general_field_size * self.my_cart_idx
         
@@ -497,7 +446,7 @@ class Cartesian(object):
         x, y, z -- (global) space coordinate
         
         """
-        coords = np.array((x,y,z), float)
+        coords = array((x,y,z), float)
             
         global_idx = empty(3, float)
         global_idx[0] = (coords[0] + self.half_size[0]) / self.dx
@@ -525,7 +474,7 @@ class Cartesian(object):
         x, y, z -- (global) space coordinate
         
         """
-        coords = np.array((x,y,z), float)
+        coords = array((x,y,z), float)
             
         global_idx = empty(3, int)
         global_idx[0] = (coords[0] + self.half_size[0]) / self.dx + .5
@@ -552,7 +501,7 @@ class Cartesian(object):
         i, j, k -- array index
         
         """
-        idx = np.array((i, j, k), int)
+        idx = array((i, j, k), int)
             
         global_idx = idx + self.general_field_size * self.my_cart_idx
         
@@ -573,7 +522,7 @@ class Cartesian(object):
         x, y, z -- (global) space coordinate
         
         """
-        coords = np.array((x, y, z), float)
+        coords = array((x, y, z), float)
             
         global_idx = empty(3, float)
         global_idx[0] = (coords[0] + self.half_size[0]) / self.dx
@@ -601,7 +550,7 @@ class Cartesian(object):
         x, y, z -- (global) space coordinate
         
         """
-        coords = np.array((x,y,z), float)
+        coords = array((x,y,z), float)
             
         global_idx = empty(3, int)
         global_idx[0] = (coords[0] + self.half_size[0]) / self.dx + .5
@@ -628,7 +577,7 @@ class Cartesian(object):
         i, j, k -- array index
         
         """
-        idx = np.array((i, j, k), int)
+        idx = array((i, j, k), int)
             
         global_idx = idx + self.general_field_size * self.my_cart_idx
         
@@ -649,7 +598,7 @@ class Cartesian(object):
         x, y, z -- (global) space coordinate
         
         """
-        coords = np.array((x,y,z), float)
+        coords = array((x,y,z), float)
             
         global_idx = empty(3, float)
         global_idx[0] = (coords[0] + self.half_size[0]) / self.dx
@@ -677,7 +626,7 @@ class Cartesian(object):
         x, y, z -- (global) space coordinate
         
         """
-        coords = np.array((x,y,z), float)
+        coords = array((x,y,z), float)
             
         global_idx = empty(3, int)
         global_idx[0] = (coords[0] + self.half_size[0]) / self.dx + .5
@@ -704,7 +653,7 @@ class Cartesian(object):
         i, j, k -- array index
         
         """
-        idx = np.array((i,j,k), int)
+        idx = array((i,j,k), int)
             
         global_idx = idx + self.general_field_size * self.my_cart_idx
         
@@ -725,7 +674,7 @@ class Cartesian(object):
         x, y, z -- (global) space coordinate
         
         """
-        coords = np.array((x,y,z), float)
+        coords = array((x,y,z), float)
             
         global_idx = empty(3, float)
         global_idx[0] = (coords[0] + self.half_size[0]) / self.dx + .5
@@ -753,7 +702,7 @@ class Cartesian(object):
         x, y, z -- (global) space coordinate
         
         """
-        coords = np.array((x,y,z), float)
+        coords = array((x,y,z), float)
             
         global_idx = empty(3, int)
         global_idx[0] = (coords[0] + self.half_size[0]) / self.dx + 1
@@ -780,7 +729,7 @@ class Cartesian(object):
         i, j, k -- array index
         
         """
-        idx = np.array((i,j,k), int)
+        idx = array((i,j,k), int)
             
         global_idx = idx + self.general_field_size * self.my_cart_idx
         
@@ -801,7 +750,7 @@ class Cartesian(object):
         x, y, z -- (global) space coordinate
         
         """
-        coords = np.array((x,y,z), float)
+        coords = array((x,y,z), float)
             
         global_idx = empty(3, float)
         global_idx[0] = (coords[0] + self.half_size[0]) / self.dx + .5
@@ -829,7 +778,7 @@ class Cartesian(object):
          x, y, z -- (global) space coordinate
         
         """
-        coords = np.array((x,y,z), float)
+        coords = array((x,y,z), float)
             
         global_idx = empty(3, int)
         global_idx[0] = (coords[0] + self.half_size[0]) / self.dx + 1
@@ -849,6 +798,9 @@ class Cartesian(object):
     def display_info(self, indent=0):
         print " " * indent, "Cartesian space"
         
+        print " " * indent, "MPI topology:",
+        print self.my_id, '/', self.numprocs
+
         print " " * indent,
         print "size:", 2 * self.half_size,
         print "resolution:", self.res
@@ -857,7 +809,7 @@ class Cartesian(object):
         print "dx:", self.dx, "dy:", self.dy, "dz:", self.dz
         
         print " " * indent,
-        print "number of nodes participating:", self.numprocs
+        print "number of participating nodes:", self.numprocs
 
 
 ####################################################################
@@ -884,29 +836,29 @@ class GeomBox(object):
     
     """
     def __init__(self, low=None, high=None):
-        self.low = np.array(low, float)
-        self.high = np.array(high, float)
+        self.low = array(low, float)
+        self.high = array(high, float)
         
     def union(self, box):
         """Enlarge the box to include the given box.
         
         """
-        self.low = map(min, self.low, box.low)
-        self.high = map(max, self.high, box.high)
+        self.low = array(map(min, self.low, box.low))
+        self.high = array(map(max, self.high, box.high))
         
     def intersection(self, box):
         """Reduce the box to intersect volume with the given box.
         
         """
-        self.low = map(max, self.low, box.low)
-        self.high = map(min, self.high, box.high)        
+        self.low = array(map(max, self.low, box.low))
+        self.high = array(map(min, self.high, box.high))
         
     def add_point(self, point):
         """Enlarge the box to include the given point.
         
         """
-        self.low = map(min, self.low, point)
-        self.high = map(max, self.high, point)
+        self.low = array(map(min, self.low, point))
+        self.high = array(map(max, self.high, point))
            
     @staticmethod
     def __between__(x, low, high):
@@ -987,17 +939,16 @@ class GeomBoxTree(object):
         self.root = GeomBoxNode(box, geom_list, 0)
         self.branch_out(self.root)
     
-    @staticmethod    
-    def find_best_partition(node, divideAxis):
+    def find_best_partition(self, node, divide_axis):
         """
-        Find the best place to "cut" along the axis divideAxis in 
+        Find the best place to "cut" along the axis divide_axis in 
         order to maximally divide the objects between the partitions.
         Upon return, n1 and n2 are the number of objects below and 
         above the partition, respectively.
         
         """
         small = 1e-6 # only 1e-6 works
-        bestPartition = None
+        best_partition = None
         
         n1 = n2 = len(node.geom_list)
         
@@ -1006,35 +957,34 @@ class GeomBoxTree(object):
         # end of an object. 
         
         for i in node.geom_list:
-            curPartition = i.box.high[divideAxis] + small
+            curPartition = i.box.high[divide_axis] + small
             curN1 = curN2 = 0
             for j in node.geom_list:
-                if j.box.low[divideAxis] <= curPartition:
+                if j.box.low[divide_axis] <= curPartition:
                     curN1 += 1
-                if j.box.high[divideAxis] >= curPartition:
+                if j.box.high[divide_axis] >= curPartition:
                     curN2 += 1
             if max(curN1, curN2) < max(n1, n2):
-                bestPartition = curPartition
+                best_partition = curPartition
                 n1 = curN1
                 n2 = curN2
                 
         for i in node.geom_list:
-            curPartition = i.box.low[divideAxis] - small
+            curPartition = i.box.low[divide_axis] - small
             curN1 = curN2 = 0
             for j in node.geom_list:
-                if j.box.low[divideAxis] <= curPartition:
+                if j.box.low[divide_axis] <= curPartition:
                     curN1 += 1
-                if j.box.high[divideAxis] >= curPartition:
+                if j.box.high[divide_axis] >= curPartition:
                     curN2 += 1
             if max(curN1, curN2) < max(n1, n2):
-                bestPartition = curPartition
+                best_partition = curPartition
                 n1 = curN1
                 n2 = curN2
         
-        return bestPartition, n1, n2
+        return best_partition, n1, n2
     
-    @staticmethod
-    def divide_geom_box_tree(node):
+    def divide_geom_box_tree(self, node):
         """Divide box in two, along the axis that maximally partitions the boxes.
         
         """
@@ -1043,8 +993,8 @@ class GeomBoxTree(object):
         # the best partition.
         best = 0
         division = []
-        for i in xrange(3):
-            partition, n1, n2 = GeomBoxTree.find_best_partition(node, i)
+        for i in range(3):
+            partition, n1, n2 = self.find_best_partition(node, i)
             division.append((partition, n1, n2))
             if max(division[i][1], division[i][2]) < max(division[best][1], division[best][2]):
                 best = i
@@ -1066,18 +1016,14 @@ class GeomBoxTree(object):
         
         return GeomBoxNode(box1, b1GeomList, node.depth + 1), GeomBoxNode(box2, b2GeomList, node.depth + 1)
     
-    @staticmethod
-    def branch_out(node):
-        node.t1, node.t2 = GeomBoxTree.divide_geom_box_tree(node)
+    def branch_out(self, node):
+        node.t1, node.t2 = self.divide_geom_box_tree(node)
         
-        if not (node.t1 or node.t2):
-            return
+        if node.t1 or node.t2:
+            self.branch_out(node.t1)
+            self.branch_out(node.t2)
     
-        GeomBoxTree.branch_out(node.t1)
-        GeomBoxTree.branch_out(node.t2)
-    
-    @staticmethod
-    def tree_search(node, point):
+    def tree_search(self, node, point):
         if node.box.in_box(point) == False: 
             return None
         else:
@@ -1085,16 +1031,16 @@ class GeomBoxTree(object):
                 return node
             else:
                 if node.t1.box.in_box(point):
-                    return GeomBoxTree.tree_search(node.t1, point)
+                    return self.tree_search(node.t1, point)
         
                 if node.t2.box.in_box(point):
-                    return GeomBoxTree.tree_search(node.t2, point)
+                    return self.tree_search(node.t2, point)
     
     def object_of_point(self, point):
         leaf = self.tree_search(self.root, point)
         geom_obj, idx = find_object(point, leaf.geom_list)
         
-        # epsilon and mu of compound material
+        # eps_inf and mu_inf of compound material
         # refer to the underneath material.
         if isinstance(geom_obj.material, Compound):
             aux_geom_list = leaf.geom_list[:idx]
@@ -1102,8 +1048,8 @@ class GeomBoxTree(object):
         else:
             underneath_obj = None
             
-#            geom_obj.material.epsilon = geom_obj2.material.epsilon
-#            geom_obj.material.mu = geom_obj2.material.mu
+#            geom_obj.material.eps_inf = geom_obj2.material.eps_inf
+#            geom_obj.material.mu_inf = geom_obj2.material.mu_inf
         
         return geom_obj, underneath_obj
         
@@ -1121,12 +1067,12 @@ class GeomBoxTree(object):
         if not node: node = self.root
         
         print " " * indent, "depth:", node.depth, node.box
-        for i in node.geom_list:
-            print " " * (indent + 5), "bounding box:", i.box
-            i.display_info(indent + 5)
+        
+        if node.t1 is None or node.t2 is None:
+            for i in node.geom_list:
+                print " " * (indent + 5), "bounding box:", i.box
+                i.display_info(indent + 5)
             
-        print " "
-
         if node.t1: self.display_info(node.t1, indent + 5)
         if node.t2: self.display_info(node.t2, indent + 5)
  
@@ -1226,7 +1172,7 @@ class DefaultMedium(GeometricObject):
         Override GeometricObject.display_info.
         
         """
-        print " " * indent, "default material"
+        print " " * indent, "default medium"
         if self.material:
             self.material.display_info(indent + 5)
     
@@ -1241,8 +1187,8 @@ class Cone(GeometricObject):
     box -- bounding box
         
     """
-    def __init__(self, material, radius2=0, axis=(1, 0, 0),
-                 radius=1, height=1, center=(0, 0, 0)):
+    def __init__(self, material, radius2=0, axis=(1,0,0), radius=1, height=1, 
+                 center=(0,0,0)):
         """
         
         Keyword arguments:
@@ -1263,19 +1209,19 @@ class Cone(GeometricObject):
         else:
             self.radius2 = float(radius2) # high side radius
 
-        self.center = np.array(center, float)
-        self.axis = np.array(axis, float) / norm(axis)
+        self.center = array(center, float)
+        self.axis = array(axis, float) / norm(axis)
         self.height = float(height)
         
         GeometricObject.__init__(self, material)
         
-    def in_object(self, x):
+    def in_object(self, point):
         """
         Override GeometricObject.in_object.
         
         """
-        x = np.array(x, float)
-        r = x - self.center
+        point = array(point, float)
+        r = point - self.center
         proj = dot(self.axis, r)
         if np.abs(proj) <= .5 * self.height:
             if self.radius2 == self.radius == inf:
@@ -1370,14 +1316,14 @@ class _Block(GeometricObject):
     def __init__(self, material,
                  e1=(1, 0, 0), e2=(0, 1, 0), e3=(0, 0, 1),
                  size=(0, 0, 0), center=(0, 0, 0)):
-        self.center = np.array(center, float)
+        self.center = array(center, float)
         
-        self.e1 = np.array(e1, float) / norm(e1)
-        self.e2 = np.array(e2, float) / norm(e2)
-        self.e3 = np.array(e3, float) / norm(e3)
-        self.size = np.array(size, float)
+        self.e1 = array(e1, float) / norm(e1)
+        self.e2 = array(e2, float) / norm(e2)
+        self.e3 = array(e3, float) / norm(e3)
+        self.size = array(size, float)
         
-        self.projection_matrix = np.array([self.e1, self.e2, self.e3])
+        self.projection_matrix = array([self.e1, self.e2, self.e3])
         
         GeometricObject.__init__(self, material)
         
@@ -1386,7 +1332,7 @@ class _Block(GeometricObject):
         Override GeometricObject.in_object.
         
         """
-        x = np.array(x, float)
+        x = array(x, float)
         r = x - self.center
         proj = dot(self.projection_matrix, r)
 
@@ -1404,7 +1350,7 @@ class _Block(GeometricObject):
         s2 = self.size[1] * self.e2
         s3 = self.size[2] * self.e3
         
-        corner = self.center + (-0.5 * (s1 + s2 + s3))
+        corner = self.center - 0.5 * (s1 + s2 + s3)
         
         tmpBox.add_point(corner)
         tmpBox.add_point(corner + s1)
@@ -1414,7 +1360,7 @@ class _Block(GeometricObject):
         tmpBox.add_point(corner + s1 + s3)
         tmpBox.add_point(corner + s3 + s2)
         tmpBox.add_point(corner + s1 + s2 + s3)
-        
+
         return tmpBox
         
         
@@ -1456,10 +1402,10 @@ class Ellipsoid(_Block):
                  size=(1, 1, 1), center=(0, 0, 0)):
         _Block.__init__(self, material, e1, e2, e3, size, center)
 
-        self.inverse_semi_axes = 2 / np.array(size, float)
+        self.inverse_semi_axes = 2 / array(size, float)
 
     def in_object(self, x):
-        x = np.array(x, float)
+        x = array(x, float)
         r = x - self.center
         proj = dot(self.projection_matrix, r)
         q = proj * self.inverse_semi_axes
@@ -1541,7 +1487,7 @@ class Boundary(GeometricObject):
         """
         self.d = float(thickness)
         
-        self.half_size = .5 * np.array(size, float)
+        self.half_size = .5 * array(size, float)
         
         self.box_list = []
         
@@ -1550,7 +1496,7 @@ class Boundary(GeometricObject):
         self.minus_z, self.plus_z = minus_z, plus_z
 
         # do someting for the PML derived class?
-        if isinstance(material, PML):
+        if isinstance(material, Pml):
             pass
         
         GeometricObject.__init__(self, material)
@@ -1635,62 +1581,62 @@ def find_object(point, geom_list):
     return geom_list[i], i
 
 
-def in_range(idx, numpy_array, component):
+def in_range(idx, shape, component):
     """Perform bounds checking.
     
     
     Keyword arguments:
         idx -- index of an array
-        numpy_array -- the array to be checked
+        shape -- shape of the array to be checked
         component -- specify field component
         
     """
     if component is const.Ex:
-        if idx[0] < 0 or idx[0] >= numpy_array.shape[0]:
+        if idx[0] < 0 or idx[0] >= shape[0]:
             return False
-        if idx[1] < 0 or idx[1] >= numpy_array.shape[1] - 1:
+        if idx[1] < 0 or idx[1] >= shape[1] - 1:
             return False
-        if idx[2] < 0 or idx[2] >= numpy_array.shape[2] - 1:
+        if idx[2] < 0 or idx[2] >= shape[2] - 1:
             return False
         
     elif component is const.Ey:
-        if idx[0] < 0 or idx[0] >= numpy_array.shape[0] - 1:
+        if idx[0] < 0 or idx[0] >= shape[0] - 1:
             return False
-        if idx[1] < 0 or idx[1] >= numpy_array.shape[1]:
+        if idx[1] < 0 or idx[1] >= shape[1]:
             return False
-        if idx[2] < 0 or idx[2] >= numpy_array.shape[2] - 1:
+        if idx[2] < 0 or idx[2] >= shape[2] - 1:
             return False
           
     elif component is const.Ez:
-        if idx[0] < 0 or idx[0] >= numpy_array.shape[0] - 1:
+        if idx[0] < 0 or idx[0] >= shape[0] - 1:
             return False
-        if idx[1] < 0 or idx[1] >= numpy_array.shape[1] - 1:
+        if idx[1] < 0 or idx[1] >= shape[1] - 1:
             return False
-        if idx[2] < 0 or idx[2] >= numpy_array.shape[2]:
+        if idx[2] < 0 or idx[2] >= shape[2]:
             return False
         
     elif component is const.Hx:
-        if idx[0] < 0 or idx[0] >= numpy_array.shape[0]:
+        if idx[0] < 0 or idx[0] >= shape[0]:
             return False
-        if idx[1] <= 0 or idx[1] >= numpy_array.shape[1]:
+        if idx[1] <= 0 or idx[1] >= shape[1]:
             return False
-        if idx[2] <= 0 or idx[2] >= numpy_array.shape[2]:
+        if idx[2] <= 0 or idx[2] >= shape[2]:
             return False
         
     elif component is const.Hy:
-        if idx[0] <= 0 or idx[0] >= numpy_array.shape[0]:
+        if idx[0] <= 0 or idx[0] >= shape[0]:
             return False
-        if idx[1] < 0 or idx[1] >= numpy_array.shape[1]:
+        if idx[1] < 0 or idx[1] >= shape[1]:
             return False
-        if idx[2] <= 0 or idx[2] >= numpy_array.shape[2]:
+        if idx[2] <= 0 or idx[2] >= shape[2]:
             return False
         
     elif component is const.Hz:
-        if idx[0] <= 0 or idx[0] >= numpy_array.shape[0]:
+        if idx[0] <= 0 or idx[0] >= shape[0]:
             return False
-        if idx[1] <= 0 or idx[1] >= numpy_array.shape[1]:
+        if idx[1] <= 0 or idx[1] >= shape[1]:
             return False
-        if idx[2] < 0 or idx[2] >= numpy_array.shape[2]:
+        if idx[2] < 0 or idx[2] >= shape[2]:
             return False
         
     else:

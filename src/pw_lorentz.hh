@@ -1,3 +1,10 @@
+/* This implementation is based on the following article.
+ *
+ * A. Taflove and S. C. Hagness, Computational Electrodynamics: The Finite-
+ * Difference Time-Domain Method, 3rd ed. 685 Canton Street Norwood, MA 02062, 
+ * USA: Artech House Publishers, 2005.
+ */
+
 #ifndef PW_LORENTZ_HH_
 #define PW_LORENTZ_HH_
 
@@ -14,184 +21,196 @@
 
 namespace gmes
 {
+  template <typename T> struct LorentzElectricParam: public ElectricParam<T>
+  {
+    std::vector<std::array<double, 3> > a;
+    std::array<double, 3> c;
+    std::vector<T> l_now, l_new;
+  };
+
+  template <typename T> struct LorentzMagneticParam: public MagneticParam<T>
+  {
+  };
+
   template <typename T> class LorentzElectric: public MaterialElectric<T>
   {
   public:
-    LorentzElectric(double epsilon,
-		    const double * const a, int a_i_size, int a_j_size,
-		    const double * const c, int c_size):
-      eps(epsilon),
-      c(c, c + c_size),
-      l_new(a_i_size, static_cast<T>(0)),
-      l_now(a_i_size, static_cast<T>(0))
+    ~LorentzElectric()
     {
-      for (int i = 0; i < a_i_size; i++)
-	{
-	  std::vector<double> tmp(a + i * a_j_size, a + (i + 1) * a_j_size);
-	  this->a.push_back(tmp);
-	}
+      for(MapType::const_iterator iter = param.begin(); 
+	  iter != param.end(); iter++) {
+	delete static_cast<LorentzElectricParam<T> *>(iter->second);
+      }
+      param.clear();
     }
-
-    double get_epsilon() const
+    
+    PwMaterial<T> *
+    attach(const int* const idx, int idx_size,
+	   const PwMaterialParam * const parameter)
     {
-      return eps;
-    }
+      std::array<int, 3> index;
+      std::copy(idx, idx + idx_size, index.begin());
 
-    void set_epsilon(double epsilon)
-    {
-      eps = epsilon;
-    }
+      MapType::const_iterator iter = param.find(index);
+      if (iter != param.end()) {
+	std::cerr << "Overwriting the existing index." << std::endl;
+	delete static_cast<LorentzElectricParam<T> *>(iter->second);
+	param.erase(iter);
+      }
+      
+      const LorentzElectricParam<T> * const LorentzElectricParameter_ptr
+	= static_cast<const LorentzElectricParam<T> * const>(parameter);
+      LorentzElectricParam<T> *param_ptr;
+      param_ptr = new LorentzElectricParam<T>();
 
-    T lps_sum(const T& init)
+      param_ptr->eps_inf = LorentzElectricParameter_ptr->eps_inf;
+      std::copy(LorentzElectricParameter_ptr->a.begin(),
+		LorentzElectricParameter_ptr->a.end(),
+		std::back_inserter(param_ptr->a));
+      std::copy(LorentzElectricParameter_ptr->c.begin(),
+		LorentzElectricParameter_ptr->c.end(),
+		param_ptr->c.begin());
+      param_ptr->l_now.resize(param_ptr->a.size(), static_cast<T>(0));
+      param_ptr->l_new.resize(param_ptr->a.size(), static_cast<T>(0));
+
+      param.insert(std::make_pair(index, param_ptr));
+
+      return this;
+    };
+
+    T 
+    lps_sum(const T& init, const LorentzElectricParam<T> * const ptr) const
     {
+      const std::vector<std::array<double, 3> >& a = ptr->a;
+      const std::vector<T>& l_now = ptr->l_now;
+      const std::vector<T>& l_new = ptr->l_new;
+      
       T sum(init);
-      for (typename std::vector<T>::size_type i = 0; i < a.size(); ++i)
-	{
-	  sum += l_new[i] - l_now[i];
-	}
+      for (typename std::vector<T>::size_type i = 0; i < a.size(); ++i)	{
+	sum += l_new[i] - l_now[i];
+      }
 
       return sum;
     }
 
-    void update_q(const T& e_now)
+    void 
+    update_l(const T& e_now, LorentzElectricParam<T> * const ptr)
     {
-      std::vector<T> l_old(l_now);
+      const std::vector<std::array<double, 3> >& a = ptr->a;
+      std::vector<T>& l_now = ptr->l_now;
+      std::vector<T>& l_new = ptr->l_new;
+
+      const std::vector<T> l_old(l_now);
       std::copy(l_new.begin(), l_new.end(), l_now.begin());
-      for (typename std::vector<T>::size_type i = 0; i < a.size(); ++i)
-	{
-	  l_new[i] = a[i][0] * l_old[i] + a[i][1] * l_now[i] + a[i][2] * e_now;
-	}
+      for (typename std::vector<T>::size_type i = 0; i < a.size(); ++i)	{
+	l_new[i] = a[i][0] * l_old[i] + a[i][1] * l_now[i] + a[i][2] * e_now;
+      }
     }
 
   protected:
-    double eps;
-    std::vector<std::vector<double> > a;
-    std::vector<double> c;
-    std::vector<T> l_new;
-    std::vector<T> l_now;
+    MaterialElectric<T>::param;
   };
 
   template <typename T> class LorentzEx: public LorentzElectric<T>
   {
   public:
-    LorentzEx(double epsilon,
-	      const double * const a, int a_i_size, int a_j_size,
-	      const double * const c, int c_size):
-      LorentzElectric<T>(epsilon, a, a_i_size, a_j_size, c, c_size)
+    void 
+    update(T * const ex, int ex_x_size, int ex_y_size, int ex_z_size,
+	   const T * const hz, int hz_x_size, int hz_y_size, int hz_z_size,
+	   const T * const hy, int hy_x_size, int hy_y_size, int hy_z_size,
+	   double dy, double dz, double dt, double n,
+	   const int* const idx, int idx_size, 
+	   PwMaterialParam * const parameter)
     {
-    }
+      int i = idx[0], j = idx[1], k = idx[2];
 
-    T update(T * const ex, int ex_x_size, int ex_y_size, int ex_z_size,
-	     const T * const hz, int hz_x_size, int hz_y_size, int hz_z_size,
-	     const T * const hy, int hy_x_size, int hy_y_size, int hy_z_size,
-	     double dy, double dz, double dt, double n, int i, int j, int k)
-    {
-      T e_now = ex(i,j,k);
-      update_q(e_now);
-      ex(i,j,k) = (c[0] * ((hz(i+1,j+1,k) - hz(i+1,j,k)) / dy - 
-			   (hy(i+1,j,k+1) - hy(i+1,j,k)) / dz)
-		   + c[1] * lps_sum(static_cast<T>(0)) + c[2] * e_now);
+      LorentzElectricParam<T> *ptr;
+      ptr = static_cast<LorentzElectricParam<T> *>(parameter);
+      std::array<double, 3>& c = ptr->c;
 
-      return ex(i,j,k);
+      T& e_now = ex(i,j,k);
+      update_l(e_now, ptr);
+      ex(i,j,k) = c[0] * ((hz(i+1,j+1,k) - hz(i+1,j,k)) / dy - 
+			  (hy(i+1,j,k+1) - hy(i+1,j,k)) / dz)
+	+ c[1] * lps_sum(static_cast<T>(0), ptr) + c[2] * e_now;
     }
 
   protected:
-    using LorentzElectric<T>::eps;
-    using LorentzElectric<T>::a;
-    using LorentzElectric<T>::c;
-    using LorentzElectric<T>::l_new;
-    using LorentzElectric<T>::l_now;
+    using LorentzElectric<T>::param;
+    using LorentzElectric<T>::update_l;
+    using LorentzElectric<T>::lps_sum;
   };
 
   template <typename T> class LorentzEy: public LorentzElectric<T>
   {
   public:
-    LorentzEy(double epsilon,
-	      const double * const a, int a_i_size, int a_j_size,
-	      const double * const c, int c_size):
-      LorentzElectric<T>(epsilon, a, a_i_size, a_j_size, c, c_size)
+    void 
+    update(T * const ey, int ey_x_size, int ey_y_size, int ey_z_size,
+	   const T * const hx, int hx_x_size, int hx_y_size, int hx_z_size,
+	   const T * const hz, int hz_x_size, int hz_y_size, int hz_z_size,
+	   double dz, double dx, double dt, double n,
+	   const int* const idx, int idx_size, 
+	   PwMaterialParam * const parameter)
     {
+      int i = idx[0], j = idx[1], k = idx[2];
+
+      LorentzElectricParam<T> *ptr;
+      ptr = static_cast<LorentzElectricParam<T> *>(parameter);
+      std::array<double, 3>& c = ptr->c;
+      
+      T& e_now = ey(i,j,k);
+      update_l(e_now, ptr);
+      ey(i,j,k) = c[0] * ((hx(i,j+1,k+1) - hx(i,j+1,k)) / dz - 
+			  (hz(i+1,j+1,k) - hz(i,j+1,k)) / dx)
+	+ c[1] * lps_sum(static_cast<T>(0), ptr) + c[2] * e_now;
     }
-
-    T update(T * const ey, int ey_x_size, int ey_y_size, int ey_z_size,
-	     const T * const hx, int hx_x_size, int hx_y_size, int hx_z_size,
-	     const T * const hz, int hz_x_size, int hz_y_size, int hz_z_size,
-	     double dz, double dx, double dt, double n, int i, int j, int k)
-    {
-      T e_now = ey(i,j,k);
-      update_q(e_now);
-      ey(i,j,k) = (c[0] * ((hx(i,j+1,k+1) - hx(i,j+1,k)) / dz - 
-			   (hz(i+1,j+1,k) - hz(i,j+1,k)) / dx)
-		   + c[1] * lps_sum(static_cast<T>(0)) + c[2] * e_now);
-
-      return ey(i,j,k);
-    }
-
+    
   protected:
-    using LorentzElectric<T>::eps;
-    using LorentzElectric<T>::a;
-    using LorentzElectric<T>::c;
-    using LorentzElectric<T>::l_new;
-    using LorentzElectric<T>::l_now;
+    using LorentzElectric<T>::param;
+    using LorentzElectric<T>::update_l;
+    using LorentzElectric<T>::lps_sum;
   };
 
   template <typename T> class LorentzEz: public LorentzElectric<T>
   {
   public:
-    LorentzEz(double epsilon,
-	      const double * const a, int a_i_size, int a_j_size,
-	      const double * const c, int c_size):
-      LorentzElectric<T>(epsilon, a, a_i_size, a_j_size, c, c_size)
+    void 
+    update(T * const ez, int ez_x_size, int ez_y_size, int ez_z_size,
+	   const T * const hy, int hy_x_size, int hy_y_size, int hy_z_size,
+	   const T * const hx, int hx_x_size, int hx_y_size, int hx_z_size,
+	   double dx, double dy, double dt, double n,
+	   const int* const idx, int idx_size, 
+	   PwMaterialParam * const parameter)
     {
-    }
+      int i = idx[0], j = idx[1], k = idx[2];
 
-    T update(T * const ez, int ez_x_size, int ez_y_size, int ez_z_size,
-	     const T * const hy, int hy_x_size, int hy_y_size, int hy_z_size,
-	     const T * const hx, int hx_x_size, int hx_y_size, int hx_z_size,
-	     double dx, double dy, double dt, double n, int i, int j, int k)
-    {
-      T e_now = ez(i,j,k);
-      update_q(e_now);
-      ez(i,j,k) = (c[0] * ((hy(i+1,j,k+1) - hy(i,j,k+1)) / dx - 
-			   (hx(i,j+1,k+1) - hx(i,j,k+1)) / dy)
-		   + c[1] * lps_sum(static_cast<T>(0)) + c[2] * e_now);
-
-      return ez(i,j,k);
+      LorentzElectricParam<T> *ptr;
+      ptr = static_cast<LorentzElectricParam<T> *>(parameter);
+      std::array<double, 3>& c = ptr->c;
+      
+      T& e_now = ez(i,j,k);
+      update_l(e_now, ptr);
+      ez(i,j,k) = c[0] * ((hy(i+1,j,k+1) - hy(i,j,k+1)) / dx - 
+			  (hx(i,j+1,k+1) - hx(i,j,k+1)) / dy)
+	+ c[1] * lps_sum(static_cast<T>(0), ptr) + c[2] * e_now;
     }
 
   protected:
-    using LorentzElectric<T>::eps;
-    using LorentzElectric<T>::a;
-    using LorentzElectric<T>::c;
-    using LorentzElectric<T>::l_new;
-    using LorentzElectric<T>::l_now;
+    using LorentzElectric<T>::param;
+    using LorentzElectric<T>::update_l;
+    using LorentzElectric<T>::lps_sum;
   };
 
   template <typename T> class LorentzHx: public DielectricHx<T>
   {
-  public:
-    LorentzHx(double mu = 1):
-      DielectricHx<T>(mu)
-    {
-    }
   };
 
   template <typename T> class LorentzHy: public DielectricHy<T>
   {
-  public:
-    LorentzHy(double mu = 1):
-      DielectricHy<T>(mu)
-    {
-    }
   };
 
   template <typename T> class LorentzHz: public DielectricHz<T>
   {
-  public:
-    LorentzHz(double mu = 1):
-      DielectricHz<T>(mu)
-    {
-    }
   };
 }
 

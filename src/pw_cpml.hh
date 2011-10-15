@@ -1,13 +1,16 @@
 /* This implementation is based on the following article.
+ *
  * S. Gedney, "Perfectly Matched Layer Absorbing Boundary Conditions,"
  * Computational Electrodynamics: The Finite-Difference Time-Domain Method,
- * Third Edition, A. Taflove and S.C. Hagness, Artech House Publishers,
- * 2005, pp. 273-328.
+ * A. Taflove and S.C. Hagness, 3rd eds., Artech House Publishers, 2005, 
+ * pp. 273-328.
  */ 
 
 #ifndef PW_CPML_HH_
 #define PW_CPML_HH_
 
+#include <iostream>
+#include <utility>
 #include "pw_material.hh"
 
 #define ex(i,j,k) ex[ex_y_size==1?0:((i)*ex_y_size+(j))*ex_z_size+(k)]
@@ -19,280 +22,336 @@
 
 namespace gmes
 {
+  template <typename T> struct CpmlElectricParam: public ElectricParam<T>
+  {
+    double b1, b2, c1, c2, kappa1, kappa2;
+    T psi1, psi2;
+  };
+  
+  template <typename T> struct CpmlMagneticParam: public MagneticParam<T>
+  {
+    double b1, b2, c1, c2, kappa1, kappa2;
+    T psi1, psi2;
+  };
+  
   template <typename T> class CpmlElectric: public MaterialElectric<T>
   {
   public:
-    CpmlElectric(double epsilon,
-		 double b1_in, double b2_in, double c1_in, double c2_in,
-		 double kappa1_in, double kappa2_in):
-      eps(epsilon),
-      b1(b1_in), b2(b2_in), c1(c1_in), c2(c2_in),
-      kappa1(kappa1_in), kappa2(kappa2_in), psi1(0), psi2(0)
+    ~CpmlElectric()
     {
+      for(MapType::const_iterator iter = param.begin(); 
+	  iter != param.end(); iter++) {
+	delete static_cast<CpmlElectricParam<T> *>(iter->second);
+      }
+      param.clear();
     }
-
-    double get_epsilon() const
+    
+    PwMaterial<T> *
+    attach(const int* const idx, int idx_size, 
+	   const PwMaterialParam * const parameter)
     {
-      return eps;
-    }
+      std::array<int, 3> index;
+      std::copy(idx, idx + idx_size, index.begin());
 
-    void set_epsilon(double epsilon)
-    {
-      eps = epsilon;
+      MapType::const_iterator iter = param.find(index);
+      if (iter != param.end()) {
+	std::cerr << "Overwriting the existing index." << std::endl;
+	delete static_cast<CpmlElectricParam<T> *>(iter->second);
+	param.erase(iter);
+      }
+
+      const CpmlElectricParam<T> * const CpmlElectricParameter_ptr
+	= static_cast<const CpmlElectricParam<T> * const>(parameter);
+      CpmlElectricParam<T> *param_ptr;
+      param_ptr = new CpmlElectricParam<T>();
+      param_ptr->eps_inf = CpmlElectricParameter_ptr->eps_inf;
+      param_ptr->b1 = CpmlElectricParameter_ptr->b1;
+      param_ptr->b2 = CpmlElectricParameter_ptr->b2;
+      param_ptr->c1 = CpmlElectricParameter_ptr->c1;
+      param_ptr->c2 = CpmlElectricParameter_ptr->c2;
+      param_ptr->kappa1 = CpmlElectricParameter_ptr->kappa1;
+      param_ptr->kappa2 = CpmlElectricParameter_ptr->kappa2;
+      param_ptr->psi1 = static_cast<T>(0);
+      param_ptr->psi2 = static_cast<T>(0);
+
+      param.insert(std::make_pair(index, param_ptr));
+
+      return this;
     }
 
   protected:
-    double eps;
-    double b1, b2;
-    double c1, c2;
-    double kappa1, kappa2;
-    T psi1, psi2;
+    using PwMaterial<T>::param;
   };
 
   template <typename T> class CpmlEx: public CpmlElectric<T>
   {
   public:
-    CpmlEx(double epsilon, double by,
-	   double bz, double cy, double cz, double kappay, double kappaz):
-      CpmlElectric<T>(epsilon, by, bz, cy, cz, kappay, kappaz)
+    void 
+    update(T * const ex, int ex_x_size, int ex_y_size, int ex_z_size,
+	   const T * const hz, int hz_x_size, int hz_y_size, int hz_z_size,
+	   const T * const hy, int hy_x_size, int hy_y_size, int hy_z_size,
+	   double dy, double dz, double dt, double n,
+	   const int* const idx, int idx_size,
+	   PwMaterialParam * const parameter)
     {
-    }
+      int i = idx[0], j = idx[1], k = idx[2];
 
-    T update(T * const ex, int ex_x_size, int ex_y_size, int ex_z_size,
-		const T * const hz, int hz_x_size, int hz_y_size, int hz_z_size,
-		const T * const hy, int hy_x_size, int hy_y_size, int hy_z_size,
-		double dy, double dz, double dt, double n, int i, int j, int k)
-    {
-      psi1 = b1 * psi1 + c1 * (hz(i+1,j+1,k) - hz(i+1,j,k)) / dy;
-      psi2 = b2 * psi2 + c2 * (hy(i+1,j,k+1) - hy(i+1,j,k)) / dz;
+      CpmlElectricParam<T> *ptr;
+      ptr = static_cast<CpmlElectricParam<T> *>(parameter);
+      double eps_inf = ptr->eps_inf;
+      double by = ptr->b1;
+      double bz = ptr->b2;
+      double cy = ptr->c1;
+      double cz = ptr->c2;
+      double kappay = ptr->kappa1;
+      double kappaz = ptr->kappa2;
+      T& psi1 = ptr->psi1;
+      T& psi2 = ptr->psi2;
 
-      ex(i,j,k) += dt / eps * ((hz(i+1,j+1,k) - hz(i+1,j,k)) / dy / kappa1 -
-			       (hy(i+1,j,k+1) - hy(i+1,j,k)) / dz / kappa2 
-			       + psi1 - psi2);
-
-      return ex(i,j,k);
+      psi1 = by * psi1 + cy * (hz(i+1,j+1,k) - hz(i+1,j,k)) / dy;
+      psi2 = bz * psi2 + cz * (hy(i+1,j,k+1) - hy(i+1,j,k)) / dz;
+      
+      ex(i,j,k) += dt / eps_inf * ((hz(i+1,j+1,k) - hz(i+1,j,k)) / dy / kappay -
+			       (hy(i+1,j,k+1) - hy(i+1,j,k)) / dz / kappaz +
+			       psi1 - psi2);
     }
 
   protected:
-    using CpmlElectric<T>::eps;
-    using CpmlElectric<T>::b1;
-    using CpmlElectric<T>::b2;
-    using CpmlElectric<T>::c1;
-    using CpmlElectric<T>::c2;
-    using CpmlElectric<T>::kappa1;
-    using CpmlElectric<T>::kappa2;
-    using CpmlElectric<T>::psi1;
-    using CpmlElectric<T>::psi2;
+    using CpmlElectric<T>::param;
   };
 
   template <typename T> class CpmlEy: public CpmlElectric<T>
   {
   public:
-    CpmlEy(double epsilon, double bz,
-	   double bx, double cz, double cx, double kappaz, double kappax):
-      CpmlElectric<T>(epsilon, bz, bx, cz, cx, kappaz, kappax)
+    void 
+    update(T * const ey, int ey_x_size, int ey_y_size, int ey_z_size,
+	   const T * const hx, int hx_x_size, int hx_y_size, int hx_z_size,
+	   const T * const hz, int hz_x_size, int hz_y_size, int hz_z_size,
+	   double dz, double dx, double dt, double n,
+	   const int* const idx, int idx_size, 
+	   PwMaterialParam * const parameter)
     {
-    }
+      int i = idx[0], j = idx[1], k = idx[2];
 
-    T update(T * const ey, int ey_x_size, int ey_y_size, int ey_z_size,
-		const T * const hx, int hx_x_size, int hx_y_size, int hx_z_size,
-		const T * const hz, int hz_x_size, int hz_y_size, int hz_z_size,
-		double dz, double dx, double dt, double n, int i, int j, int k)
-    {
-      psi1 = b1 * psi1 + c1 * (hx(i,j+1,k+1) - hx(i,j+1,k)) / dz;
-      psi2 = b2 * psi2 + c2 * (hz(i+1,j+1,k) - hz(i,j+1,k)) / dx;
+      CpmlElectricParam<T> *ptr;
+      ptr = static_cast<CpmlElectricParam<T> *>(parameter);
+      double eps_inf = ptr->eps_inf;
+      double bz = ptr->b1;
+      double bx = ptr->b2;
+      double cz = ptr->c1;
+      double cx = ptr->c2;
+      double kappaz = ptr->kappa1;
+      double kappax = ptr->kappa2;
+      T& psi1 = ptr->psi1;
+      T& psi2 = ptr->psi2;
 
-      ey(i,j,k) += dt / eps * ((hx(i,j+1,k+1) - hx(i,j+1,k)) / dz / kappa1 - 
-			       (hz(i+1,j+1,k) - hz(i,j+1,k)) / dx / kappa2 
-			       + psi1 - psi2);
-
-      return ey(i,j,k);
+      psi1 = bz * psi1 + cz * (hx(i,j+1,k+1) - hx(i,j+1,k)) / dz;
+      psi2 = bx * psi2 + cx * (hz(i+1,j+1,k) - hz(i,j+1,k)) / dx;
+      
+      ey(i,j,k) += dt / eps_inf * ((hx(i,j+1,k+1) - hx(i,j+1,k)) / dz / kappaz -
+			       (hz(i+1,j+1,k) - hz(i,j+1,k)) / dx / kappax +
+			       psi1 - psi2);
     }
 
   protected:
-    using CpmlElectric<T>::eps;
-    using CpmlElectric<T>::b1;
-    using CpmlElectric<T>::b2;
-    using CpmlElectric<T>::c1;
-    using CpmlElectric<T>::c2;
-    using CpmlElectric<T>::kappa1;
-    using CpmlElectric<T>::kappa2;
-    using CpmlElectric<T>::psi1;
-    using CpmlElectric<T>::psi2;
+    using CpmlElectric<T>::param;
   };
 
   template <typename T> class CpmlEz: public CpmlElectric<T>
   {
   public:
-    CpmlEz(double epsilon, double bx,
-	   double by, double cx, double cy, double kappax, double kappay):
-      CpmlElectric<T>(epsilon, bx, by, cx, cy, kappax, kappay)
+    void 
+    update(T * const ez, int ez_x_size, int ez_y_size, int ez_z_size,
+	   const T * const hy, int hy_x_size, int hy_y_size, int hy_z_size,
+	   const T * const hx, int hx_x_size, int hx_y_size, int hx_z_size,
+	   double dx, double dy, double dt, double n,
+	   const int* const idx, int idx_size, 
+	   PwMaterialParam * const parameter)
     {
-    }
+      int i = idx[0], j = idx[1], k = idx[2];
 
-    T update(T * const ez, int ez_x_size, int ez_y_size, int ez_z_size,
-		const T * const hy, int hy_x_size, int hy_y_size, int hy_z_size,
-		const T * const hx, int hx_x_size, int hx_y_size, int hx_z_size,
-		double dx, double dy, double dt, double n, int i, int j, int k)
-    {
-      psi1 = b1 * psi1 + c1 * (hy(i+1,j,k+1) - hy(i,j,k+1)) / dx;
-      psi2 = b2 * psi2 + c2 * (hx(i,j+1,k+1) - hx(i,j,k+1)) / dy;
+      CpmlElectricParam<T> *ptr;
+      ptr = static_cast<CpmlElectricParam<T> *>(parameter);
+      double eps_inf = ptr->eps_inf;
+      double bx = ptr->b1;
+      double by = ptr->b2;
+      double cx = ptr->c1;
+      double cy = ptr->c2;
+      double kappax = ptr->kappa1;
+      double kappay = ptr->kappa2;
+      T& psi1 = ptr->psi1;
+      T& psi2 = ptr->psi2;
 
-      ez(i,j,k) += dt / eps * ((hy(i+1,j,k+1) - hy(i,j,k+1)) / dx / kappa1 - 
-			       (hx(i,j+1,k+1) - hx(i,j,k+1)) / dy / kappa2 
-			       + psi1 - psi2);
-
-      return ez(i,j,k);
+      psi1 = bx * psi1 + cx * (hy(i+1,j,k+1) - hy(i,j,k+1)) / dx;
+      psi2 = by * psi2 + cy * (hx(i,j+1,k+1) - hx(i,j,k+1)) / dy;
+      
+      ez(i,j,k) += dt / eps_inf * ((hy(i+1,j,k+1) - hy(i,j,k+1)) / dx / kappax -
+			       (hx(i,j+1,k+1) - hx(i,j,k+1)) / dy / kappay +
+			       psi1 - psi2);
     }
 
   protected:
-    using CpmlElectric<T>::eps;
-    using CpmlElectric<T>::b1;
-    using CpmlElectric<T>::b2;
-    using CpmlElectric<T>::c1;
-    using CpmlElectric<T>::c2;
-    using CpmlElectric<T>::kappa1;
-    using CpmlElectric<T>::kappa2;
-    using CpmlElectric<T>::psi1;
-    using CpmlElectric<T>::psi2;
+    using CpmlElectric<T>::param;
   };
 
   template <typename T> class CpmlMagnetic: public MaterialMagnetic<T>
   {
   public:
-    CpmlMagnetic(double mu, double b1_in,
-		 double b2_in, double c1_in, double c2_in, double kappa1_in,
-		 double kappa2_in):
-      mu(mu),
-      b1(b1_in), b2(b2_in), c1(c1_in), c2(c2_in),
-      kappa1(kappa1_in), kappa2(kappa2_in), psi1(0), psi2(0)
+    ~CpmlMagnetic()
     {
+      for(MapType::const_iterator iter = param.begin(); 
+	  iter != param.end(); iter++) {
+	delete static_cast<CpmlMagneticParam<T> *>(iter->second);
+      }
+      param.clear();
     }
-
-    double get_mu() const
+    
+    PwMaterial<T> *
+    attach(const int* const idx, int idx_size, 
+	   const PwMaterialParam * const parameter)
     {
-      return mu;
-    }
+      std::array<int, 3> index;
+      std::copy(idx, idx + idx_size, index.begin());
 
-    void set_mu(double mu)
-    {
-      this->mu = mu;
+      MapType::const_iterator iter = param.find(index);
+      if (iter != param.end()) {
+	std::cerr << "Overwriting the existing index." << std::endl;
+	delete static_cast<CpmlMagneticParam<T> *>(iter->second);
+	param.erase(iter);
+      }
+
+      const CpmlMagneticParam<T> * const CpmlMagneticParameter_ptr
+	= static_cast<const CpmlMagneticParam<T> * const>(parameter);
+      CpmlMagneticParam<T> * param_ptr;
+      param_ptr = new CpmlMagneticParam<T>();
+      param_ptr->mu_inf = CpmlMagneticParameter_ptr->mu_inf;
+      param_ptr->b1 = CpmlMagneticParameter_ptr->b1;
+      param_ptr->b2 = CpmlMagneticParameter_ptr->b2;
+      param_ptr->c1 = CpmlMagneticParameter_ptr->c1;
+      param_ptr->c2 = CpmlMagneticParameter_ptr->c2;
+      param_ptr->kappa1 = CpmlMagneticParameter_ptr->kappa1;
+      param_ptr->kappa2 = CpmlMagneticParameter_ptr->kappa2;
+      param_ptr->psi1 = static_cast<T>(0);
+      param_ptr->psi2 = static_cast<T>(0);
+
+      param.insert(std::make_pair(index, param_ptr));
+
+      return this;
     }
 
   protected:
-    double mu;
-    double b1, b2;
-    double c1, c2;
-    double kappa1, kappa2;
-    T psi1, psi2;
+    using PwMaterial<T>::param;
   };
 
   template <typename T> class CpmlHx: public CpmlMagnetic<T>
   {
   public:
-    CpmlHx(double mu, double by, double bz,
-	   double cy, double cz, double kappay, double kappaz):
-      CpmlMagnetic<T>(mu, by, bz, cy, cz, kappay, kappaz)
+    void 
+    update(T * const hx, int hx_x_size, int hx_y_size, int hx_z_size,
+	   const T * const ez, int ez_x_size, int ez_y_size, int ez_z_size,
+	   const T * const ey, int ey_x_size, int ey_y_size, int ey_z_size,
+	   double dy, double dz, double dt, double n,
+	   const int* const idx, int idx_size, 
+	   PwMaterialParam * const parameter)
     {
-    }
+      int i = idx[0], j = idx[1], k = idx[2];
 
-    T update(T * const hx, int hx_x_size, int hx_y_size, int hx_z_size,
-		const T * const ez, int ez_x_size, int ez_y_size, int ez_z_size,
-		const T * const ey, int ey_x_size, int ey_y_size, int ey_z_size,
-		double dy, double dz, double dt, double n, int i, int j, int k)
-    {
-      psi1 = b1 * psi1 + c1 * (ez(i,j,k-1) - ez(i,j-1,k-1)) / dy;
-      psi2 = b2 * psi2 + c2 * (ey(i,j-1,k) - ey(i,j-1,k-1)) / dz;
+      CpmlMagneticParam<T> *ptr;
+      ptr = static_cast<CpmlMagneticParam<T> *>(parameter);
+      double mu_inf = ptr->mu_inf;
+      double by = ptr->b1;
+      double bz = ptr->b2;
+      double cy = ptr->c1;
+      double cz = ptr->c2;
+      double kappay = ptr->kappa1;
+      double kappaz = ptr->kappa2;
+      T& psi1 = ptr->psi1;
+      T& psi2 = ptr->psi2;
+      
+      psi1 = by * psi1 + cy * (ez(i,j,k-1) - ez(i,j-1,k-1)) / dy;
+      psi2 = bz * psi2 + cz * (ey(i,j-1,k) - ey(i,j-1,k-1)) / dz;
 
-      hx(i,j,k) -= dt / mu
-	* ((ez(i,j,k-1) - ez(i,j-1,k-1)) / dy / kappa1 
-	   - (ey(i,j-1,k) - ey(i,j-1,k-1)) / dz / kappa2 + psi1 - psi2);
-
-      return hx(i,j,k);
+      hx(i,j,k) -= dt / mu_inf * ((ez(i,j,k-1) - ez(i,j-1,k-1)) / dy / kappay -
+			      (ey(i,j-1,k) - ey(i,j-1,k-1)) / dz / kappaz +
+			      psi1 - psi2);
     }
 
   protected:
-    using CpmlMagnetic<T>::mu;
-    using CpmlMagnetic<T>::b1;
-    using CpmlMagnetic<T>::b2;
-    using CpmlMagnetic<T>::c1;
-    using CpmlMagnetic<T>::c2;
-    using CpmlMagnetic<T>::kappa1;
-    using CpmlMagnetic<T>::kappa2;
-    using CpmlMagnetic<T>::psi1;
-    using CpmlMagnetic<T>::psi2;
+    using CpmlMagnetic<T>::param;
   };
 
   template <typename T> class CpmlHy: public CpmlMagnetic<T>
   {
   public:
-    CpmlHy(double mu, double bz, double bx,
-	   double cz, double cx, double kappaz, double kappax):
-      CpmlMagnetic<T>(mu, bz, bx, cz, cx, kappaz, kappax)
+    void 
+    update(T * const hy, int hy_x_size, int hy_y_size, int hy_z_size,
+	   const T * const ex, int ex_x_size, int ex_y_size, int ex_z_size,
+	   const T * const ez, int ez_x_size, int ez_y_size, int ez_z_size,
+	   double dz, double dx, double dt, double n,
+	   const int* const idx, int idx_size, 
+	   PwMaterialParam * const parameter)
     {
-    }
+      int i = idx[0], j = idx[1], k = idx[2];
 
-    T update(T * const hy, int hy_x_size, int hy_y_size, int hy_z_size,
-		const T * const ex, int ex_x_size, int ex_y_size, int ex_z_size,
-		const T * const ez, int ez_x_size, int ez_y_size, int ez_z_size,
-		double dz, double dx, double dt, double n, int i, int j, int k)
-    {
-      psi1 = b1 * psi1 + c1 * (ex(i-1,j,k) - ex(i-1,j,k-1)) / dz;
-      psi2 = b2 * psi2 + c2 * (ez(i,j,k-1) - ez(i-1,j,k-1)) / dx;
+      CpmlMagneticParam<T> *ptr;
+      ptr = static_cast<CpmlMagneticParam<T> *>(parameter);
+      double mu_inf = ptr->mu_inf;
+      double bz = ptr->b1;
+      double bx = ptr->b2;
+      double cz = ptr->c1;
+      double cx = ptr->c2;
+      double kappaz = ptr->kappa1;
+      double kappax = ptr->kappa2;
+      T& psi1 = ptr->psi1;
+      T& psi2 = ptr->psi2;
 
-      hy(i,j,k) -= dt / mu
-	* ((ex(i-1,j,k) - ex(i-1,j,k-1)) / dz / kappa1 
-	   - (ez(i,j,k-1) - ez(i-1,j,k-1)) / dx / kappa2 + psi1 - psi2);
+      psi1 = bz * psi1 + cz * (ex(i-1,j,k) - ex(i-1,j,k-1)) / dz;
+      psi2 = bx * psi2 + cx * (ez(i,j,k-1) - ez(i-1,j,k-1)) / dx;
 
-      return hy(i,j,k);
+      hy(i,j,k) -= dt / mu_inf * ((ex(i-1,j,k) - ex(i-1,j,k-1)) / dz / kappaz -
+			      (ez(i,j,k-1) - ez(i-1,j,k-1)) / dx / kappax +
+			      psi1 - psi2);
     }
 
   protected:
-    using CpmlMagnetic<T>::mu;
-    using CpmlMagnetic<T>::b1;
-    using CpmlMagnetic<T>::b2;
-    using CpmlMagnetic<T>::c1;
-    using CpmlMagnetic<T>::c2;
-    using CpmlMagnetic<T>::kappa1;
-    using CpmlMagnetic<T>::kappa2;
-    using CpmlMagnetic<T>::psi1;
-    using CpmlMagnetic<T>::psi2;
+    using CpmlMagnetic<T>::param;
   };
 
   template <typename T> class CpmlHz: public CpmlMagnetic<T>
   {
   public:
-    CpmlHz(double mu, double bx, double by,
-	   double cx, double cy, double kappax, double kappay):
-      CpmlMagnetic<T>(mu, bx, by, cx, cy, kappax, kappay)
+    void 
+    update(T * const hz, int hz_x_size, int hz_y_size, int hz_z_size,
+	   const T * const ey, int ey_x_size, int ey_y_size, int ey_z_size,
+	   const T * const ex, int ex_x_size, int ex_y_size, int ex_z_size,
+	   double dx, double dy, double dt, double n,
+	   const int* const idx, int idx_size, 
+	   PwMaterialParam * const parameter)
     {
-    }
+      int i = idx[0], j = idx[1], k = idx[2];
 
-    T update(T * const hz, int hz_x_size, int hz_y_size, int hz_z_size,
-		const T * const ey, int ey_x_size, int ey_y_size, int ey_z_size,
-		const T * const ex, int ex_x_size, int ex_y_size, int ex_z_size,
-		double dx, double dy, double dt, double n, int i, int j, int k)
-    {
-      psi1 = b1 * psi1 + c1 * (ey(i,j-1,k) - ey(i-1,j-1,k)) / dx;
-      psi2 = b2 * psi2 + c2 * (ex(i-1,j,k) - ex(i-1,j-1,k)) / dy;
+      CpmlMagneticParam<T> *ptr;
+      ptr = static_cast<CpmlMagneticParam<T> *>(parameter);
+      double mu_inf = ptr->mu_inf;
+      double bx = ptr->b1;
+      double by = ptr->b2;
+      double cx = ptr->c1;
+      double cy = ptr->c2;
+      double kappax = ptr->kappa1;
+      double kappay = ptr->kappa2;
+      T& psi1 = ptr->psi1;
+      T& psi2 = ptr->psi2;
 
-      hz(i,j,k) -= dt / mu
-	* ((ey(i,j-1,k) - ey(i-1,j-1,k)) / dx / kappa1 
-	   - (ex(i-1,j,k) - ex(i-1,j-1,k)) / dy / kappa2 + psi1 - psi2);
-
-      return hz(i,j,k);
+      psi1 = bx * psi1 + cx * (ey(i,j-1,k) - ey(i-1,j-1,k)) / dx;
+      psi2 = by * psi2 + cy * (ex(i-1,j,k) - ex(i-1,j-1,k)) / dy;
+      
+      hz(i,j,k) -= dt / mu_inf * ((ey(i,j-1,k) - ey(i-1,j-1,k)) / dx / kappax -
+			      (ex(i-1,j,k) - ex(i-1,j-1,k)) / dy / kappay +
+			      psi1 - psi2);
     }
 
   protected:
-    using CpmlMagnetic<T>::mu;
-    using CpmlMagnetic<T>::b1;
-    using CpmlMagnetic<T>::b2;
-    using CpmlMagnetic<T>::c1;
-    using CpmlMagnetic<T>::c2;
-    using CpmlMagnetic<T>::kappa1;
-    using CpmlMagnetic<T>::kappa2;
-    using CpmlMagnetic<T>::psi1;
-    using CpmlMagnetic<T>::psi2;
+    using CpmlMagnetic<T>::param;
   };
 }
 
