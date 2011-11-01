@@ -8,7 +8,7 @@ try:
     psyco.profile()
     from psyco.classes import *
 except ImportError:
-    stderr.write('No module named psyco. Execution speed might be slow.\n')
+    pass
 
 try:
     from threading import Thread
@@ -34,8 +34,7 @@ class ShowLine(Thread):
     """Animated 1-D on-time display. 
     
     """
-    def __init__(self, fdtd, component, start, end, vrange, 
-                 interval, title, fig_id):
+    def __init__(self, fdtd, component, start, end, vrange, interval, title, fig_id):
         """Constructor.
 
         Argumetns:
@@ -185,8 +184,7 @@ class ShowPlane(Thread):
     """Animated 2-D on-time display.
     
     """
-    def __init__(self, fdtd, component, axis, cut, vrange, interval, 
-                 title, fig_id):
+    def __init__(self, fdtd, component, axis, cut, vrange, interval, title, fig_id):
         """Constructor.
 
         Arguments:
@@ -246,11 +244,11 @@ class ShowPlane(Thread):
         elif issubclass(comp, const.Magnetic):
             end_boundary_idx = [i - 1 for i in field.shape]
             if comp is const.Hx:
-                start_boundary_idx = idx2spc[comp](0, 1, 1)
+                start_boundary_idx = (0, 1, 1)
             elif comp is const.Hy:
-                start_boundary_idx = idx2spc[comp](1, 0, 1)
+                start_boundary_idx = (1, 0, 1)
             elif comp is const.Hz:
-                start_boundary_idx = idx2spc[comp](1, 1, 0)
+                start_boundary_idx = (1, 1, 0)
  	else:
             msg = "component should be of class constant.Component."
             raise ValueError(msg)

@@ -8,7 +8,7 @@ try:
     psyco.profile()
     from psyco.classes import *
 except ImportError:
-    stderr.write('No module named psyco. Execution speed might be slow.\n')
+    pass
 
 from copy import deepcopy
 from math import sqrt
@@ -1184,7 +1184,7 @@ class FDTD(object):
         showcase.start()
         return showcase
         
-    def show_hx(self, axis, cut, vrange=(-1, 1), msecs=2500):
+    def show_hx(self, axis, cut, vrange=(-1, 1), interval=2500):
         """Show the real value of the hx on the plone.
 
         axis: Specify the normal axis to the show plane.
@@ -1201,7 +1201,7 @@ class FDTD(object):
         showcase.start()
         return showcase
         
-    def show_hy(self, axis, cut, vrange=(-1, 1), msecs=2500):
+    def show_hy(self, axis, cut, vrange=(-1, 1), interval=2500):
         """Show the real value of the hy on the plone.
 
         axis: Specify the normal axis to the show plane.
@@ -1218,7 +1218,7 @@ class FDTD(object):
         showcase.start()
         return showcase
         
-    def show_hz(self, axis, cut, vrange=(-1, 1), msecs=2500):
+    def show_hz(self, axis, cut, vrange=(-1, 1), interval=2500):
         """Show the real value of the hz on the plone.
 
         axis: Specify the normal axis to the show plane.

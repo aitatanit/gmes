@@ -10,12 +10,12 @@ try:
     psyco.profile()
     from psyco.classes import *
 except ImportError:
-    stderr.write('No module named psyco. Execution speed might be slow.\n')
+    pass
 
 try:
     from mpi4py import MPI
 except ImportError:
-    stderr.write('No module named mpi4py. MPI support will not be available.\n')
+    pass
 
 from copy import deepcopy
 
@@ -25,7 +25,7 @@ from scipy.linalg import norm
 
 # GMES modules
 import constant as const
-from material import Compound, Pml
+from material import Compound, PML
 
 
 class AuxiCartComm(object):
@@ -125,17 +125,16 @@ class Cartesian(object):
         the electromagnetic field of this node except the communication buffers
             
     """
-    def __init__(self, size, resolution=15, parallel=False):
+    def __init__(self, size, resolution=15, parallel=True):
         """Constructor
 
         Keyword arguments:
         size -- a length three sequence consists of non-negative numbers
         resolution -- number of sections of one unit. scalar or 3-tuple
             (default 15)
-        parallel -- whether space be divided into segments (default False)
-            
+        parallel -- whether space be divided into segments (default True)    
+
         """
-        
         try:
             if len(resolution) == 3:
                 self.res = array(resolution, float)
@@ -157,15 +156,17 @@ class Cartesian(object):
         self.whole_field_size = \
             array((2 * self.half_size * self.res).round(), int)
         
-        if parallel:
-            self.my_id = MPI.COMM_WORLD.rank
-            self.numprocs = MPI.COMM_WORLD.size
-            self.cart_comm = \
-            MPI.COMM_WORLD.Create_cart(self.find_best_deploy(), (1, 1, 1))
-        else:
+        try:
+            from mpi4py import MPI
+            if parallel:
+                self.my_id = MPI.COMM_WORLD.rank
+                self.numprocs = MPI.COMM_WORLD.size
+                self.cart_comm = MPI.COMM_WORLD.Create_cart(self.find_best_deploy(), (1, 1, 1))
+        except ImportError:
             self.my_id = 0
             self.numprocs = 1
             self.cart_comm = AuxiCartComm()
+
         self.my_cart_idx = self.cart_comm.topo[2]
         
         # Usually the my_field_size is general_field_size,
@@ -1496,7 +1497,7 @@ class Boundary(GeometricObject):
         self.minus_z, self.plus_z = minus_z, plus_z
 
         # do someting for the PML derived class?
-        if isinstance(material, Pml):
+        if isinstance(material, PML):
             pass
         
         GeometricObject.__init__(self, material)

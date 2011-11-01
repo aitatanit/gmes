@@ -8,7 +8,7 @@ try:
     psyco.profile()
     from psyco.classes import *
 except ImportError:
-    stderr.write('No module named psyco. Execution speed might be slow.\n')
+    pass
 
 from math import cos, sin, pi, floor
 

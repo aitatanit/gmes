@@ -167,28 +167,28 @@ import_array();
 %template(DielectricHz ## postfix) gmes::DielectricHz<T >;
 
 // UPML
-%template(UpmlElectricParam ## postfix) gmes::UpmlElectricParam<T >;
-%template(UpmlMagneticParam ## postfix) gmes::UpmlMagneticParam<T >;
-%template(UpmlElectric ## postfix) gmes::UpmlElectric<T >;
-%template(UpmlMagnetic ## postfix) gmes::UpmlMagnetic<T >;
-%template(UpmlEx ## postfix) gmes::UpmlEx<T >;
-%template(UpmlEy ## postfix) gmes::UpmlEy<T >;
-%template(UpmlEz ## postfix) gmes::UpmlEz<T >;
-%template(UpmlHx ## postfix) gmes::UpmlHx<T >;
-%template(UpmlHy ## postfix) gmes::UpmlHy<T >;
-%template(UpmlHz ## postfix) gmes::UpmlHz<T >;
+%template(UPMLElectricParam ## postfix) gmes::UPMLElectricParam<T >;
+%template(UPMLMagneticParam ## postfix) gmes::UPMLMagneticParam<T >;
+%template(UPMLElectric ## postfix) gmes::UPMLElectric<T >;
+%template(UPMLMagnetic ## postfix) gmes::UPMLMagnetic<T >;
+%template(UPMLEx ## postfix) gmes::UPMLEx<T >;
+%template(UPMLEy ## postfix) gmes::UPMLEy<T >;
+%template(UPMLEz ## postfix) gmes::UPMLEz<T >;
+%template(UPMLHx ## postfix) gmes::UPMLHx<T >;
+%template(UPMLHy ## postfix) gmes::UPMLHy<T >;
+%template(UPMLHz ## postfix) gmes::UPMLHz<T >;
 
 // CPML
-%template(CpmlElectricParam ## postfix) gmes::CpmlElectricParam<T >;
-%template(CpmlMagneticParam ## postfix) gmes::CpmlMagneticParam<T >;
-%template(CpmlElectric ## postfix) gmes::CpmlElectric<T >;
-%template(CpmlMagnetic ## postfix) gmes::CpmlMagnetic<T >;
-%template(CpmlEx ## postfix) gmes::CpmlEx<T >;
-%template(CpmlEy ## postfix) gmes::CpmlEy<T >;
-%template(CpmlEz ## postfix) gmes::CpmlEz<T >;
-%template(CpmlHx ## postfix) gmes::CpmlHx<T >;
-%template(CpmlHy ## postfix) gmes::CpmlHy<T >;
-%template(CpmlHz ## postfix) gmes::CpmlHz<T >;
+%template(CPMLElectricParam ## postfix) gmes::CPMLElectricParam<T >;
+%template(CPMLMagneticParam ## postfix) gmes::CPMLMagneticParam<T >;
+%template(CPMLElectric ## postfix) gmes::CPMLElectric<T >;
+%template(CPMLMagnetic ## postfix) gmes::CPMLMagnetic<T >;
+%template(CPMLEx ## postfix) gmes::CPMLEx<T >;
+%template(CPMLEy ## postfix) gmes::CPMLEy<T >;
+%template(CPMLEz ## postfix) gmes::CPMLEz<T >;
+%template(CPMLHx ## postfix) gmes::CPMLHx<T >;
+%template(CPMLHy ## postfix) gmes::CPMLHy<T >;
+%template(CPMLHz ## postfix) gmes::CPMLHz<T >;
 
 // Drude model
 %template(DrudeElectricParam ## postfix) gmes::DrudeElectricParam<T >;

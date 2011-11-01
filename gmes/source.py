@@ -8,7 +8,7 @@ try:
     psyco.profile()
     from psyco.classes import *
 except ImportError:
-    stderr.write('No module named psyco. Execution speed might be slow.\n')
+    pass
     
 from copy import deepcopy
 from math import sqrt, pi, sin, cos, exp
@@ -22,7 +22,7 @@ from scipy.optimize import bisect
 import constant as const
 from geometry import Cartesian, DefaultMedium, Boundary, in_range
 from fdtd import TEMzFDTD
-from material import Dielectric, Cpml
+from material import Dielectric, CPML
 
 # for a dipole source
 from pw_source import DipoleParam
@@ -500,7 +500,7 @@ class TotalFieldScatteredField(Src):
                               resolution=1/delta_1d,
                               parallel=False)
         aux_geom_list = (DefaultMedium(material=mat_objs),
-                         Boundary(material=Cpml(kappa_max=2.0,
+                         Boundary(material=CPML(kappa_max=2.0,
                                                 sigma_max_ratio=2.0),
                                   thickness=pml_thickness,
                                   size=aux_size,
