@@ -50,11 +50,11 @@ namespace gmes
       std::array<int, 3> index;
       std::copy(idx, idx + idx_size, index.begin());
 
-      MapType::const_iterator iter = param.find(index);
+      MapType::iterator iter = param.find(index);
       if (iter != param.end()) {
-	std::cerr << "Overwriting the existing index." << std::endl;
-	delete static_cast<DrudeElectricParam<T> *>(iter->second);
-	param.erase(iter);
+      	std::cerr << "Overwriting the existing index." << std::endl;
+      	delete static_cast<DrudeElectricParam<T> *>(iter->second);
+      	param.erase(iter);
       }
       
       const DrudeElectricParam<T> * const DrudeElectricParameter_ptr

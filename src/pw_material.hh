@@ -3,39 +3,39 @@
 
 #include <array>
 #include <numeric>
-#include <unordered_map>
-
-namespace std
-{
-  template <>
-  struct hash<array<int, 3> >: public unary_function<array<int, 3>, size_t>
-  {
-    size_t operator()(const array<int, 3>& idx) const
-    {
-      return accumulate(idx.begin(), idx.end(), 0);
-    }
-  };
-}
+#include <map>
 
 namespace gmes 
 {
+  struct ltidx
+  {
+    bool 
+    operator()(const std::array<int, 3>& l, const std::array<int, 3>& r) const
+    {
+      return (l[0] < r[0]) || (l[0] == r[0] && l[1] < r[1]) || (l[0] == r[0] && l[1] == r[1] && l[2] < r[2]);
+    }
+  };
+  
   struct PwMaterialParam
   {
   };
   
-  template <typename T> struct ElectricParam: public PwMaterialParam
+  template <typename T> 
+  struct ElectricParam: public PwMaterialParam
   {
     double eps_inf;
   };
   
-  template <typename T> struct MagneticParam: public PwMaterialParam
+  template <typename T> 
+  struct MagneticParam: public PwMaterialParam
   {
     double mu_inf;
   };
 
-  typedef std::unordered_map<std::array<int, 3>, PwMaterialParam*> MapType;
+  typedef std::map<std::array<int, 3>, PwMaterialParam*, ltidx> MapType;
 
-  template<class T> class PwMaterial 
+  template<class T> 
+  class PwMaterial 
   {
   public:
     virtual
@@ -102,7 +102,7 @@ namespace gmes
       return param.end();
     }
 
-    typedef typename MapType::const_iterator const_iterator;
+    // typedef typename MapType::const_iterator const_iterator;
 
   protected:
     virtual void

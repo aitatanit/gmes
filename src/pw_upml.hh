@@ -52,11 +52,11 @@ namespace gmes
       std::array<int, 3> index;
       std::copy(idx, idx + idx_size, index.begin());
       
-      MapType::const_iterator iter = param.find(index);
+      MapType::iterator iter = param.find(index);
       if (iter != param.end()) {
-	std::cerr << "Overwriting the existing index." << std::endl;
-	delete static_cast<UPMLElectricParam<T> *>(iter->second);
-	param.erase(iter);
+      	std::cerr << "Overwriting the existing index." << std::endl;
+      	delete static_cast<UPMLElectricParam<T> *>(iter->second);
+      	param.erase(iter);
       }
 
       const UPMLElectricParam<T>* UPMLElectricParameter_ptr
@@ -204,11 +204,11 @@ namespace gmes
       std::array<int, 3> index;
       std::copy(idx, idx + idx_size, index.begin());
       
-      MapType::const_iterator iter = param.find(index);
+      MapType::iterator iter = param.find(index);
       if (iter != param.end()) {
-	std::cerr << "Overwriting the existing index." << std::endl;
-	delete static_cast<UPMLMagneticParam<T> *>(iter->second);
-	param.erase(iter);
+      	std::cerr << "Overwriting the existing index." << std::endl;
+      	delete static_cast<UPMLMagneticParam<T> *>(iter->second);
+      	param.erase(iter);
       }
       
       const UPMLMagneticParam<T>* UPMLMagneticParameter_ptr 

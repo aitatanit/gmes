@@ -139,32 +139,32 @@ class FDTD(object):
 
         self.time_step = TimeStep(time_step_size)
         
-        if verbose:
+        if self.verbose:
             self.space.display_info()
 
-        if verbose:
+        if self.verbose:
             print 'dt:', time_step_size
             print 'courant ratio:', self.courant_ratio
             
-        if verbose:
+        if self.verbose:
             print 'Initializing the geometry list...',
             
         self.geom_list = deepcopy(geom_list)
         for geom_obj in self.geom_list:
             geom_obj.init(self.space)
             
-        if verbose:
+        if self.verbose:
             print 'done.'
             
-        if verbose:
+        if self.verbose:
             print 'Generating geometric binary search tree...',
             
         self.geom_tree = GeomBoxTree(self.geom_list)
 
-        if verbose:
+        if self.verbose:
             print 'done.'
             
-        if verbose:
+        if self.verbose:
             print 'The geometric tree follows...'
             self.geom_tree.display_info()
                 
@@ -190,47 +190,55 @@ class FDTD(object):
             self.bloch = 2 * ref_n / ds \
                 * np.arcsin(np.sin(self.bloch * S * ds / 2) / S)
             
-        if verbose:
+        if self.verbose:
             print 'Bloch wave vector is', self.bloch
             
-        if verbose:
+        if self.verbose:
             print 'Initializing source...',
             
         self.src_list = deepcopy(src_list)
         for so in self.src_list:
             so.init(self.geom_tree, self.space, self.cmplx)
             
-        if verbose:
+        if self.verbose:
             print 'done.'
             
-        if verbose:
+        if self.verbose:
             print 'The source list information follows...'
             for so in self.src_list:
                 so.display_info()
-                
-        if verbose:
+
+    def init(self):
+        """Initialize sources.
+        """
+
+        if self.verbose:
             print 'Allocating memory for the electromagnetic fields...',
             
         # storage for the electromagnetic field 
-        self.ex = space.get_ex_storage(self.e_field_compnt, self.cmplx)
-        self.ey = space.get_ey_storage(self.e_field_compnt, self.cmplx)
-        self.ez = space.get_ez_storage(self.e_field_compnt, self.cmplx)
-        self.hx = space.get_hx_storage(self.h_field_compnt, self.cmplx)
-        self.hy = space.get_hy_storage(self.h_field_compnt, self.cmplx)
-        self.hz = space.get_hz_storage(self.h_field_compnt, self.cmplx)
+        self.ex = self.space.get_ex_storage(self.e_field_compnt, self.cmplx)
+        self.ey = self.space.get_ey_storage(self.e_field_compnt, self.cmplx)
+        self.ez = self.space.get_ez_storage(self.e_field_compnt, self.cmplx)
+        self.hx = self.space.get_hx_storage(self.h_field_compnt, self.cmplx)
+        self.hy = self.space.get_hy_storage(self.h_field_compnt, self.cmplx)
+        self.hz = self.space.get_hz_storage(self.h_field_compnt, self.cmplx)
         
-        if verbose:
+        if self.verbose:
             print 'done.'
             
-        if verbose:
+        if self.verbose:
             print 'ex field:', self.ex.dtype, self.ex.shape 
             print 'ey field:', self.ey.dtype, self.ey.shape 
             print 'ez field:', self.ez.dtype, self.ez.shape
             print 'hx field:', self.hx.dtype, self.hx.shape
             print 'hy field:', self.hy.dtype, self.hy.shape
             print 'hz field:', self.hz.dtype, self.hz.shape
-        
-        if verbose:
+
+    # def init(self):
+    #     """Initialize sources.
+    #     """
+
+        if self.verbose:
             print 'Mapping the piecewise material.',
             print 'This will take some times...'
 
@@ -243,11 +251,11 @@ class FDTD(object):
 
         self.init_material()
         
-        if verbose:
+        if self.verbose:
             print 'done.'
 
         # pw_material information for electromagnetic fields
-        if verbose:
+        if self.verbose:
             print 'ex material:',
             self._print_pw_obj(self.material_ex)
 
@@ -266,7 +274,11 @@ class FDTD(object):
             print 'hz material:',
             self._print_pw_obj(self.material_hz)
 
-        if verbose:
+    # def init(self):
+    #     """Initialize sources.
+    #     """
+        
+        if self.verbose:
             print 'Mapping the pointwise source...',
             
         self.source_ex = {}
@@ -278,11 +290,11 @@ class FDTD(object):
 
         self.init_source()
 
-        if verbose:
+        if self.verbose:
             print 'done.'
     
         # pw_source information for electromagnetic fields
-        if verbose:
+        if self.verbose:
             print 'ex source:',
             self._print_pw_obj(self.source_ex)
 

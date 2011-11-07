@@ -1084,8 +1084,6 @@ class GeomBoxTree(object):
 #                                                                  #
 ####################################################################
 
-# TODO: Redefine the hierarchy of GeometricObject as like the one of Meep. 
-
 class GeometricObject(object):
     """Base class for geometric object types.
     
@@ -1112,11 +1110,11 @@ class GeometricObject(object):
             
         """ 
         self.material = material
-        self.box = self.geom_box()
         
     def init(self, space):
         self.material.init(space)
-        
+        self.box = self.geom_box()
+
     def geom_box(self):
         """Return a bounding box enclosing this geometric object.
         
@@ -1198,6 +1196,8 @@ class Cone(GeometricObject):
             (a "sharp" cone).
             
         """
+        GeometricObject.__init__(self, material)
+
         if radius < 0:
             msg = "radius must be non-negative."
             raise ValueError(msg)
@@ -1214,15 +1214,13 @@ class Cone(GeometricObject):
         self.axis = array(axis, float) / norm(axis)
         self.height = float(height)
         
-        GeometricObject.__init__(self, material)
-        
     def in_object(self, point):
         """
         Override GeometricObject.in_object.
         
         """
-        point = array(point, float)
-        r = point - self.center
+        p = array(point, float)
+        r = p - self.center
         proj = dot(self.axis, r)
         if np.abs(proj) <= .5 * self.height:
             if self.radius2 == self.radius == inf:
@@ -1296,8 +1294,7 @@ class Cylinder(Cone):
         Cone.__init__(self, material, radius, axis, radius, height, center)
         
     def display_info(self, indent=0):
-        """
-        Override Cone.display_info.
+        """Display information of this cylinder.
         
         """
         print " " * indent, "cylinder"
@@ -1310,13 +1307,23 @@ class Cylinder(Cone):
             self.material.display_info(indent + 5)
 
 
-class _Block(GeometricObject):
-    """Base class for Block and Ellipsoid class.
+class Block(GeometricObject):
+    """Form a parallelpiped(i.e., a brick, possibly with non-orthogonal axes.)
     
     """
-    def __init__(self, material,
-                 e1=(1, 0, 0), e2=(0, 1, 0), e3=(0, 0, 1),
-                 size=(0, 0, 0), center=(0, 0, 0)):
+    def __init__(self, material, e1=(1, 0, 0), e2=(0, 1, 0), e3=(0, 0, 1), size=(1, 1, 1), center=(0, 0, 0)):
+        """
+        Keyword arguments:
+            e1, e2, e3 -- The directions of the axes of the block; the 
+                lengths of these vectors are ignored. Must be linearly 
+                independent. They default to the three Cartesian axis.
+            size -- The lengths of the block edges along each of its 
+                three axes. Default is (1, 1, 1).
+            center -- center location. Default is (0, 0, 0).
+            
+        """
+        GeometricObject.__init__(self, material)
+
         self.center = array(center, float)
         
         self.e1 = array(e1, float) / norm(e1)
@@ -1326,23 +1333,19 @@ class _Block(GeometricObject):
         
         self.projection_matrix = array([self.e1, self.e2, self.e3])
         
-        GeometricObject.__init__(self, material)
-        
-    def in_object(self, x):
+    def in_object(self, point):
+        """Check whether the given point is in this block.
+
         """
-        Override GeometricObject.in_object.
-        
-        """
-        x = array(x, float)
-        r = x - self.center
+        p = array(point, float)
+        r = p - self.center
         proj = dot(self.projection_matrix, r)
 
         return (np.abs(proj) <= .5 * self.size).all()
         
     def geom_box(self):
-        """
-        Override GeometricObject.geom_box.
-        
+        """Return a GeomBox for this block.
+
         """
         tmpBox = GeomBox(low=self.center, high=self.center)
         # enlarge the box to be big enough to contain all 8 corners
@@ -1364,27 +1367,10 @@ class _Block(GeometricObject):
 
         return tmpBox
         
-        
-class Block(_Block):
-    """Form a parallelpiped (i.e., a brick, possibly with non-orthogonal axes).
-    
-    """
-    def __init__(self, material,
-                 e1=(1, 0, 0), e2=(0, 1, 0), e3=(0, 0, 1),
-                 size=(1, 1, 1), center=(0, 0, 0)):
-        """
-        
-        Keyword arguments:
-            size -- The lengths of the block edges along each of its 
-                three axes. Default is (1, 1, 1).
-            e1, e2, e3 -- The directions of the axes of the block; the 
-                lengths of these vectors are ignored. Must be linearly 
-                independent. They default to the three Cartesian axis.
-                
-        """
-        _Block.__init__(self, material, e1, e2, e3, size, center)
-        
     def display_info(self, indent=0):
+        """Display information of this block.
+
+        """
         print " " * indent, "block"
         print " " * indent,
         print "center", self.center,
@@ -1394,25 +1380,34 @@ class Block(_Block):
             self.material.display_info(indent + 5)
 
 
-class Ellipsoid(_Block):
+class Ellipsoid(Block):
     """Form an ellipsoid.
     
     """
     def __init__(self, material,
                  e1=(1, 0, 0), e2=(0, 1, 0), e3=(0, 0, 1),
                  size=(1, 1, 1), center=(0, 0, 0)):
-        _Block.__init__(self, material, e1, e2, e3, size, center)
+        """
+
+        """
+        Block.__init__(self, material, e1, e2, e3, size, center)
 
         self.inverse_semi_axes = 2 / array(size, float)
 
-    def in_object(self, x):
-        x = array(x, float)
-        r = x - self.center
+    def in_object(self, point):
+        """Check whether the given point is in this ellipsoid.
+
+        """
+        p = array(point, float)
+        r = p - self.center
         proj = dot(self.projection_matrix, r)
         q = proj * self.inverse_semi_axes
         return sum(q * q) <= 1
 
     def display_info(self, indent=0):
+        """Display information of this ellipsoid.
+
+        """
         print " " * indent, "ellipsoid"
         print " " * indent,
         print "center", self.center,
@@ -1422,7 +1417,7 @@ class Ellipsoid(_Block):
             self.material.display_info(indent + 5)
 
 
-class Sphere(Ellipsoid):
+class Sphere(GeometricObject):
     """Form a sphere.
     
     Attributes:
@@ -1437,17 +1432,42 @@ class Sphere(Ellipsoid):
         material -- The material that the object is made of. 
             No default.
         center -- Center point of the object. Default is (0,0,0).
+
         """
+        GeometricObject.__init__(self, material)
+
         if radius < 0:
             msg = "radius must be non-negative."
             raise ValueError(msg)
         else:
-            self.radius = radius
-            
-        Ellipsoid.__init__(self, material, (1, 0, 0), (0, 1, 0), (0, 0, 1),
-                           (2 * radius, 2 * radius, 2 * radius), center)
+            self.radius = float(radius)
+
+        self.center = array(center, float)
+
+    def geom_box(self):
+        """Return GeomBox for the sphere.
+
+        """
+        box = GeomBox(low=self.center, high=self.center)
+
+        box.low -= self.radius
+        box.high += self.radius
+
+        return box
+
+    def in_object(self, point):
+        """Check whether the given point is in the sphere.
+
+        """
+        p = array(point, float)
+        r = p - self.center
+        
+        return norm(r) <= self.radius;
 
     def display_info(self, indent=0):
+        """Display information of the sphere.
+
+        """
         print " " * indent, "sphere"
         print " " * indent,
         print "center", self.center,
@@ -1467,7 +1487,7 @@ class Boundary(GeometricObject):
         """
         
          Keyword arguments:
-             material --
+             material -- The filling material
              thickness -- The spatial thickness of the Boundary layer 
                  (which extends from the boundary towards the inside of
                  the computational cell). Default value.
@@ -1486,6 +1506,8 @@ class Boundary(GeometricObject):
                  direction z is set. Default is True.
         
         """
+        GeometricObject.__init__(self, material)
+
         self.d = float(thickness)
         
         self.half_size = .5 * array(size, float)
@@ -1500,8 +1522,6 @@ class Boundary(GeometricObject):
         if isinstance(material, PML):
             pass
         
-        GeometricObject.__init__(self, material)
-                
     def init(self, space):
         if 2 * self.half_size[0] < space.dx:
             self.half_size[0] = 0.5 * space.dx
