@@ -1,9 +1,10 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
 
 """
-This script can handle parallel execution and data-collection. The fields in 
-the waveguide are recorded following probe lines. Each field data is pickled 
-and saved in separate files.
+This script can handle parallel execution and data-collection. The fields 
+in the waveguide are recorded following probe lines. Each field data is 
+pickled and saved in separate files.
 
 """
 
@@ -14,7 +15,6 @@ sys.path.append(new_path)
 import cPickle, time
 from numpy import *
 from gmes import *
-import gmes.constants as const
 
 # Define simulation parameters.
 
@@ -23,7 +23,6 @@ FWIDTH = 0.0455
 RADIUS = 0.2
 PML_THICK = .5
 SIZE = (15, 13, 0)
-#SIZE = (3, 3, 0)
 RESOLUTION = 25
 TIME_STEP_T = 800
 
@@ -103,7 +102,7 @@ def make_lowpass_bragg_grating(period):
 
     for i in arange(-(.5 * period - .5) * l, (.5 * period + .5) * l, l):
         rod = geometry.Cylinder(material=Al2O3, axis=(0,0,1), radius=0.0362054*l,
-                height=10, center=(i, 0, 0))
+                                height=10, center=(i, 0, 0))
         bragg.append(rod)
 
     return tuple(bragg)
@@ -111,11 +110,11 @@ def make_lowpass_bragg_grating(period):
 
 if __name__ == "__main__":
     start = time.time()
-    geom_list = (geometry.DefaultMaterial(material=AIR),) + \
+    geom_list = (geometry.DefaultMedium(material=AIR),) + \
             make_crystals(*SIZE[:2]) + make_line_defect(SIZE[0]) + \
             (geometry.Boundary(material=material.UPML(), thickness=PML_THICK, size=SIZE),)
 
-    space = geometry.Cartesian(size=SIZE, resolution=RESOLUTION, parallel=True)
+    space = geometry.Cartesian(size=SIZE, resolution=RESOLUTION)
 
     ez1_id = 0 % space.numprocs
     hx1_id = 1 % space.numprocs
@@ -125,38 +124,40 @@ if __name__ == "__main__":
     hy2_id = 5 % space.numprocs
 
     src_list = (source.Dipole(src_time=source.Bandpass(freq=FREQ, fwidth=FWIDTH),
-        component=constants.Ez, pos=(-.5 * SIZE[0] + 1, 0, 0)),)
+                              component=constant.Ez, 
+                              pos=(-.5 * SIZE[0] + 1, 0, 0)),)
 
     my_fdtd = fdtd.TMzFDTD(space, geom_list, src_list)
-    #my_fdtd.show_permittivity_ez(constants.Z, 0)
-    #my_fdtd.show_ez(constants.Z, 0)
+    my_fdtd.init()
+    my_fdtd.show_permittivity_ez(constant.Z, 0)
+    my_fdtd.show_ez(constant.Z, 0)
 
     ez_sums1 = []
     hx_sums1 = []
     hy_sums1 = []
 
-    start_ez_idx1 = space.space_to_ez_index(START_PNT_SPC_1)
-    start_hx_idx1 = space.space_to_hx_index(START_PNT_SPC_1)
-    start_hy_idx1 = space.space_to_hy_index(START_PNT_SPC_1)
+    start_ez_idx1 = space.space_to_ez_index(*START_PNT_SPC_1)
+    start_hx_idx1 = space.space_to_hx_index(*START_PNT_SPC_1)
+    start_hy_idx1 = space.space_to_hy_index(*START_PNT_SPC_1)
 
-    end_ez_idx1 = space.space_to_ez_index(END_PNT_SPC_1)
-    end_hx_idx1 = space.space_to_hx_index(END_PNT_SPC_1)
-    end_hy_idx1 = space.space_to_hy_index(END_PNT_SPC_1)
+    end_ez_idx1 = space.space_to_ez_index(*END_PNT_SPC_1)
+    end_hx_idx1 = space.space_to_hx_index(*END_PNT_SPC_1)
+    end_hy_idx1 = space.space_to_hy_index(*END_PNT_SPC_1)
 
     ez_sums2 = []
     hx_sums2 = []
     hy_sums2 = []
 
-    start_ez_idx2 = space.space_to_ez_index(START_PNT_SPC_2)
-    start_hx_idx2 = space.space_to_hx_index(START_PNT_SPC_2)
-    start_hy_idx2 = space.space_to_hy_index(START_PNT_SPC_2)
+    start_ez_idx2 = space.space_to_ez_index(*START_PNT_SPC_2)
+    start_hx_idx2 = space.space_to_hx_index(*START_PNT_SPC_2)
+    start_hy_idx2 = space.space_to_hy_index(*START_PNT_SPC_2)
 
-    end_ez_idx2 = space.space_to_ez_index(END_PNT_SPC_2)
-    end_hx_idx2 = space.space_to_hx_index(END_PNT_SPC_2)
-    end_hy_idx2 = space.space_to_hy_index(END_PNT_SPC_2)
+    end_ez_idx2 = space.space_to_ez_index(*END_PNT_SPC_2)
+    end_hx_idx2 = space.space_to_hx_index(*END_PNT_SPC_2)
+    end_hy_idx2 = space.space_to_hy_index(*END_PNT_SPC_2)
 
     while my_fdtd.time_step.t < TIME_STEP_T:
-        if space.my_id == 0 and my_fdtd.time_step.n % 10 == 0:
+        if space.my_id == 0 and my_fdtd.time_step.n % 100 == 0:
             print my_fdtd.time_step.t
 
         ez_sum1, hx_sum1, hy_sum1 = 0, 0, 0
@@ -164,41 +165,41 @@ if __name__ == "__main__":
 
         for i in range(start_ez_idx1[1], end_ez_idx1[1] + 1):
             idx1 = start_ez_idx1[0], i, start_ez_idx1[2]
-            if geometry.in_range(idx1, my_fdtd.ez, const.Ez):
+            if geometry.in_range(idx1, my_fdtd.ez.shape, constant.Ez):
                 ez_sum1 += my_fdtd.ez[idx1]
 
         for i in range(start_hx_idx1[1], end_hx_idx1[1] + 1):
             idx1 = start_hx_idx1[0], i, start_hx_idx1[2]
-            if geometry.in_range(idx1, my_fdtd.hx, const.Hx):
+            if geometry.in_range(idx1, my_fdtd.hx.shape, constant.Hx):
                 hx_sum1 += my_fdtd.hx[idx1]
 
         for i in range(start_hy_idx1[1], end_hx_idx1[1] + 1):
             idx1 = start_hy_idx1[0], i, start_hy_idx1[2]
-            if geometry.in_range(idx1, my_fdtd.hy, const.Hy):
+            if geometry.in_range(idx1, my_fdtd.hy.shape, constant.Hy):
                 hy_sum1 += my_fdtd.hy[idx1]
 
         for i in range(start_ez_idx2[1], end_ez_idx2[1] + 1):
             idx2 = start_ez_idx2[0], i, start_ez_idx2[2]
-            if geometry.in_range(idx2, my_fdtd.ez, const.Ez):
+            if geometry.in_range(idx2, my_fdtd.ez.shape, constant.Ez):
                 ez_sum2 += my_fdtd.ez[idx2]
 
         for i in range(start_hx_idx2[1], end_hx_idx2[1] + 1):
             idx2 = start_hx_idx2[0], i, start_hx_idx2[2]
-            if geometry.in_range(idx2, my_fdtd.hx, const.Hx):
+            if geometry.in_range(idx2, my_fdtd.hx.shape, constant.Hx):
                 hx_sum2 += my_fdtd.hx[idx2]
 
         for i in range(start_hy_idx2[1], end_hx_idx2[1] + 1):
             idx2 = start_hy_idx2[0], i, start_hy_idx2[2]
-            if geometry.in_range(idx2, my_fdtd.hy, const.Hy):
+            if geometry.in_range(idx2, my_fdtd.hy.shape, constant.Hy):
                 hy_sum2 += my_fdtd.hy[idx2]
 
-        ez_sum1 = space.cart_comm.Reduce(ez_sum1, root=ez1_id)
-        hx_sum1 = space.cart_comm.Reduce(hx_sum1, root=hx1_id)
-        hy_sum1 = space.cart_comm.Reduce(hy_sum1, root=hy1_id)
+        ez_sum1 = space.cart_comm.reduce(ez_sum1, root=ez1_id)
+        hx_sum1 = space.cart_comm.reduce(hx_sum1, root=hx1_id)
+        hy_sum1 = space.cart_comm.reduce(hy_sum1, root=hy1_id)
 
-        ez_sum2 = space.cart_comm.Reduce(ez_sum2, root=ez2_id)
-        hx_sum2 = space.cart_comm.Reduce(hx_sum2, root=hx2_id)
-        hy_sum2 = space.cart_comm.Reduce(hy_sum2, root=hy2_id)
+        ez_sum2 = space.cart_comm.reduce(ez_sum2, root=ez2_id)
+        hx_sum2 = space.cart_comm.reduce(hx_sum2, root=hx2_id)
+        hy_sum2 = space.cart_comm.reduce(hy_sum2, root=hy2_id)
 
         ez_sums1.append(ez_sum1)
         hx_sums1.append(hx_sum1)

@@ -6,8 +6,8 @@ You can download the latest release at the GMES project page of sourceforge:
 
 http://sourceforge.net/projects/gmes
 
-The latest development version can be checked out through SVN with the following
-instruction set:
+The latest development version can be checked out through SVN with the 
+following instruction set:
 
 svn co https://gmes.svn.sourceforge.net/svnroot/gmes gmes 
 
@@ -17,11 +17,13 @@ GMES follows the C++ standard, thus it is OS portable in source code level.
 
 2.1. GNU/Linux
 
-GMES has been tested on Debian GNU/Linux 5.0.8 Lenny (32 bit) and Ubuntu 11.04 Natty Narwhal (64 bit).
+GMES has been tested on Debian GNU/Linux 5.0.8 Lenny (32 bit), Ubuntu 10.04
+Lucid Lynx (32 bit), and Ubuntu 11.04 Natty Narwhal (64 bit).
 
 2.2. Windows
 
-GMES has been tested on Windows 7 Enterprise K Service Pack 1 (32 and 64 bit).
+GMES has been tested on Windows 7 Enterprise K Service Pack 1 (32 and 64 
+bit).
 
 2.3. Mac
 
@@ -29,18 +31,17 @@ GMES has not been tested on Mac. Any contributions are welcomed.
 
 3. Preliminaries
 
-GMES does not tested on the Python 3.
-
 3.1. GNU/Linux
 
 GMES uses various Python and non-Python programs. You will need following 
-programs to install and execute GMES. The following programs are provided as 
-packages on Debian and Ubuntu distributions, except the MPICH2 and 
+programs to install and execute GMES. The following programs are provided 
+as packages on Debian and Ubuntu distributions, except the MPICH2 and 
 MPI for Python.
 
 * python >= 2.5 (tested with 2.5.2 and 2.7.1+) (Debian package: python)
 * g++ (to compile) (Debian package: g++)
 * swig >= 1.3.36 (to compile) (Debian package: swig)
+* cython >= 0.9.8-1 (to compile) (Debian package: cython)
 * numpy (Debian package: python-numpy)
 * scipy (Debian package: python-scipy)
 * matplotlib (Debian package: python-matplotlib)
@@ -49,21 +50,23 @@ MPI for Python.
 
 3.2. Windows
 
-We didn't tested the MPI environment on Windows. Any contributions are welcomed.
+We haven't tested the MPI environment on Windows. Any contributions are 
+welcomed.
 
 * python >= 2.7.2
 * MinGW with C++ compiler >= 20110802 (to compile)
 * swig >= 2.0.4 (to compile)
+* cython (to compile)
 * numpy >= 1.6.1
 * scipy >= 0.9.0
 * matplotlib >= 1.1.0
 
 4. Compile and Install
 
-If you like to test the GMES without or before installation, follow 'compile 
-for the inplace test' section. Otherwise, follow 'compile' and 'install' 
-sections in order. The command preceding '#' mark means that the command 
-should be executed as the root privilege. 
+If you like to test the GMES without or before installation, follow 
+'compile for the inplace test' section. Otherwise, follow 'compile' and 
+'install' sections in order. The command preceding '#' mark means that the 
+command should be executed as the root privilege. 
 
 4.1. For GNU/Linux
 
@@ -99,8 +102,8 @@ $ python setup.py build_ext --compile=mingw32
 
 Your MPI2 implementation may requires pre- or post- commands to exploit the 
 parallel environment. Consult the manuals of your MPI2 implementation for 
-these commands. <N> and <GMES SCRIPT> indicate the number of parallel process
-and your script which uses the GMES package.
+these commands. <N> and <GMES SCRIPT> indicate the number of parallel 
+process and your script which uses the GMES package.
  
 $ mpiexec -l -n <N> python <GMES SCRIPT>
 
@@ -141,8 +144,8 @@ if self.linker_dll == "dllwrap":
     
 6.4. compile failure on Windows
 
-If you use EPD(>=7.1-2) with MinGW on Windows 7, you will meet the following 
-error message when you compile GMES.
+If you use EPD(>=7.1-2) with MinGW on Windows 7, you will meet the 
+following error message when you compile GMES.
 
 In file included from c:\mingw\bin\../lib/gcc/mingw32/4.5.2/include/c++/cmath:629:0,
                  from c:\mingw\bin\../lib/gcc/mingw32/4.5.2/include/c++/complex:46,
@@ -152,5 +155,9 @@ c:\mingw\bin\../lib/gcc/mingw32/4.5.2/include/c++/tr1_impl/cmath:203:11: error: 
 error: command 'gcc' failed with exit status 1
 
 This problem is not yet solved.
+
+6.5 Python 3 support
+
+GMES has not tested with Python 3.
 
 Kyungwon Chun (kwchun@gist.ac.kr)

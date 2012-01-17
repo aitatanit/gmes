@@ -4,8 +4,9 @@
 #include <array>
 #include <numeric>
 #include <map>
+#include <unordered_map>
 
-namespace gmes 
+namespace std
 {
   struct ltidx
   {
@@ -15,7 +16,19 @@ namespace gmes
       return (l[0] < r[0]) || (l[0] == r[0] && l[1] < r[1]) || (l[0] == r[0] && l[1] == r[1] && l[2] < r[2]);
     }
   };
-  
+
+  template <>
+  struct hash<array<int, 3> >: public unary_function<array<int, 3>, size_t>
+  {
+    size_t operator()(const array<int, 3>& idx) const
+    {
+      return accumulate(idx.begin(), idx.end(), 0);
+    }
+  };
+}
+
+namespace gmes 
+{
   struct PwMaterialParam
   {
   };
@@ -32,7 +45,8 @@ namespace gmes
     double mu_inf;
   };
 
-  typedef std::map<std::array<int, 3>, PwMaterialParam*, ltidx> MapType;
+  typedef std::map<std::array<int, 3>, PwMaterialParam*, std::ltidx> MapType;
+  // typedef std::unordered_map<std::array<int, 3>, PwMaterialParam*> MapType;
 
   template<class T> 
   class PwMaterial 

@@ -48,11 +48,6 @@ try:
 except ImportError:
     stderr.write('No module named psyco. Execution speed might be slow.\n')
 
-try:
-    from mpi4py import MPI
-except ImportError:
-    stderr.write('No module named mpi4py. MPI support will not be available.\n')
-
 # List here only the objects we want to be publicly available
 __all__ = ['fdtd', 'geometry', 'show', 'constant', 'source', 'pw_source', 
            'material', 'pw_material']

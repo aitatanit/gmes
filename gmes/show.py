@@ -17,6 +17,7 @@ except ImportError:
     from dummy_threading import Thread
 
 from numpy import array, empty, arange, ndindex, linspace
+import numpy as np
 
 from sys import modules
 if not 'matplotlib.backends' in modules:
@@ -51,7 +52,7 @@ class ShowLine(Thread):
         """
         Thread.__init__(self)
 
-        self.vrange = array(vrange, float)
+        self.vrange = array(vrange, np.double)
         self.interval = int(interval)
         self.time_step = fdtd.time_step
         self.note_form = 'time: %f'
@@ -203,7 +204,7 @@ class ShowPlane(Thread):
         """
         Thread.__init__(self)
 
-        self.vrange = array(vrange, float)
+        self.vrange = array(vrange, np.double)
         self.time_step = fdtd.time_step
         self.title = str(title)
         self.interval = int(interval)
@@ -262,7 +263,7 @@ class ShowPlane(Thread):
                        end_boundary_spc[(axis_int + 2) % 3], 
                        end_boundary_spc[(axis_int + 1) % 3], 
                        start_boundary_spc[(axis_int + 1) % 3])
-        cut_spc = array(end_boundary_spc, float)
+        cut_spc = array(end_boundary_spc, np.double)
         cut_spc[axis_int] = cut
         cut_idx = spc2idx[comp](*cut_spc)
         if in_range(cut_idx, field.shape, comp) is False:
@@ -409,7 +410,7 @@ class Snapshot(Thread):
                        end_boundary_spc[(axis_int + 2) % 3], 
                        end_boundary_spc[(axis_int + 1) % 3], 
                        start_boundary_spc[(axis_int + 1) % 3])
-        cut_spc = array(end_boundary_spc, float)
+        cut_spc = array(end_boundary_spc, np.double)
         cut_spc[axis_int] = cut
         cut_idx = spc2idx[comp](*cut_spc)
         if in_range(cut_idx, field.shape, comp) is False:
@@ -428,10 +429,10 @@ class Snapshot(Thread):
         data_shape_3d = array(end_boundary_idx) - array(start_boundary_idx) + 1
         data_shape_2d = [v for i, v in enumerate(data_shape_3d) 
                          if i != axis_int]
-        self.data = empty(data_shape_2d, float)
+        self.data = empty(data_shape_2d, np.double)
 
         for idx in ndindex(*data_shape_2d):
-            mat_idx = empty(3, float)
+            mat_idx = empty(3, np.double)
             
             if axis_int == 0:
                 mat_idx[1] = idx[0] + start_boundary_idx[1]
@@ -460,9 +461,9 @@ class Snapshot(Thread):
             if data_min == data_max:
                 data_min = 0.5 * data_min
                 data_max = 1.5 * data_max
-            self.vrange = array((data_min, data_max), float)
+            self.vrange = array((data_min, data_max), np.double)
         else:
-            self.vrange = array(vrange, float)
+            self.vrange = array(vrange, np.double)
 
         self.title = str(title)
 

@@ -12,20 +12,14 @@ try:
 except ImportError:
     pass
 
-try:
-    from mpi4py import MPI
-except ImportError:
-    pass
-
 from copy import deepcopy
 
 import numpy as np
 from numpy import empty, zeros, inf, dot, array
-from scipy.linalg import norm
 
 # GMES modules
 import constant as const
-from material import Compound, PML
+from pygeom import *
 
 
 class AuxiCartComm(object):
@@ -137,16 +131,16 @@ class Cartesian(object):
         """
         try:
             if len(resolution) == 3:
-                self.res = array(resolution, float)
+                self.res = array(resolution, np.double)
         except TypeError:
-            self.res = array((resolution,)*3, float)
+            self.res = array((resolution,)*3, np.double)
         
         self.dx, self.dy, self.dz = 1 / self.res
 
         # local spatial differentials to calculate dt
         dx, dy, dz = self.dx, self.dy, self.dz
         
-        self.half_size = 0.5 * array(size, float)
+        self.half_size = 0.5 * array(size, np.double)
         
         for i, v in enumerate((self.dx, self.dy, self.dz)):
             if self.half_size[i] == 0:
@@ -154,18 +148,19 @@ class Cartesian(object):
             
         # the size of the whole field arrays 
         self.whole_field_size = \
-            array((2 * self.half_size * self.res).round(), int)
+            array((2 * self.half_size * self.res).round(), np.int)
         
+        self.my_id = 0
+        self.numprocs = 1
+        self.cart_comm = AuxiCartComm()
         try:
-            from mpi4py import MPI
             if parallel:
+                from mpi4py import MPI
                 self.my_id = MPI.COMM_WORLD.rank
                 self.numprocs = MPI.COMM_WORLD.size
                 self.cart_comm = MPI.COMM_WORLD.Create_cart(self.find_best_deploy(), (1, 1, 1))
         except ImportError:
-            self.my_id = 0
-            self.numprocs = 1
-            self.cart_comm = AuxiCartComm()
+            pass
 
         self.my_cart_idx = self.cart_comm.topo[2]
         
@@ -202,7 +197,7 @@ class Cartesian(object):
         self.my_cart_idx
             
         """
-        field_size = empty(3, int)
+        field_size = empty(3, np.int)
         dims = self.cart_comm.topo[0]
 
         for i in xrange(3):
@@ -267,7 +262,7 @@ class Cartesian(object):
         if cmplx:
             return zeros(shape, complex)
         else:
-            return zeros(shape, float)
+            return zeros(shape, np.double)
 
     def get_ex_storage(self, field_compnt, cmplx=False):
         """Return an initialized array for Ex field component.
@@ -351,7 +346,7 @@ class Cartesian(object):
         i, j, k -- array index
         
         """
-        idx = array((i, j, k), int)  
+        idx = array((i, j, k), np.int)  
         global_idx = idx + self.general_field_size * self.my_cart_idx
         
         spc_0 = (global_idx[0] + .5) * self.dx - self.half_size[0]
@@ -371,14 +366,14 @@ class Cartesian(object):
             x, y, z -- (global) space coordinate
         
         """
-        coords = array((x,y,z), float)
+        coords = array((x,y,z), np.double)
 
-        global_idx = empty(3, float)
+        global_idx = empty(3, np.double)
         global_idx[0] = (coords[0] + self.half_size[0]) / self.dx - .5
         global_idx[1] = (coords[1] + self.half_size[1]) / self.dy
         global_idx[2] = (coords[2] + self.half_size[2]) / self.dz
         
-        idx = empty(3, float)
+        idx = empty(3, np.double)
         for i in xrange(3):
             if self.whole_field_size[i] == 1:
                 idx[i] = 0
@@ -399,14 +394,14 @@ class Cartesian(object):
         x, y, z -- (global) space coordinate
         
         """
-        spc = array((x,y,z), float)
+        spc = array((x,y,z), np.double)
 
-        global_idx = empty(3, int)
+        global_idx = empty(3, np.int)
         global_idx[0] = (spc[0] + self.half_size[0]) / self.dx
         global_idx[1] = (spc[1] + self.half_size[1]) / self.dy + .5
         global_idx[2] = (spc[2] + self.half_size[2]) / self.dz + .5
 
-        idx = empty(3, int)
+        idx = empty(3, np.int)
         for i in xrange(3):
             if self.whole_field_size[i] == 1:
                 idx[i] = 0
@@ -426,7 +421,7 @@ class Cartesian(object):
         i, j, k -- array index
         
         """
-        idx = array((i,j,k), int)
+        idx = array((i,j,k), np.int)
             
         global_idx = idx + self.general_field_size * self.my_cart_idx
         
@@ -447,14 +442,14 @@ class Cartesian(object):
         x, y, z -- (global) space coordinate
         
         """
-        coords = array((x,y,z), float)
+        coords = array((x,y,z), np.double)
             
-        global_idx = empty(3, float)
+        global_idx = empty(3, np.double)
         global_idx[0] = (coords[0] + self.half_size[0]) / self.dx
         global_idx[1] = (coords[1] + self.half_size[1]) / self.dy - .5
         global_idx[2] = (coords[2] + self.half_size[2]) / self.dz
     
-        idx = empty(3, float)
+        idx = empty(3, np.double)
         for i in xrange(3):
             if self.whole_field_size[i] == 1:
                 idx[i] = 0
@@ -475,14 +470,14 @@ class Cartesian(object):
         x, y, z -- (global) space coordinate
         
         """
-        coords = array((x,y,z), float)
+        coords = array((x,y,z), np.double)
             
-        global_idx = empty(3, int)
+        global_idx = empty(3, np.int)
         global_idx[0] = (coords[0] + self.half_size[0]) / self.dx + .5
         global_idx[1] = (coords[1] + self.half_size[1]) / self.dy
         global_idx[2] = (coords[2] + self.half_size[2]) / self.dz + .5
     
-        idx = empty(3, int)
+        idx = empty(3, np.int)
         for i in xrange(3):
             if self.whole_field_size[i] == 1:
                 idx[i] = 0
@@ -502,7 +497,7 @@ class Cartesian(object):
         i, j, k -- array index
         
         """
-        idx = array((i, j, k), int)
+        idx = array((i, j, k), np.int)
             
         global_idx = idx + self.general_field_size * self.my_cart_idx
         
@@ -523,14 +518,14 @@ class Cartesian(object):
         x, y, z -- (global) space coordinate
         
         """
-        coords = array((x, y, z), float)
+        coords = array((x, y, z), np.double)
             
-        global_idx = empty(3, float)
+        global_idx = empty(3, np.double)
         global_idx[0] = (coords[0] + self.half_size[0]) / self.dx
         global_idx[1] = (coords[1] + self.half_size[1]) / self.dy
         global_idx[2] = (coords[2] + self.half_size[2]) / self.dz - .5
         
-        idx = empty(3, float)
+        idx = empty(3, np.double)
         for i in xrange(3):
             if self.whole_field_size[i] == 1:
                 idx[i] = 0
@@ -551,14 +546,14 @@ class Cartesian(object):
         x, y, z -- (global) space coordinate
         
         """
-        coords = array((x,y,z), float)
+        coords = array((x,y,z), np.double)
             
-        global_idx = empty(3, int)
+        global_idx = empty(3, np.int)
         global_idx[0] = (coords[0] + self.half_size[0]) / self.dx + .5
         global_idx[1] = (coords[1] + self.half_size[1]) / self.dy + .5
         global_idx[2] = (coords[2] + self.half_size[2]) / self.dz
         
-        idx = empty(3, int)
+        idx = empty(3, np.int)
         for i in xrange(3):
             if self.whole_field_size[i] == 1:
                 idx[i] = 0
@@ -578,7 +573,7 @@ class Cartesian(object):
         i, j, k -- array index
         
         """
-        idx = array((i, j, k), int)
+        idx = array((i, j, k), np.int)
             
         global_idx = idx + self.general_field_size * self.my_cart_idx
         
@@ -599,9 +594,9 @@ class Cartesian(object):
         x, y, z -- (global) space coordinate
         
         """
-        coords = array((x,y,z), float)
+        coords = array((x,y,z), np.double)
             
-        global_idx = empty(3, float)
+        global_idx = empty(3, np.double)
         global_idx[0] = (coords[0] + self.half_size[0]) / self.dx
         global_idx[1] = (coords[1] + self.half_size[1]) / self.dy + .5
         global_idx[2] = (coords[2] + self.half_size[2]) / self.dz + .5
@@ -627,9 +622,9 @@ class Cartesian(object):
         x, y, z -- (global) space coordinate
         
         """
-        coords = array((x,y,z), float)
+        coords = array((x,y,z), np.double)
             
-        global_idx = empty(3, int)
+        global_idx = empty(3, np.int)
         global_idx[0] = (coords[0] + self.half_size[0]) / self.dx + .5
         global_idx[1] = (coords[1] + self.half_size[1]) / self.dy + 1
         global_idx[2] = (coords[2] + self.half_size[2]) / self.dz + 1
@@ -654,7 +649,7 @@ class Cartesian(object):
         i, j, k -- array index
         
         """
-        idx = array((i,j,k), int)
+        idx = array((i,j,k), np.int)
             
         global_idx = idx + self.general_field_size * self.my_cart_idx
         
@@ -675,9 +670,9 @@ class Cartesian(object):
         x, y, z -- (global) space coordinate
         
         """
-        coords = array((x,y,z), float)
+        coords = array((x,y,z), np.double)
             
-        global_idx = empty(3, float)
+        global_idx = empty(3, np.double)
         global_idx[0] = (coords[0] + self.half_size[0]) / self.dx + .5
         global_idx[1] = (coords[1] + self.half_size[1]) / self.dy
         global_idx[2] = (coords[2] + self.half_size[2]) / self.dz + .5
@@ -703,9 +698,9 @@ class Cartesian(object):
         x, y, z -- (global) space coordinate
         
         """
-        coords = array((x,y,z), float)
+        coords = array((x,y,z), np.double)
             
-        global_idx = empty(3, int)
+        global_idx = empty(3, np.int)
         global_idx[0] = (coords[0] + self.half_size[0]) / self.dx + 1
         global_idx[1] = (coords[1] + self.half_size[1]) / self.dy + .5
         global_idx[2] = (coords[2] + self.half_size[2]) / self.dz + 1
@@ -730,7 +725,7 @@ class Cartesian(object):
         i, j, k -- array index
         
         """
-        idx = array((i,j,k), int)
+        idx = array((i,j,k), np.int)
             
         global_idx = idx + self.general_field_size * self.my_cart_idx
         
@@ -751,9 +746,9 @@ class Cartesian(object):
         x, y, z -- (global) space coordinate
         
         """
-        coords = array((x,y,z), float)
+        coords = array((x,y,z), np.double)
             
-        global_idx = empty(3, float)
+        global_idx = empty(3, np.double)
         global_idx[0] = (coords[0] + self.half_size[0]) / self.dx + .5
         global_idx[1] = (coords[1] + self.half_size[1]) / self.dy + .5
         global_idx[2] = (coords[2] + self.half_size[2]) / self.dz
@@ -779,9 +774,9 @@ class Cartesian(object):
          x, y, z -- (global) space coordinate
         
         """
-        coords = array((x,y,z), float)
+        coords = array((x,y,z), np.double)
             
-        global_idx = empty(3, int)
+        global_idx = empty(3, np.int)
         global_idx[0] = (coords[0] + self.half_size[0]) / self.dx + 1
         global_idx[1] = (coords[1] + self.half_size[1]) / self.dy + 1
         global_idx[2] = (coords[2] + self.half_size[2]) / self.dz + .5
@@ -811,795 +806,6 @@ class Cartesian(object):
         
         print " " * indent,
         print "number of participating nodes:", self.numprocs
-
-
-####################################################################
-#                                                                  #
-#                      Fast geometry routines                      #
-#                                                                  #
-# Using the geometry list is way too slow, especially when there   #
-# are lots of objects to test.                                     #
-#                                                                  #
-# The basic idea here is twofold.  (1) Compute bounding boxes for  #
-# each geometric object, for which inclusion tests can be computed #
-# quickly.  (2) Build a tree that recursively breaks down the unit #
-# cell in half, allowing us to perform searches in logarithmic     #
-# time.                                                            #
-#                                                                  #
-####################################################################
-
-class GeomBox(object):
-    """A bounding box of a geometric object.
-    
-    Attributes:
-    low -- the coordinates of the lowest vertex
-    high -- the coordinates of the highest vertex
-    
-    """
-    def __init__(self, low=None, high=None):
-        self.low = array(low, float)
-        self.high = array(high, float)
-        
-    def union(self, box):
-        """Enlarge the box to include the given box.
-        
-        """
-        self.low = array(map(min, self.low, box.low))
-        self.high = array(map(max, self.high, box.high))
-        
-    def intersection(self, box):
-        """Reduce the box to intersect volume with the given box.
-        
-        """
-        self.low = array(map(max, self.low, box.low))
-        self.high = array(map(min, self.high, box.high))
-        
-    def add_point(self, point):
-        """Enlarge the box to include the given point.
-        
-        """
-        self.low = array(map(min, self.low, point))
-        self.high = array(map(max, self.high, point))
-           
-    @staticmethod
-    def __between__(x, low, high):
-        """Return truth of low <= x <= high.
-        
-        """
-        return low <= x <= high
-    
-    def in_box(self, point):
-        """Check whether the given point is in the box.
-        
-        """
-        componential = map(self.__between__, point, self.low, self.high)
-        return reduce(lambda x, y: x and y, componential)
-    
-    def intersect(self, box):
-        """Check whether the given box intersect with the box.
-        
-        """
-        componential = (self.__between__(box.low[0], self.low[0], self.high[0]) or
-                        self.__between__(box.high[0], self.low[0], self.high[0]) or
-                        self.__between__(self.low[0], box.low[0], box.high[0])), \
-                       (self.__between__(box.low[1], self.low[1], self.high[1]) or
-                        self.__between__(box.high[1], self.low[1], self.high[1]) or
-                        self.__between__(self.low[1], box.low[1], box.high[1])), \
-                       (self.__between__(box.low[2], self.low[2], self.high[2]) or
-                        self.__between__(box.high[2], self.low[2], self.high[2]) or
-                        self.__between__(self.low[2], box.low[2], box.high[2]))
-        return reduce(lambda x, y: x and y, componential)
-    
-    def divide(self, axis, x):
-        high1 = deepcopy(self.high)
-        high1[axis] = x
-        
-        low2 = deepcopy(self.low)
-        low2[axis] = x
-        
-        return GeomBox(self.low, high1), GeomBox(low2, self.high)
-    
-    def display_info(self, indent=0):
-        print " " * indent, "geom box:",
-        print "low:", self.low, "high:", self.high
-        
-    def __str__(self):
-        return "low: " + self.low.__str__() + " high: " + self.high.__str__()
-    
-    
-class GeomBoxNode(object):
-    """Node class which makes up a binary search tree.
-    
-    Attributes:
-    box -- a bounding box enclosing the volume of this node
-    t1 -- left branch from this node
-    t2 -- right branch from this node
-    geom_list -- a geometric object list overlapping the volume of this node.
-    depth -- depth from the root of this binary search tree
-        
-    """
-    def __init__(self, box, geom_list, depth):
-        self.box = box
-        self.t1, self.t2 = None, None
-        self.geom_list = geom_list
-        self.depth = depth
-        
-        
-class GeomBoxTree(object):
-    """A tree for the fast inclusion test of geometric objects within them.
-    
-    The tree recursively partitions the unit cell, allowing us to perform 
-    binary searches for the object containing a give point.
-    
-    Attributes:
-    root -- root node of the binary search tree
-        
-    """
-    def __init__(self, geom_list=None):
-        box = GeomBox((-inf, -inf, -inf), (inf, inf, inf))
-        self.root = GeomBoxNode(box, geom_list, 0)
-        self.branch_out(self.root)
-    
-    def find_best_partition(self, node, divide_axis):
-        """
-        Find the best place to "cut" along the axis divide_axis in 
-        order to maximally divide the objects between the partitions.
-        Upon return, n1 and n2 are the number of objects below and 
-        above the partition, respectively.
-        
-        """
-        small = 1e-6 # only 1e-6 works
-        best_partition = None
-        
-        n1 = n2 = len(node.geom_list)
-        
-        # Search for the best partition, by checking all possible partitions 
-        # either just above the high end of an object or just below the low 
-        # end of an object. 
-        
-        for i in node.geom_list:
-            curPartition = i.box.high[divide_axis] + small
-            curN1 = curN2 = 0
-            for j in node.geom_list:
-                if j.box.low[divide_axis] <= curPartition:
-                    curN1 += 1
-                if j.box.high[divide_axis] >= curPartition:
-                    curN2 += 1
-            if max(curN1, curN2) < max(n1, n2):
-                best_partition = curPartition
-                n1 = curN1
-                n2 = curN2
-                
-        for i in node.geom_list:
-            curPartition = i.box.low[divide_axis] - small
-            curN1 = curN2 = 0
-            for j in node.geom_list:
-                if j.box.low[divide_axis] <= curPartition:
-                    curN1 += 1
-                if j.box.high[divide_axis] >= curPartition:
-                    curN2 += 1
-            if max(curN1, curN2) < max(n1, n2):
-                best_partition = curPartition
-                n1 = curN1
-                n2 = curN2
-        
-        return best_partition, n1, n2
-    
-    def divide_geom_box_tree(self, node):
-        """Divide box in two, along the axis that maximally partitions the boxes.
-        
-        """
-        # Try partitioning along each dimension, counting the
-        # number of objects in the partitioned boxes and finding
-        # the best partition.
-        best = 0
-        division = []
-        for i in range(3):
-            partition, n1, n2 = self.find_best_partition(node, i)
-            division.append((partition, n1, n2))
-            if max(division[i][1], division[i][2]) < max(division[best][1], division[best][2]):
-                best = i
-        
-        # Don't do anything if division makes the worst case worse or if
-        # it fails to improve the best case:       
-        if division[best][0] is None:
-            return None, None
-        
-        box1, box2 = node.box.divide(best, division[best][0])
-        b1GeomList = []
-        b2GeomList = []
-        
-        for i in node.geom_list:
-            if box1.intersect(i.box):
-                b1GeomList.append(i)
-            if box2.intersect(i.box):
-                b2GeomList.append(i)
-        
-        return GeomBoxNode(box1, b1GeomList, node.depth + 1), GeomBoxNode(box2, b2GeomList, node.depth + 1)
-    
-    def branch_out(self, node):
-        node.t1, node.t2 = self.divide_geom_box_tree(node)
-        
-        if node.t1 or node.t2:
-            self.branch_out(node.t1)
-            self.branch_out(node.t2)
-    
-    def tree_search(self, node, point):
-        if node.box.in_box(point) == False: 
-            return None
-        else:
-            if not (node.t1 and node.t2):
-                return node
-            else:
-                if node.t1.box.in_box(point):
-                    return self.tree_search(node.t1, point)
-        
-                if node.t2.box.in_box(point):
-                    return self.tree_search(node.t2, point)
-    
-    def object_of_point(self, point):
-        leaf = self.tree_search(self.root, point)
-        geom_obj, idx = find_object(point, leaf.geom_list)
-        
-        # eps_inf and mu_inf of compound material
-        # refer to the underneath material.
-        if isinstance(geom_obj.material, Compound):
-            aux_geom_list = leaf.geom_list[:idx]
-            underneath_obj, trash = find_object(point, aux_geom_list)
-        else:
-            underneath_obj = None
-            
-#            geom_obj.material.eps_inf = geom_obj2.material.eps_inf
-#            geom_obj.material.mu_inf = geom_obj2.material.mu_inf
-        
-        return geom_obj, underneath_obj
-        
-    def material_of_point(self, point):
-        geom_obj, underneath_obj = self.object_of_point(point)
-
-        if underneath_obj: 
-            underneath_material = underneath_obj.material
-        else:
-            underneath_material = None
-            
-        return geom_obj.material, underneath_material
-        
-    def display_info(self, node=None, indent=0):
-        if not node: node = self.root
-        
-        print " " * indent, "depth:", node.depth, node.box
-        
-        if node.t1 is None or node.t2 is None:
-            for i in node.geom_list:
-                print " " * (indent + 5), "bounding box:", i.box
-                i.display_info(indent + 5)
-            
-        if node.t1: self.display_info(node.t1, indent + 5)
-        if node.t2: self.display_info(node.t2, indent + 5)
- 
-        
-####################################################################
-#                                                                  #
-#                       Geometric primitives                       #
-#                                                                  #
-####################################################################
-
-class GeometricObject(object):
-    """Base class for geometric object types.
-    
-    This class and its descendants are used to specify the solid 
-    geometric objects that form the structure being simulated. One 
-    normally does not create objects of type geometric-object directly,
-    however; instead, you use one of the subclasses. Recall that 
-    subclasses inherit the properties of their superclass, so these 
-    subclasses automatically have the material property (which must be 
-    specified, since they have no default values). In a two- or one-
-    dimensional calculation, only the intersections of the objects with
-    the simulation plane or line are considered. 
-    
-    Attributes:
-    material -- Filling up material.
-    box -- bounding box enclosing this geometric object
-    
-    """
-    def __init__(self, material):
-        """
-        
-        Keyword arguments:
-        material -- The material that the object is made of. No default.
-            
-        """ 
-        self.material = material
-        
-    def init(self, space):
-        self.material.init(space)
-        self.box = self.geom_box()
-
-    def geom_box(self):
-        """Return a bounding box enclosing this geometric object.
-        
-        The derived classes should override this method.
-
-        """        
-        raise NotImplementedError
-        
-    
-    def in_object(self, point):
-        """Return whether or not the point is inside.
-        
-        Return whether or not the point (in the lattice basis) is 
-        inside this geometric object. This method additionally requires
-        that fixObject has been called on this object (if the lattice 
-        basis is non-orthogonal).
-        
-        """ 
-        raise NotImplementedError
-    
-    def display_info(self, indent=0):
-        """Display some information about this geometric object.
-        
-        """
-        print " " * indent, "geometric object"
-        print " " * indent, "center", self.center
-        if self.material:
-            self.material.display_info(indent + 5)
-       
-            
-class DefaultMedium(GeometricObject):
-    """A geometric object expanding the whole space.
-    
-    """
-    def __init__(self, material):
-        GeometricObject.__init__(self, material)
-        
-    def in_object(self, point):
-        """
-        Override GeometricObject.in_object.
-        
-        """
-        return self.geom_box().in_box(point)
-
-    def geom_box(self):
-        """
-        Override GeometriObject.geom_box.
-        
-        """
-        return GeomBox((-inf, -inf, -inf), (inf, inf, inf))
-
-    def display_info(self, indent=0):
-        """
-        Override GeometricObject.display_info.
-        
-        """
-        print " " * indent, "default medium"
-        if self.material:
-            self.material.display_info(indent + 5)
-    
-    
-class Cone(GeometricObject):
-    """Form a cone or possibly a truncated cone. 
-    
-    Attributes:
-    center -- coordinates of the center of this geometric object
-    axis -- unit vector of axis
-    height -- length of axis
-    box -- bounding box
-        
-    """
-    def __init__(self, material, radius2=0, axis=(1,0,0), radius=1, height=1, 
-                 center=(0,0,0)):
-        """
-        
-        Keyword arguments:
-        radius2 -- Radius of the tip of the cone (i.e. the end of the 
-            cone pointed to by the axis vector). Defaults to zero 
-            (a "sharp" cone).
-            
-        """
-        GeometricObject.__init__(self, material)
-
-        if radius < 0:
-            msg = "radius must be non-negative."
-            raise ValueError(msg)
-        else:
-            self.radius = float(radius) # low side radius
-            
-        if radius2 < 0:
-            msg = "radius2 must be non-negative."
-            raise ValueError(msg)
-        else:
-            self.radius2 = float(radius2) # high side radius
-
-        self.center = array(center, float)
-        self.axis = array(axis, float) / norm(axis)
-        self.height = float(height)
-        
-    def in_object(self, point):
-        """
-        Override GeometricObject.in_object.
-        
-        """
-        p = array(point, float)
-        r = p - self.center
-        proj = dot(self.axis, r)
-        if np.abs(proj) <= .5 * self.height:
-            if self.radius2 == self.radius == inf:
-                return True
-            radius = self.radius
-            radius += (proj / self.height + .5) * (self.radius2 - radius)
-            truth = radius != 0 and norm(r - proj * self.axis) <= np.abs(radius)
-            return truth
-        else:
-            return False
-           
-    def display_info(self, indent=0):
-        """
-        Override GeometricObject.display_info.
-        
-        """
-        print " " * indent, "cone"
-        print " " * indent,
-        print "center", self.center,
-        print "radius", self.radius,
-        print "height" , self.height,
-        print "axis", self.axis,
-        print "radius2", self.radius2
-        if self.material:
-            self.material.display_info(indent + 5)
-        
-    def geom_box(self):
-        """
-        Override GeometricObject.geom_box.
-        
-        """
-        tmpBox1 = GeomBox(low=self.center, high=self.center)
-
-        h = .5 * self.height
-        r = np.sqrt(1 - self.axis * self.axis)
-
-        # set tmpBox2 to center of object
-        tmpBox2 = deepcopy(tmpBox1)
-        
-        # bounding box for -h*axis cylinder end
-        tmpBox1.low -= h * self.axis + r * self.radius
-        tmpBox1.high -= h * self.axis - r * self.radius
-        
-        # bounding box for +h*axis cylinder end
-        tmpBox2.low += h * self.axis - r * self.radius
-        tmpBox2.high += h * self.axis + r * self.radius
-        
-        tmpBox1.union(tmpBox2)
-        
-        return tmpBox1
-       
-        
-class Cylinder(Cone):
-    """Form a cylinder.
-    
-    """
-    def __init__(self, material, axis=(0, 0, 1),
-                 radius=1, height=1, center=(0, 0, 0)):
-        """
-        Keyword arguments:
-            axis -- Direction of the cylinder's axis; the length of 
-                this vector is ignored. Defaults to point parallel to 
-                the z axis i.e., (0,0,1).
-            radius -- Radius of the cylinder's cross-section. Default is 1.
-            height -- Length of the cylinder along its axis. Default is 1. 
-            material -- The material that the object is made of. 
-                No default.
-            center -- Center point of the object. Default is (0,0,0). 
-        
-        """
-        Cone.__init__(self, material, radius, axis, radius, height, center)
-        
-    def display_info(self, indent=0):
-        """Display information of this cylinder.
-        
-        """
-        print " " * indent, "cylinder"
-        print " " * indent,
-        print "center", self.center,
-        print "radius", self.radius,
-        print "height", self.height,
-        print "axis", self.axis
-        if self.material:
-            self.material.display_info(indent + 5)
-
-
-class Block(GeometricObject):
-    """Form a parallelpiped(i.e., a brick, possibly with non-orthogonal axes.)
-    
-    """
-    def __init__(self, material, e1=(1, 0, 0), e2=(0, 1, 0), e3=(0, 0, 1), size=(1, 1, 1), center=(0, 0, 0)):
-        """
-        Keyword arguments:
-            e1, e2, e3 -- The directions of the axes of the block; the 
-                lengths of these vectors are ignored. Must be linearly 
-                independent. They default to the three Cartesian axis.
-            size -- The lengths of the block edges along each of its 
-                three axes. Default is (1, 1, 1).
-            center -- center location. Default is (0, 0, 0).
-            
-        """
-        GeometricObject.__init__(self, material)
-
-        self.center = array(center, float)
-        
-        self.e1 = array(e1, float) / norm(e1)
-        self.e2 = array(e2, float) / norm(e2)
-        self.e3 = array(e3, float) / norm(e3)
-        self.size = array(size, float)
-        
-        self.projection_matrix = array([self.e1, self.e2, self.e3])
-        
-    def in_object(self, point):
-        """Check whether the given point is in this block.
-
-        """
-        p = array(point, float)
-        r = p - self.center
-        proj = dot(self.projection_matrix, r)
-
-        return (np.abs(proj) <= .5 * self.size).all()
-        
-    def geom_box(self):
-        """Return a GeomBox for this block.
-
-        """
-        tmpBox = GeomBox(low=self.center, high=self.center)
-        # enlarge the box to be big enough to contain all 8 corners
-        # of the block.
-        s1 = self.size[0] * self.e1
-        s2 = self.size[1] * self.e2
-        s3 = self.size[2] * self.e3
-        
-        corner = self.center - 0.5 * (s1 + s2 + s3)
-        
-        tmpBox.add_point(corner)
-        tmpBox.add_point(corner + s1)
-        tmpBox.add_point(corner + s2)
-        tmpBox.add_point(corner + s3)
-        tmpBox.add_point(corner + s1 + s2)
-        tmpBox.add_point(corner + s1 + s3)
-        tmpBox.add_point(corner + s3 + s2)
-        tmpBox.add_point(corner + s1 + s2 + s3)
-
-        return tmpBox
-        
-    def display_info(self, indent=0):
-        """Display information of this block.
-
-        """
-        print " " * indent, "block"
-        print " " * indent,
-        print "center", self.center,
-        print "size", self.size,
-        print "axes", self.e1, self.e2, self.e3
-        if self.material:
-            self.material.display_info(indent + 5)
-
-
-class Ellipsoid(Block):
-    """Form an ellipsoid.
-    
-    """
-    def __init__(self, material,
-                 e1=(1, 0, 0), e2=(0, 1, 0), e3=(0, 0, 1),
-                 size=(1, 1, 1), center=(0, 0, 0)):
-        """
-
-        """
-        Block.__init__(self, material, e1, e2, e3, size, center)
-
-        self.inverse_semi_axes = 2 / array(size, float)
-
-    def in_object(self, point):
-        """Check whether the given point is in this ellipsoid.
-
-        """
-        p = array(point, float)
-        r = p - self.center
-        proj = dot(self.projection_matrix, r)
-        q = proj * self.inverse_semi_axes
-        return sum(q * q) <= 1
-
-    def display_info(self, indent=0):
-        """Display information of this ellipsoid.
-
-        """
-        print " " * indent, "ellipsoid"
-        print " " * indent,
-        print "center", self.center,
-        print "size", self.size,
-        print "axis", self.e1, self.e2, self.e3
-        if self.material:
-            self.material.display_info(indent + 5)
-
-
-class Sphere(GeometricObject):
-    """Form a sphere.
-    
-    Attributes:
-    radius -- Radius of the sphere.
-    
-    """
-    def __init__(self, material, radius=1, center=(0, 0, 0)):
-        """
-        
-        Keyword arguments:
-        radius -- Radius of the sphere. Default is 1. 
-        material -- The material that the object is made of. 
-            No default.
-        center -- Center point of the object. Default is (0,0,0).
-
-        """
-        GeometricObject.__init__(self, material)
-
-        if radius < 0:
-            msg = "radius must be non-negative."
-            raise ValueError(msg)
-        else:
-            self.radius = float(radius)
-
-        self.center = array(center, float)
-
-    def geom_box(self):
-        """Return GeomBox for the sphere.
-
-        """
-        box = GeomBox(low=self.center, high=self.center)
-
-        box.low -= self.radius
-        box.high += self.radius
-
-        return box
-
-    def in_object(self, point):
-        """Check whether the given point is in the sphere.
-
-        """
-        p = array(point, float)
-        r = p - self.center
-        
-        return norm(r) <= self.radius;
-
-    def display_info(self, indent=0):
-        """Display information of the sphere.
-
-        """
-        print " " * indent, "sphere"
-        print " " * indent,
-        print "center", self.center,
-        print "radius", self.radius
-        if self.material:
-            self.material.display_info(indent + 5)
-
-
-class Boundary(GeometricObject):
-    """Form a boundary.
-     
-    """
-    def __init__(self, material, thickness=None, size=None,
-                 plus_x=True, minus_x=True,
-                 plus_y=True, minus_y=True,
-                 plus_z=True, minus_z=True):
-        """
-        
-         Keyword arguments:
-             material -- The filling material
-             thickness -- The spatial thickness of the Boundary layer 
-                 (which extends from the boundary towards the inside of
-                 the computational cell). Default value.
-             size --
-             plus_x -- Specify whether the high of the boundary in 
-                 direction x is set. Default is True.
-             minus_x -- Specify whether the low of the boundary in 
-                 direction x is set. Default is True.
-             plus_y -- Specify whether the high of the boundary in 
-                 direction y is set. Default is True.
-             minus_y -- Specify whether the low of the boundary in 
-                 direction y is set. Default is True.
-             plus_z -- Specify whether the high of the boundary in 
-                 direction z is set. Default is True.
-             minus_z -- Specify whether the low of the boundary in 
-                 direction z is set. Default is True.
-        
-        """
-        GeometricObject.__init__(self, material)
-
-        self.d = float(thickness)
-        
-        self.half_size = .5 * array(size, float)
-        
-        self.box_list = []
-        
-        self.minus_x, self.plus_x = minus_x, plus_x
-        self.minus_y, self.plus_y = minus_y, plus_y
-        self.minus_z, self.plus_z = minus_z, plus_z
-
-        # do someting for the PML derived class?
-        if isinstance(material, PML):
-            pass
-        
-    def init(self, space):
-        if 2 * self.half_size[0] < space.dx:
-            self.half_size[0] = 0.5 * space.dx
-        
-        if 2 * self.half_size[1] < space.dy:
-            self.half_size[1] = 0.5 * space.dy
-            
-        if 2 * self.half_size[2] < space.dz:
-            self.half_size[2] = 0.5 * space.dz
-            
-        if 2 * self.half_size[0] > space.dx:
-            if self.plus_x:
-                low = (self.half_size[0] - self.d, -self.half_size[1],
-                       -self.half_size[2])
-                high = self.half_size[:]
-                self.box_list.append(GeomBox(low, high))
-            if self.minus_x:
-                low = -self.half_size[:]
-                high = (-self.half_size[0] + self.d, self.half_size[1],
-                        self.half_size[2])
-                self.box_list.append(GeomBox(low, high))
-                
-        if 2 * self.half_size[1] > space.dy:
-            if self.plus_y:
-                low = (-self.half_size[0], self.half_size[1] - self.d,
-                       -self.half_size[2])
-                high = self.half_size[:]
-                self.box_list.append(GeomBox(low, high))
-            if self.minus_y:
-                low = -self.half_size[:]
-                high = (self.half_size[0], -self.half_size[1] + self.d,
-                        self.half_size[2])
-                self.box_list.append(GeomBox(low, high))
-
-        if 2 * self.half_size[2] > space.dz:
-            if self.plus_z:
-                low = (-self.half_size[0], -self.half_size[1],
-                       self.half_size[2] - self.d)
-                high = self.half_size[:]
-                self.box_list.append(GeomBox(low, high))
-            if self.minus_z:
-                low = -self.half_size[:]
-                high = (self.half_size[0], self.half_size[1],
-                        -self.half_size[2] + self.d)
-                self.box_list.append(GeomBox(low, high))
-        
-        self.material.init(space, self.d)
-        
-    def in_object(self, point):
-        for box in self.box_list:
-            if box.in_box(point):
-                return True
-        return False
-        
-    def geom_box(self):
-        return GeomBox(-self.half_size, self.half_size)
-        
-    def display_info(self, indent=0):
-        print " " * indent, "boundary"
-        print " " * indent,
-        print "+x:", self.plus_x, "-x:", self.minus_x,
-        print "+y:", self.plus_y, "-y:", self.minus_y,
-        print "+z:", self.plus_z, "-z:", self.minus_z
-        if self.material:
-            self.material.display_info(indent + 5)
-    
-    
-def find_object(point, geom_list):
-    """Find the last object including point in geom_list.
-    
-    find_object returns (object, array index). If no object includes 
-    the given point it returns (geom_list[0], 0).
-    """
-    for i in range(len(geom_list) - 1, -1, -1):
-        if geom_list[i].in_object(point):
-            break
-        
-    return geom_list[i], i
 
 
 def in_range(idx, shape, component):
@@ -1685,4 +891,3 @@ if __name__ == '__main__':
     print "hx:", space.space_to_hx_index(0, 0, 0)
     print "hy:", space.space_to_hy_index(0, 0, 0)
     print "hz:", space.space_to_hz_index(0, 0, 0)
-    

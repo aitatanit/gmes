@@ -183,7 +183,7 @@ class Bandpass(SrcTime):
 
 class Dipole(Src):
     def __init__(self, src_time, pos, component, amp=1, filename=None):
-        self.pos = np.array(pos, float)
+        self.pos = np.array(pos, np.double)
         self.comp = component
         self.src_time = src_time
         self.amp = float(amp)
@@ -306,12 +306,12 @@ class TotalFieldScatteredField(Src):
         else:
             raise TypeError, 'src_time must be an instance of SrcTime.'
         
-        self.k = np.array(direction, float) / norm(direction)
-        self.center = np.array(center, float)
-        self.size = np.array(size, float)
+        self.k = np.array(direction, np.double) / norm(direction)
+        self.center = np.array(center, np.double)
+        self.size = np.array(size, np.double)
         
         self.half_size = .5 * self.size
-        self.e_direction = np.array(polarization, float) / norm(polarization)
+        self.e_direction = np.array(polarization, np.double) / norm(polarization)
         
         # direction of h field
         self.h_direction = cross(self.k, self.e_direction)
@@ -326,7 +326,8 @@ class TotalFieldScatteredField(Src):
         self.src_time.init(cmplx)
         
         self.aux_fdtd = self._get_aux_fdtd(space, geom_tree, cmplx)
-        
+        self.aux_fdtd.init()
+
     def step(self):
         self.aux_fdtd.step()
         
@@ -1259,6 +1260,7 @@ class GaussianBeam(TotalFieldScatteredField):
         self.src_time.init(cmplx)
         
         aux_fdtd = self._get_aux_fdtd(space, geom_tree, cmplx)
+        aux_fdtd.init()
         raising = aux_fdtd.src_list[0].src_time.width
         dist = 2 * aux_fdtd.space.half_size[2]
         default_medium = (i for i in aux_fdtd.geom_list 

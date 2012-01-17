@@ -13,9 +13,9 @@ except ImportError:
 from copy import deepcopy
 from math import sqrt
 from cmath import exp
+from numpy import ndindex, arange, inf, array
 
 import numpy as np
-from numpy import ndindex, arange, inf, array
 
 # GMES modules
 from geometry import GeomBoxTree, in_range, DefaultMedium
@@ -23,6 +23,7 @@ from file_io import Probe
 #from file_io import write_hdf5, snapshot
 from show import ShowLine, ShowPlane, Snapshot
 from material import Dummy
+
 import constant as const
 
 
@@ -33,7 +34,7 @@ class TimeStep(object):
     dt -- time-step size
     n -- current time-step
     t -- current time
-        
+    
     """
     def __init__(self, dt, n=0.0, t=0.0):
         """Constructor.
@@ -50,7 +51,7 @@ class TimeStep(object):
         
     def half_step_up(self):
         """Increase n and t for the electric or magnetic field update.
-
+        
         """
         self.n += 0.5
         self.t = self.n * self.dt
@@ -150,8 +151,9 @@ class FDTD(object):
             print 'Initializing the geometry list...',
             
         self.geom_list = deepcopy(geom_list)
-        for geom_obj in self.geom_list:
-            geom_obj.init(self.space)
+
+        for go in self.geom_list:
+            go.init(self.space)
             
         if self.verbose:
             print 'done.'
@@ -186,7 +188,7 @@ class FDTD(object):
             c = 1 / sqrt(eps_inf * mu_inf)
             S = c * time_step_size / ds
             ref_n = sqrt(eps_inf)
-            self.bloch = np.array(bloch, float)
+            self.bloch = np.array(bloch, np.double)
             self.bloch = 2 * ref_n / ds \
                 * np.arcsin(np.sin(self.bloch * S * ds / 2) / S)
             
@@ -210,8 +212,8 @@ class FDTD(object):
 
     def init(self):
         """Initialize sources.
-        """
 
+        """
         if self.verbose:
             print 'Allocating memory for the electromagnetic fields...',
             
@@ -233,10 +235,6 @@ class FDTD(object):
             print 'hx field:', self.hx.dtype, self.hx.shape
             print 'hy field:', self.hy.dtype, self.hy.shape
             print 'hz field:', self.hz.dtype, self.hz.shape
-
-    # def init(self):
-    #     """Initialize sources.
-    #     """
 
         if self.verbose:
             print 'Mapping the piecewise material.',
@@ -274,9 +272,6 @@ class FDTD(object):
             print 'hz material:',
             self._print_pw_obj(self.material_hz)
 
-    # def init(self):
-    #     """Initialize sources.
-    #     """
         
         if self.verbose:
             print 'Mapping the pointwise source...',
@@ -349,7 +344,7 @@ class FDTD(object):
 
         non_inf = e_ds.intersection(h_ds)
 
-        dr = array((space.dx, space.dy, space.dz), float)
+        dr = array((space.dx, space.dy, space.dz), np.double)
         for i in range(3):
             if i not in non_inf: dr[i] = inf
         

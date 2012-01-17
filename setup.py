@@ -5,6 +5,7 @@
 from os import getcwd
 from glob import glob
 from distutils.core import setup, Extension
+from Cython.Distutils import build_ext
 
 # Third-party modules - we depend on numpy for everything
 import numpy
@@ -40,6 +41,10 @@ constant = Extension(name = 'gmes._constant',
                      swig_opts = ['-c++', '-outdir', 'gmes'],
                      language = 'c++')
 
+# pygeom module
+pygeom = Extension(name = 'gmes.pygeom',
+                   sources = ['src/pygeom.pyx'])
+
 setup(name = PACKAGE,
       version = VERSION,
       description = "GIST Maxwell's Equations Solver",
@@ -62,4 +67,5 @@ setup(name = PACKAGE,
         'Translations: Korean'],
       license = 'http://www.gnu.org/licenses/gpl.html',
       packages = [PACKAGE],
-      ext_modules = [pw_material, constant])
+      ext_modules = [pw_material, constant, pygeom],
+      cmdclass = {'build_ext': build_ext})
