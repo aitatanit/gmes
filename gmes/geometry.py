@@ -64,6 +64,9 @@ class AuxiCartComm(object):
     def Get_topo(self):
         return self.topo
     
+    def Get_size(self):
+        return 1
+
     def Shift(self, direction, disp):
         """Get source/destination with specified shift.
         
@@ -178,10 +181,13 @@ class Cartesian(object):
         the nodes.
         
         """
+        size = self.cart_comm.Get_size()
+        if size == 1:
+            return obj
+
         if root is None:
             obj = self.cart_comm.recv(source = MPI.ANY_SOURCE)
         else:
-            size = self.cart_comm.Get_size()
             for dest in xrange(size):
                 if dest != root:
                     self.cart_comm.send(obj, dest)

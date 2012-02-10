@@ -60,8 +60,7 @@ class Probe(object):
 
     def write(self, n):
         self.f.write(str(n) + ' ' + str(self.field[self.idx]) + '\n')
-        
-        
+       
 def write_hdf5(data, name, low_index, high_index):
     h5file = openFile(name + '.h5', mode='w')
     group = h5file.createGroup('/')
