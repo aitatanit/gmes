@@ -50,17 +50,28 @@ class PwSource(object):
 
 
 class DipoleParam(PwSourceParam):
-    def __init__(self, src_time=None, amp=1):
+    def __init__(self, src_time=None, amp=1, 
+                 comp=None, eps_inf=1, mu_inf=1):
         self.src_time = src_time
         self.amp = float(amp)
+        self.comp = comp
+        self.eps_inf = float(eps_inf)
+        self.mu_inf = float(mu_inf)
 
 
 class DipoleElectric(PwSource):
     def _update(self, e, h1, h2, dr1, dr2, dt, n, idx, param):
-        src_t = param.amp * param.src_time.dipole(dt * n)
-        e[idx] = src_t
-        
-        
+        """
+        This _update should be called after that the pw_material._update 
+        is called.
+
+        """
+        src_t = param.amp * param.src_time.oscillator(dt * n)
+        if issubclass(param.comp, const.Electric):
+            e[idx] = src_t
+        elif issubclass(param.comp, const.ElectricCurrent):
+            e[idx] -= dt * src_t / param.eps_inf
+
 class DipoleEx(DipoleElectric): pass
 
 
@@ -72,9 +83,16 @@ class DipoleEz(DipoleElectric): pass
 
 class DipoleMagnetic(PwSource):
     def _update(self, h, e1, e2, dr1, dr2, dt, n, idx, param):
-        src_t = param.amp * param.src_time.dipole(dt * n)
-        h[idx] = src_t
+        """
+        This _update should be called after that the pw_material._update 
+        is called.
 
+        """
+        src_t = param.amp * param.src_time.oscillator(dt * n)
+        if issubclass(param.comp, const.Magnetic):
+            h[idx] = src_t
+        elif issubclass(param.comp, const.MagneticCurrent):
+            h[idx] -= dt * src_t / param.mu_inf
         
 class DipoleHx(DipoleMagnetic): pass
 
@@ -106,7 +124,7 @@ class _Continuous(_SrcTime):
         else:
             self.width = float(width)
             
-    def dipole(self, time):
+    def oscillator(self, time):
         ts = time - self.start
         te = self.end - time
         

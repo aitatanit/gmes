@@ -42,6 +42,7 @@ namespace gmes
     {
       return tag;
     }
+    
   private:
     Component();
     static const int tag = 0;
@@ -135,7 +136,7 @@ namespace gmes
     static const int tag = 8;
   };
 
-  class Directional
+  class ElectricCurrent: public Component
   {
   public:
     static int get_tag()
@@ -143,22 +144,33 @@ namespace gmes
       return tag;
     }
   private:
-    Directional();
-    static const int tag = 10;
+    static const int tag = 9;
   };
 
-  class X: public Directional
+  class Jx: public ElectricCurrent
   {
   public:
     static int get_tag()
     {
       return tag;
     }
+  private:
+    static const int tag = 10;
+  };
+
+  class Jy: public ElectricCurrent
+  {
+  public:
+    static int get_tag()
+    {
+      return tag;
+    }
+
   private:
     static const int tag = 11;
   };
 
-  class Y: public Directional
+  class Jz: public ElectricCurrent
   {
   public:
     static int get_tag()
@@ -169,7 +181,7 @@ namespace gmes
     static const int tag = 12;
   };
 
-  class Z: public Directional
+    class MagneticCurrent: public Component
   {
   public:
     static int get_tag()
@@ -178,6 +190,84 @@ namespace gmes
     }
   private:
     static const int tag = 13;
+  };
+
+  class Mx: public MagneticCurrent
+  {
+  public:
+    static int get_tag()
+    {
+      return tag;
+    }
+  private:
+    static const int tag = 14;
+  };
+
+  class My: public MagneticCurrent
+  {
+  public:
+    static int get_tag()
+    {
+      return tag;
+    }
+  private:
+    static const int tag = 15;
+  };
+
+  class Mz: public MagneticCurrent
+  {
+  public:
+    static int get_tag()
+    {
+      return tag;
+    }
+  private:
+    static const int tag = 16;
+  };
+
+  class Directional
+  {
+  public:
+    static int get_tag()
+    {
+      return tag;
+    }
+  private:
+    Directional();
+    static const int tag = 17;
+  };
+
+  class X: public Directional
+  {
+  public:
+    static int get_tag()
+    {
+      return tag;
+    }
+  private:
+    static const int tag = 18;
+  };
+
+  class Y: public Directional
+  {
+  public:
+    static int get_tag()
+    {
+      return tag;
+    }
+  private:
+    static const int tag = 19;
+  };
+
+  class Z: public Directional
+  {
+  public:
+    static int get_tag()
+    {
+      return tag;
+    }
+  private:
+    static const int tag = 20;
   };
 
   class PlusX: public X
@@ -190,7 +280,7 @@ namespace gmes
     static void get_vector(double vector[3]);
   private:
     static const double vector[];
-    static const int tag = 14;
+    static const int tag = 21;
   };
 
   class MinusX: public X
@@ -203,7 +293,7 @@ namespace gmes
     static void get_vector(double vector[3]);
   private:
     static const double vector[];
-    static const int tag = 15;
+    static const int tag = 22;
   };
 
   class PlusY: public Y
@@ -216,7 +306,7 @@ namespace gmes
     static void get_vector(double vector[3]);
   private:
     static const double vector[];
-    static const int tag = 16;
+    static const int tag = 23;
   };
 
   class MinusY: public Y
@@ -229,7 +319,7 @@ namespace gmes
     static void get_vector(double vector[3]);
   private:
     static const double vector[];
-    static const int tag = 17;
+    static const int tag = 24;
   };
 
   class PlusZ: public Z
@@ -242,7 +332,7 @@ namespace gmes
     static void get_vector(double vector[3]);
   private:
     static const double vector[];
-    static const int tag = 18;
+    static const int tag = 25;
   };
 
   class MinusZ: public Z
@@ -255,7 +345,7 @@ namespace gmes
     static void get_vector(double vector[3]);
   private:
     static const double vector[];
-    static const int tag = 19;
+    static const int tag = 26;
   };
 
 }

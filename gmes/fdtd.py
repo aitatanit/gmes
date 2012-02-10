@@ -518,7 +518,7 @@ class FDTD(object):
 
     def init_source_ex(self):
         for so in self.src_list:
-            pw_src = so.get_pw_source_ex(self.ex, self.space)
+            pw_src = so.get_pw_source_ex(self.ex, self.space, self.geom_tree)
 
             if pw_src is None:
                 continue
@@ -530,7 +530,7 @@ class FDTD(object):
             
     def init_source_ey(self):
         for so in self.src_list:
-            pw_src = so.get_pw_source_ey(self.ey, self.space)
+            pw_src = so.get_pw_source_ey(self.ey, self.space, self.geom_tree)
             
             if pw_src is None:
                 continue
@@ -542,7 +542,7 @@ class FDTD(object):
 
     def init_source_ez(self):
         for so in self.src_list:
-            pw_src = so.get_pw_source_ez(self.ez, self.space)
+            pw_src = so.get_pw_source_ez(self.ez, self.space, self.geom_tree)
 
             if pw_src is None:
                 continue
@@ -554,7 +554,7 @@ class FDTD(object):
 
     def init_source_hx(self):
         for so in self.src_list:
-            pw_src = so.get_pw_source_hx(self.hx, self.space)
+            pw_src = so.get_pw_source_hx(self.hx, self.space, self.geom_tree)
 
             if pw_src is None:
                 continue
@@ -566,7 +566,7 @@ class FDTD(object):
             
     def init_source_hy(self):
         for so in self.src_list:
-            pw_src = so.get_pw_source_hy(self.hy, self.space)
+            pw_src = so.get_pw_source_hy(self.hy, self.space, self.geom_tree)
 
             if pw_src is None:
                 continue
@@ -578,7 +578,7 @@ class FDTD(object):
             
     def init_source_hz(self):
         for so in self.src_list:
-            pw_src = so.get_pw_source_hz(self.hz, self.space)
+            pw_src = so.get_pw_source_hz(self.hz, self.space, self.geom_tree)
 
             if pw_src is None:
                 continue

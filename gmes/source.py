@@ -46,7 +46,7 @@ class SrcTime(object):
     def init(self, cmplx):
         raise NotImplementedError
 
-    def dipole(self, time):
+    def oscillator(self, time):
         raise NotImplementedError
 
     def display_info(self, indent=0):
@@ -66,22 +66,22 @@ class Src(object):
     def step(self):
         raise NotImplementedError
 
-    def get_pw_source_ex(self, ex_field, space):
+    def get_pw_source_ex(self, ex_field, space, geom_tree):
         raise NotImplementedError
     
-    def get_pw_source_ey(self, ey_field, space):
+    def get_pw_source_ey(self, ey_field, space, geom_tree):
         raise NotImplementedError
 
-    def get_pw_source_ez(self, ez_field, space):
+    def get_pw_source_ez(self, ez_field, space, geom_tree):
         raise NotImplementedError
 
-    def get_pw_source_hx(self, hx_field, space):
+    def get_pw_source_hx(self, hx_field, space, geom_tree):
         raise NotImplementedError
 
-    def get_pw_source_hy(self, hy_field, space):
+    def get_pw_source_hy(self, hy_field, space, geom_tree):
         raise NotImplementedError
     
-    def get_pw_source_hz(self, hz_field, space):
+    def get_pw_source_hz(self, hz_field, space, geom_tree):
         raise NotImplementedError
 
 
@@ -112,7 +112,7 @@ class Continuous(SrcTime):
         print "end time:", self.end,
         print "raising duration:", self.width
                 
-    def dipole(self, time):
+    def oscillator(self, time):
         ts = time - self.start
         te = self.end - time
         
@@ -164,13 +164,13 @@ class Bandpass(SrcTime):
         print "peak time:", self.peak_time,
         print "cutoff:", self.cutoff
         
-    def dipole(self, time):
+    def oscillator(self, time):
         tt = time - self.peak_time
         if (abs(tt) > self.cutoff): 
             return 0
 
-        # correction factor so that current amplitude (= d(dipole)/dt) is
-        # ~ 1 near the peak of the Gaussian.
+        # correction factor so that current amplitude (= d(oscillator)/dt) 
+        # is ~1 near the peak of the Gaussian.
         cfactor = 1.0 / (-2j * pi * self.freq)
         
         osc = cfactor * exp(-0.5 * (tt / self.width)**2) \
@@ -205,73 +205,97 @@ class Dipole(Src):
         
         self.src_time.display_info(4)
         
-    def get_pw_source_ex(self, ex_field, space):
+    def get_pw_source_ex(self, ex_field, space, geom_tree):
         pw_src = None
 
         if self.comp is const.Ex:
             idx = space.space_to_ex_index(*self.pos)
             if in_range(idx, ex_field.shape, const.Ex):
-                pw_src_param = DipoleParam(self.src_time, self.amp)
+                mat_obj, underneath = geom_tree.material_of_point(self.pos)
+                pw_src_param = DipoleParam(self.src_time, self.amp,
+                                           self.comp,
+                                           mat_obj.eps_inf,
+                                           mat_obj.mu_inf)
                 pw_src = DipoleEx()
                 pw_src.attach(idx, pw_src_param)
 
         return pw_src
 
-    def get_pw_source_ey(self, ey_field, space):
+    def get_pw_source_ey(self, ey_field, space, geom_tree):
         pw_src = None
 
         if self.comp is const.Ey:
             idx = space.space_to_ey_index(*self.pos)
             if in_range(idx, ey_field.shape, const.Ey):
-                pw_src_param = DipoleParam(self.src_time, self.amp)
+                mat_obj, underneath = geom_tree.material_of_point(self.pos)
+                pw_src_param = DipoleParam(self.src_time, self.amp,
+                                           self.comp,
+                                           mat_obj.eps_inf,
+                                           mat_obj.mu_inf)
                 pw_src = DipoleEy()
                 pw_src.attach(idx, pw_src_param)
 
         return pw_src
 
-    def get_pw_source_ez(self, ez_field, space):
+    def get_pw_source_ez(self, ez_field, space, geom_tree):
         pw_src = None
 
         if self.comp is const.Ez:
             idx = space.space_to_ez_index(*self.pos)
             if in_range(idx, ez_field.shape, const.Ez):
-                pw_src_param = DipoleParam(self.src_time, self.amp)
+                mat_obj, underneath = geom_tree.material_of_point(self.pos)
+                pw_src_param = DipoleParam(self.src_time, self.amp,
+                                           self.comp,
+                                           mat_obj.eps_inf,
+                                           mat_obj.mu_inf)
                 pw_src = DipoleEz()
                 pw_src.attach(idx, pw_src_param)
 
         return pw_src
 
-    def get_pw_source_hx(self, hx_field, space):
+    def get_pw_source_hx(self, hx_field, space, geom_tree):
         pw_src = None
 
         if self.comp is const.Hx:
             idx = space.space_to_hx_index(*self.pos)
             if in_range(idx, hx_field.shape, const.Hx):
-                pw_src_param = DipoleParam(self.src_time, self.amp)
+                mat_obj, underneath = geom_tree.material_of_point(self.pos)
+                pw_src_param = DipoleParam(self.src_time, self.amp,
+                                           self.comp,
+                                           mat_obj.eps_inf,
+                                           mat_obj.mu_inf)
                 pw_src = DipoleHx()
                 pw_src.attach(idx, pw_src_param)
 
         return pw_src
 
-    def get_pw_source_hy(self, hy_field, space):
+    def get_pw_source_hy(self, hy_field, space, geom_tree):
         pw_src = None
 
         if self.comp is const.Hy:
             idx = space.space_to_hy_index(*self.pos)
             if in_range(idx, hy_field.shape, const.Hy):
-                pw_src_param = DipoleParam(self.src_time, self.amp)
+                mat_obj, underneath = geom_tree.material_of_point(self.pos)
+                pw_src_param = DipoleParam(self.src_time, self.amp,
+                                           self.comp,
+                                           mat_obj.eps_inf,
+                                           mat_obj.mu_inf)
                 pw_src = DipoleHy()
                 pw_src.attach(idx, pw_src_param)
 
         return pw_src
 
-    def get_pw_source_hz(self, hz_field, space):
+    def get_pw_source_hz(self, hz_field, space, geom_tree):
         pw_src = None
 
         if self.comp is const.Hz:
             idx = space.space_to_hz_index(*self.pos)
             if in_range(idx, hz_field.shape, const.Hz):
-                pw_src_param = DipoleParam(self.src_time, self.amp)
+                mat_obj, underneath = geom_tree.material_of_point(self.pos)
+                pw_src_param = DipoleParam(self.src_time, self.amp,
+                                           self.comp,
+                                           mat_obj.eps_inf,
+                                           mat_obj.mu_inf)
                 pw_src = DipoleHz()
                 pw_src.attach(idx, pw_src_param)
 
@@ -584,7 +608,7 @@ class TotalFieldScatteredField(Src):
                 
         return pw_src
 
-    def get_pw_source_ex(self, ex_field, space):
+    def get_pw_source_ex(self, ex_field, space, geom_tree):
         pw_src = TransparentEx()
 
         cosine = dot(self.h_direction, (0, 0, 1))
@@ -684,7 +708,7 @@ class TotalFieldScatteredField(Src):
 
         return pw_src
         
-    def get_pw_source_ey(self, ey_field, space):
+    def get_pw_source_ey(self, ey_field, space, geom_tree):
         pw_src = TransparentEy()
 
         cosine = dot(self.h_direction, (1, 0, 0))
@@ -782,7 +806,7 @@ class TotalFieldScatteredField(Src):
             
         return pw_src
 
-    def get_pw_source_ez(self, ez_field, space):
+    def get_pw_source_ez(self, ez_field, space, geom_tree):
         pw_src = TransparentEz()
 
         cosine = dot(self.h_direction, (0, 1, 0))
@@ -880,7 +904,7 @@ class TotalFieldScatteredField(Src):
 
         return pw_src
 
-    def get_pw_source_hx(self, hx_field, space):
+    def get_pw_source_hx(self, hx_field, space, geom_tree):
         pw_src = TransparentHx()
 
         cosine = dot(self.e_direction, (0, 0, 1))
@@ -991,7 +1015,7 @@ class TotalFieldScatteredField(Src):
 
         return pw_src
 
-    def get_pw_source_hy(self, hy_field, space):
+    def get_pw_source_hy(self, hy_field, space, geom_tree):
         pw_src = TransparentHy()
 
         cosine = dot(self.e_direction, (1, 0, 0))
@@ -1101,7 +1125,7 @@ class TotalFieldScatteredField(Src):
         
         return pw_src
 
-    def get_pw_source_hz(self, hz_field, space):
+    def get_pw_source_hz(self, hz_field, space, geom_tree):
         pw_src = TransparentHz()
 
         cosine = dot(self.e_direction, (0, 1, 0))
@@ -1290,7 +1314,7 @@ class GaussianBeam(TotalFieldScatteredField):
         r = self._dist_from_beam_axis(x, y, z)
         return exp(-(r / self.waist)**2)
         
-    def get_pw_source_ex(self, ex_field, space):
+    def get_pw_source_ex(self, ex_field, space, geom_tree):
         if self.directivity is const.PlusY:
             cosine = dot(self.h_direction, (0, 0, 1))
             return self._get_pw_source_ex_minus_y(ex_field, space, cosine)
@@ -1310,7 +1334,7 @@ class GaussianBeam(TotalFieldScatteredField):
         else:
             return None
 
-    def get_pw_source_ey(self, ey_field, space):
+    def get_pw_source_ey(self, ey_field, space, geom_tree):
         if self.directivity is const.PlusZ:
             cosine = dot(self.h_direction, (1, 0, 0))
             return self._get_pw_source_ey_minus_z(ey_field, space, cosine)
@@ -1330,7 +1354,7 @@ class GaussianBeam(TotalFieldScatteredField):
         else:
             return None
 
-    def get_pw_source_ez(self, ez_field, space):
+    def get_pw_source_ez(self, ez_field, space, geom_tree):
         if self.directivity is const.PlusX:
             cosine = dot(self.h_direction, (0, 1, 0))
             return self._get_pw_source_ez_minus_x(ez_field, space, cosine)
@@ -1350,7 +1374,7 @@ class GaussianBeam(TotalFieldScatteredField):
         else:
             return None
         
-    def get_pw_source_hx(self, hx_field, space):
+    def get_pw_source_hx(self, hx_field, space, geom_tree):
         if self.directivity is const.PlusY:
             cosine = dot(self.e_direction, (0, 0, 1))
             return self._get_pw_source_hx_minus_y(hx_field, space, cosine)
@@ -1370,7 +1394,7 @@ class GaussianBeam(TotalFieldScatteredField):
         else:
             return None
         
-    def get_pw_source_hy(self, hy_field, space):
+    def get_pw_source_hy(self, hy_field, space, geom_tree):
         if self.directivity is const.PlusZ:
             cosine = dot(self.e_direction, (1, 0, 0))
             return self._get_pw_source_hy_minus_z(hy_field, space, cosine)
@@ -1390,7 +1414,7 @@ class GaussianBeam(TotalFieldScatteredField):
         else:
             return None
         
-    def get_pw_source_hz(self, hz_field, space):
+    def get_pw_source_hz(self, hz_field, space, geom_tree):
         if self.directivity is const.PlusX:
             cosine = dot(self.e_direction, (0, 1, 0))
             return self._get_pw_source_hz_minus_x(hz_field, space, cosine)

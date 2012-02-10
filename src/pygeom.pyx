@@ -200,7 +200,6 @@ cdef class GeomBox(object):
         self.low.setfield(map(min, self.low, point), np.double)
         self.high.setfield(map(max, self.high, point), np.double)
     
-    @cython.profile(False)
     cdef inline bint between(self, double x, double low, double high):
         """Return truth of low <= x <= high.
         

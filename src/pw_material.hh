@@ -180,4 +180,4 @@ namespace gmes
   };
 }
 
-#endif /*PW_MATERIAL_HH_*/
+#endif /* PW_MATERIAL_HH_ */
