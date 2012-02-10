@@ -103,53 +103,6 @@ class DipoleHy(DipoleMagnetic): pass
 class DipoleHz(DipoleMagnetic): pass
 
 
-class _SrcTime(object):
-    """Time-dependent part of a source.
-    
-    """
-
-
-class _Continuous(_SrcTime):
-    """_Continuous (CW) source with (optional) slow turn-on and/or turn-off.
-    
-    """
-    def __init__(self, freq, phase=0, start=0, end=inf, width=None):
-        self.freq = float(freq)
-        self.phase = float(phase)
-        self.start = float(start)
-        self.end = float(end)
-        
-        if width is None:
-            self.width = 3 / self.freq
-        else:
-            self.width = float(width)
-            
-    def oscillator(self, time):
-        ts = time - self.start
-        te = self.end - time
-        
-        if ts < 0 or te < 0:
-            return None
-        
-        if ts < self.width:
-            env = sin(.5 * pi * ts / self.width)**2
-        elif te < self.width:
-            env = sin(.5 * pi * te / self.width)**2
-        else:
-            env = 1
-            
-        return env * cos(2 * pi * self.freq * time - self.phase)
-        
-    def display_info(self, indent=0):
-        print " " * indent, "continuous source"
-        print " " * indent,
-        print "frequency:", self.freq,
-        print "initial phase advance:", self.phase,
-        print "start time:", self.start,
-        print "end time:", self.end,
-        print "raising duration:", self.width
-
-
 class TransparentParam(PwSourceParam):
     def __init__(self, amp, aux_fdtd, directional):
         self.aux_fdtd = aux_fdtd
@@ -204,7 +157,7 @@ class TransparentEx(PwSource):
     def _consistency_minus_y(self, ex, hz, hy, dy, dz, dt, face, idx, param):
         incident_hz = (param.r0[face] * param.aux_fdtd.hy[param.samp_idx0[face]] +
                        param.r1[face] * param.aux_fdtd.hy[param.samp_idx1[face]])
-                
+        
         ex[idx] -= dt / (param.eps_inf * dy) * param.amp[face] * incident_hz
 
     def _consistency_plus_y(self, ex, hz, hy, dy, dz, dt, face, idx, param):

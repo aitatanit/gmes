@@ -801,7 +801,7 @@ class Cartesian(object):
         print " " * indent, "Cartesian space"
         
         print " " * indent, "MPI topology:",
-        print self.my_id, '/', self.numprocs
+        print self.my_id, 'of', self.numprocs
 
         print " " * indent,
         print "size:", 2 * self.half_size,
