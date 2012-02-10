@@ -123,9 +123,9 @@ if __name__ == "__main__":
     hx2_id = 4 % space.numprocs
     hy2_id = 5 % space.numprocs
 
-    src_list = (source.Dipole(src_time=source.Bandpass(freq=FREQ, fwidth=FWIDTH),
-                              component=constant.Ez, 
-                              pos=(-.5 * SIZE[0] + 1, 0, 0)),)
+    src_list = (source.PointSource(src_time=source.Bandpass(freq=FREQ, fwidth=FWIDTH),
+                                   component=constant.Ez, 
+                                   pos=(-.5 * SIZE[0] + 1, 0, 0)),)
 
     my_fdtd = fdtd.TMzFDTD(space, geom_list, src_list)
     my_fdtd.init()

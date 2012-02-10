@@ -23,8 +23,8 @@ SIZE = (10,10,0)
 space = geometry.Cartesian(size=SIZE, resolution=20)
 geom_list = (geometry.DefaultMedium(material=material.Dielectric()),
              geometry.Boundary(material=material.UPML(), thickness=0.5, size=SIZE))
-src_list = (source.Dipole(src_time=source.Continuous(freq=0.8), 
-                          component=constant.Ez, pos=(0,0,0)),)
+src_list = (source.PointSource(src_time=source.Continuous(freq=0.8), 
+                               component=constant.Ez, pos=(0,0,0)),)
 
 my_fdtd = fdtd.TMzFDTD(space, geom_list, src_list)
 

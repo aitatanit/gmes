@@ -97,8 +97,8 @@ geom_list = (geometry.DefaultMedium(material=AIR),
 
 space = geometry.Cartesian(size=SIZE, resolution=RESOLUTION)
 
-src_list = (source.Dipole(src_time=source.Continuous(freq=FREQ),
-                         component=constant.Hz, pos=(-.5 * SIZE[0] + 1, 0, 0)),)
+src_list = (source.PointSource(src_time=source.Continuous(freq=FREQ),
+                               component=constant.Hz, pos=(-.5 * SIZE[0] + 1, 0, 0)),)
 
 # src_list = (source.GaussianBeam(src_time=source.Continuous(freq=FREQ),
 #                                 directivity=constant.PlusX,

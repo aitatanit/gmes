@@ -25,9 +25,9 @@ from fdtd import TEMzFDTD
 from material import Dielectric, CPML
 
 # for a dipole source
-from pw_source import DipoleParam
-from pw_source import DipoleEx, DipoleEy, DipoleEz
-from pw_source import DipoleHx, DipoleHy, DipoleHz
+from pw_source import PointSourceParam
+from pw_source import PointSourceEx, PointSourceEy, PointSourceEz
+from pw_source import PointSourceHx, PointSourceHy, PointSourceHz
 
 # for a total-field/scattered-field and Gaussian beam source
 from pw_source import TransparentElectricParam, TransparentMagneticParam
@@ -36,7 +36,7 @@ from pw_source import TransparentHx, TransparentHy, TransparentHz
 
 # 
 # SrcTime: Continuous, Bandpass
-# Src: Dipole, GaussianBeam, TotalFieldScatteredField
+# Src: PointSource, GaussianBeam, TotalFieldScatteredField
 #
 
 class SrcTime(object):
@@ -181,7 +181,7 @@ class Bandpass(SrcTime):
             return osc.real
         
 
-class Dipole(Src):
+class PointSource(Src):
     def __init__(self, src_time, pos, component, amp=1, filename=None):
         self.pos = np.array(pos, np.double)
         self.comp = component
@@ -212,11 +212,12 @@ class Dipole(Src):
             idx = space.space_to_ex_index(*self.pos)
             if in_range(idx, ex_field.shape, const.Ex):
                 mat_obj, underneath = geom_tree.material_of_point(tuple(self.pos))
-                pw_src_param = DipoleParam(self.src_time, self.amp,
-                                           self.comp,
-                                           mat_obj.eps_inf,
-                                           mat_obj.mu_inf)
-                pw_src = DipoleEx()
+                pw_src_param = PointSourceParam(self.src_time, 
+                                                self.amp,
+                                                self.comp,
+                                                mat_obj.eps_inf,
+                                                mat_obj.mu_inf)
+                pw_src = PointSourceEx()
                 pw_src.attach(idx, pw_src_param)
 
         return pw_src
@@ -228,11 +229,12 @@ class Dipole(Src):
             idx = space.space_to_ey_index(*self.pos)
             if in_range(idx, ey_field.shape, const.Ey):
                 mat_obj, underneath = geom_tree.material_of_point(tuple(self.pos))
-                pw_src_param = DipoleParam(self.src_time, self.amp,
-                                           self.comp,
-                                           mat_obj.eps_inf,
-                                           mat_obj.mu_inf)
-                pw_src = DipoleEy()
+                pw_src_param = PointSourceParam(self.src_time, 
+                                                self.amp,
+                                                self.comp,
+                                                mat_obj.eps_inf,
+                                                mat_obj.mu_inf)
+                pw_src = PointSourceEy()
                 pw_src.attach(idx, pw_src_param)
 
         return pw_src
@@ -244,11 +246,12 @@ class Dipole(Src):
             idx = space.space_to_ez_index(*self.pos)
             if in_range(idx, ez_field.shape, const.Ez):
                 mat_obj, underneath = geom_tree.material_of_point(tuple(self.pos))
-                pw_src_param = DipoleParam(self.src_time, self.amp,
-                                           self.comp,
-                                           mat_obj.eps_inf,
-                                           mat_obj.mu_inf)
-                pw_src = DipoleEz()
+                pw_src_param = PointSourceParam(self.src_time, 
+                                                self.amp,
+                                                self.comp,
+                                                mat_obj.eps_inf,
+                                                mat_obj.mu_inf)
+                pw_src = PointSourceEz()
                 pw_src.attach(idx, pw_src_param)
 
         return pw_src
@@ -260,11 +263,12 @@ class Dipole(Src):
             idx = space.space_to_hx_index(*self.pos)
             if in_range(idx, hx_field.shape, const.Hx):
                 mat_obj, underneath = geom_tree.material_of_point(tuple(self.pos))
-                pw_src_param = DipoleParam(self.src_time, self.amp,
-                                           self.comp,
-                                           mat_obj.eps_inf,
-                                           mat_obj.mu_inf)
-                pw_src = DipoleHx()
+                pw_src_param = PointSourceParam(self.src_time, 
+                                                self.amp,
+                                                self.comp,
+                                                mat_obj.eps_inf,
+                                                mat_obj.mu_inf)
+                pw_src = PointSourceHx()
                 pw_src.attach(idx, pw_src_param)
 
         return pw_src
@@ -276,11 +280,12 @@ class Dipole(Src):
             idx = space.space_to_hy_index(*self.pos)
             if in_range(idx, hy_field.shape, const.Hy):
                 mat_obj, underneath = geom_tree.material_of_point(tuple(self.pos))
-                pw_src_param = DipoleParam(self.src_time, self.amp,
-                                           self.comp,
-                                           mat_obj.eps_inf,
-                                           mat_obj.mu_inf)
-                pw_src = DipoleHy()
+                pw_src_param = PointSourceParam(self.src_time, 
+                                                self.amp,
+                                                self.comp,
+                                                mat_obj.eps_inf,
+                                                mat_obj.mu_inf)
+                pw_src = PointSourceHy()
                 pw_src.attach(idx, pw_src_param)
 
         return pw_src
@@ -292,11 +297,12 @@ class Dipole(Src):
             idx = space.space_to_hz_index(*self.pos)
             if in_range(idx, hz_field.shape, const.Hz):
                 mat_obj, underneath = geom_tree.material_of_point(tuple(self.pos))
-                pw_src_param = DipoleParam(self.src_time, self.amp,
-                                           self.comp,
-                                           mat_obj.eps_inf,
-                                           mat_obj.mu_inf)
-                pw_src = DipoleHz()
+                pw_src_param = PointSourceParam(self.src_time, 
+                                                self.amp,
+                                                self.comp,
+                                                mat_obj.eps_inf,
+                                                mat_obj.mu_inf)
+                pw_src = PointSourceHz()
                 pw_src.attach(idx, pw_src_param)
 
         return pw_src
@@ -531,9 +537,9 @@ class TotalFieldScatteredField(Src):
                                   size=aux_size,
                                   minus_z=False))
         src_pnt = aux_space.ex_index_to_space(0, 0, 0)
-        aux_src_list = (Dipole(src_time=deepcopy(self.src_time),
-                               component=const.Ex,
-                               pos=src_pnt),)
+        aux_src_list = (PointSource(src_time=deepcopy(self.src_time),
+                                    component=const.Ex,
+                                    pos=src_pnt),)
         
         if cmplx:
             aux_fdtd = TEMzFDTD(aux_space, aux_geom_list, aux_src_list,

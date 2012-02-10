@@ -49,7 +49,7 @@ class PwSource(object):
         raise NotImplementedError
 
 
-class DipoleParam(PwSourceParam):
+class PointSourceParam(PwSourceParam):
     def __init__(self, src_time=None, amp=1, 
                  comp=None, eps_inf=1, mu_inf=1):
         self.src_time = src_time
@@ -59,7 +59,7 @@ class DipoleParam(PwSourceParam):
         self.mu_inf = float(mu_inf)
 
 
-class DipoleElectric(PwSource):
+class PointSourceElectric(PwSource):
     def _update(self, e, h1, h2, dr1, dr2, dt, n, idx, param):
         """
         This _update should be called after that the pw_material._update 
@@ -72,16 +72,16 @@ class DipoleElectric(PwSource):
         elif issubclass(param.comp, const.ElectricCurrent):
             e[idx] -= dt * src_t / param.eps_inf
 
-class DipoleEx(DipoleElectric): pass
+class PointSourceEx(PointSourceElectric): pass
 
 
-class DipoleEy(DipoleElectric): pass
+class PointSourceEy(PointSourceElectric): pass
 
 
-class DipoleEz(DipoleElectric): pass
+class PointSourceEz(PointSourceElectric): pass
 
 
-class DipoleMagnetic(PwSource):
+class PointSourceMagnetic(PwSource):
     def _update(self, h, e1, e2, dr1, dr2, dt, n, idx, param):
         """
         This _update should be called after that the pw_material._update 
@@ -94,13 +94,13 @@ class DipoleMagnetic(PwSource):
         elif issubclass(param.comp, const.MagneticCurrent):
             h[idx] -= dt * src_t / param.mu_inf
         
-class DipoleHx(DipoleMagnetic): pass
+class PointSourceHx(PointSourceMagnetic): pass
 
 
-class DipoleHy(DipoleMagnetic): pass
+class PointSourceHy(PointSourceMagnetic): pass
 
 
-class DipoleHz(DipoleMagnetic): pass
+class PointSourceHz(PointSourceMagnetic): pass
 
 
 class TransparentParam(PwSourceParam):
