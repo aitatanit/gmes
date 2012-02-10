@@ -23,6 +23,14 @@ import_array();
 %rename(_hx) gmes::Hx;
 %rename(_hy) gmes::Hy;
 %rename(_hz) gmes::Hz;
+%rename(_electriccurrent) gmes::ElectricCurrent;
+%rename(_jx) gmes::Jx;
+%rename(_jy) gmes::Jy;
+%rename(_jz) gmes::Jz;
+%rename(_magneticcurrent) gmes::MagneticCurrent;
+%rename(_mx) gmes::Mx;
+%rename(_my) gmes::My;
+%rename(_mz) gmes::Mz;
 %rename(_directional) gmes::Directional;
 %rename(_x) gmes::X;
 %rename(_y) gmes::Y;
@@ -88,6 +96,54 @@ class Hz(Magnetic):
     @classmethod
     def str(cls):
         return 'Hz'
+
+class ElectricCurrent(Component):
+  tag = _electriccurrent_get_tag()
+    
+class Jx(ElectricCurrent):
+    tag = _jx_get_tag()
+
+    @classmethod
+    def str(cls):
+        return 'Jx'
+
+class Jy(ElectricCurrent):
+    tag = _jy_get_tag()
+
+    @classmethod
+    def str(cls):
+        return 'Jy'
+
+class Jz(ElectricCurrent):
+    tag = _jz_get_tag()
+
+    @classmethod
+    def str(cls):
+        return 'Jz'
+
+class MagneticCurrent(Component):
+    tag = _magneticcurrent_get_tag()
+    
+class Mx(Magnetic):
+    tag = _mx_get_tag()
+
+    @classmethod
+    def str(cls):
+        return 'Mx'
+
+class My(MagneticCurrent):
+    tag = _my_get_tag()
+
+    @classmethod
+    def str(cls):
+        return 'My'
+
+class Mz(MagneticCurrent):
+    tag = _mz_get_tag()
+
+    @classmethod
+    def str(cls):
+        return 'Mz'
 
 class Directional(_directional):
     tag = _directional_get_tag()

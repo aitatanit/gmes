@@ -199,7 +199,7 @@ class Dipole(Src):
     def display_info(self, indent=0):
         print " " * indent, "Hertzian dipole source:"
         print " " * indent, "center:", self.pos
-        print " " * indent, "polarization direction:", self.comp
+        print " " * indent, "component:", self.comp.str()
         print " " * indent, "maximum amp.:", self.amp
         print " " * indent, "source recording: ", self.filename
         
