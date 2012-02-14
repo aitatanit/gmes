@@ -970,7 +970,7 @@ cdef class Boundary(GeometricObject):
     cdef public list box_list
     cdef public bint minus_x, plus_x, minus_y, plus_y, minus_z, plus_z
 
-    def __init__(self, material, thickness=0, size=(0,0,0),
+    def __init__(self, material, thickness=0,
                  plus_x=True, minus_x=True,
                  plus_y=True, minus_y=True,
                  plus_z=True, minus_z=True):
@@ -981,7 +981,6 @@ cdef class Boundary(GeometricObject):
              thickness -- The spatial thickness of the Boundary layer 
                  (which extends from the boundary towards the inside of
                  the computational cell). Default value.
-             size --
              plus_x -- Specify whether the high of the boundary in 
                  direction x is set. Default is True.
              minus_x -- Specify whether the low of the boundary in 
@@ -1000,13 +999,13 @@ cdef class Boundary(GeometricObject):
         
         self.d = float(thickness)
         
-        self.half_size = .5 * np.array(size, np.double)
-        
         self.box_list = []
         
         self.minus_x, self.plus_x = minus_x, plus_x
         self.minus_y, self.plus_y = minus_y, plus_y
         self.minus_z, self.plus_z = minus_z, plus_z
+
+        self.half_size = np.zeros((3,), np.double)
 
         # do someting for the PML derived class?
         if isinstance(material, PML):
@@ -1038,6 +1037,8 @@ cdef class Boundary(GeometricObject):
         self.plus_z = d['plus_z']
 
     def init(self, space):
+        self.half_size = np.array(space.half_size, np.double)
+
         if 2 * self.half_size[0] < space.dx:
             self.half_size[0] = 0.5 * space.dx
         
