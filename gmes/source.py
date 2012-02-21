@@ -180,6 +180,40 @@ class Bandpass(SrcTime):
         else:
             return osc.real
         
+        
+class DifferentiatedGaussian(SrcTime):
+    """a differentiated Gaussian pulse
+    
+    -2((t-t0)/tw)exp(-((t-t0)/tw)**2)
+
+    """
+    def __init__(self, tw, t0):
+        """
+        tw: half-width of pulse
+        t0: dealy time
+        
+        """
+        self.tw = float(tw)
+        self.t0 = float(t0)
+        
+    def init(self, cmplx):
+        self.cmplx = bool(cmplx)
+        
+    def oscillator(self, time):
+        exponent = -((time - self.t0) / self.tw)**2
+        osc = -2 * (time - self.t0) / self.tw * cm.exp(exponent)
+        if self.cmplx:
+            return osc
+        else:
+            return osc.real
+        
+    def display_info(self, indent=0):
+        print " " * indent,
+        print "differentiated Gaussian pulse"
+        print " " * indent,
+        print "half-width:", self.tw,
+        print "delay time:", self.t0
+
 
 class PointSource(Src):
     def __init__(self, src_time, pos, component, amp=1, filename=None):

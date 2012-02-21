@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+from __future__ import division
 from sys import stderr
 
 try:
@@ -15,97 +16,7 @@ from numpy import array, inf, empty, exp
 import numpy as np
 
 from pygeom import Material
-
-# Dummy
-from pw_material import DummyElectricParamReal, DummyElectricParamCmplx
-from pw_material import DummyMagneticParamReal, DummyMagneticParamCmplx
-from pw_material import DummyExReal, DummyExCmplx
-from pw_material import DummyEyReal, DummyEyCmplx
-from pw_material import DummyEzReal, DummyEzCmplx
-from pw_material import DummyHxReal, DummyHxCmplx
-from pw_material import DummyHyReal, DummyHyCmplx
-from pw_material import DummyHzReal, DummyHzCmplx
-
-# Const
-from pw_material import ConstElectricParamReal, ConstElectricParamCmplx
-from pw_material import ConstMagneticParamReal, ConstMagneticParamCmplx
-from pw_material import ConstExReal, ConstExCmplx
-from pw_material import ConstEyReal, ConstEyCmplx
-from pw_material import ConstEzReal, ConstEzCmplx
-from pw_material import ConstHxReal, ConstHxCmplx
-from pw_material import ConstHyReal, ConstHyCmplx
-from pw_material import ConstHzReal, ConstHzCmplx
-
-# Dielectric
-from pw_material import DielectricElectricParamReal, DielectricElectricParamCmplx
-from pw_material import DielectricMagneticParamReal, DielectricMagneticParamCmplx
-from pw_material import DielectricExReal, DielectricExCmplx
-from pw_material import DielectricEyReal, DielectricEyCmplx
-from pw_material import DielectricEzReal, DielectricEzCmplx
-from pw_material import DielectricHxReal, DielectricHxCmplx
-from pw_material import DielectricHyReal, DielectricHyCmplx
-from pw_material import DielectricHzReal, DielectricHzCmplx
-
-# UPML
-from pw_material import UPMLElectricParamReal, UPMLElectricParamCmplx
-from pw_material import UPMLMagneticParamReal, UPMLMagneticParamCmplx
-from pw_material import UPMLExReal, UPMLExCmplx
-from pw_material import UPMLEyReal, UPMLEyCmplx
-from pw_material import UPMLEzReal, UPMLEzCmplx
-from pw_material import UPMLHxReal, UPMLHxCmplx
-from pw_material import UPMLHyReal, UPMLHyCmplx
-from pw_material import UPMLHzReal, UPMLHzCmplx
-
-# CPML
-from pw_material import CPMLElectricParamReal, CPMLElectricParamCmplx
-from pw_material import CPMLMagneticParamReal, CPMLMagneticParamCmplx
-from pw_material import CPMLExReal, CPMLExCmplx
-from pw_material import CPMLEyReal, CPMLEyCmplx
-from pw_material import CPMLEzReal, CPMLEzCmplx
-from pw_material import CPMLHxReal, CPMLHxCmplx
-from pw_material import CPMLHyReal, CPMLHyCmplx
-from pw_material import CPMLHzReal, CPMLHzCmplx
-
-# Drude
-from pw_material import DrudeElectricParamReal, DrudeElectricParamCmplx
-from pw_material import DrudeMagneticParamReal, DrudeMagneticParamCmplx
-from pw_material import DrudeExReal, DrudeExCmplx
-from pw_material import DrudeEyReal, DrudeEyCmplx
-from pw_material import DrudeEzReal, DrudeEzCmplx
-from pw_material import DrudeHxReal, DrudeHxCmplx
-from pw_material import DrudeHyReal, DrudeHyCmplx
-from pw_material import DrudeHzReal, DrudeHzCmplx
-
-# Lorentz
-from pw_material import LorentzElectricParamReal, LorentzElectricParamCmplx
-from pw_material import LorentzMagneticParamReal, LorentzMagneticParamCmplx
-from pw_material import LorentzExReal, LorentzExCmplx
-from pw_material import LorentzEyReal, LorentzEyCmplx
-from pw_material import LorentzEzReal, LorentzEzCmplx
-from pw_material import LorentzHxReal, LorentzHxCmplx
-from pw_material import LorentzHyReal, LorentzHyCmplx
-from pw_material import LorentzHzReal, LorentzHzCmplx
-
-# ADE implementation of DCP
-from pw_material import DcpAdeElectricParamReal, DcpAdeElectricParamCmplx
-from pw_material import DcpAdeMagneticParamReal, DcpAdeMagneticParamCmplx
-from pw_material import DcpAdeExReal, DcpAdeExCmplx
-from pw_material import DcpAdeEyReal, DcpAdeEyCmplx
-from pw_material import DcpAdeEzReal, DcpAdeEzCmplx
-from pw_material import DcpAdeHxReal, DcpAdeHxCmplx
-from pw_material import DcpAdeHyReal, DcpAdeHyCmplx
-from pw_material import DcpAdeHzReal, DcpAdeHzCmplx
-
-# PLRC implementation of DCP
-from pw_material import DcpPlrcElectricParamReal, DcpPlrcElectricParamCmplx
-from pw_material import DcpPlrcMagneticParamReal, DcpPlrcMagneticParamCmplx
-from pw_material import DcpPlrcExReal, DcpPlrcExCmplx
-from pw_material import DcpPlrcEyReal, DcpPlrcEyCmplx
-from pw_material import DcpPlrcEzReal, DcpPlrcEzCmplx
-from pw_material import DcpPlrcHxReal, DcpPlrcHxCmplx
-from pw_material import DcpPlrcHyReal, DcpPlrcHyCmplx
-from pw_material import DcpPlrcHzReal, DcpPlrcHzCmplx
-
+from pw_material import *
 from constant import c0
 
 
