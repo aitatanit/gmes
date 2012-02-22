@@ -32,7 +32,7 @@ cylinder = geometry.Cylinder(center=(0, 0, 0),
                              height=1,
                              material=gold)
 boundary = geometry.Boundary(material=material.CPML(),
-                             thickness=1, size=SIZE,
+                             thickness=1,
                              minus_y=False, plus_y=False)
 
 space = geometry.Cartesian(size=SIZE, resolution=100, parallel=True)

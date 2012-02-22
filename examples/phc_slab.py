@@ -93,7 +93,7 @@ geom_list = (geometry.DefaultMedium(material=AIR),
              geometry.Block(material=SiO2, size=(SIZE[0], SIZE[1], SLAB_THICK)),
              geometry.Block(material=Si, size=(SIZE[0], SIZE[1], SLAB_CORE))) + \
              make_crystals(*SIZE[:2]) + make_line_defect(SIZE[0]) + \
-             (geometry.Boundary(material=material.UPML(), thickness=PML_THICK, size=SIZE),)
+             (geometry.Boundary(material=material.UPML(), thickness=PML_THICK),)
 
 space = geometry.Cartesian(size=SIZE, resolution=RESOLUTION)
 

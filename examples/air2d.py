@@ -22,7 +22,7 @@ SIZE = (10,10,0)
 
 space = geometry.Cartesian(size=SIZE, resolution=20)
 geom_list = (geometry.DefaultMedium(material=material.Dielectric()),
-             geometry.Boundary(material=material.UPML(), thickness=0.5, size=SIZE))
+             geometry.Boundary(material=material.UPML(), thickness=0.5))
 src_list = (source.PointSource(src_time=source.Continuous(freq=0.8), 
                                component=constant.Ez, pos=(0,0,0)),)
 
