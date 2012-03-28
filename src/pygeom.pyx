@@ -641,16 +641,17 @@ cdef class Cone(GeometricObject):
         cdef np.ndarray p, r
         cdef double proj, radius
         cdef bint truth
-        
+
         p = np.array(point, np.double)
         r = p - self.center
         proj = np.dot(self.axis, r)
         if np.abs(proj) <= .5 * self.height:
             if self.radius2 == self.radius == np.inf:
-                return True
-            radius = self.radius
-            radius += (proj / self.height + .5) * (self.radius2 - radius)
-            truth = radius != 0 and norm(r - proj * self.axis) <= np.abs(radius)
+                truth = True
+            else:
+                radius = self.radius
+                radius += (proj / self.height + .5) * (self.radius2 - radius)
+                truth = norm(r - proj * self.axis) <= np.abs(radius)
         else:
             truth = False
 
@@ -676,23 +677,21 @@ cdef class Cone(GeometricObject):
         Override GeometricObject.geom_box.
         
         """
-        tmpBox1 = GeomBox(low=self.center, high=self.center)
-
         h = .5 * self.height
-        r = np.sqrt(1 - self.axis * self.axis)
-
-        # set tmpBox2 to center of object
-        tmpBox2 = GeomBox()
-        tmpBox2.low = tmpBox1.low.copy()
-        tmpBox2.high = tmpBox2.high.copy()
+        
+        r = np.ones((3,), np.double)
+        radial = r - np.dot(r, self.axis) * self.axis
+        radial /= np.norm(radial)
 
         # bounding box for -h*axis cylinder end
-        tmpBox1.low -= h * self.axis + r * self.radius
-        tmpBox1.high -= h * self.axis - r * self.radius
+        tmpBox1 = GeomBox(low=self.center, high=self.center)
+        tmpBox1.low -= h * self.axis + self.radius * radial
+        tmpBox1.high -= h * self.axis - self.radius * radial
         
         # bounding box for +h*axis cylinder end
-        tmpBox2.low += h * self.axis - r * self.radius
-        tmpBox2.high += h * self.axis + r * self.radius
+        tmpBox2 = GeomBox(low=self.center, high=self.center)
+        tmpBox2.low += h * self.axis - self.radius2 * radial
+        tmpBox2.high += h * self.axis + self.radius2 * radial
         
         tmpBox1.union(tmpBox2)
         
