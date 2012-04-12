@@ -681,7 +681,7 @@ cdef class Cone(GeometricObject):
         
         r = np.ones((3,), np.double)
         radial = r - np.dot(r, self.axis) * self.axis
-        radial /= np.norm(radial)
+        radial /= np.linalg.norm(radial)
 
         # bounding box for -h*axis cylinder end
         tmpBox1 = GeomBox(low=self.center, high=self.center)
@@ -697,11 +697,11 @@ cdef class Cone(GeometricObject):
         
         return tmpBox1
        
-        
+    
 class Cylinder(Cone):
     """Form a cylinder.
     
-    """
+    """	
     def __init__(self, material, axis=(0, 0, 1),
                  radius=1, height=1, center=(0, 0, 0)):
         """

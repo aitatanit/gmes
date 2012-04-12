@@ -13,6 +13,7 @@ except ImportError:
 
 from math import sqrt, sin, cos
 from numpy import array, inf, empty, exp
+from copy import deepcopy
 import numpy as np
 
 from pygeom import Material
@@ -444,10 +445,10 @@ class PML(Material, Compound):
         
         if d['initialized']:
             self.d = d['d']
-            self.half_size.setfield(d['half_size'], np.double)
+            self.half_size = d['half_size'].copy()
             self.dt = d['dt']
-            self.dw.setfield(d['dw'], np.double)
-            self.sigma_max.setfield(d['sigma_max'], np.double)
+            self.dw = d['dw'].copy()
+            self.sigma_max = d['sigma_max'].copy()
         
     def init(self, space, param=None):
         """
@@ -1077,9 +1078,9 @@ class DcpAde(Dielectric):
 
         if self.initialized:
             self.dt = d['dt']
-            self.a.setfield(d['a'], np.double)
-            self.b.setfield(d['b'], np.double)
-            self.c.setfield(d['c'], np.double)
+            self.a = d['a'].copy()
+            self.b = d['b'].copy()
+            self.c = d['c'].copy()
             
     def init(self, space, param=None):
         self.dt = space.dt
@@ -1284,10 +1285,10 @@ class DcpPlrc(Dielectric):
 
         if self.initialized:
             self.dt = d['dt']
-            self.a.setfield(d['a'], np.double)
-            self.b.setfield(d['b'], np.double)
-            self.c.setfield(d['c'], np.double)
-    
+            self.a = d['a'].copy()
+            self.b = d['b'].copy()
+            self.c = d['c'].copy()
+        
     def init(self, space, param=None):
         self.dt = space.dt
 
@@ -1563,8 +1564,8 @@ class Drude(Dielectric):
 
         if self.initialized:
             self.dt = d['dt']
-            self.a.setfield(d['a'], np.double)
-            self.c.setfield(d['c'], np.double)
+            self.a = d['a'].copy()
+            self.c = d['c'].copy()
 
     def init(self, space, param=None):
         self.dt = space.dt
@@ -1741,8 +1742,8 @@ class Lorentz(Dielectric):
 
         if self.initialized:
             self.dt = d['dt']
-            self.a.setfield(d['a'], np.double)
-            self.c.setfield(d['c'], np.double)
+            self.a = d['a'].copy()
+            self.c = d['c'].coyp()
             
     def init(self, space, param=None):
         self.dt = space.dt
@@ -1906,6 +1907,9 @@ class GoldAde(DcpAde):
         DcpAde.__init__(self, eps_inf=1.1431, mu_inf=1, sigma=0, 
                         dps=(dp1,), cps=(cp1,cp2))
         
+    def __reduce__(self):
+        return self.__class__, (1,), self.__getstate__()
+
 
 class GoldPlrc(DcpPlrc):
     """
@@ -1934,6 +1938,9 @@ class GoldPlrc(DcpPlrc):
         DcpPlrc.__init__(self, eps_inf=1.1431, mu_inf=1, sigma=0, 
                          dps=(dp1,), cps=(cp1,cp2))
         
+    def __reduce__(self):
+        return self.__class__, (1,), self.__getstate__()
+
 
 class GoldRc(DcpRc):
     """
@@ -1961,7 +1968,11 @@ class GoldRc(DcpRc):
                             gamma=2.3555e15 * a / c0)
         DcpRc.__init__(self, eps_inf=1.1431, mu_inf=1, sigma=0, 
                        dps=(dp1,), cps=(cp1,cp2))
-                        
+
+    def __reduce__(self):
+        return self.__class__, (1,), self.__getstate__()
+
+
 class GoldDrude(Drude):
     """
     The parameters are from the following article.
@@ -1978,6 +1989,10 @@ class GoldDrude(Drude):
                         gamma=8.052e13 * a / c0)
         Drude.__init__(self, eps_inf=1, mu_inf=1, sigma=0, dps=(dp1,))
         
+
+    def __reduce__(self):
+        return self.__class__, (1,), self.__getstate__()
+
 
 class Meep(Lorentz):
     """
@@ -1996,6 +2011,9 @@ class Meep(Lorentz):
                           amp=2e-5)
         Lorentz.__init__(self, eps_inf=2.25, mu_inf=1, sigma=0, lps=(lp1,lp2))
         
+    def __reduce__(self):
+        return self.__class__, (1,), self.__getstate__()
+
         
 class Silver(DcpAde):
     """
@@ -2024,6 +2042,9 @@ class Silver(DcpAde):
         DcpAde.__init__(self, eps_inf=15.833, mu_inf=1, sigma=0, 
                         dps=(dp1,), cps=(cp1,cp2))
         
+    def __reduce__(self):
+        return self.__class__, (1,), self.__getstate__()
+
 
 class Aluminum(DcpAde):
     """
@@ -2050,8 +2071,11 @@ class Aluminum(DcpAde):
                             omega=2.4668e15 * a / c0, 
                             gamma=1.7731e15 * a / c0)
         DcpAde.__init__(self, eps_inf=1.0000, mu_inf=1, sigma=0, 
-                        dps=(dp1,), cps=(cp1,cp2))
-        
+                        dps=(dp1,), cps=(cp1,cp2))        
+
+    def __reduce__(self):
+        return self.__class__, (1,), self.__getstate__()
+
 
 class Chromium(DcpAde):
     """
@@ -2080,3 +2104,5 @@ class Chromium(DcpAde):
         DcpAde.__init__(self, eps_inf=1.1297, mu_inf=1, sigma=0, 
                         dps=(dp1,), cps=(cp1,cp2))
         
+    def __reduce__(self):
+        return self.__class__, (1,), self.__getstate__()
