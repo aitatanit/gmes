@@ -565,10 +565,8 @@ class TotalFieldScatteredField(Src):
                               resolution=1/delta_1d,
                               parallel=False)
         aux_geom_list = (DefaultMedium(material=mat_objs),
-                         Boundary(material=CPML(kappa_max=2.0,
-                                                sigma_max_ratio=2.0),
+                         Boundary(material=CPML(),
                                   thickness=pml_thickness,
-                                  size=aux_size,
                                   minus_z=False))
         src_pnt = aux_space.ex_index_to_space(0, 0, 0)
         aux_src_list = (PointSource(src_time=deepcopy(self.src_time),

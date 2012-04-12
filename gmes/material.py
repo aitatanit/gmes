@@ -515,14 +515,14 @@ class UPML(PML):
     2005, pp. 273-328.
     
     Attributes:
-        m -- degree of kappa
-        kappa_max -- maximum of kappa
-        eps_inf -- the permittivity for incident mode impinging on the PML boundary with infinite frequency
-        mu_inf -- the permeability for incident mode impinging on the PML boundary with infinite frequency
-        sigma_max_ratio -- the ratio between sigma_max and sigma_opt
+        eps_inf -- the permittivity for incident mode impinging on the PML boundary with infinite frequency. default 1
+        mu_inf -- the permeability for incident mode impinging on the PML boundary with infinite frequency. default 1
+        m -- degree of kappa. default 3.6
+        kappa_max -- maximum of kappa. default 4.6
+        sigma_max_ratio -- the ratio between sigma_max and sigma_opt. default 0.745
 
     """    
-    def __init__(self, eps_inf=1, mu_inf=1, m=3.5, kappa_max=1, sigma_max_ratio=.75):
+    def __init__(self, eps_inf=1, mu_inf=1, m=3.6, kappa_max=4.6, sigma_max_ratio=.745):
         PML.__init__(self, eps_inf, mu_inf)
 
         self.m = float(m)
@@ -742,16 +742,16 @@ class CPML(PML):
     2005, pp. 273-328.
     
     Attributes:
-        m -- degree of kappa. default 3
-        kappa_max -- maximum of kappa. default 15
-        m_a -- degree of a. default 1
-        a_max -- maximum of a. default 0. CPML works like UPML when a_max = 0.
-        eps_inf -- the permittivity for incident mode impinging on the PML boundary with infinite frequency
-        mu_inf -- the permeability of incident mode impinging on the PML boundary with infinite frequency
-        sigma_max_ratio -- default 1
+        eps_inf -- the permittivity for incident mode impinging on the PML boundary with infinite frequency. default 1
+        mu_inf -- the permeability of incident mode impinging on the PML boundary with infinite frequency. default 1
+        m -- degree of kappa. default 3.4
+        kappa_max -- maximum of kappa. default 1
+        m_a -- degree of a. default 4.8
+        a_max -- maximum of a. default 0.8
+        sigma_max_ratio -- default 0.65
     
     """
-    def __init__(self, eps_inf=1, mu_inf=1, m=3, kappa_max=2, m_a=1, a_max=0, sigma_max_ratio=2):
+    def __init__(self, eps_inf=1, mu_inf=1, m=3.4, kappa_max=1, m_a=4.8, a_max=0.8, sigma_max_ratio=0.65):
         PML.__init__(self, eps_inf, mu_inf)
 
         self.m = float(m)
