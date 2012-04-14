@@ -130,7 +130,7 @@ class Continuous(SrcTime):
         else:
             env = 1
         
-        osc = env * cm.exp(-2j * pi * self.freq * time - self.phase)
+        osc = env * cm.exp(-2j * pi * self.freq * time - 1j * self.phase)
         if self.cmplx:
             return osc
         else:
@@ -221,12 +221,15 @@ class PointSource(Src):
         self.comp = component
         self.src_time = src_time
         self.amp = float(amp)
-        self.filename = filename
+        if filename:
+            self.filename = str(filename)
+        else:
+            self.filename = None
         
     def init(self, geom_tree, space, cmplx):
         self.geom_tree = geom_tree
         self.src_time.init(cmplx)
-    
+        
     def step(self):
         pass
     
@@ -250,7 +253,8 @@ class PointSource(Src):
                                                 self.amp,
                                                 self.comp,
                                                 mat_obj.eps_inf,
-                                                mat_obj.mu_inf)
+                                                mat_obj.mu_inf,
+                                                self.filename)
                 pw_src = PointSourceEx()
                 pw_src.attach(idx, pw_src_param)
 
@@ -267,7 +271,8 @@ class PointSource(Src):
                                                 self.amp,
                                                 self.comp,
                                                 mat_obj.eps_inf,
-                                                mat_obj.mu_inf)
+                                                mat_obj.mu_inf,
+                                                self.filename)
                 pw_src = PointSourceEy()
                 pw_src.attach(idx, pw_src_param)
 
@@ -284,7 +289,8 @@ class PointSource(Src):
                                                 self.amp,
                                                 self.comp,
                                                 mat_obj.eps_inf,
-                                                mat_obj.mu_inf)
+                                                mat_obj.mu_inf,
+                                                self.filename)
                 pw_src = PointSourceEz()
                 pw_src.attach(idx, pw_src_param)
 
@@ -301,7 +307,8 @@ class PointSource(Src):
                                                 self.amp,
                                                 self.comp,
                                                 mat_obj.eps_inf,
-                                                mat_obj.mu_inf)
+                                                mat_obj.mu_inf,
+                                                self.filename)
                 pw_src = PointSourceHx()
                 pw_src.attach(idx, pw_src_param)
 
@@ -318,7 +325,8 @@ class PointSource(Src):
                                                 self.amp,
                                                 self.comp,
                                                 mat_obj.eps_inf,
-                                                mat_obj.mu_inf)
+                                                mat_obj.mu_inf,
+                                                self.filename)
                 pw_src = PointSourceHy()
                 pw_src.attach(idx, pw_src_param)
 
@@ -335,7 +343,8 @@ class PointSource(Src):
                                                 self.amp,
                                                 self.comp,
                                                 mat_obj.eps_inf,
-                                                mat_obj.mu_inf)
+                                                mat_obj.mu_inf,
+                                                self.filename)
                 pw_src = PointSourceHz()
                 pw_src.attach(idx, pw_src_param)
 

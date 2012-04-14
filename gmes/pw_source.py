@@ -42,21 +42,24 @@ class PwSource(object):
     def update_all(self, inplace_field, in_field1, in_field2, d1, d2, dt, n):
         for idx, param in self._param.iteritems():
             self._update(inplace_field, in_field1, in_field2, d1, d2, dt, n,
-                        idx, param)
+                         idx, param)
 
     def _update(self, inplace_field, in_field1, in_field2, d1, d2, dt, n, 
-               idx, param):
+                idx, param):
         raise NotImplementedError
 
 
 class PointSourceParam(PwSourceParam):
     def __init__(self, src_time=None, amp=1, 
-                 comp=None, eps_inf=1, mu_inf=1):
+                 comp=None, eps_inf=1, mu_inf=1, filename=None):
         self.src_time = src_time
         self.amp = float(amp)
         self.comp = comp
         self.eps_inf = float(eps_inf)
         self.mu_inf = float(mu_inf)
+        self.f = None
+        if filename:
+            self.f = open(filename, 'w')
 
 
 class PointSourceElectric(PwSource):
@@ -67,10 +70,14 @@ class PointSourceElectric(PwSource):
 
         """
         src_t = param.amp * param.src_time.oscillator(dt * n)
+        if param.f:
+            param.f.write('%f\t%f\n' % (dt * n, src_t))
+
         if issubclass(param.comp, const.Electric):
             e[idx] = src_t
         elif issubclass(param.comp, const.ElectricCurrent):
             e[idx] -= dt * src_t / param.eps_inf
+
 
 class PointSourceEx(PointSourceElectric): pass
 
@@ -89,6 +96,9 @@ class PointSourceMagnetic(PwSource):
 
         """
         src_t = param.amp * param.src_time.oscillator(dt * n)
+        if param.f:
+            param.f.write('%f\t%f\n' % (dt * n, src_t))
+
         if issubclass(param.comp, const.Magnetic):
             h[idx] = src_t
         elif issubclass(param.comp, const.MagneticCurrent):
