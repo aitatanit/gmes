@@ -84,7 +84,7 @@ namespace gmes
       double eps_inf = static_cast<DielectricElectricParam<T>*>(parameter)->eps_inf;
 
       ex(i,j,k) += dt / eps_inf * ((hz(i+1,j+1,k) - hz(i+1,j,k)) / dy - 
-			       (hy(i+1,j,k+1) - hy(i+1,j,k)) / dz);
+				   (hy(i+1,j,k+1) - hy(i+1,j,k)) / dz);
     }
 
   protected:
@@ -106,7 +106,7 @@ namespace gmes
       double eps_inf = static_cast<DielectricElectricParam<T>*>(parameter)->eps_inf;
 
       ey(i,j,k) += dt / eps_inf * ((hx(i,j+1,k+1) - hx(i,j+1,k)) / dz - 
-			       (hz(i+1,j+1,k) - hz(i,j+1,k)) / dx);
+				   (hz(i+1,j+1,k) - hz(i,j+1,k)) / dx);
     }
 
   protected:
@@ -190,7 +190,7 @@ namespace gmes
       double mu_inf = static_cast<DielectricMagneticParam<T>*>(parameter)->mu_inf;
 
       hx(i,j,k) += dt / mu_inf * ((ey(i,j-1,k) - ey(i,j-1,k-1)) / dz -
-			      (ez(i,j,k-1) - ez(i,j-1,k-1)) / dy);
+				  (ez(i,j,k-1) - ez(i,j-1,k-1)) / dy);
     }
 
   protected:

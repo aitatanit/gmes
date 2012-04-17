@@ -415,11 +415,11 @@ namespace gmes
       const std::vector<std::complex<double> >& psi_cp_im = ptr->psi_cp_im;
 
       double psi_re = 
-	std::accumulate(psi_dp_re.begin(), psi_dp_re.end(), double(0)) + 
+	std::accumulate(psi_dp_re.begin(), psi_dp_re.end(), 0.0) + 
 	std::accumulate(psi_cp_re.begin(), psi_cp_re.end(), std::complex<double>(0)).real();
       
       double psi_im = 
-	std::accumulate(psi_dp_im.begin(), psi_dp_im.end(), double(0)) +
+	std::accumulate(psi_dp_im.begin(), psi_dp_im.end(), 0.0) +
 	std::accumulate(psi_cp_im.begin(), psi_cp_im.end(), std::complex<double>(0)).real();
       
       return std::complex<double>(psi_re, psi_im);
@@ -447,12 +447,12 @@ namespace gmes
   {
   public:
     void 
-    update(T * const ex, int ex_x_size, int ex_y_size, int ex_z_size,
+    update(T* const ex, int ex_x_size, int ex_y_size, int ex_z_size,
 	   const T * const hz, int hz_x_size, int hz_y_size, int hz_z_size,
 	   const T * const hy, int hy_x_size, int hy_y_size, int hy_z_size,
 	   double dy, double dz, double dt, double n,
 	   const int* const idx, int idx_size, 
-	   PwMaterialParam * const parameter)
+	   PwMaterialParam* const parameter)
     {
       int i = idx[0], j = idx[1], k = idx[2];
       
@@ -462,9 +462,9 @@ namespace gmes
 
       const std::complex<double> e_now = ex(i,j,k);
       const std::complex<double> e_new = 
-	c[0] * e_now + c[1] * ((hz(i+1,j+1,k) - hz(i+1,j,k)) / dy - 
-			       (hy(i+1,j,k+1) - hy(i+1,j,k)) / dz)
-	+ c[2] * psi_total(ptr);
+	c[0] * ((hz(i+1,j+1,k) - hz(i+1,j,k)) / dy - 
+		(hy(i+1,j,k+1) - hy(i+1,j,k)) / dz) +
+	c[1] * e_now + c[2] * psi_total(ptr);
       
       update_psi_dp(e_now, e_new, ptr);
       update_psi_cp(e_now, e_new, ptr);
@@ -498,9 +498,9 @@ namespace gmes
 
       const std::complex<double> e_now = ey(i,j,k);
       const std::complex<double> e_new = 
-	c[0] * e_now + c[1] * ((hx(i,j+1,k+1) - hx(i,j+1,k)) / dz - 
-			       (hz(i+1,j+1,k) - hz(i,j+1,k)) / dx)
-	+ c[2] * psi_total(ptr);
+	c[0] * ((hx(i,j+1,k+1) - hx(i,j+1,k)) / dz - 
+		(hz(i+1,j+1,k) - hz(i,j+1,k)) / dx) +
+	c[1] * e_now + c[2] * psi_total(ptr);
 
       update_psi_dp(e_now, e_new, ptr);
       update_psi_cp(e_now, e_new, ptr);
@@ -534,9 +534,9 @@ namespace gmes
 
       const std::complex<double> e_now = ez(i,j,k);
       const std::complex<double> e_new = 
-	c[0] * e_now + c[1] * ((hy(i+1,j,k+1) - hy(i,j,k+1)) / dx - 
-			       (hx(i,j+1,k+1) - hx(i,j,k+1)) / dy)
-	+ c[2] * psi_total(ptr);
+	c[0] * ((hy(i+1,j,k+1) - hy(i,j,k+1)) / dx - 
+		(hx(i,j+1,k+1) - hx(i,j,k+1)) / dy) +
+	c[1] * e_now + c[2] * psi_total(ptr);
 
       update_psi_dp(e_now, e_new, ptr);
       update_psi_cp(e_now, e_new, ptr);

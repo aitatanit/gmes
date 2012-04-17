@@ -11,7 +11,7 @@ try:
 except ImportError:
     pass
 
-from math import sqrt, sin, cos
+from math import sqrt, sin, cos, tanh
 from numpy import array, inf, empty, exp
 from copy import deepcopy
 import numpy as np
@@ -1294,39 +1294,29 @@ class DcpPlrc(Dielectric):
 
         # parameters of the recursion relation for the Drude pole recursive accumulator.
         self.a = empty((len(self.dps), 3), np.double)
-        for i in xrange(len(self.dps)):
-            pole = self.dps[i]
+        for i, pole in enumerate(self.dps):
             self.a[i,0] = self.delta_chi_dp_0(pole) - self.delta_xi_dp_0(pole)
             self.a[i,1] = self.delta_xi_dp_0(pole)
             self.a[i,2] = exp(-pole.gamma * self.dt)
         
         # parameters of the recursion relation for the critical point recursive accumulator.
         self.b = empty((len(self.cps), 3), complex)
-        for i in xrange(len(self.cps)):
-            pnt = self.cps[i]
+        for i, pnt in enumerate(self.cps):
             self.b[i,0] = self.delta_chi_cp_0(pnt) - self.delta_xi_cp_0(pnt)
             self.b[i,1] = self.delta_xi_cp_0(pnt)
             self.b[i,2] = exp(-self.dt * (pnt.gamma + 1j * pnt.omega))
             
         # parameters for the electric field update equations.
-        chi_0_cmplx = sum(map(self.chi_dp_0, self.dps) + 
-                          map(self.chi_cp_0, self.cps))
-        if type(chi_0_cmplx) == complex:
-            chi_0 = chi_0_cmplx.real
-        else:
-            chi_0 = chi_0_cmplx
+        chi_0 = sum(map(self.chi_dp_0, self.dps) + 
+                    map(self.chi_cp_0, self.cps)).real
 
-        xi_0_cmplx = sum(map(self.xi_dp_0, self.dps) + 
-                         map(self.xi_cp_0, self.cps))
-        if type(xi_0_cmplx) == complex:
-            xi_0 = xi_0_cmplx.real
-        else:
-            xi_0 = xi_0_cmplx
+        xi_0 = sum(map(self.xi_dp_0, self.dps) + 
+                   map(self.xi_cp_0, self.cps)).real
         
         self.c = empty(3, np.double)
         denom = self.eps_inf - xi_0 + chi_0
-        self.c[0] = (self.eps_inf - xi_0) / denom
-        self.c[1] = self.dt / denom
+        self.c[0] = self.dt / denom
+        self.c[1] = (self.eps_inf - xi_0) / denom
         self.c[2] = 1 / denom
 
         self.initialized = True
@@ -1335,27 +1325,24 @@ class DcpPlrc(Dielectric):
         omega = dp.omega
         gamma = dp.gamma
         gdt = dp.gamma * self.dt
-        
-        return (omega / gamma)**2 * (gdt + exp(-gdt) - 1)
+        return (omega / gamma)**2 * (exp(-gdt) + gdt - 1)
 
     def xi_dp_0(self, dp):
+        chi_dp_0 = self.chi_dp_0(dp)
         omega = dp.omega
         gamma = dp.gamma
         gdt = dp.gamma * self.dt
-        
-        return (omega / gamma)**2 * (gdt / 2 - (1 - (1 + gdt) * exp(-gdt)) / gdt)
-    
+        return chi_dp_0 * (1 / (1 - exp(gdt)) + 1 / gdt) + (omega / gamma)**2 * (gdt / 2 / tanh(gdt / 2) - 1)
+
     def delta_chi_dp_0(self, dp):
         omega = dp.omega
         gamma = dp.gamma
         gdt = dp.gamma * self.dt
-        
         return -(omega / gamma * (1 - exp(-gdt)))**2
     
     def delta_xi_dp_0(self, dp):
         gdt = dp.gamma * self.dt
         delta_chi_dp_0 = self.delta_chi_dp_0(dp)
-        
         return delta_chi_dp_0 * (1 / (1 - exp(gdt)) + 1 / gdt) 
     
     def chi_cp_0(self, cp):
@@ -1365,7 +1352,6 @@ class DcpPlrc(Dielectric):
     def xi_cp_0(self, cp):
         dtgo = self.dt * (cp.gamma + 1j * cp.omega)
         chi_cp_0 = self.chi_cp_0(cp)
-        
         return chi_cp_0 * (1 / (1 - exp(dtgo)) + 1 / dtgo)
     
     def delta_chi_cp_0(self, cp):
@@ -1375,7 +1361,6 @@ class DcpPlrc(Dielectric):
     def delta_xi_cp_0(self, cp):
         dtgo = self.dt * (cp.gamma + 1j * cp.omega)
         delta_chi_cp_0 = self.delta_chi_cp_0(cp)
-        
         return delta_chi_cp_0 * (1 / (1 - exp(dtgo)) + 1 / dtgo)
     
     def display_info(self, indent=0):
