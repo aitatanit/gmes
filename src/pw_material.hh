@@ -29,7 +29,7 @@ namespace gmes
     bool 
     operator()(const std::array<int, 3>& l, const std::array<int, 3>& r) const
     {
-      return (l[0] < r[0]) || (l[0] == r[0] && (l[1] < r[1] || (l[1] == r[1] && l[2] < r[2]));
+      return l[0] < r[0] || (l[0] == r[0] && (l[1] < r[1] || (l[1] == r[1] && l[2] < r[2])));
     }
   };
 

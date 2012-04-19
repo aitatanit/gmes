@@ -28,6 +28,8 @@
 #define hy(i,j,k) hy[hy_z_size==1?0:((i)*hy_y_size+(j))*hy_z_size+(k)]
 #define hz(i,j,k) hz[hz_x_size==1?0:((i)*hz_y_size+(j))*hz_z_size+(k)]
 
+// The classes should be rewritten using template specialization
+// to increase the calculation speed.
 namespace gmes
 {
   /**************************************************/

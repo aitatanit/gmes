@@ -481,7 +481,7 @@ class PML(Material, Compound):
         
         """
         eta = sqrt(self.mu_inf / self.eps_inf)
-        return .8 * (self.m + 1) / (eta * self.dw)
+        return 0.8 * (self.m + 1) / (eta * self.dw)
     
     def sigma(self, w, component):
         """Polynomial grading of conductivity.
@@ -492,7 +492,7 @@ class PML(Material, Compound):
         elif self.half_size[component] - self.d <= w:
             return self.sigma_max[component] * (1 - (self.half_size[component] - w) / self.d)**self.m
         else:
-            return 0.0
+            return 0
         
     def kappa(self, w, component):
         """Polynomial grading of kappa.
@@ -503,7 +503,7 @@ class PML(Material, Compound):
         elif self.half_size[component] - self.d <= w:
             return 1 + (self.kappa_max - 1) * (1 - (self.half_size[component] - w) / self.d)**self.m
         else:
-            return 1.0
+            return 1
         
         
 class UPML(PML):
@@ -802,7 +802,7 @@ class CPML(PML):
         elif self.half_size[component] - self.d <= w:
             return self.a_max * ((self.half_size[component] - w) / self.d)**self.m_a
         else:
-            return 0.0
+            return 0
        
     def b(self, w, component):
         exponent = -(self.sigma(w, component) / self.kappa(w, component) + self.a(w, component)) * self.dt
@@ -811,7 +811,7 @@ class CPML(PML):
     def c(self, w, component):
         numerator = self.sigma(w, component) * (self.b(w, component) - 1)
         if numerator == 0:
-            return 0.0
+            return 0
         denominator = (self.sigma(w, component) + 
                        self.kappa(w, component) * self.a(w, component)) * self.kappa(w, component)
         return numerator / denominator
@@ -1494,16 +1494,16 @@ class DcpRc(DcpPlrc):
     
     """
     def xi_dp_0(self, dp):
-        return .0
+        return 0
     
     def xi_cp_0(self, cp):
-        return .0
+        return 0j
 
     def delta_xi_dp_0(self, dp):
-        return .0
+        return 0
     
     def delta_xi_cp_0(self, cp):
-        return .0
+        return 0j
         
         
 class Drude(Dielectric):
