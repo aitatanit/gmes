@@ -32,18 +32,21 @@ class AuxiCartComm(object):
     ndims -- dimensionality of this Cartesian topology
         
     """
-    def __init__(self, dims=(1,1,1), periods=(1,1,1), reorder=(0,0,0)):
+    def __init__(self, dims=(1,1,1), periods=None, reorder=(0,0,0)):
         """Constructor. 
         
         Keyword arguments:
         dims -- dimensions of the communicator (default (1,1,1))
-        periods -- default (1,1,1)
+        periods -- type: 3-int tuple, default (1,1,1)
         reorder -- default (0,0,0)
 
         """
         self.rank = 0
         self.dim = 3
-        cyclic = tuple(map(int, periods))
+        if periods:
+            cyclic = tuple(map(int, periods))
+        else:
+            cyclic = (0, 0, 0)
         self.topo = ((1,1,1), cyclic, (0,0,0))
         
     def Get_cart_rank(self, coords):
@@ -87,7 +90,10 @@ class AuxiCartComm(object):
         All arguments except message are ignored.
         
         """
-        return sendbuf
+        if dest == -1 or source == -1:
+            return None
+        else:
+            return sendbuf
         
     def reduce(self, value, root=0, op=None):
         """Mimic reduce method.

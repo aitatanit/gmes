@@ -722,7 +722,9 @@ class FDTD(object):
         """
         # Send ex field data to -y direction and receive from +y direction.
         src, dest = self.space.cart_comm.Shift(1, -1)
-        
+        if dest == -1 or src == -1:
+            return
+
         if self.cmplx:
             dest_spc = self.space.ex_index_to_space(0, self.ex.shape[1] - 1, 0)[1]
         
@@ -740,6 +742,8 @@ class FDTD(object):
         
         # Send ex field data to -z direction and receive from +z direction.
         src, dest = self.space.cart_comm.Shift(2, -1)
+        if dest == -1 or src == -1:
+            return
         
         if self.cmplx:
             dest_spc = self.space.ex_index_to_space(0, 0, self.ex.shape[2] - 1)[2]
@@ -764,6 +768,8 @@ class FDTD(object):
         """
         # Send ey field data to -z direction and receive from +z direction.
         src, dest = self.space.cart_comm.Shift(2, -1)
+        if dest == -1 or src == -1:
+            return
         
         if self.cmplx:
             dest_spc = self.space.ey_index_to_space(0, 0, self.ey.shape[2] - 1)[2]
@@ -782,6 +788,8 @@ class FDTD(object):
         
         # Send ey field data to -x direction and receive from +x direction.
         src, dest = self.space.cart_comm.Shift(0, -1)
+        if dest == -1 or src == -1:
+            return
 
         if self.cmplx:
             dest_spc = self.space.ey_index_to_space(self.ey.shape[0] - 1, 0, 0)[0]
@@ -806,6 +814,8 @@ class FDTD(object):
         """
         # Send ez field data to -x direction and receive from +x direction.
         src, dest = self.space.cart_comm.Shift(0, -1)
+        if dest == -1 or src == -1:
+            return
         
         if self.cmplx:
             dest_spc = self.space.ez_index_to_space(self.ez.shape[0] - 1, 0, 0)[0]
@@ -824,6 +834,8 @@ class FDTD(object):
         
         # Send ez field data to -y direction and receive from +y direction.
         src, dest = self.space.cart_comm.Shift(1, -1)
+        if dest == -1 or src == -1:
+            return
 
         if self.cmplx:
             dest_spc = self.space.ez_index_to_space(0, self.ez.shape[1] - 1, 0)[1]
@@ -848,6 +860,8 @@ class FDTD(object):
         """
         # Send hx field data to +y direction and receive from -y direction.
         src, dest = self.space.cart_comm.Shift(1, 1)
+        if dest == -1 or src == -1:
+            return
 
         if self.cmplx:
             dest_spc = self.space.hx_index_to_space(0, 0, 0)[1]
@@ -866,6 +880,8 @@ class FDTD(object):
             
         # Send hx field data to +z direction and receive from -z direction.    
         src, dest = self.space.cart_comm.Shift(2, 1)
+        if dest == -1 or src == -1:
+            return
         
         if self.cmplx:
             dest_spc = self.space.hx_index_to_space(0, 0, 0)[2]
@@ -890,6 +906,8 @@ class FDTD(object):
         """
         # Send hy field data to +z direction and receive from -z direction.
         src, dest = self.space.cart_comm.Shift(2, 1)
+        if dest == -1 or src == -1:
+            return
         
         if self.cmplx:
             dest_spc = self.space.hy_index_to_space(0, 0, 0)[2]
@@ -908,6 +926,8 @@ class FDTD(object):
             
         # Send hy field data to +x direction and receive from -x direction.
         src, dest = self.space.cart_comm.Shift(0, 1)
+        if dest == -1 or src == -1:
+            return
         
         if self.cmplx:
             dest_spc = self.space.hy_index_to_space(0, 0, 0)[0]
@@ -932,6 +952,8 @@ class FDTD(object):
         """
         # Send hz field data to +x direction and receive from -x direction.
         src, dest = self.space.cart_comm.Shift(0, 1)
+        if dest == -1 or src == -1:
+            return
         
         if self.cmplx:
             dest_spc = self.space.hz_index_to_space(0, 0, 0)[0]
@@ -950,6 +972,8 @@ class FDTD(object):
             
         # Send hz field data to +y direction and receive from -y direction.
         src, dest = self.space.cart_comm.Shift(1, 1)
+        if dest == -1 or src == -1:
+            return
         
         if self.cmplx:
             dest_spc = self.space.hz_index_to_space(0, 0, 0)[1]
