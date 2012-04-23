@@ -104,13 +104,13 @@ class Continuous(SrcTime):
         self.cmplx = cmplx
         
     def display_info(self, indent=0):
-        print " " * indent, "continuous source"
-        print " " * indent,
-        print "frequency:", self.freq,
-        print "initial phase advance:", self.phase,
-        print "start time:", self.start,
-        print "end time:", self.end,
-        print "raising duration:", self.width
+        print ' ' * indent, 'continuous source:'
+        print ' ' * indent,
+        print 'frequency:', self.freq,
+        print 'initial phase advance:', self.phase,
+        print 'start time:', self.start,
+        print 'end time:', self.end,
+        print 'raising duration:', self.width
                 
     def oscillator(self, time):
         ts = time - self.start
@@ -399,7 +399,6 @@ class TotalFieldScatteredField(Src):
         self.src_time.init(cmplx)
         
         self.aux_fdtd = self._get_aux_fdtd(space, geom_tree, cmplx)
-        self.aux_fdtd.init()
 
     def step(self):
         self.aux_fdtd.step()
@@ -549,7 +548,7 @@ class TotalFieldScatteredField(Src):
         delta_1d = bisect(self._1d_dispersion_relation, 0, 2 * max(ds),
                           (zeta, v, omega, dt, wave_number))
         
-        pml_thickness = 10 * delta_1d
+        pml_thickness = 50 * delta_1d
         
         # Find the furthest distance, max_dist from the longitudinal
         # axis of the incomming wave
@@ -565,9 +564,9 @@ class TotalFieldScatteredField(Src):
         dist = map(abs, map(self._metric_from_center_along_beam_axis, vertices))
         max_dist = max(dist)
 
-        longitudinal_size = 2 * (max_dist + pml_thickness + delta_1d)
+        longitudinal_size = 2 * (max_dist + pml_thickness + 2 * delta_1d)
         aux_size = (0, 0, longitudinal_size)
-
+        
         mat_objs =  self.geom_tree.material_of_point((inf, inf, inf))[0]
         
         aux_space = Cartesian(size=aux_size,
@@ -575,9 +574,8 @@ class TotalFieldScatteredField(Src):
                               parallel=False)
         aux_geom_list = (DefaultMedium(material=mat_objs),
                          Boundary(material=CPML(),
-                                  thickness=pml_thickness,
-                                  minus_z=False))
-        src_pnt = aux_space.ex_index_to_space(0, 0, 0)
+                                  thickness=pml_thickness))
+        src_pnt = (0, 0, -max_dist - delta_1d)
         aux_src_list = (PointSource(src_time=deepcopy(self.src_time),
                                     component=const.Ex,
                                     pos=src_pnt),)
@@ -588,7 +586,7 @@ class TotalFieldScatteredField(Src):
         else:
             aux_fdtd = TEMzFDTD(aux_space, aux_geom_list, aux_src_list,
                                 dt=space.dt, bloch=None, verbose=False)
-
+        
         return aux_fdtd
 
     def _get_pw_source(self, space, component, cosine, field,
@@ -1341,19 +1339,19 @@ class GaussianBeam(TotalFieldScatteredField):
         v_p = 1 / sqrt(eps_inf * mu_inf)
         passby = raising + dist / v_p
 
-        while aux_fdtd.time_step.t < 2 * passby:
-            aux_fdtd.step()
+        aux_fdtd.step_until_t(2 * passby)
         
         self.aux_fdtd = _GaussianBeamSrcTime(aux_fdtd)
 
     def display_info(self, indent=0):
-        print " " * indent, "Gaussian beam source:"
-        print " " * indent, "propagation direction:", self.k
-        print " " * indent, "center:", self.center
-        print " " * indent, "source plane size:", self.size 
-        print " " * indent, "polarization direction:", self.e_direction
-        print " " * indent, "beam waist:", self.waist
-        print " " * indent, "maximum amp.:", self.amp
+        print ' ' * indent, 'Gaussian beam source:'
+        print ' ' * indent, 
+        print 'propagation direction:', self.k,
+        print 'center:', self.center
+        print 'source plane size:', self.size 
+        print 'polarization direction:', self.e_direction
+        print 'beam waist:', self.waist
+        print 'maximum amp.:', self.amp
         
         self.src_time.display_info(indent + 4)
     
