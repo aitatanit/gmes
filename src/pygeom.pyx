@@ -1046,42 +1046,43 @@ cdef class Boundary(GeometricObject):
             
         if 2 * self.half_size[2] < space.dz:
             self.half_size[2] = 0.5 * space.dz
-            
-        if 2 * self.half_size[0] > space.dx:
-            if self.plus_x:
-                low = (self.half_size[0] - self.d, -self.half_size[1],
-                       -self.half_size[2])
-                high = self.half_size[:]
-                self.box_list.append(GeomBox(low, high))
-            if self.minus_x:
-                low = -self.half_size[:]
-                high = (-self.half_size[0] + self.d, self.half_size[1],
-                        self.half_size[2])
-                self.box_list.append(GeomBox(low, high))
-                
-        if 2 * self.half_size[1] > space.dy:
-            if self.plus_y:
-                low = (-self.half_size[0], self.half_size[1] - self.d,
-                       -self.half_size[2])
-                high = self.half_size[:]
-                self.box_list.append(GeomBox(low, high))
-            if self.minus_y:
-                low = -self.half_size[:]
-                high = (self.half_size[0], -self.half_size[1] + self.d,
-                        self.half_size[2])
-                self.box_list.append(GeomBox(low, high))
+        
+        if self.d > 0:
+            if 2 * self.half_size[0] > space.dx:
+                if self.plus_x:
+                    low = (self.half_size[0] - self.d, -self.half_size[1],
+                           -self.half_size[2])
+                    high = self.half_size[:]
+                    self.box_list.append(GeomBox(low, high))
+                if self.minus_x:
+                    low = -self.half_size[:]
+                    high = (-self.half_size[0] + self.d, self.half_size[1],
+                            self.half_size[2])
+                    self.box_list.append(GeomBox(low, high))
 
-        if 2 * self.half_size[2] > space.dz:
-            if self.plus_z:
-                low = (-self.half_size[0], -self.half_size[1],
-                       self.half_size[2] - self.d)
-                high = self.half_size[:]
-                self.box_list.append(GeomBox(low, high))
-            if self.minus_z:
-                low = -self.half_size[:]
-                high = (self.half_size[0], self.half_size[1],
-                        -self.half_size[2] + self.d)
-                self.box_list.append(GeomBox(low, high))
+            if 2 * self.half_size[1] > space.dy:
+                if self.plus_y:
+                    low = (-self.half_size[0], self.half_size[1] - self.d,
+                           -self.half_size[2])
+                    high = self.half_size[:]
+                    self.box_list.append(GeomBox(low, high))
+                if self.minus_y:
+                    low = -self.half_size[:]
+                    high = (self.half_size[0], -self.half_size[1] + self.d,
+                            self.half_size[2])
+                    self.box_list.append(GeomBox(low, high))
+
+            if 2 * self.half_size[2] > space.dz:
+                if self.plus_z:
+                    low = (-self.half_size[0], -self.half_size[1],
+                           self.half_size[2] - self.d)
+                    high = self.half_size[:]
+                    self.box_list.append(GeomBox(low, high))
+                if self.minus_z:
+                    low = -self.half_size[:]
+                    high = (self.half_size[0], self.half_size[1],
+                            -self.half_size[2] + self.d)
+                    self.box_list.append(GeomBox(low, high))
         
         self.material.init(space, self.d)
         self.box = self.geom_box()

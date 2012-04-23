@@ -203,13 +203,13 @@ class ShowPlane(Thread):
 
         """
         Thread.__init__(self)
-
+        
         self.vrange = array(vrange, np.double)
         self.time_step = fdtd.time_step
         self.title = str(title)
         self.interval = int(interval)
         self.id = fig_id
-
+        
         comp = component
         
         spc2idx = {const.Ex: fdtd.space.space_to_ex_index,
