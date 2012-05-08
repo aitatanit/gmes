@@ -303,6 +303,282 @@ namespace gmes
   {
   };
 
+  /***********************************************************/
+  /* Improved Auxiliary Differential Equation Implementation */
+  /***********************************************************/
+
+  typedef std::vector<std::array<double, 3> > Ade2CoeffA;
+  typedef std::vector<std::array<double, 5> > Ade2CoeffB;
+  typedef std::array<double, 4> Ade2CoeffC;
+    
+  template <typename T> struct DcpAde2ElectricParam: ElectricParam<T>
+  {
+    // parameters for the ADE of the Drude terms
+    Ade2CoeffA a;
+    // parameters for the ADE of critical point terms
+    Ade2CoeffB b;
+    // parameters for the electric field update equations
+    Ade2CoeffC c;
+    T e_old;
+    std::vector<T> q_old, q_now, p_old, p_now;
+  };
+  
+  template <typename T> struct DcpAde2MagneticParam: MagneticParam<T>
+  {
+  };
+
+  template <typename T> class DcpAde2Electric: public MaterialElectric<T>
+  {
+  public:
+    ~DcpAde2Electric()
+    {
+      for(MapType::const_iterator iter = param.begin(); 
+	  iter != param.end(); iter++) {
+	delete static_cast<DcpAde2ElectricParam<T> *>(iter->second);
+      }
+      param.clear();
+    }
+    
+    PwMaterial<T> *
+    attach(const int* const idx, int idx_size,
+	   const PwMaterialParam * const parameter)
+    {
+      std::array<int, 3> index;
+      std::copy(idx, idx + idx_size, index.begin());
+
+      MapType::iterator iter = param.find(index);
+      if (iter != param.end()) {
+      	std::cerr << "Overwriting the existing index." << std::endl;
+      	delete static_cast<DcpAde2ElectricParam<T> *>(iter->second);
+      	param.erase(iter);
+      }
+
+      const DcpAde2ElectricParam<T> * const DcpAde2ElectricParameter_ptr
+	= static_cast<const DcpAde2ElectricParam<T> * const>(parameter);
+      DcpAde2ElectricParam<T> *param_ptr;
+      param_ptr = new DcpAde2ElectricParam<T>();
+
+      param_ptr->eps_inf = DcpAde2ElectricParameter_ptr->eps_inf;
+      std::copy(DcpAde2ElectricParameter_ptr->a.begin(),
+		DcpAde2ElectricParameter_ptr->a.end(),
+		std::back_inserter(param_ptr->a));
+      std::copy(DcpAde2ElectricParameter_ptr->b.begin(),
+		DcpAde2ElectricParameter_ptr->b.end(),
+		std::back_inserter(param_ptr->b));
+      std::copy(DcpAde2ElectricParameter_ptr->c.begin(),
+		DcpAde2ElectricParameter_ptr->c.end(),
+		param_ptr->c.begin());
+      param_ptr->e_old = static_cast<T>(0);
+      param_ptr->q_old.resize(param_ptr->a.size(), static_cast<T>(0));
+      param_ptr->q_now.resize(param_ptr->a.size(), static_cast<T>(0));
+      param_ptr->p_old.resize(param_ptr->b.size(), static_cast<T>(0));
+      param_ptr->p_now.resize(param_ptr->b.size(), static_cast<T>(0));
+
+      param.insert(std::make_pair(index, param_ptr));
+
+      return this;
+    }
+    
+    T 
+    dps_sum(const T& init, const DcpAde2ElectricParam<T> * const ptr) const
+    {
+      const Ade2CoeffA& a = ptr->a;
+      const std::vector<T>& q_old = ptr->q_old;
+      const std::vector<T>& q_now = ptr->q_now;
+      
+      T sum(init);
+      for (typename std::vector<T>::size_type i = 0; i < a.size(); ++i) {
+	sum += (1 - a[i][1]) * q_now[i] - a[i][0] * q_old[i];
+      }
+
+      return sum;
+    }
+    
+    T 
+    cps_sum(const T& init, const DcpAde2ElectricParam<T> * const ptr) const
+    {
+      const Ade2CoeffB& b = ptr->b;
+      const std::vector<T>& p_old = ptr->p_old;
+      const std::vector<T>& p_now = ptr->p_now;
+
+      T sum(init);
+      for (typename std::vector<T>::size_type i = 0; i < b.size(); ++i) {
+	sum += (1 - b[i][1]) * p_now[i] - b[i][0] * p_old[i];
+      }
+      
+      return sum;
+    }
+
+    void 
+    update_q(const T& e_old, const T& e_now, const T& e_new,
+	     DcpAde2ElectricParam<T> * const ptr)
+    {
+      const Ade2CoeffA& a = ptr->a;
+      std::vector<T>& q_old = ptr->q_old;
+      std::vector<T>& q_now = ptr->q_now;
+
+      std::vector<T> q_new(a.size());
+      for (typename std::vector<T>::size_type i = 0; i < a.size(); ++i) {
+	q_new[i] = a[i][0] * q_old[i] + a[i][1] * q_now[i] + a[i][2] * (e_old + 2.0 * e_now + e_new);
+      }
+      
+      std::copy(q_now.begin(), q_now.end(), q_old.begin());
+      std::copy(q_new.begin(), q_new.end(), q_now.begin());
+    }
+    
+    void 
+    update_p(const T& e_old, const T& e_now, const T& e_new,
+	     DcpAde2ElectricParam<T> * const ptr)
+    {
+      const Ade2CoeffB& b = ptr->b;
+      std::vector<T>& p_old = ptr->p_old;
+      std::vector<T>& p_now = ptr->p_now;
+    
+      std::vector<T> p_new(b.size());
+      for (typename std::vector<T>::size_type i = 0; i < b.size(); ++i) {
+	p_new[i] = b[i][0] * p_old[i] + b[i][1] * p_now[i] + b[i][2] 
+	  * e_old + b[i][3] * e_now + b[i][4] * e_new;
+      }
+      std::copy(p_now.begin(), p_now.end(), p_old.begin());
+      std::copy(p_new.begin(), p_new.end(), p_now.begin());
+    }
+  
+  protected:
+    using PwMaterial<T>::param;
+  };
+
+  template <typename T> class DcpAde2Ex: public DcpAde2Electric<T>
+  {
+  public:
+    void 
+    update(T * const ex, int ex_x_size, int ex_y_size, int ex_z_size,
+	   const T * const hz, int hz_x_size, int hz_y_size, int hz_z_size,
+	   const T * const hy, int hy_x_size, int hy_y_size, int hy_z_size,
+	   double dy, double dz, double dt, double n,
+	   const int* const idx, int idx_size, 
+	   PwMaterialParam * const parameter)
+    {
+      int i = idx[0], j = idx[1], k = idx[2];
+      
+      DcpAde2ElectricParam<T> *ptr;
+      ptr = static_cast<DcpAde2ElectricParam<T> *>(parameter);
+      const std::array<double, 4>& c = ptr->c;
+      T& e_old = ptr->e_old;
+
+      const T& e_now = ex(i,j,k);
+      const T e_new = c[0] * ((hz(i+1,j+1,k) - hz(i+1,j,k)) / dy - 
+			      (hy(i+1,j,k+1) - hy(i+1,j,k)) / dz) 
+	+ c[1] * (dps_sum(static_cast<T>(0), ptr) + 
+		  cps_sum(static_cast<T>(0), ptr))
+	+ c[2] * e_old + c[3] * e_now;
+      
+      update_q(e_old, e_now, e_new, ptr);
+      update_p(e_old, e_now, e_new, ptr);
+      
+      e_old = e_now;
+      ex(i,j,k) = e_new;
+    }
+    
+  protected:
+    using DcpAde2Electric<T>::param;
+    using DcpAde2Electric<T>::dps_sum;
+    using DcpAde2Electric<T>::cps_sum;
+    using DcpAde2Electric<T>::update_q;
+    using DcpAde2Electric<T>::update_p;
+  };
+
+  template <typename T> class DcpAde2Ey: public DcpAde2Electric<T>
+  {
+  public:
+    void 
+    update(T * const ey, int ey_x_size, int ey_y_size, int ey_z_size,
+	   const T * const hx, int hx_x_size, int hx_y_size, int hx_z_size,
+	   const T * const hz, int hz_x_size, int hz_y_size, int hz_z_size,
+	   double dz, double dx, double dt, double n,
+	   const int* const idx, int idx_size, 
+	   PwMaterialParam * const parameter)
+    {
+      int i = idx[0], j = idx[1], k = idx[2];
+      
+      DcpAde2ElectricParam<T> *ptr;
+      ptr = static_cast<DcpAde2ElectricParam<T> *>(parameter);
+      const std::array<double, 4>& c = ptr->c;
+      T& e_old = ptr->e_old;
+      
+      const T& e_now = ey(i,j,k);
+      T e_new = c[0] * ((hx(i,j+1,k+1) - hx(i,j+1,k)) / dz - 
+			(hz(i+1,j+1,k) - hz(i,j+1,k)) / dx)
+	+ c[1] * (dps_sum(static_cast<T>(0), ptr) + 
+		  cps_sum(static_cast<T>(0), ptr))
+	+ c[2] * e_old + c[3] * e_now;
+
+      update_q(e_old, e_now, e_new, ptr);
+      update_p(e_old, e_now, e_new, ptr);
+      
+      e_old = e_now;
+      ey(i,j,k) = e_new;
+    }
+    
+  protected:
+    using DcpAde2Electric<T>::param;
+    using DcpAde2Electric<T>::dps_sum;
+    using DcpAde2Electric<T>::cps_sum;
+    using DcpAde2Electric<T>::update_q;
+    using DcpAde2Electric<T>::update_p;
+  };
+
+  template <typename T> class DcpAde2Ez: public DcpAde2Electric<T>
+  {
+  public:
+    void 
+    update(T * const ez, int ez_x_size, int ez_y_size, int ez_z_size,
+	   const T * const hy, int hy_x_size, int hy_y_size, int hy_z_size,
+	   const T * const hx, int hx_x_size, int hx_y_size, int hx_z_size,
+	   double dx, double dy, double dt, double n,
+	   const int* const idx, int idx_size, 
+	   PwMaterialParam * const parameter)
+    {
+      int i = idx[0], j = idx[1], k = idx[2];
+      
+      DcpAde2ElectricParam<T> *ptr;
+      ptr = static_cast<DcpAde2ElectricParam<T> *>(parameter);
+      const std::array<double, 4>& c = ptr->c;
+      T& e_old = ptr->e_old;
+
+      const T& e_now = ez(i,j,k);
+      T e_new = c[0] * ((hy(i+1,j,k+1) - hy(i,j,k+1)) / dx - 
+			(hx(i,j+1,k+1) - hx(i,j,k+1)) / dy)
+	+ c[1] * (dps_sum(static_cast<T>(0), ptr) + 
+		  cps_sum(static_cast<T>(0), ptr))
+	+ c[2] * e_old + c[3] * e_now;
+      
+      update_q(e_old, e_now, e_new, ptr);
+      update_p(e_old, e_now, e_new, ptr);
+      
+      e_old = e_now;
+      ez(i,j,k) = e_new;
+    }
+
+  protected:
+    using DcpAde2Electric<T>::param;
+    using DcpAde2Electric<T>::dps_sum;
+    using DcpAde2Electric<T>::cps_sum;
+    using DcpAde2Electric<T>::update_q;
+    using DcpAde2Electric<T>::update_p;
+  };
+
+  template <typename T> class DcpAde2Hx: public DielectricHx<T>
+  {
+  };
+
+  template <typename T> class DcpAde2Hy: public DielectricHy<T>
+  {
+  };
+
+  template <typename T> class DcpAde2Hz: public DielectricHz<T>
+  {
+  };
+
   /*********************************************************/
   /* Piecewise-Linear Recursive Convolution Implementation */
   /*********************************************************/

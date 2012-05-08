@@ -286,6 +286,44 @@ import_array();
   }
 };
 
+// ADE implementation of the Drude-critical points model
+%template(DcpAde2ElectricParam ## postfix) gmes::DcpAde2ElectricParam<T >;
+%template(DcpAde2MagneticParam ## postfix) gmes::DcpAde2MagneticParam<T >;
+%template(DcpAde2Electric ## postfix) gmes::DcpAde2Electric<T >;
+%template(DcpAde2Ex ## postfix) gmes::DcpAde2Ex<T >;
+%template(DcpAde2Ey ## postfix) gmes::DcpAde2Ey<T >;
+%template(DcpAde2Ez ## postfix) gmes::DcpAde2Ez<T >;
+%template(DcpAde2Hx ## postfix) gmes::DcpAde2Hx<T >;
+%template(DcpAde2Hy ## postfix) gmes::DcpAde2Hy<T >;
+%template(DcpAde2Hz ## postfix) gmes::DcpAde2Hz<T >;
+
+%extend gmes::DcpAde2ElectricParam<T >
+{
+  void set(const double* const a, int a_size1, int a_size2,
+	   const double* const b, int b_size1, int b_size2,
+	   const double* const c, int c_size)
+  {
+    for (int i = 0; i < a_size1; i++) {
+      std::array<double, 3> tmp;
+      std::copy(a + i * a_size2, a + i * a_size2 + 3, tmp.begin());
+      $self->a.push_back(tmp);
+    }
+
+    for (int i = 0; i < b_size1; i++) {
+      std::array<double, 5> tmp;
+      std::copy(b + i * b_size2, b + i * b_size2 + 5, tmp.begin());
+      $self->b.push_back(tmp);
+    }
+
+    std::copy(c, c + c_size, $self->c.begin());
+    
+    $self->q_old.resize(a_size1);
+    $self->q_now.resize(a_size1);
+    $self->p_old.resize(b_size1);
+    $self->p_now.resize(b_size1);
+  }
+};
+
 // PLRC implementation of the Drude-critical points model
 %template(DcpPlrcElectricParam ## postfix) gmes::DcpPlrcElectricParam<T >;
 %template(DcpPlrcMagneticParam ## postfix) gmes::DcpPlrcMagneticParam<T >;
