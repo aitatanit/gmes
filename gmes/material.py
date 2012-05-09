@@ -1299,7 +1299,7 @@ class DcpAde2(Dielectric):
             self.b[i,0] = -((self.dt * pnt.gamma - 2)**2 + (self.dt * pnt.omega)**2) / denom
             self.b[i,1] = 2 * (4 - self.dt**2 * (pnt.gamma**2 + pnt.omega**2)) / denom
             self.b[i,2] = 2 * self.dt * pnt.amp * pnt.omega * (self.dt * cos(pnt.phi) * pnt.omega + sin(pnt.phi) * (2 - self.dt * pnt.gamma)) / denom
-            self.b[i,3] = 4 * self.dt**2 * pnt.amp * pnt.omega * (cos(pnt.phi) * pnt.omega - pnt.sin(pnt.phi) * pnt.gamma) / denom
+            self.b[i,3] = 4 * self.dt**2 * pnt.amp * pnt.omega * (cos(pnt.phi) * pnt.omega - sin(pnt.phi) * pnt.gamma) / denom
             self.b[i,4] = 2 * self.dt * pnt.amp * pnt.omega * (self.dt * cos(pnt.phi) * pnt.omega - sin(pnt.phi) * (2 + self.dt * pnt.gamma)) / denom
             
         # parameters for the electric field update equations.
@@ -1329,6 +1329,108 @@ class DcpAde2(Dielectric):
         for i in self.cps:
             i.display_info(indent+4)
         
+    def get_pw_material_ex(self, idx, coords, underneath=None, cmplx=False):
+        if cmplx:
+            pw_obj = DcpAde2ExCmplx()
+            pw_param = DcpAde2ElectricParamCmplx()
+        else:
+            pw_obj = DcpAde2ExReal()
+            pw_param = DcpAde2ElectricParamReal()
+                
+        if underneath is None:
+            pw_param.eps_inf = self.eps_inf
+        else:
+            pw_param.eps_inf = underneath.eps_inf
+        
+        pw_param.set(self.a, self.b, self.c)
+        
+        pw_obj.attach(idx, pw_param)
+        return pw_obj
+    
+    def get_pw_material_ey(self, idx, coords, underneath=None, cmplx=False):
+        if cmplx:
+            pw_obj = DcpAde2EyCmplx()
+            pw_param = DcpAde2ElectricParamCmplx()
+        else:
+            pw_obj = DcpAde2EyReal()
+            pw_param = DcpAde2ElectricParamReal()
+                
+        if underneath is None:
+            pw_param.eps_inf = self.eps_inf
+        else:
+            pw_param.eps_inf = underneath.eps_inf
+        
+        pw_param.set(self.a, self.b, self.c)
+        
+        pw_obj.attach(idx, pw_param)
+        return pw_obj
+    
+    def get_pw_material_ez(self, idx, coords, underneath=None, cmplx=False):
+        if cmplx:
+            pw_obj = DcpAde2EzCmplx()
+            pw_param = DcpAde2ElectricParamCmplx()
+        else:
+            pw_obj = DcpAde2EzReal()
+            pw_param = DcpAde2ElectricParamReal()
+                
+        if underneath is None:
+            pw_param.eps_inf = self.eps_inf
+        else:
+            pw_param.eps_inf = underneath.eps_inf
+        
+        pw_param.set(self.a, self.b, self.c)
+        
+        pw_obj.attach(idx, pw_param)
+        return pw_obj
+    
+    def get_pw_material_hx(self, idx, coords, underneath=None, cmplx=False):
+        if cmplx:
+            pw_obj = DcpAde2HxCmplx()
+            pw_param = DcpAde2MagneticParamCmplx()
+        else:
+            pw_obj = DcpAde2HxReal()
+            pw_param = DcpAde2MagneticParamReal()
+            
+        if underneath is None:
+            pw_param.mu_inf = self.mu_inf
+        else:
+            pw_param.mu_inf = underneath.mu_inf
+        
+        pw_obj.attach(idx, pw_param)
+        return pw_obj
+    
+    def get_pw_material_hy(self, idx, coords, underneath=None, cmplx=False):
+        if cmplx:
+            pw_obj = DcpAde2HyCmplx()
+            pw_param = DcpAde2MagneticParamCmplx()
+        else:
+            pw_obj = DcpAde2HyReal()
+            pw_param = DcpAde2MagneticParamReal()
+            
+        if underneath is None:
+            pw_param.mu_inf = self.mu_inf
+        else:
+            pw_param.mu_inf = underneath.mu_inf
+        
+        pw_obj.attach(idx, pw_param)
+        return pw_obj
+    
+    def get_pw_material_hz(self, idx, coords, underneath=None, cmplx=False):
+        if cmplx:
+            pw_obj = DcpAde2HzCmplx()
+            pw_param = DcpAde2MagneticParamCmplx()
+        else:
+            pw_obj = DcpAde2HzReal()
+            pw_param = DcpAde2MagneticParamReal()
+            
+        if underneath is None:
+            pw_param.mu_inf = self.mu_inf
+        else:
+            pw_param.mu_inf = underneath.mu_inf
+        
+        pw_obj.attach(idx, pw_param)
+        return pw_obj
+
 
 class DcpPlrc(Dielectric):
     """
