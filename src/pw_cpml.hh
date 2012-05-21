@@ -22,26 +22,26 @@
 
 namespace gmes
 {
-  template <typename T> struct CPMLElectricParam: public ElectricParam<T>
+  template <typename T> struct CpmlElectricParam: public ElectricParam<T>
   {
     double b1, b2, c1, c2, kappa1, kappa2;
     T psi1, psi2;
   };
   
-  template <typename T> struct CPMLMagneticParam: public MagneticParam<T>
+  template <typename T> struct CpmlMagneticParam: public MagneticParam<T>
   {
     double b1, b2, c1, c2, kappa1, kappa2;
     T psi1, psi2;
   };
   
-  template <typename T> class CPMLElectric: public MaterialElectric<T>
+  template <typename T> class CpmlElectric: public MaterialElectric<T>
   {
   public:
-    ~CPMLElectric()
+    ~CpmlElectric()
     {
       for(MapType::const_iterator iter = param.begin(); 
 	  iter != param.end(); iter++) {
-	delete static_cast<CPMLElectricParam<T> *>(iter->second);
+	delete static_cast<CpmlElectricParam<T> *>(iter->second);
       }
       param.clear();
     }
@@ -56,21 +56,21 @@ namespace gmes
       MapType::iterator iter = param.find(index);
       if (iter != param.end()) {
       	std::cerr << "Overwriting the existing index." << std::endl;
-      	delete static_cast<CPMLElectricParam<T> *>(iter->second);
+      	delete static_cast<CpmlElectricParam<T> *>(iter->second);
       	param.erase(iter);
       }
 
-      const CPMLElectricParam<T> * const CPMLElectricParameter_ptr
-	= static_cast<const CPMLElectricParam<T> * const>(parameter);
-      CPMLElectricParam<T> *param_ptr;
-      param_ptr = new CPMLElectricParam<T>();
-      param_ptr->eps_inf = CPMLElectricParameter_ptr->eps_inf;
-      param_ptr->b1 = CPMLElectricParameter_ptr->b1;
-      param_ptr->b2 = CPMLElectricParameter_ptr->b2;
-      param_ptr->c1 = CPMLElectricParameter_ptr->c1;
-      param_ptr->c2 = CPMLElectricParameter_ptr->c2;
-      param_ptr->kappa1 = CPMLElectricParameter_ptr->kappa1;
-      param_ptr->kappa2 = CPMLElectricParameter_ptr->kappa2;
+      const CpmlElectricParam<T> * const CpmlElectricParameter_ptr
+	= static_cast<const CpmlElectricParam<T> * const>(parameter);
+      CpmlElectricParam<T> *param_ptr;
+      param_ptr = new CpmlElectricParam<T>();
+      param_ptr->eps_inf = CpmlElectricParameter_ptr->eps_inf;
+      param_ptr->b1 = CpmlElectricParameter_ptr->b1;
+      param_ptr->b2 = CpmlElectricParameter_ptr->b2;
+      param_ptr->c1 = CpmlElectricParameter_ptr->c1;
+      param_ptr->c2 = CpmlElectricParameter_ptr->c2;
+      param_ptr->kappa1 = CpmlElectricParameter_ptr->kappa1;
+      param_ptr->kappa2 = CpmlElectricParameter_ptr->kappa2;
       param_ptr->psi1 = static_cast<T>(0);
       param_ptr->psi2 = static_cast<T>(0);
 
@@ -83,7 +83,7 @@ namespace gmes
     using PwMaterial<T>::param;
   };
 
-  template <typename T> class CPMLEx: public CPMLElectric<T>
+  template <typename T> class CpmlEx: public CpmlElectric<T>
   {
   public:
     void 
@@ -96,8 +96,8 @@ namespace gmes
     {
       int i = idx[0], j = idx[1], k = idx[2];
 
-      CPMLElectricParam<T> *ptr;
-      ptr = static_cast<CPMLElectricParam<T> *>(parameter);
+      CpmlElectricParam<T> *ptr;
+      ptr = static_cast<CpmlElectricParam<T> *>(parameter);
       double eps_inf = ptr->eps_inf;
       double by = ptr->b1;
       double bz = ptr->b2;
@@ -117,10 +117,10 @@ namespace gmes
     }
 
   protected:
-    using CPMLElectric<T>::param;
+    using CpmlElectric<T>::param;
   };
 
-  template <typename T> class CPMLEy: public CPMLElectric<T>
+  template <typename T> class CpmlEy: public CpmlElectric<T>
   {
   public:
     void 
@@ -133,8 +133,8 @@ namespace gmes
     {
       int i = idx[0], j = idx[1], k = idx[2];
 
-      CPMLElectricParam<T> *ptr;
-      ptr = static_cast<CPMLElectricParam<T> *>(parameter);
+      CpmlElectricParam<T> *ptr;
+      ptr = static_cast<CpmlElectricParam<T> *>(parameter);
       double eps_inf = ptr->eps_inf;
       double bz = ptr->b1;
       double bx = ptr->b2;
@@ -154,10 +154,10 @@ namespace gmes
     }
 
   protected:
-    using CPMLElectric<T>::param;
+    using CpmlElectric<T>::param;
   };
 
-  template <typename T> class CPMLEz: public CPMLElectric<T>
+  template <typename T> class CpmlEz: public CpmlElectric<T>
   {
   public:
     void 
@@ -170,8 +170,8 @@ namespace gmes
     {
       int i = idx[0], j = idx[1], k = idx[2];
 
-      CPMLElectricParam<T> *ptr;
-      ptr = static_cast<CPMLElectricParam<T> *>(parameter);
+      CpmlElectricParam<T> *ptr;
+      ptr = static_cast<CpmlElectricParam<T> *>(parameter);
       double eps_inf = ptr->eps_inf;
       double bx = ptr->b1;
       double by = ptr->b2;
@@ -191,17 +191,17 @@ namespace gmes
     }
 
   protected:
-    using CPMLElectric<T>::param;
+    using CpmlElectric<T>::param;
   };
 
-  template <typename T> class CPMLMagnetic: public MaterialMagnetic<T>
+  template <typename T> class CpmlMagnetic: public MaterialMagnetic<T>
   {
   public:
-    ~CPMLMagnetic()
+    ~CpmlMagnetic()
     {
       for(MapType::const_iterator iter = param.begin(); 
 	  iter != param.end(); iter++) {
-	delete static_cast<CPMLMagneticParam<T> *>(iter->second);
+	delete static_cast<CpmlMagneticParam<T> *>(iter->second);
       }
       param.clear();
     }
@@ -216,21 +216,21 @@ namespace gmes
       MapType::iterator iter = param.find(index);
       if (iter != param.end()) {
       	std::cerr << "Overwriting the existing index." << std::endl;
-      	delete static_cast<CPMLMagneticParam<T> *>(iter->second);
+      	delete static_cast<CpmlMagneticParam<T> *>(iter->second);
       	param.erase(iter);
       }
 
-      const CPMLMagneticParam<T> * const CPMLMagneticParameter_ptr
-	= static_cast<const CPMLMagneticParam<T> * const>(parameter);
-      CPMLMagneticParam<T> * param_ptr;
-      param_ptr = new CPMLMagneticParam<T>();
-      param_ptr->mu_inf = CPMLMagneticParameter_ptr->mu_inf;
-      param_ptr->b1 = CPMLMagneticParameter_ptr->b1;
-      param_ptr->b2 = CPMLMagneticParameter_ptr->b2;
-      param_ptr->c1 = CPMLMagneticParameter_ptr->c1;
-      param_ptr->c2 = CPMLMagneticParameter_ptr->c2;
-      param_ptr->kappa1 = CPMLMagneticParameter_ptr->kappa1;
-      param_ptr->kappa2 = CPMLMagneticParameter_ptr->kappa2;
+      const CpmlMagneticParam<T> * const CpmlMagneticParameter_ptr
+	= static_cast<const CpmlMagneticParam<T> * const>(parameter);
+      CpmlMagneticParam<T> * param_ptr;
+      param_ptr = new CpmlMagneticParam<T>();
+      param_ptr->mu_inf = CpmlMagneticParameter_ptr->mu_inf;
+      param_ptr->b1 = CpmlMagneticParameter_ptr->b1;
+      param_ptr->b2 = CpmlMagneticParameter_ptr->b2;
+      param_ptr->c1 = CpmlMagneticParameter_ptr->c1;
+      param_ptr->c2 = CpmlMagneticParameter_ptr->c2;
+      param_ptr->kappa1 = CpmlMagneticParameter_ptr->kappa1;
+      param_ptr->kappa2 = CpmlMagneticParameter_ptr->kappa2;
       param_ptr->psi1 = static_cast<T>(0);
       param_ptr->psi2 = static_cast<T>(0);
 
@@ -243,7 +243,7 @@ namespace gmes
     using PwMaterial<T>::param;
   };
 
-  template <typename T> class CPMLHx: public CPMLMagnetic<T>
+  template <typename T> class CpmlHx: public CpmlMagnetic<T>
   {
   public:
     void 
@@ -256,8 +256,8 @@ namespace gmes
     {
       int i = idx[0], j = idx[1], k = idx[2];
 
-      CPMLMagneticParam<T> *ptr;
-      ptr = static_cast<CPMLMagneticParam<T> *>(parameter);
+      CpmlMagneticParam<T> *ptr;
+      ptr = static_cast<CpmlMagneticParam<T> *>(parameter);
       double mu_inf = ptr->mu_inf;
       double by = ptr->b1;
       double bz = ptr->b2;
@@ -277,10 +277,10 @@ namespace gmes
     }
 
   protected:
-    using CPMLMagnetic<T>::param;
+    using CpmlMagnetic<T>::param;
   };
 
-  template <typename T> class CPMLHy: public CPMLMagnetic<T>
+  template <typename T> class CpmlHy: public CpmlMagnetic<T>
   {
   public:
     void 
@@ -293,8 +293,8 @@ namespace gmes
     {
       int i = idx[0], j = idx[1], k = idx[2];
 
-      CPMLMagneticParam<T> *ptr;
-      ptr = static_cast<CPMLMagneticParam<T> *>(parameter);
+      CpmlMagneticParam<T> *ptr;
+      ptr = static_cast<CpmlMagneticParam<T> *>(parameter);
       double mu_inf = ptr->mu_inf;
       double bz = ptr->b1;
       double bx = ptr->b2;
@@ -314,10 +314,10 @@ namespace gmes
     }
 
   protected:
-    using CPMLMagnetic<T>::param;
+    using CpmlMagnetic<T>::param;
   };
 
-  template <typename T> class CPMLHz: public CPMLMagnetic<T>
+  template <typename T> class CpmlHz: public CpmlMagnetic<T>
   {
   public:
     void 
@@ -330,8 +330,8 @@ namespace gmes
     {
       int i = idx[0], j = idx[1], k = idx[2];
 
-      CPMLMagneticParam<T> *ptr;
-      ptr = static_cast<CPMLMagneticParam<T> *>(parameter);
+      CpmlMagneticParam<T> *ptr;
+      ptr = static_cast<CpmlMagneticParam<T> *>(parameter);
       double mu_inf = ptr->mu_inf;
       double bx = ptr->b1;
       double by = ptr->b2;
@@ -351,7 +351,7 @@ namespace gmes
     }
 
   protected:
-    using CPMLMagnetic<T>::param;
+    using CpmlMagnetic<T>::param;
   };
 }
 

@@ -112,7 +112,7 @@ if __name__ == "__main__":
     start = time.time()
     geom_list = (geometry.DefaultMedium(material=AIR),) + \
             make_crystals(*SIZE[:2]) + make_line_defect(SIZE[0]) + \
-            (geometry.Boundary(material=material.UPML(), thickness=PML_THICK),)
+            (geometry.Boundary(material=material.Upml(), thickness=PML_THICK),)
 
     space = geometry.Cartesian(size=SIZE, resolution=RESOLUTION)
 

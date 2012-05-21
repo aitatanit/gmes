@@ -18,7 +18,7 @@ GMES follows the C++ standard, thus it is OS portable in source code level.
 2.1. GNU/Linux
 
 GMES has been tested on Debian GNU/Linux 5.0.8 Lenny (32 bit), Ubuntu 10.04
-Lucid Lynx (32 bit), and Ubuntu 11.04 Natty Narwhal (64 bit).
+Lucid Lynx (32 bit), and Ubuntu 11.10 Oneiric Ocelot (64 bit).
 
 2.2. Windows
 

@@ -22,7 +22,7 @@ from scipy.optimize import bisect
 import constant as const
 from geometry import Cartesian, DefaultMedium, Boundary, in_range
 from fdtd import TEMzFDTD
-from material import Dielectric, CPML
+from material import Dielectric, Cpml
 
 # for a dipole source
 from pw_source import PointSourceParam
@@ -573,7 +573,7 @@ class TotalFieldScatteredField(Src):
                               resolution=1/delta_1d,
                               parallel=False)
         aux_geom_list = (DefaultMedium(material=mat_objs),
-                         Boundary(material=CPML(),
+                         Boundary(material=Cpml(),
                                   thickness=pml_thickness))
         src_pnt = (0, 0, -max_dist - delta_1d)
         aux_src_list = (PointSource(src_time=deepcopy(self.src_time),

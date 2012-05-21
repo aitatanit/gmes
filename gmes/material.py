@@ -411,7 +411,7 @@ class Compound(object):
     pass
 
 
-class PML(Material, Compound):
+class Pml(Material, Compound):
     """Base class of PML materials.
     
     Attributes:
@@ -506,7 +506,7 @@ class PML(Material, Compound):
             return 1
         
         
-class UPML(PML):
+class Upml(Pml):
     """Form Uniaxial Perfectly Matched Layer (UPML).
     
     This class implements CFS PML represented in
@@ -524,21 +524,21 @@ class UPML(PML):
 
     """    
     def __init__(self, eps_inf=1, mu_inf=1, m=3.6, kappa_max=4.6, sigma_max_ratio=.745):
-        PML.__init__(self, eps_inf, mu_inf)
+        Pml.__init__(self, eps_inf, mu_inf)
 
         self.m = float(m)
         self.kappa_max = float(kappa_max)
         self.sigma_max_ratio = float(sigma_max_ratio)
 
     def __getstate__(self):
-        d = PML.__getstate__(self)
+        d = Pml.__getstate__(self)
         d['m'] = self.m
         d['kappa_max'] = self.kappa_max
         d['sigma_max_ratio'] = self.sigma_max_ratio
         return d
 
     def __setstate__(self, d):
-        PML.__setstate__(self, d)
+        Pml.__setstate__(self, d)
         self.m = d['m']
         self.kappa_max = d['kappa_max']
         self.sigma_max_ratio = d['sigma_max_ratio']
@@ -596,11 +596,11 @@ class UPML(PML):
     
     def get_pw_material_ex(self, idx, coords, underneath=None, cmplx=False):
         if cmplx:
-            pw_obj = UPMLExCmplx()
-            pw_param = UPMLElectricParamCmplx()
+            pw_obj = UpmlExCmplx()
+            pw_param = UpmlElectricParamCmplx()
         else:
-            pw_obj = UPMLExReal()
-            pw_param = UPMLElectricParamReal()
+            pw_obj = UpmlExReal()
+            pw_param = UpmlElectricParamReal()
             
         if underneath is None:
             pw_param.eps_inf = self.eps_inf
@@ -619,11 +619,11 @@ class UPML(PML):
     
     def get_pw_material_ey(self, idx, coords, underneath=None, cmplx=False):
         if cmplx:
-            pw_obj = UPMLEyCmplx()
-            pw_param = UPMLElectricParamCmplx()
+            pw_obj = UpmlEyCmplx()
+            pw_param = UpmlElectricParamCmplx()
         else:
-            pw_obj = UPMLEyReal()
-            pw_param = UPMLElectricParamReal()
+            pw_obj = UpmlEyReal()
+            pw_param = UpmlElectricParamReal()
          
         if underneath is None:
             pw_param.eps_inf = self.eps_inf
@@ -642,11 +642,11 @@ class UPML(PML):
     
     def get_pw_material_ez(self, idx, coords, underneath=None, cmplx=False):
         if cmplx:
-            pw_obj = UPMLEzCmplx()
-            pw_param = UPMLElectricParamCmplx()
+            pw_obj = UpmlEzCmplx()
+            pw_param = UpmlElectricParamCmplx()
         else:
-            pw_obj = UPMLEzReal()
-            pw_param = UPMLElectricParamReal()
+            pw_obj = UpmlEzReal()
+            pw_param = UpmlElectricParamReal()
 
         if underneath is None:
             pw_param.eps_inf = self.eps_inf
@@ -665,11 +665,11 @@ class UPML(PML):
     
     def get_pw_material_hx(self, idx, coords, underneath=None, cmplx=False):
         if cmplx:
-            pw_obj = UPMLHxCmplx()
-            pw_param = UPMLMagneticParamCmplx()
+            pw_obj = UpmlHxCmplx()
+            pw_param = UpmlMagneticParamCmplx()
         else:
-            pw_obj = UPMLHxReal()
-            pw_param = UPMLMagneticParamReal()
+            pw_obj = UpmlHxReal()
+            pw_param = UpmlMagneticParamReal()
 
         if underneath is None:
             pw_param.mu_inf = self.mu_inf
@@ -688,11 +688,11 @@ class UPML(PML):
     
     def get_pw_material_hy(self, idx, coords, underneath=None, cmplx=False):
         if cmplx:
-            pw_obj = UPMLHyCmplx()
-            pw_param = UPMLMagneticParamCmplx()
+            pw_obj = UpmlHyCmplx()
+            pw_param = UpmlMagneticParamCmplx()
         else:
-            pw_obj = UPMLHyReal()
-            pw_param = UPMLMagneticParamReal()
+            pw_obj = UpmlHyReal()
+            pw_param = UpmlMagneticParamReal()
 
         if underneath is None:
             pw_param.mu_inf = self.mu_inf
@@ -711,11 +711,11 @@ class UPML(PML):
     
     def get_pw_material_hz(self, idx, coords, underneath=None, cmplx=False):
         if cmplx:
-            pw_obj = UPMLHzCmplx()
-            pw_param = UPMLMagneticParamCmplx()
+            pw_obj = UpmlHzCmplx()
+            pw_param = UpmlMagneticParamCmplx()
         else:
-            pw_obj = UPMLHzReal()
-            pw_param = UPMLMagneticParamReal()
+            pw_obj = UpmlHzReal()
+            pw_param = UpmlMagneticParamReal()
 
         if underneath is None:
             pw_param.mu_inf = self.mu_inf
@@ -733,7 +733,7 @@ class UPML(PML):
         return pw_obj
     
     
-class CPML(PML):
+class Cpml(Pml):
     """Form Complex Frequency Shifted (CFS) Perfectly Matched Layer (PML).
     
     This class implements CFS PML represented in
@@ -753,7 +753,7 @@ class CPML(PML):
     
     """
     def __init__(self, eps_inf=1, mu_inf=1, m=3.4, kappa_max=1, m_a=4.8, a_max=0.8, sigma_max_ratio=0.65):
-        PML.__init__(self, eps_inf, mu_inf)
+        Pml.__init__(self, eps_inf, mu_inf)
 
         self.m = float(m)
         self.kappa_max = float(kappa_max)
@@ -762,7 +762,7 @@ class CPML(PML):
         self.sigma_max_ratio = float(sigma_max_ratio)
         
     def __getstate__(self):
-        d = PML.__getstate__(self)
+        d = Pml.__getstate__(self)
         d['m'] = self.m
         d['kappa_max'] = self.kappa_max
         d['m_a'] = self.m_a
@@ -771,7 +771,7 @@ class CPML(PML):
         return d
 
     def __setstate__(self, d):
-        PML.__setstate__(self, d)
+        Pml.__setstate__(self, d)
         self.m = d['m']
         self.kappa_max = d['kappa_max']
         self.m_a = d['m_a']
@@ -818,11 +818,11 @@ class CPML(PML):
     
     def get_pw_material_ex(self, idx, coords, underneath=None, cmplx=False):
         if cmplx:
-            pw_obj = CPMLExCmplx()
-            pw_param = CPMLElectricParamCmplx()
+            pw_obj = CpmlExCmplx()
+            pw_param = CpmlElectricParamCmplx()
         else:
-            pw_obj = CPMLExReal()
-            pw_param = CPMLElectricParamReal()
+            pw_obj = CpmlExReal()
+            pw_param = CpmlElectricParamReal()
 
         if underneath is None:
             pw_param.eps_inf = self.eps_inf
@@ -841,11 +841,11 @@ class CPML(PML):
     
     def get_pw_material_ey(self, idx, coords, underneath=None, cmplx=False):
         if cmplx:
-            pw_obj = CPMLEyCmplx()
-            pw_param = CPMLElectricParamCmplx()
+            pw_obj = CpmlEyCmplx()
+            pw_param = CpmlElectricParamCmplx()
         else:
-            pw_obj = CPMLEyReal()
-            pw_param = CPMLElectricParamReal()
+            pw_obj = CpmlEyReal()
+            pw_param = CpmlElectricParamReal()
 
         if underneath is None:
             pw_param.eps_inf = self.eps_inf
@@ -864,11 +864,11 @@ class CPML(PML):
     
     def get_pw_material_ez(self, idx, coords, underneath=None, cmplx=False):
         if cmplx:
-            pw_obj = CPMLEzCmplx()
-            pw_param = CPMLElectricParamCmplx()
+            pw_obj = CpmlEzCmplx()
+            pw_param = CpmlElectricParamCmplx()
         else:
-            pw_obj = CPMLEzReal()
-            pw_param = CPMLElectricParamReal()
+            pw_obj = CpmlEzReal()
+            pw_param = CpmlElectricParamReal()
 
         if underneath is None:
             pw_param.eps_inf = self.eps_inf
@@ -886,11 +886,11 @@ class CPML(PML):
     
     def get_pw_material_hx(self, idx, coords, underneath=None, cmplx=False):
         if cmplx:
-            pw_obj = CPMLHxCmplx()
-            pw_param = CPMLMagneticParamCmplx()
+            pw_obj = CpmlHxCmplx()
+            pw_param = CpmlMagneticParamCmplx()
         else:
-            pw_obj = CPMLHxReal()
-            pw_param = CPMLMagneticParamReal()
+            pw_obj = CpmlHxReal()
+            pw_param = CpmlMagneticParamReal()
 
         if underneath is None:
             pw_param.mu_inf = self.mu_inf
@@ -908,11 +908,11 @@ class CPML(PML):
     
     def get_pw_material_hy(self, idx, coords, underneath=None, cmplx=False):
         if cmplx:
-            pw_obj = CPMLHyCmplx()
-            pw_param = CPMLMagneticParamCmplx()
+            pw_obj = CpmlHyCmplx()
+            pw_param = CpmlMagneticParamCmplx()
         else:
-            pw_obj = CPMLHyReal()
-            pw_param = CPMLMagneticParamReal()
+            pw_obj = CpmlHyReal()
+            pw_param = CpmlMagneticParamReal()
 
         if underneath is None:
             pw_param.mu_inf = self.mu_inf
@@ -930,11 +930,11 @@ class CPML(PML):
     
     def get_pw_material_hz(self, idx, coords, underneath=None, cmplx=False):
         if cmplx:
-            pw_obj = CPMLHzCmplx()
-            pw_param = CPMLMagneticParamCmplx()
+            pw_obj = CpmlHzCmplx()
+            pw_param = CpmlMagneticParamCmplx()
         else:
-            pw_obj = CPMLHzReal()
-            pw_param = CPMLMagneticParamReal()
+            pw_obj = CpmlHzReal()
+            pw_param = CpmlMagneticParamReal()
 
         if underneath is None:
             pw_param.mu_inf = self.mu_inf

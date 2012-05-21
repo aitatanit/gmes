@@ -31,7 +31,7 @@ cylinder = geometry.Cylinder(center=(0, 0, 0),
                              radius=1000,
                              height=1,
                              material=gold)
-boundary = geometry.Boundary(material=material.CPML(),
+boundary = geometry.Boundary(material=material.Cpml(),
                              thickness=1,
                              minus_y=False, plus_y=False)
 

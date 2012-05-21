@@ -5,7 +5,7 @@
 from __future__ import division
 from copy import deepcopy
 import numpy as np
-from material import Compound, PML
+from material import Compound, Pml
 
 cimport numpy as np
 np.import_array()
@@ -1007,7 +1007,7 @@ cdef class Boundary(GeometricObject):
         self.half_size = np.zeros((3,), np.double)
 
         # do someting for the PML derived class?
-        if isinstance(material, PML):
+        if isinstance(material, Pml):
             pass
 
     def __getstate__(self):
