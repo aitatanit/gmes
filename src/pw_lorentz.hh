@@ -1,8 +1,8 @@
-/* This implementation is based on the following article.
+/* This implementation is based on the following article:
  *
- * A. Taflove and S. C. Hagness, Computational Electrodynamics: The Finite-
- * Difference Time-Domain Method, 3rd ed. 685 Canton Street Norwood, MA 02062, 
- * USA: Artech House Publishers, 2005.
+ * M. Okoniewski, M. Mrozowski, and M. A. Stuchly, "Simple 
+ * treatment of multi-term dispersion in FDTD," IEEE Microw. 
+ * Guided Wave Lett. 7, 121-123 (1997).
  */
 
 #ifndef PW_LORENTZ_HH_

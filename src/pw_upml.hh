@@ -1,9 +1,8 @@
-/* This implementation is based on the following article.
+/* This implementation is based on the following article:
  *
- * S. Gedney, "Perfectly Matched Layer Absorbing Boundary Conditions,"
- * Computational Electrodynamics: The Finite-Difference Time-Domain Method,
- * A. Taflove and S.C. Hagness, 3rd ed., Artech House Publishers, 2005,
- * pp. 273-328.
+ * S. D. Gedney, "An anisotropic perfectly matched layer-absorbing
+ * medium for the truncation of FDTD lattices," IEEE Trans. 
+ * Antennas Propag. 44, 1630-1639 (1996).
  */
 
 #ifndef PW_UPML_HH_

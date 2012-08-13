@@ -13,7 +13,7 @@ start_time = datetime.now()
 from numpy import cross
 from gmes import material, geometry, fdtd, source, constant, pw_material
 
-space = geometry.Cartesian(size=(6,6,6), resolution=10)
+space = geometry.Cartesian(size=(6,6,6), resolution=20)
 body = geometry.Block(material.Dielectric(1), size=(1,1,2))
 head = geometry.Sphere(material.Dielectric(2), radius=0.5, center=(0,0,-1.5))
 hat = geometry.Cone(material.Dielectric(3), axis=(0,0.2,-1), radius=0.7,
@@ -32,11 +32,11 @@ geom_list = (geometry.DefaultMedium(material.Dielectric(10)),
              body, head, hat, leg1, leg2, arm1, arm2)
 
 my_fdtd = fdtd.FDTD(space, geom_list, ())
-
-import cProfile, pstats
-cProfile.runctx('my_fdtd.init()', globals(), locals(), 'man.prof')
-s = pstats.Stats('man.prof')
-s.strip_dirs().sort_stats('time').print_stats()
+my_fdtd.init()
+#import cProfile, pstats
+#cProfile.runctx('my_fdtd.init()', globals(), locals(), 'man.prof')
+#s = pstats.Stats('man.prof')
+#s.strip_dirs().sort_stats('time').print_stats()
 
 my_fdtd.show_permittivity_ex(axis=constant.X, cut=0)
 my_fdtd.show_permittivity_ex(axis=constant.Y, cut=0)

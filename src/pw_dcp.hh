@@ -17,6 +17,7 @@
 #define PW_DCP_HH_
 
 #include <complex>
+#include <iostream>
 #include <numeric>
 #include <vector>
 #include "pw_dielectric.hh"

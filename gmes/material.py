@@ -509,11 +509,11 @@ class Pml(Material, Compound):
 class Upml(Pml):
     """Form Uniaxial Perfectly Matched Layer (UPML).
     
-    This class implements CFS PML represented in
-    S. Gedney, "Perfectly Matched Layer Absorbing Boundary Conditions,"
-    Computational Electrodynamics: The Finite-Difference Time-Domain Method, 
-    Third Edition, A. Taflove and S.C. Hagness, eds., Artech House Publishers,
-    2005, pp. 273-328.
+    This class implements UPML represented in
+    
+    S. D. Gedney, "An anisotropic perfectly matched layer-
+    absorbing medium for the truncation of FDTD lattices," IEEE 
+    Trans. Antennas Propag. 44, 1630-1639 (1996).
     
     Attributes:
         eps_inf -- the permittivity for incident mode impinging on the PML boundary with infinite frequency. default 1

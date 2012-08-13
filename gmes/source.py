@@ -24,7 +24,7 @@ from geometry import Cartesian, DefaultMedium, Boundary, in_range
 from fdtd import TEMzFDTD
 from material import Dielectric, Cpml
 
-# for a dipole source
+# for a point source
 from pw_source import PointSourceParam
 from pw_source import PointSourceEx, PointSourceEy, PointSourceEz
 from pw_source import PointSourceHx, PointSourceHy, PointSourceHz
@@ -208,16 +208,16 @@ class DifferentiatedGaussian(SrcTime):
             return osc.real
         
     def display_info(self, indent=0):
-        print " " * indent,
-        print "differentiated Gaussian pulse"
-        print " " * indent,
-        print "half-width:", self.tw,
-        print "delay time:", self.t0
+        print ' ' * indent,
+        print 'differentiated Gaussian pulse'
+        print ' ' * indent,
+        print 'half-width:', self.tw,
+        print 'delay time:', self.t0
 
 
 class PointSource(Src):
-    def __init__(self, src_time, pos, component, amp=1, filename=None):
-        self.pos = np.array(pos, np.double)
+    def __init__(self, src_time, center, component, amp=1, filename=None):
+        self.center = np.array(center, np.double)
         self.comp = component
         self.src_time = src_time
         self.amp = float(amp)
@@ -234,11 +234,11 @@ class PointSource(Src):
         pass
     
     def display_info(self, indent=0):
-        print " " * indent, "Hertzian dipole source:"
-        print " " * indent, "center:", self.pos
-        print " " * indent, "component:", self.comp.str()
-        print " " * indent, "maximum amp.:", self.amp
-        print " " * indent, "source recording: ", self.filename
+        print ' ' * indent, 'point source:'
+        print ' ' * indent, 'center:', self.center
+        print ' ' * indent, 'component:', self.comp.str()
+        print ' ' * indent, 'maximum amp.:', self.amp
+        print ' ' * indent, 'source recording: ', self.filename
         
         self.src_time.display_info(4)
         
@@ -246,9 +246,9 @@ class PointSource(Src):
         pw_src = None
 
         if self.comp is const.Ex or self.comp is const.Jx:
-            idx = space.space_to_ex_index(*self.pos)
+            idx = space.space_to_ex_index(*self.center)
             if in_range(idx, ex_field.shape, const.Ex):
-                mat_obj, underneath = geom_tree.material_of_point(tuple(self.pos))
+                mat_obj, underneath = geom_tree.material_of_point(tuple(self.center))
                 pw_src_param = PointSourceParam(self.src_time, 
                                                 self.amp,
                                                 self.comp,
@@ -264,9 +264,9 @@ class PointSource(Src):
         pw_src = None
 
         if self.comp is const.Ey or self.comp is const.Jy:
-            idx = space.space_to_ey_index(*self.pos)
+            idx = space.space_to_ey_index(*self.center)
             if in_range(idx, ey_field.shape, const.Ey):
-                mat_obj, underneath = geom_tree.material_of_point(tuple(self.pos))
+                mat_obj, underneath = geom_tree.material_of_point(tuple(self.center))
                 pw_src_param = PointSourceParam(self.src_time, 
                                                 self.amp,
                                                 self.comp,
@@ -282,9 +282,9 @@ class PointSource(Src):
         pw_src = None
 
         if self.comp is const.Ez or self.comp is const.Jz:
-            idx = space.space_to_ez_index(*self.pos)
+            idx = space.space_to_ez_index(*self.center)
             if in_range(idx, ez_field.shape, const.Ez):
-                mat_obj, underneath = geom_tree.material_of_point(tuple(self.pos))
+                mat_obj, underneath = geom_tree.material_of_point(tuple(self.center))
                 pw_src_param = PointSourceParam(self.src_time, 
                                                 self.amp,
                                                 self.comp,
@@ -300,9 +300,9 @@ class PointSource(Src):
         pw_src = None
 
         if self.comp is const.Hx or self.comp is const.Mx:
-            idx = space.space_to_hx_index(*self.pos)
+            idx = space.space_to_hx_index(*self.center)
             if in_range(idx, hx_field.shape, const.Hx):
-                mat_obj, underneath = geom_tree.material_of_point(tuple(self.pos))
+                mat_obj, underneath = geom_tree.material_of_point(tuple(self.center))
                 pw_src_param = PointSourceParam(self.src_time, 
                                                 self.amp,
                                                 self.comp,
@@ -318,9 +318,9 @@ class PointSource(Src):
         pw_src = None
 
         if self.comp is const.Hy or self.comp is const.My:
-            idx = space.space_to_hy_index(*self.pos)
+            idx = space.space_to_hy_index(*self.center)
             if in_range(idx, hy_field.shape, const.Hy):
-                mat_obj, underneath = geom_tree.material_of_point(tuple(self.pos))
+                mat_obj, underneath = geom_tree.material_of_point(tuple(self.center))
                 pw_src_param = PointSourceParam(self.src_time, 
                                                 self.amp,
                                                 self.comp,
@@ -336,9 +336,9 @@ class PointSource(Src):
         pw_src = None
 
         if self.comp is const.Hz or self.comp is const.Mz:
-            idx = space.space_to_hz_index(*self.pos)
+            idx = space.space_to_hz_index(*self.center)
             if in_range(idx, hz_field.shape, const.Hz):
-                mat_obj, underneath = geom_tree.material_of_point(tuple(self.pos))
+                mat_obj, underneath = geom_tree.material_of_point(tuple(self.center))
                 pw_src_param = PointSourceParam(self.src_time, 
                                                 self.amp,
                                                 self.comp,
@@ -578,7 +578,7 @@ class TotalFieldScatteredField(Src):
         src_pnt = (0, 0, -max_dist - delta_1d)
         aux_src_list = (PointSource(src_time=deepcopy(self.src_time),
                                     component=const.Ex,
-                                    pos=src_pnt),)
+                                    center=src_pnt),)
         
         if cmplx:
             aux_fdtd = TEMzFDTD(aux_space, aux_geom_list, aux_src_list,

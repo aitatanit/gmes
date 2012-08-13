@@ -57,7 +57,7 @@ namespace gmes
 	       int in2_dim1, int in2_dim2, int in2_dim3,
 	       double d1, double d2, double dt, double n)
     {
-      for(MapType::const_iterator iter = param.begin(); 
+      for(MapType::const_iterator iter = param.begin();
 	  iter != param.end(); iter++) {
 	update(inplace_field, inplace_dim1, inplace_dim2, inplace_dim3,
 	       in_field1, in1_dim1, in1_dim2, in1_dim3,

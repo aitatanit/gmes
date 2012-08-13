@@ -267,7 +267,7 @@ namespace gmes
       double kappaz = ptr->kappa2;
       T& psi1 = ptr->psi1;
       T& psi2 = ptr->psi2;
-      
+
       psi1 = by * psi1 + cy * (ez(i,j,k-1) - ez(i,j-1,k-1)) / dy;
       psi2 = bz * psi2 + cz * (ey(i,j-1,k) - ey(i,j-1,k-1)) / dz;
 
@@ -346,8 +346,8 @@ namespace gmes
       psi2 = by * psi2 + cy * (ex(i-1,j,k) - ex(i-1,j-1,k)) / dy;
       
       hz(i,j,k) -= dt / mu_inf * ((ey(i,j-1,k) - ey(i-1,j-1,k)) / dx / kappax -
-			      (ex(i-1,j,k) - ex(i-1,j-1,k)) / dy / kappay +
-			      psi1 - psi2);
+				  (ex(i-1,j,k) - ex(i-1,j-1,k)) / dy / kappay +
+				  psi1 - psi2);
     }
 
   protected:
@@ -362,4 +362,4 @@ namespace gmes
 #undef hy
 #undef hz
 
-#endif /*PW_CPML_HH_*/
+#endif // PW_CPML_HH_

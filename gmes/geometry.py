@@ -176,7 +176,7 @@ class Cartesian(object):
         # Usually the my_field_size is general_field_size,
         # except the last node in each dimension.
         self.general_field_size = \
-        self.whole_field_size / self.cart_comm.topo[0]
+            self.whole_field_size / self.cart_comm.topo[0]
         
         # my_field_size may be different than general_field_size at the last 
         # node in each dimension.
