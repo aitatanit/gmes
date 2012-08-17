@@ -17,7 +17,7 @@ if not 'matplotlib.backends' in modules:
     matplotlib.use('TkAgg')
 import pylab
 
-#from tables import openFile
+# from tables import openFile
 
 # GMES modules
 from pw_material import MaterialElectricReal, MaterialElectricCmplx

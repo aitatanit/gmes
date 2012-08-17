@@ -58,9 +58,8 @@ namespace gmes
   public:
     ~DcpAdeElectric()
     {
-      for(MapType::const_iterator iter = param.begin(); 
-	  iter != param.end(); iter++) {
-	delete static_cast<DcpAdeElectricParam<T> *>(iter->second);
+      for (auto v: param) {
+	delete static_cast<DcpAdeElectricParam<T> *>(v.second);
       }
       param.clear();
     }
@@ -175,12 +174,31 @@ namespace gmes
   template <typename T> class DcpAdeEx: public DcpAdeElectric<T>
   {
   public:
+    void
+    update_all(T* const inplace_field,
+	       int inplace_dim1, int inplace_dim2, int inplace_dim3,
+	       const T* const in_field1, 
+	       int in1_dim1, int in1_dim2, int in1_dim3,
+	       const T* const in_field2, 
+	       int in2_dim1, int in2_dim2, int in2_dim3,
+	       double d1, double d2, double dt, double n)
+    {
+      for (auto v: param) {
+    	update(inplace_field, inplace_dim1, inplace_dim2, inplace_dim3,
+    	       in_field1, in1_dim1, in1_dim2, in1_dim3,
+    	       in_field2, in2_dim1, in2_dim2, in2_dim3,
+    	       d1, d2, dt, n, 
+    	       v.first, v.second);
+      }
+    }
+
+  private:
     void 
     update(T * const ex, int ex_x_size, int ex_y_size, int ex_z_size,
 	   const T * const hz, int hz_x_size, int hz_y_size, int hz_z_size,
 	   const T * const hy, int hy_x_size, int hy_y_size, int hy_z_size,
 	   double dy, double dz, double dt, double n,
-	   const int* const idx, int idx_size, 
+	   const Index3& idx,
 	   PwMaterialParam * const parameter)
     {
       int i = idx[0], j = idx[1], k = idx[2];
@@ -215,12 +233,31 @@ namespace gmes
   template <typename T> class DcpAdeEy: public DcpAdeElectric<T>
   {
   public:
+    void
+    update_all(T* const inplace_field,
+	       int inplace_dim1, int inplace_dim2, int inplace_dim3,
+	       const T* const in_field1, 
+	       int in1_dim1, int in1_dim2, int in1_dim3,
+	       const T* const in_field2, 
+	       int in2_dim1, int in2_dim2, int in2_dim3,
+	       double d1, double d2, double dt, double n)
+    {
+      for (auto v: param) {
+    	update(inplace_field, inplace_dim1, inplace_dim2, inplace_dim3,
+    	       in_field1, in1_dim1, in1_dim2, in1_dim3,
+    	       in_field2, in2_dim1, in2_dim2, in2_dim3,
+    	       d1, d2, dt, n, 
+    	       v.first, v.second);
+      }
+    }
+
+  private:
     void 
     update(T * const ey, int ey_x_size, int ey_y_size, int ey_z_size,
 	   const T * const hx, int hx_x_size, int hx_y_size, int hx_z_size,
 	   const T * const hz, int hz_x_size, int hz_y_size, int hz_z_size,
 	   double dz, double dx, double dt, double n,
-	   const int* const idx, int idx_size, 
+	   const Index3& idx,
 	   PwMaterialParam * const parameter)
     {
       int i = idx[0], j = idx[1], k = idx[2];
@@ -255,12 +292,31 @@ namespace gmes
   template <typename T> class DcpAdeEz: public DcpAdeElectric<T>
   {
   public:
+    void
+    update_all(T* const inplace_field,
+	       int inplace_dim1, int inplace_dim2, int inplace_dim3,
+	       const T* const in_field1, 
+	       int in1_dim1, int in1_dim2, int in1_dim3,
+	       const T* const in_field2, 
+	       int in2_dim1, int in2_dim2, int in2_dim3,
+	       double d1, double d2, double dt, double n)
+    {
+      for (auto v: param) {
+    	update(inplace_field, inplace_dim1, inplace_dim2, inplace_dim3,
+    	       in_field1, in1_dim1, in1_dim2, in1_dim3,
+    	       in_field2, in2_dim1, in2_dim2, in2_dim3,
+    	       d1, d2, dt, n, 
+    	       v.first, v.second);
+      }
+    }
+
+  private:
     void 
     update(T * const ez, int ez_x_size, int ez_y_size, int ez_z_size,
 	   const T * const hy, int hy_x_size, int hy_y_size, int hy_z_size,
 	   const T * const hx, int hx_x_size, int hx_y_size, int hx_z_size,
 	   double dx, double dy, double dt, double n,
-	   const int* const idx, int idx_size, 
+	   const Index3& idx,
 	   PwMaterialParam * const parameter)
     {
       int i = idx[0], j = idx[1], k = idx[2];
@@ -333,9 +389,8 @@ namespace gmes
   public:
     ~DcpAde2Electric()
     {
-      for(MapType::const_iterator iter = param.begin(); 
-	  iter != param.end(); iter++) {
-	delete static_cast<DcpAde2ElectricParam<T> *>(iter->second);
+      for (auto v: param) {
+	delete static_cast<DcpAde2ElectricParam<T> *>(v.second);
       }
       param.clear();
     }
@@ -451,12 +506,31 @@ namespace gmes
   template <typename T> class DcpAde2Ex: public DcpAde2Electric<T>
   {
   public:
+    void
+    update_all(T* const inplace_field,
+	       int inplace_dim1, int inplace_dim2, int inplace_dim3,
+	       const T* const in_field1, 
+	       int in1_dim1, int in1_dim2, int in1_dim3,
+	       const T* const in_field2, 
+	       int in2_dim1, int in2_dim2, int in2_dim3,
+	       double d1, double d2, double dt, double n)
+    {
+      for (auto v: param) {
+    	update(inplace_field, inplace_dim1, inplace_dim2, inplace_dim3,
+    	       in_field1, in1_dim1, in1_dim2, in1_dim3,
+    	       in_field2, in2_dim1, in2_dim2, in2_dim3,
+    	       d1, d2, dt, n, 
+    	       v.first, v.second);
+      }
+    }
+
+  private:
     void 
     update(T * const ex, int ex_x_size, int ex_y_size, int ex_z_size,
 	   const T * const hz, int hz_x_size, int hz_y_size, int hz_z_size,
 	   const T * const hy, int hy_x_size, int hy_y_size, int hy_z_size,
 	   double dy, double dz, double dt, double n,
-	   const int* const idx, int idx_size, 
+	   const Index3& idx,
 	   PwMaterialParam * const parameter)
     {
       int i = idx[0], j = idx[1], k = idx[2];
@@ -491,12 +565,31 @@ namespace gmes
   template <typename T> class DcpAde2Ey: public DcpAde2Electric<T>
   {
   public:
+    void
+    update_all(T* const inplace_field,
+	       int inplace_dim1, int inplace_dim2, int inplace_dim3,
+	       const T* const in_field1, 
+	       int in1_dim1, int in1_dim2, int in1_dim3,
+	       const T* const in_field2, 
+	       int in2_dim1, int in2_dim2, int in2_dim3,
+	       double d1, double d2, double dt, double n)
+    {
+      for (auto v: param) {
+    	update(inplace_field, inplace_dim1, inplace_dim2, inplace_dim3,
+    	       in_field1, in1_dim1, in1_dim2, in1_dim3,
+    	       in_field2, in2_dim1, in2_dim2, in2_dim3,
+    	       d1, d2, dt, n, 
+    	       v.first, v.second);
+      }
+    }
+
+  private:
     void 
     update(T * const ey, int ey_x_size, int ey_y_size, int ey_z_size,
 	   const T * const hx, int hx_x_size, int hx_y_size, int hx_z_size,
 	   const T * const hz, int hz_x_size, int hz_y_size, int hz_z_size,
 	   double dz, double dx, double dt, double n,
-	   const int* const idx, int idx_size, 
+	   const Index3& idx,
 	   PwMaterialParam * const parameter)
     {
       int i = idx[0], j = idx[1], k = idx[2];
@@ -531,12 +624,31 @@ namespace gmes
   template <typename T> class DcpAde2Ez: public DcpAde2Electric<T>
   {
   public:
+    void
+    update_all(T* const inplace_field,
+	       int inplace_dim1, int inplace_dim2, int inplace_dim3,
+	       const T* const in_field1, 
+	       int in1_dim1, int in1_dim2, int in1_dim3,
+	       const T* const in_field2, 
+	       int in2_dim1, int in2_dim2, int in2_dim3,
+	       double d1, double d2, double dt, double n)
+    {
+      for (auto v: param) {
+    	update(inplace_field, inplace_dim1, inplace_dim2, inplace_dim3,
+    	       in_field1, in1_dim1, in1_dim2, in1_dim3,
+    	       in_field2, in2_dim1, in2_dim2, in2_dim3,
+    	       d1, d2, dt, n, 
+    	       v.first, v.second);
+      }
+    }
+
+  private:
     void 
     update(T * const ez, int ez_x_size, int ez_y_size, int ez_z_size,
 	   const T * const hy, int hy_x_size, int hy_y_size, int hy_z_size,
 	   const T * const hx, int hx_x_size, int hx_y_size, int hx_z_size,
 	   double dx, double dy, double dt, double n,
-	   const int* const idx, int idx_size, 
+	   const Index3& idx,
 	   PwMaterialParam * const parameter)
     {
       int i = idx[0], j = idx[1], k = idx[2];
@@ -604,9 +716,8 @@ namespace gmes
   public:
     ~DcpPlrcElectric()
     {
-      for(MapType::const_iterator iter = param.begin(); 
-	  iter != param.end(); iter++) {
-	delete static_cast<DcpPlrcElectricParam<T> *>(iter->second);
+      for (auto v: param) {
+	delete static_cast<DcpPlrcElectricParam<T> *>(v.second);
       }
       param.clear();
     }
@@ -725,12 +836,31 @@ namespace gmes
   template <typename T> class DcpPlrcEx: public DcpPlrcElectric<T>
   {
   public:
+    void
+    update_all(T* const inplace_field,
+	       int inplace_dim1, int inplace_dim2, int inplace_dim3,
+	       const T* const in_field1, 
+	       int in1_dim1, int in1_dim2, int in1_dim3,
+	       const T* const in_field2, 
+	       int in2_dim1, int in2_dim2, int in2_dim3,
+	       double d1, double d2, double dt, double n)
+    {
+      for (auto v: param) {
+    	update(inplace_field, inplace_dim1, inplace_dim2, inplace_dim3,
+    	       in_field1, in1_dim1, in1_dim2, in1_dim3,
+    	       in_field2, in2_dim1, in2_dim2, in2_dim3,
+    	       d1, d2, dt, n, 
+    	       v.first, v.second);
+      }
+    }
+
+  private:
     void 
     update(T* const ex, int ex_x_size, int ex_y_size, int ex_z_size,
 	   const T * const hz, int hz_x_size, int hz_y_size, int hz_z_size,
 	   const T * const hy, int hy_x_size, int hy_y_size, int hy_z_size,
 	   double dy, double dz, double dt, double n,
-	   const int* const idx, int idx_size, 
+	   const Index3& idx, 
 	   PwMaterialParam* const parameter)
     {
       int i = idx[0], j = idx[1], k = idx[2];
@@ -761,12 +891,31 @@ namespace gmes
   template <typename T> class DcpPlrcEy: public DcpPlrcElectric<T>
   {
   public:
+    void
+    update_all(T* const inplace_field,
+	       int inplace_dim1, int inplace_dim2, int inplace_dim3,
+	       const T* const in_field1, 
+	       int in1_dim1, int in1_dim2, int in1_dim3,
+	       const T* const in_field2, 
+	       int in2_dim1, int in2_dim2, int in2_dim3,
+	       double d1, double d2, double dt, double n)
+    {
+      for (auto v: param) {
+    	update(inplace_field, inplace_dim1, inplace_dim2, inplace_dim3,
+    	       in_field1, in1_dim1, in1_dim2, in1_dim3,
+    	       in_field2, in2_dim1, in2_dim2, in2_dim3,
+    	       d1, d2, dt, n, 
+    	       v.first, v.second);
+      }
+    }
+
+  private:
     void 
     update(T * const ey, int ey_x_size, int ey_y_size, int ey_z_size,
 	   const T * const hx, int hx_x_size, int hx_y_size, int hx_z_size,
 	   const T * const hz, int hz_x_size, int hz_y_size, int hz_z_size,
 	   double dz, double dx, double dt, double n,
-	   const int* const idx, int idx_size, 
+	   const Index3& idx, 
 	   PwMaterialParam * const parameter)
     {
       int i = idx[0], j = idx[1], k = idx[2];
@@ -797,12 +946,31 @@ namespace gmes
   template <typename T> class DcpPlrcEz: public DcpPlrcElectric<T>
   {
   public:
+    void
+    update_all(T* const inplace_field,
+	       int inplace_dim1, int inplace_dim2, int inplace_dim3,
+	       const T* const in_field1, 
+	       int in1_dim1, int in1_dim2, int in1_dim3,
+	       const T* const in_field2, 
+	       int in2_dim1, int in2_dim2, int in2_dim3,
+	       double d1, double d2, double dt, double n)
+    {
+      for (auto v: param) {
+    	update(inplace_field, inplace_dim1, inplace_dim2, inplace_dim3,
+    	       in_field1, in1_dim1, in1_dim2, in1_dim3,
+    	       in_field2, in2_dim1, in2_dim2, in2_dim3,
+    	       d1, d2, dt, n, 
+    	       v.first, v.second);
+      }
+    }
+
+  private:
     void 
     update(T * const ez, int ez_x_size, int ez_y_size, int ez_z_size,
 	   const T * const hy, int hy_x_size, int hy_y_size, int hy_z_size,
 	   const T * const hx, int hx_x_size, int hx_y_size, int hx_z_size,
 	   double dx, double dy, double dt, double n,
-	   const int* const idx, int idx_size, 
+	   const Index3& idx, 
 	   PwMaterialParam * const parameter)
     {
       int i = idx[0], j = idx[1], k = idx[2];

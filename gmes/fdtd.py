@@ -14,6 +14,7 @@ from copy import deepcopy
 from math import sqrt
 from cmath import exp
 from numpy import ndindex, arange, inf, array
+from time import time
 
 import numpy as np
 
@@ -1059,20 +1060,32 @@ class FDTD(object):
         """Run self.step() until time step reaches n.
 
         """
+        st = time()
         while self.time_step.n < n:
             self.step()
             if self.time_step.n % modulus == 0:
                 print 'n:', self.time_step.n, 't:', self.time_step.t
 
+        et = time()
+
+        print 'Elapsed time: %f s' % (et -st)
+
     def step_until_t(self, t=0, modulus=inf):
         """Run self.step() until time reaches t.
 
         """
+        st = time()
+        sn = self.time_step.n
+
         while self.time_step.t < t:
             self.step()
             if self.time_step.n % modulus == 0:
                 print 'n:', self.time_step.n, 't:', self.time_step.t
-    
+        et = time()
+        en = self.time_step.n
+
+        print 'Elapsed time: %f s, (%d timesteps)' % (et - st, en - sn)
+
     def show_line_ex(self, start, end, vrange=(-1, 1), interval=2500):
         """Show the real value of the ex along the line.
 
@@ -1381,28 +1394,131 @@ class FDTD(object):
         
         high_idx = [i + 1 for i in high_idx]
         
-        name = ''
+        name = 'ex'
+        if prefix is not None:
+            name = prefix + name
+        if postfix is not None:
+            name = name + postfix
+        
+        np.save(name, self.ex[low_idx[0]: high_idx[0],
+                              low_idx[1]: high_idx[1],
+                              low_idx[2]: high_idx[2]])
+    	
+    def write_ey(self, low=None, high=None, prefix=None, postfix=None):    
+        if low is None:
+            low_idx = (0, 0, 0)
+        else:
+            low_idx = self.space.space_to_ey_index(low)
+            
+        if low is None:
+            high_idx = self.ey.shape
+        else:
+            high_idx = self.space.space_to_ey_index(high)
+        
+        high_idx = [i + 1 for i in high_idx]
+        
+        name = 'ey'
         if prefix is not None:
             name = prefix + name
         if postfix is not None:
             name = name + postfix
             
-        write_hdf5(self.ex, name, low_idx, high_idx)
-    	
-    def write_ey(self):
-        pass
-    	
-    def write_ez(self):
-        pass
+        np.save(name, self.ey[low_idx[0]: high_idx[0],
+                              low_idx[1]: high_idx[1],
+                              low_idx[2]: high_idx[2]])
 
-    def write_hx(self):
-        pass
+        	
+    def write_ez(self, low=None, high=None, prefix=None, postfix=None):
+        if low is None:
+            low_idx = (0, 0, 0)
+        else:
+            low_idx = self.space.space_to_ez_index(low)
+            
+        if low is None:
+            high_idx = self.ez.shape
+        else:
+            high_idx = self.space.space_to_ez_index(high)
+        
+        high_idx = [i + 1 for i in high_idx]
+        
+        name = 'ez'
+        if prefix is not None:
+            name = prefix + name
+        if postfix is not None:
+            name = name + postfix
+            
+        np.save(name, self.ez[low_idx[0]: high_idx[0],
+                              low_idx[1]: high_idx[1],
+                              low_idx[2]: high_idx[2]])
+
+    def write_hx(self, low=None, high=None, prefix=None, postfix=None):
+        if low is None:
+            low_idx = (0, 0, 0)
+        else:
+            low_idx = self.space.space_to_hx_index(low)
+            
+        if low is None:
+            high_idx = self.hx.shape
+        else:
+            high_idx = self.space.space_to_hx_index(high)
+        
+        high_idx = [i + 1 for i in high_idx]
+        
+        name = 'hx'
+        if prefix is not None:
+            name = prefix + name
+        if postfix is not None:
+            name = name + postfix
+            
+        np.save(name, self.hx[low_idx[0]: high_idx[0],
+                              low_idx[1]: high_idx[1],
+                              low_idx[2]: high_idx[2]])
     	
-    def write_hy(self):
-        pass
+    def write_hy(self, low=None, high=None, prefix=None, postfix=None):
+        if low is None:
+            low_idx = (0, 0, 0)
+        else:
+            low_idx = self.space.space_to_hy_index(low)
+            
+        if low is None:
+            high_idx = self.hy.shape
+        else:
+            high_idx = self.space.space_to_hy_index(high)
+        
+        high_idx = [i + 1 for i in high_idx]
+        
+        name = 'hy'
+        if prefix is not None:
+            name = prefix + name
+        if postfix is not None:
+            name = name + postfix
+            
+        np.save(name, self.hy[low_idx[0]: high_idx[0],
+                              low_idx[1]: high_idx[1],
+                              low_idx[2]: high_idx[2]])
     	
-    def write_hz(self):
-        pass
+    def write_hz(self, low=None, high=None, prefix=None, postfix=None):
+        if low is None:
+            low_idx = (0, 0, 0)
+        else:
+            low_idx = self.space.space_to_hz_index(low)
+            
+        if low is None:
+            high_idx = self.hz.shape
+        else:
+            high_idx = self.space.space_to_hz_index(high)
+        
+        high_idx = [i + 1 for i in high_idx]
+        
+        name = 'hz'
+        if prefix is not None:
+            name = prefix + name
+        if postfix is not None:
+            name = name + postfix
+            
+        np.save(name, self.hz[low_idx[0]: high_idx[0],
+                              low_idx[1]: high_idx[1],
+                              low_idx[2]: high_idx[2]])
         
     def snapshot_ex(self, axis, cut):
         if axis is const.X:
