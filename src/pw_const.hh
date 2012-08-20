@@ -30,26 +30,18 @@ namespace gmes
       param.clear();
     }
     
-    PwMaterial<T> *
+    PwMaterial<T>*
     attach(const int* const idx, int idx_size, 
-	   const PwMaterialParam * const param_ptr)
+	   const PwMaterialParam* const pm_param_ptr)
     {
       Index3 index;
       std::copy(idx, idx + idx_size, index.begin());
 
-      MapType::iterator iter = param.find(index);
-      if (iter != param.end()) {
-      	std::cerr << "Overwriting the existing index." << std::endl;
-      	delete static_cast<ConstElectricParam<T> *>(iter->second);
-      	param.erase(iter);
-      }
+      auto const_param_ptr = static_cast<const ConstElectricParam<T>*>(pm_param_ptr);
+      auto new_param_ptr = new ConstElectricParam<T>();
 
-      const ConstElectricParam<T> *ConstElectricParameter_ptr
-	= static_cast<const ConstElectricParam<T> *>(param_ptr);   
-      ConstElectricParam<T> *new_param_ptr = new ConstElectricParam<T>();
-
-      new_param_ptr->eps_inf = ConstElectricParameter_ptr->eps_inf;
-      new_param_ptr->value = ConstElectricParameter_ptr->value;
+      new_param_ptr->eps_inf = const_param_ptr->eps_inf;
+      new_param_ptr->value = const_param_ptr->value;
 
       param.insert(std::make_pair(index, new_param_ptr));
 
@@ -66,11 +58,12 @@ namespace gmes
 	       double d1, double d2, double dt, double n)
     {
       for (auto v: param) {
+	const auto const_param_ptr = static_cast<ConstElectricParam<T>*>(v.second);
     	update(inplace_field, inplace_dim1, inplace_dim2, inplace_dim3,
     	       in_field1, in1_dim1, in1_dim2, in1_dim3,
     	       in_field2, in2_dim1, in2_dim2, in2_dim3,
     	       d1, d2, dt, n, 
-    	       v.first, v.second);
+    	       v.first, *const_param_ptr);
       }
     }
 
@@ -82,13 +75,10 @@ namespace gmes
 	   const T * const in_field2, int in2_dim1, int in2_dim2, int in2_dim3,
 	   double d1, double d2, double dt, double n,
 	   const Index3& idx, 
-	   PwMaterialParam * const param_ptr) const
+	   const ConstElectricParam<T>& const_param) const
     {
-      int i = idx[0], j = idx[1], k = idx[2];
-      const T& value 
-	= static_cast<const ConstElectricParam<T> *>(param_ptr)->value;
-
-      inplace_field(i,j,k) = value;
+      const int i = idx[0], j = idx[1], k = idx[2];
+      inplace_field(i,j,k) = const_param.value;
     }
 
   protected:
@@ -118,26 +108,18 @@ namespace gmes
       param.clear();
     }
     
-    PwMaterial<T> *
+    PwMaterial<T>*
     attach(const int* const idx, int idx_size, 
-	   const PwMaterialParam * const param_ptr)
+	   const PwMaterialParam* const pm_param_ptr)
     {
       Index3 index;
       std::copy(idx, idx + idx_size, index.begin());
 
-      MapType::iterator iter = param.find(index);
-      if (iter != param.end()) {
-      	std::cerr << "Overwriting the existing index." << std::endl;
-      	delete static_cast<ConstMagneticParam<T> *>(iter->second);
-      	param.erase(iter);
-      }
+      auto const_param_ptr = static_cast<const ConstMagneticParam<T>*>(pm_param_ptr);
+      auto new_param_ptr = new ConstMagneticParam<T>();
 
-      const ConstMagneticParam<T> *ConstMagneticParameter_ptr
-	= static_cast<const ConstMagneticParam<T> *>(param_ptr);
-      ConstMagneticParam<T> *new_param_ptr = new ConstMagneticParam<T>();
-
-      new_param_ptr->mu_inf = ConstMagneticParameter_ptr->mu_inf;
-      new_param_ptr->value = ConstMagneticParameter_ptr->value;
+      new_param_ptr->mu_inf = const_param_ptr->mu_inf;
+      new_param_ptr->value = const_param_ptr->value;
 
       param.insert(std::make_pair(index, new_param_ptr));
 
@@ -154,11 +136,12 @@ namespace gmes
 	       double d1, double d2, double dt, double n)
     {
       for (auto v: param) {
+	const auto const_param_ptr = static_cast<ConstMagneticParam<T>*>(v.second);
     	update(inplace_field, inplace_dim1, inplace_dim2, inplace_dim3,
     	       in_field1, in1_dim1, in1_dim2, in1_dim3,
     	       in_field2, in2_dim1, in2_dim2, in2_dim3,
     	       d1, d2, dt, n, 
-    	       v.first, v.second);
+    	       v.first, *const_param_ptr);
       }
     }
 
@@ -170,13 +153,10 @@ namespace gmes
 	   const T * const in_field2, int in2_dim1, int in2_dim2, int in2_dim3,
 	   double d1, double d2, double dt, double n, 
 	   const Index3& idx, 
-	   PwMaterialParam * const param_ptr) const
+	   const ConstMagneticParam<T>& const_param) const
     {
-      int i = idx[0], j = idx[1], k = idx[2];
-      const T& value 
-	= static_cast<const ConstElectricParam<T> *>(param_ptr)->value;
-
-      inplace_field(i,j,k) = value;
+      const int i = idx[0], j = idx[1], k = idx[2];
+      inplace_field(i,j,k) = const_param.value;
     }
 
   protected:

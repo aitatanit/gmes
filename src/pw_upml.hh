@@ -38,39 +38,31 @@ namespace gmes
     ~UpmlElectric()
     {
       for (auto v: param) {
-	delete static_cast<UpmlElectricParam<T> *>(v.second);
+    	delete static_cast<UpmlElectricParam<T>*>(v.second);
       }
       param.clear();
     }
 
-    PwMaterial<T> *
+    PwMaterial<T>*
     attach(const int* const idx, int idx_size, 
-	   const PwMaterialParam * const parameter)
+	   const PwMaterialParam* const pm_param_ptr)
     {
-      std::array<int, 3> index;
+      Index3 index;
       std::copy(idx, idx + idx_size, index.begin());
       
-      MapType::iterator iter = param.find(index);
-      if (iter != param.end()) {
-      	std::cerr << "Overwriting the existing index." << std::endl;
-      	delete static_cast<UpmlElectricParam<T> *>(iter->second);
-      	param.erase(iter);
-      }
+      auto upml_param_ptr = static_cast<const UpmlElectricParam<T>*>(pm_param_ptr);
+      auto new_param_ptr = new UpmlElectricParam<T>();
 
-      const UpmlElectricParam<T>* UpmlElectricParameter_ptr
-	= static_cast<const UpmlElectricParam<T> *>(parameter);
-      UpmlElectricParam<T> *param_ptr = new UpmlElectricParam<T>();
+      new_param_ptr->eps_inf = upml_param_ptr->eps_inf;
+      new_param_ptr->c1 = upml_param_ptr->c1;
+      new_param_ptr->c2 = upml_param_ptr->c2;
+      new_param_ptr->c3 = upml_param_ptr->c3;
+      new_param_ptr->c4 = upml_param_ptr->c4;
+      new_param_ptr->c5 = upml_param_ptr->c5;
+      new_param_ptr->c6 = upml_param_ptr->c6;
+      new_param_ptr->d = static_cast<T>(0);
 
-      param_ptr->eps_inf = UpmlElectricParameter_ptr->eps_inf;
-      param_ptr->c1 = UpmlElectricParameter_ptr->c1;
-      param_ptr->c2 = UpmlElectricParameter_ptr->c2;
-      param_ptr->c3 = UpmlElectricParameter_ptr->c3;
-      param_ptr->c4 = UpmlElectricParameter_ptr->c4;
-      param_ptr->c5 = UpmlElectricParameter_ptr->c5;
-      param_ptr->c6 = UpmlElectricParameter_ptr->c6;
-      param_ptr->d = static_cast<T>(0);
-
-      param.insert(std::make_pair(index, param_ptr));
+      param.insert(std::make_pair(index, new_param_ptr));
 
       return this;
     }
@@ -83,44 +75,40 @@ namespace gmes
   {
   public:
     virtual void
-    update_all(T* const inplace_field,
-	       int inplace_dim1, int inplace_dim2, int inplace_dim3,
-	       const T* const in_field1, 
-	       int in1_dim1, int in1_dim2, int in1_dim3,
-	       const T* const in_field2, 
-	       int in2_dim1, int in2_dim2, int in2_dim3,
-	       double d1, double d2, double dt, double n)
+    update_all(T* const ex, int ex_x_size, int ex_y_size, int ex_z_size,
+	       const T* const hz, int hz_x_size, int hz_y_size, int hz_z_size,
+	       const T* const hy, int hy_x_size, int hy_y_size, int hy_z_size,
+	       double dy, double dz, double dt, double n)
     {
-      for (auto v: param) {
-    	update(inplace_field, inplace_dim1, inplace_dim2, inplace_dim3,
-    	       in_field1, in1_dim1, in1_dim2, in1_dim3,
-    	       in_field2, in2_dim1, in2_dim2, in2_dim3,
-    	       d1, d2, dt, n, 
-    	       v.first, v.second);
+      for (auto v: param) { 
+	auto upml_param_ptr = static_cast<UpmlElectricParam<T>*>(v.second);
+    	update(ex, ex_x_size, ex_y_size, ex_z_size,
+	       hz, hz_x_size, hz_y_size, hz_z_size,
+	       hy, hy_x_size, hy_y_size, hy_z_size,
+	       dy, dz, dt, n,
+    	       v.first, *upml_param_ptr);
       }
     }
 
   private:
     void 
-    update(T * const ex, int ex_x_size, int ex_y_size, int ex_z_size,
-	   const T * const hz, int hz_x_size, int hz_y_size, int hz_z_size,
-	   const T * const hy, int hy_x_size, int hy_y_size, int hy_z_size,
+    update(T* const ex, int ex_x_size, int ex_y_size, int ex_z_size,
+	   const T* const hz, int hz_x_size, int hz_y_size, int hz_z_size,
+	   const T* const hy, int hy_x_size, int hy_y_size, int hy_z_size,
 	   double dy, double dz, double dt, double n,
 	   const Index3& idx,
-	   PwMaterialParam * const parameter) const
+	   UpmlElectricParam<T>& upml_param) const
     {
-      int i = idx[0], j = idx[1], k = idx[2];
-      
-      UpmlElectricParam<T> *ptr
-	= static_cast<UpmlElectricParam<T> *>(parameter);
-      double eps_inf = ptr->eps_inf;
-      double c1 = ptr->c1;
-      double c2 = ptr->c2;
-      double c3 = ptr->c3;
-      double c4 = ptr->c4;
-      double c5 = ptr->c5;
-      double c6 = ptr->c6;
-      T& d = ptr->d;
+      const int i = idx[0], j = idx[1], k = idx[2];
+     
+      const double eps_inf = upml_param.eps_inf;
+      const double c1 = upml_param.c1;
+      const double c2 = upml_param.c2;
+      const double c3 = upml_param.c3;
+      const double c4 = upml_param.c4;
+      const double c5 = upml_param.c5;
+      const double c6 = upml_param.c6;
+      T& d = upml_param.d;
       
       const T dstore(d);
       
@@ -136,44 +124,40 @@ namespace gmes
   template <typename T> class UpmlEy: public UpmlElectric<T>
   {
     virtual void
-    update_all(T* const inplace_field,
-	       int inplace_dim1, int inplace_dim2, int inplace_dim3,
-	       const T* const in_field1, 
-	       int in1_dim1, int in1_dim2, int in1_dim3,
-	       const T* const in_field2, 
-	       int in2_dim1, int in2_dim2, int in2_dim3,
-	       double d1, double d2, double dt, double n)
+    update_all(T* const ey, int ey_x_size, int ey_y_size, int ey_z_size,
+	       const T* const hx, int hx_x_size, int hx_y_size, int hx_z_size,
+	       const T* const hz, int hz_x_size, int hz_y_size, int hz_z_size,
+	       double dz, double dx, double dt, double n)
     {
       for (auto v: param) {
-    	update(inplace_field, inplace_dim1, inplace_dim2, inplace_dim3,
-    	       in_field1, in1_dim1, in1_dim2, in1_dim3,
-    	       in_field2, in2_dim1, in2_dim2, in2_dim3,
-    	       d1, d2, dt, n, 
-    	       v.first, v.second);
+	auto upml_param_ptr = static_cast<UpmlElectricParam<T>*>(v.second);
+    	update(ey, ey_x_size, ey_y_size, ey_z_size,
+	       hx, hx_x_size, hx_y_size, hx_z_size,
+	       hz, hz_x_size, hz_y_size, hz_z_size,
+	       dz, dx, dt, n,
+    	       v.first, *upml_param_ptr);
       }
     }
 
   private:
     void 
-    update(T * const ey, int ey_x_size, int ey_y_size, int ey_z_size,
-	   const T * const hx, int hx_x_size, int hx_y_size, int hx_z_size,
-	   const T * const hz, int hz_x_size, int hz_y_size, int hz_z_size,
+    update(T* const ey, int ey_x_size, int ey_y_size, int ey_z_size,
+	   const T* const hx, int hx_x_size, int hx_y_size, int hx_z_size,
+	   const T* const hz, int hz_x_size, int hz_y_size, int hz_z_size,
 	   double dz, double dx, double dt, double n,
 	   const Index3& idx,
-	   PwMaterialParam * const parameter) const
+	   UpmlElectricParam<T>& upml_param) const
     {
-      int i = idx[0], j = idx[1], k = idx[2];
+      const int i = idx[0], j = idx[1], k = idx[2];
       
-      UpmlElectricParam<T> *ptr
-	= static_cast<UpmlElectricParam<T> *>(parameter);
-      double eps_inf = ptr->eps_inf;
-      double c1 = ptr->c1;
-      double c2 = ptr->c2;
-      double c3 = ptr->c3;
-      double c4 = ptr->c4;
-      double c5 = ptr->c5;
-      double c6 = ptr->c6;
-      T& d = ptr->d;
+      const double eps_inf = upml_param.eps_inf;
+      const double c1 = upml_param.c1;
+      const double c2 = upml_param.c2;
+      const double c3 = upml_param.c3;
+      const double c4 = upml_param.c4;
+      const double c5 = upml_param.c5;
+      const double c6 = upml_param.c6;
+      T& d = upml_param.d;
       
       const T dstore(d);
 
@@ -190,44 +174,40 @@ namespace gmes
   {
   public:
     virtual void
-    update_all(T* const inplace_field,
-	       int inplace_dim1, int inplace_dim2, int inplace_dim3,
-	       const T* const in_field1, 
-	       int in1_dim1, int in1_dim2, int in1_dim3,
-	       const T* const in_field2, 
-	       int in2_dim1, int in2_dim2, int in2_dim3,
-	       double d1, double d2, double dt, double n)
+    update_all(T* const ez, int ez_x_size, int ez_y_size, int ez_z_size,
+	       const T* const hy, int hy_x_size, int hy_y_size, int hy_z_size,
+	       const T* const hx, int hx_x_size, int hx_y_size, int hx_z_size,
+	       double dx, double dy, double dt, double n)
     {
       for (auto v: param) {
-    	update(inplace_field, inplace_dim1, inplace_dim2, inplace_dim3,
-    	       in_field1, in1_dim1, in1_dim2, in1_dim3,
-    	       in_field2, in2_dim1, in2_dim2, in2_dim3,
-    	       d1, d2, dt, n, 
-    	       v.first, v.second);
+	auto upml_param_ptr = static_cast<UpmlElectricParam<T>*>(v.second);
+    	update(ez, ez_x_size, ez_y_size, ez_z_size,
+	       hy, hy_x_size, hy_y_size, hy_z_size,
+	       hx, hx_x_size, hx_y_size, hx_z_size,
+	       dx, dy, dt, n,
+    	       v.first, *upml_param_ptr);
       }
     }
 
   private:
     void 
-    update(T * const ez, int ez_x_size, int ez_y_size, int ez_z_size,
-	   const T * const hy, int hy_x_size, int hy_y_size, int hy_z_size,
-	   const T * const hx, int hx_x_size, int hx_y_size, int hx_z_size,
+    update(T* const ez, int ez_x_size, int ez_y_size, int ez_z_size,
+	   const T* const hy, int hy_x_size, int hy_y_size, int hy_z_size,
+	   const T* const hx, int hx_x_size, int hx_y_size, int hx_z_size,
 	   double dx, double dy, double dt, double n,
 	   const Index3& idx,
-	   PwMaterialParam * const parameter) const
+	   UpmlElectricParam<T>& upml_param) const
     {
-      int i = idx[0], j = idx[1], k = idx[2];
+      const int i = idx[0], j = idx[1], k = idx[2];
       
-      UpmlElectricParam<T> *ptr
-	= static_cast<UpmlElectricParam<T> *>(parameter);
-      double eps_inf = ptr->eps_inf;
-      double c1 = ptr->c1;
-      double c2 = ptr->c2;
-      double c3 = ptr->c3;
-      double c4 = ptr->c4;
-      double c5 = ptr->c5;
-      double c6 = ptr->c6;
-      T& d = ptr->d;
+      const double eps_inf = upml_param.eps_inf;
+      const double c1 = upml_param.c1;
+      const double c2 = upml_param.c2;
+      const double c3 = upml_param.c3;
+      const double c4 = upml_param.c4;
+      const double c5 = upml_param.c5;
+      const double c6 = upml_param.c6;
+      T& d = upml_param.d;
       
       const T dstore(d);
 
@@ -246,39 +226,31 @@ namespace gmes
     ~UpmlMagnetic()
     {
       for (auto v: param) {
-	delete static_cast<UpmlMagneticParam<T> *>(v.second);
+    	delete static_cast<UpmlMagneticParam<T>*>(v.second);
       }
       param.clear();
     }
 
-    PwMaterial<T> *
+    PwMaterial<T>*
     attach(const int* const idx, int idx_size, 
-	   const PwMaterialParam * const parameter)
+	   const PwMaterialParam* const pm_param_ptr)
     {
-      std::array<int, 3> index;
+      Index3 index;
       std::copy(idx, idx + idx_size, index.begin());
       
-      MapType::iterator iter = param.find(index);
-      if (iter != param.end()) {
-      	std::cerr << "Overwriting the existing index." << std::endl;
-      	delete static_cast<UpmlMagneticParam<T> *>(iter->second);
-      	param.erase(iter);
-      }
-      
-      const UpmlMagneticParam<T>* UpmlMagneticParameter_ptr 
-	= static_cast<const UpmlMagneticParam<T> *>(parameter);
-      UpmlMagneticParam<T> *param_ptr = new UpmlMagneticParam<T>();
+      auto upml_param_ptr = static_cast<const UpmlMagneticParam<T>*>(pm_param_ptr);
+      auto new_param_ptr = new UpmlMagneticParam<T>();
 
-      param_ptr->mu_inf = UpmlMagneticParameter_ptr->mu_inf;
-      param_ptr->c1 = UpmlMagneticParameter_ptr->c1;
-      param_ptr->c2 = UpmlMagneticParameter_ptr->c2;
-      param_ptr->c3 = UpmlMagneticParameter_ptr->c3;
-      param_ptr->c4 = UpmlMagneticParameter_ptr->c4;
-      param_ptr->c5 = UpmlMagneticParameter_ptr->c5;
-      param_ptr->c6 = UpmlMagneticParameter_ptr->c6;
-      param_ptr->b = static_cast<T>(0);
+      new_param_ptr->mu_inf = upml_param_ptr->mu_inf;
+      new_param_ptr->c1 = upml_param_ptr->c1;
+      new_param_ptr->c2 = upml_param_ptr->c2;
+      new_param_ptr->c3 = upml_param_ptr->c3;
+      new_param_ptr->c4 = upml_param_ptr->c4;
+      new_param_ptr->c5 = upml_param_ptr->c5;
+      new_param_ptr->c6 = upml_param_ptr->c6;
+      new_param_ptr->b = static_cast<T>(0);
 
-      param.insert(std::make_pair(index, param_ptr));
+      param.insert(std::make_pair(index, new_param_ptr));
 
       return this;
     }
@@ -290,44 +262,40 @@ namespace gmes
   template <typename T> class UpmlHx: public UpmlMagnetic<T>
   {
     virtual void
-    update_all(T* const inplace_field,
-	       int inplace_dim1, int inplace_dim2, int inplace_dim3,
-	       const T* const in_field1, 
-	       int in1_dim1, int in1_dim2, int in1_dim3,
-	       const T* const in_field2, 
-	       int in2_dim1, int in2_dim2, int in2_dim3,
-	       double d1, double d2, double dt, double n)
+    update_all(T* const hx, int hx_x_size, int hx_y_size, int hx_z_size,
+	       const T* const ez, int ez_x_size, int ez_y_size, int ez_z_size,
+	       const T* const ey, int ey_x_size, int ey_y_size, int ey_z_size,
+	       double dy, double dz, double dt, double n)
     {
       for (auto v: param) {
-    	update(inplace_field, inplace_dim1, inplace_dim2, inplace_dim3,
-    	       in_field1, in1_dim1, in1_dim2, in1_dim3,
-    	       in_field2, in2_dim1, in2_dim2, in2_dim3,
-    	       d1, d2, dt, n, 
-    	       v.first, v.second);
+	auto upml_param_ptr = static_cast<UpmlMagneticParam<T>*>(v.second);
+    	update(hx, hx_x_size, hx_y_size, hx_z_size,
+	       ez, ez_x_size, ez_y_size, ez_z_size,
+	       ey, ey_x_size, ey_y_size, ey_z_size,
+	       dy, dz, dt, n,
+    	       v.first, *upml_param_ptr);
       }
     }
 
   private:
     void 
-    update(T * const hx, int hx_x_size, int hx_y_size, int hx_z_size,
-	   const T * const ez, int ez_x_size, int ez_y_size, int ez_z_size,
-	   const T * const ey, int ey_x_size, int ey_y_size, int ey_z_size,
+    update(T* const hx, int hx_x_size, int hx_y_size, int hx_z_size,
+	   const T* const ez, int ez_x_size, int ez_y_size, int ez_z_size,
+	   const T* const ey, int ey_x_size, int ey_y_size, int ey_z_size,
 	   double dy, double dz, double dt, double n,
 	   const Index3& idx, 
-	   PwMaterialParam * const parameter) const
+	   UpmlMagneticParam<T> upml_param) const
     {
-      int i = idx[0], j = idx[1], k = idx[2];
+      const int i = idx[0], j = idx[1], k = idx[2];
       
-      UpmlMagneticParam<T> *ptr
-	= static_cast<UpmlMagneticParam<T> *>(parameter);
-      double mu_inf = ptr->mu_inf;
-      double c1 = ptr->c1;
-      double c2 = ptr->c2;
-      double c3 = ptr->c3;
-      double c4 = ptr->c4;
-      double c5 = ptr->c5;
-      double c6 = ptr->c6;
-      T& b = ptr->b;
+      const double mu_inf = upml_param.mu_inf;
+      const double c1 = upml_param.c1;
+      const double c2 = upml_param.c2;
+      const double c3 = upml_param.c3;
+      const double c4 = upml_param.c4;
+      const double c5 = upml_param.c5;
+      const double c6 = upml_param.c6;
+      T& b = upml_param.b;
       
       const T bstore(b);
 
@@ -344,44 +312,40 @@ namespace gmes
   {
   public:
     virtual void
-    update_all(T* const inplace_field,
-	       int inplace_dim1, int inplace_dim2, int inplace_dim3,
-	       const T* const in_field1, 
-	       int in1_dim1, int in1_dim2, int in1_dim3,
-	       const T* const in_field2, 
-	       int in2_dim1, int in2_dim2, int in2_dim3,
-	       double d1, double d2, double dt, double n)
+    update_all(T* const hy, int hy_x_size, int hy_y_size, int hy_z_size,
+	       const T* const ex, int ex_x_size, int ex_y_size, int ex_z_size,
+	       const T* const ez, int ez_x_size, int ez_y_size, int ez_z_size,
+	       double dz, double dx, double dt, double n)
     {
       for (auto v: param) {
-    	update(inplace_field, inplace_dim1, inplace_dim2, inplace_dim3,
-    	       in_field1, in1_dim1, in1_dim2, in1_dim3,
-    	       in_field2, in2_dim1, in2_dim2, in2_dim3,
-    	       d1, d2, dt, n, 
-    	       v.first, v.second);
+	auto upml_param_ptr = static_cast<UpmlMagneticParam<T>*>(v.second);
+    	update(hy, hy_x_size, hy_y_size, hy_z_size,
+	       ex, ex_x_size, ex_y_size, ex_z_size,
+	       ez, ez_x_size, ez_y_size, ez_z_size,
+	       dz, dx, dt, n,
+    	       v.first, *upml_param_ptr);
       }
     }
 
   private:
     void 
-    update(T * const hy, int hy_x_size, int hy_y_size, int hy_z_size,
-	   const T * const ex, int ex_x_size, int ex_y_size, int ex_z_size,
-	   const T * const ez, int ez_x_size, int ez_y_size, int ez_z_size,
+    update(T* const hy, int hy_x_size, int hy_y_size, int hy_z_size,
+	   const T* const ex, int ex_x_size, int ex_y_size, int ex_z_size,
+	   const T* const ez, int ez_x_size, int ez_y_size, int ez_z_size,
 	   double dz, double dx, double dt, double n,
 	   const Index3& idx, 
-	   PwMaterialParam * const parameter) const
+	   UpmlMagneticParam<T>& upml_param) const
     {
-      int i = idx[0], j = idx[1], k = idx[2];
+      const int i = idx[0], j = idx[1], k = idx[2];
       
-      UpmlMagneticParam<T> *ptr
-	= static_cast<UpmlMagneticParam<T> *>(parameter);
-      double mu_inf = ptr->mu_inf;
-      double c1 = ptr->c1;
-      double c2 = ptr->c2;
-      double c3 = ptr->c3;
-      double c4 = ptr->c4;
-      double c5 = ptr->c5;
-      double c6 = ptr->c6;
-      T& b = ptr->b;
+      const double mu_inf = upml_param.mu_inf;
+      const double c1 = upml_param.c1;
+      const double c2 = upml_param.c2;
+      const double c3 = upml_param.c3;
+      const double c4 = upml_param.c4;
+      const double c5 = upml_param.c5;
+      const double c6 = upml_param.c6;
+      T& b = upml_param.b;
       
       const T bstore(b);
 
@@ -398,44 +362,40 @@ namespace gmes
   {
   public:
     virtual void
-    update_all(T* const inplace_field,
-	       int inplace_dim1, int inplace_dim2, int inplace_dim3,
-	       const T* const in_field1, 
-	       int in1_dim1, int in1_dim2, int in1_dim3,
-	       const T* const in_field2, 
-	       int in2_dim1, int in2_dim2, int in2_dim3,
-	       double d1, double d2, double dt, double n)
+    update_all(T* const hz, int hz_x_size, int hz_y_size, int hz_z_size,
+	       const T* const ey, int ey_x_size, int ey_y_size, int ey_z_size,
+	       const T* const ex, int ex_x_size, int ex_y_size, int ex_z_size,
+	       double dx, double dy, double dt, double n)
     {
       for (auto v: param) {
-    	update(inplace_field, inplace_dim1, inplace_dim2, inplace_dim3,
-    	       in_field1, in1_dim1, in1_dim2, in1_dim3,
-    	       in_field2, in2_dim1, in2_dim2, in2_dim3,
-    	       d1, d2, dt, n, 
-    	       v.first, v.second);
+	auto upml_param_ptr = static_cast<UpmlMagneticParam<T>*>(v.second);
+    	update(hz, hz_x_size, hz_y_size, hz_z_size,
+	       ey, ey_x_size, ey_y_size, ey_z_size,
+	       ex, ex_x_size, ex_y_size, ex_z_size,
+	       dx, dy, dt, n,
+    	       v.first, *upml_param_ptr);
       }
     }
 
   private:
     void 
-    update(T * const hz, int hz_x_size, int hz_y_size, int hz_z_size,
-	   const T * const ey, int ey_x_size, int ey_y_size, int ey_z_size,
-	   const T * const ex, int ex_x_size, int ex_y_size, int ex_z_size,
+    update(T* const hz, int hz_x_size, int hz_y_size, int hz_z_size,
+	   const T* const ey, int ey_x_size, int ey_y_size, int ey_z_size,
+	   const T* const ex, int ex_x_size, int ex_y_size, int ex_z_size,
 	   double dx, double dy, double dt, double n,
 	   const Index3& idx, 
-	   PwMaterialParam * const parameter) const
+	   UpmlMagneticParam<T>& upml_param) const
     {
-      int i = idx[0], j = idx[1], k = idx[2];
+      const int i = idx[0], j = idx[1], k = idx[2];
       
-      UpmlMagneticParam<T> *ptr
-	= static_cast<UpmlMagneticParam<T> *>(parameter);
-      double mu_inf = ptr->mu_inf;
-      double c1 = ptr->c1;
-      double c2 = ptr->c2;
-      double c3 = ptr->c3;
-      double c4 = ptr->c4;
-      double c5 = ptr->c5;
-      double c6 = ptr->c6;
-      T& b = ptr->b;
+      const double mu_inf = upml_param.mu_inf;
+      const double c1 = upml_param.c1;
+      const double c2 = upml_param.c2;
+      const double c3 = upml_param.c3;
+      const double c4 = upml_param.c4;
+      const double c5 = upml_param.c5;
+      const double c6 = upml_param.c6;
+      T& b = upml_param.b;
       
       const T bstore(b);
 

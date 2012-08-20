@@ -20,30 +20,22 @@ namespace gmes
     ~DummyElectric()
     {
       for (auto v: param) {
-	delete static_cast<DummyElectricParam<T> *>(v.second);
+    	delete static_cast<DummyElectricParam<T> *>(v.second);
       }
       param.clear();
     }
     
-    PwMaterial<T> *
+    PwMaterial<T>*
     attach(const int* const idx, int idx_size,
-	   const PwMaterialParam * const parameter)
+	   const PwMaterialParam* const pm_param_ptr)
     {
-      std::array<int, 3> index;
+      Index3 index;
       std::copy(idx, idx + idx_size, index.begin());
       
-      auto iter = param.find(index);
-      if (iter != param.end()) {
-      	std::cerr << "Overwriting the existing index." << std::endl;
-      	delete static_cast<DummyElectricParam<T> *>(iter->second);
-      	param.erase(iter);
-      }
-
-      DummyElectricParam<T> *param_ptr;
-      param_ptr = new DummyElectricParam<T>();
-      param_ptr->eps_inf = static_cast<const DummyElectricParam<T> *>(parameter)->eps_inf;
+      auto new_param_ptr = new DummyElectricParam<T>();
+      new_param_ptr->eps_inf = static_cast<const DummyElectricParam<T> *>(pm_param_ptr)->eps_inf;
 	  
-      param.insert(std::make_pair(index, param_ptr));
+      param.insert(std::make_pair(index, new_param_ptr));
 
       return this;
     }
@@ -82,30 +74,22 @@ namespace gmes
     ~DummyMagnetic()
     {
       for (auto v: param) {
-	delete static_cast<DummyMagneticParam<T> *>(v.second);
+    	delete static_cast<DummyMagneticParam<T>*>(v.second);
       }
       param.clear();
     }
     
-    PwMaterial<T> *
+    PwMaterial<T>*
     attach(const int* const idx, int idx_size,
-	   const PwMaterialParam * const parameter)
+	   const PwMaterialParam* const pm_param_ptr)
     {
-      std::array<int, 3> index;
+      Index3 index;
       std::copy(idx, idx + idx_size, index.begin());
       
-      auto iter = param.find(index);
-      if (iter != param.end()) {
-      	std::cerr << "Overwriting the existing index." << std::endl;
-      	delete static_cast<DummyMagneticParam<T> *>(iter->second);
-      	param.erase(iter);
-      }
+      auto new_param_ptr = new DummyMagneticParam<T>();
+      new_param_ptr->mu_inf = static_cast<const DummyMagneticParam<T> *>(pm_param_ptr)->mu_inf;
       
-      DummyMagneticParam<T> *param_ptr;
-      param_ptr = new DummyMagneticParam<T>();
-      param_ptr->mu_inf = static_cast<const DummyMagneticParam<T> *>(parameter)->mu_inf;
-      
-      param.insert(std::make_pair(index, param_ptr));
+      param.insert(std::make_pair(index, new_param_ptr));
 
       return this;
     }

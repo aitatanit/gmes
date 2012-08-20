@@ -42,45 +42,36 @@ namespace gmes
       param.clear();
     }
     
-    PwMaterial<T> *
+    PwMaterial<T>*
     attach(const int* const idx, int idx_size,
-	   const PwMaterialParam * const parameter)
+	   const PwMaterialParam* const pm_param_ptr)
     {
-      std::array<int, 3> index;
+      Index3 index;
       std::copy(idx, idx + idx_size, index.begin());
 
-      MapType::iterator iter = param.find(index);
-      if (iter != param.end()) {
-      	std::cerr << "Overwriting the existing index." << std::endl;
-      	delete static_cast<DrudeElectricParam<T> *>(iter->second);
-      	param.erase(iter);
-      }
-      
-      const DrudeElectricParam<T> * const DrudeElectricParameter_ptr
-	= static_cast<const DrudeElectricParam<T> * const>(parameter);
-      DrudeElectricParam<T> *param_ptr;
-      param_ptr = new DrudeElectricParam<T>();
-      param_ptr->eps_inf = DrudeElectricParameter_ptr->eps_inf;
-      std::copy(DrudeElectricParameter_ptr->a.begin(),
-		DrudeElectricParameter_ptr->a.end(),
-		std::back_inserter(param_ptr->a));
-      std::copy(DrudeElectricParameter_ptr->c.begin(),
-		DrudeElectricParameter_ptr->c.end(),
-		param_ptr->c.begin());
-      param_ptr->q_now.resize(param_ptr->a.size(), static_cast<T>(0));
-      param_ptr->q_new.resize(param_ptr->a.size(), static_cast<T>(0));
+      auto drude_param_ptr = static_cast<const DrudeElectricParam<T>* const>(pm_param_ptr);
+      auto new_param_ptr = new DrudeElectricParam<T>();
+      new_param_ptr->eps_inf = drude_param_ptr->eps_inf;
+      std::copy(drude_param_ptr->a.begin(),
+		drude_param_ptr->a.end(),
+		std::back_inserter(new_param_ptr->a));
+      std::copy(drude_param_ptr->c.begin(),
+		drude_param_ptr->c.end(),
+		new_param_ptr->c.begin());
+      new_param_ptr->q_now.resize(drude_param_ptr->a.size(), static_cast<T>(0));
+      new_param_ptr->q_new.resize(drude_param_ptr->a.size(), static_cast<T>(0));
 
-      param.insert(std::make_pair(index, param_ptr));
+      param.insert(std::make_pair(index, new_param_ptr));
 
       return this;
     };
 
     T 
-    dps_sum(const T& init, const DrudeElectricParam<T> * const ptr) const
+    dps_sum(const T& init, const DrudeElectricParam<T>& drude_param) const
     {
-      const std::vector<std::array<double, 3> >& a = ptr->a;
-      const std::vector<T>& q_now = ptr->q_now;
-      const std::vector<T>& q_new = ptr->q_new;
+      const auto& a = drude_param.a;
+      const auto& q_now = drude_param.q_now;
+      const auto& q_new = drude_param.q_new;
 
       T sum(init);
       for (typename std::vector<T>::size_type i = 0; i < a.size(); ++i)	{
@@ -91,11 +82,11 @@ namespace gmes
     }
 
     void 
-    update_q(const T& e_now, DrudeElectricParam<T> * const ptr)
+    update_q(const T& e_now, DrudeElectricParam<T>& drude_param)
     {
-      const std::vector<std::array<double, 3> >& a = ptr->a;
-      std::vector<T>& q_now = ptr->q_now;
-      std::vector<T>& q_new = ptr->q_new;
+      const std::vector<std::array<double, 3> >& a = drude_param.a;
+      std::vector<T>& q_now = drude_param.q_now;
+      std::vector<T>& q_new = drude_param.q_new;
 
       std::vector<T> q_old(q_now);
       std::copy(q_new.begin(), q_new.end(), q_now.begin());
@@ -112,20 +103,18 @@ namespace gmes
   {
   public:
     void
-    update_all(T* const inplace_field,
-	       int inplace_dim1, int inplace_dim2, int inplace_dim3,
-	       const T* const in_field1, 
-	       int in1_dim1, int in1_dim2, int in1_dim3,
-	       const T* const in_field2, 
-	       int in2_dim1, int in2_dim2, int in2_dim3,
-	       double d1, double d2, double dt, double n)
+    update_all(T* const ex, int ex_x_size, int ex_y_size, int ex_z_size,
+	       const T* const hz, int hz_x_size, int hz_y_size, int hz_z_size,
+	       const T* const hy, int hy_x_size, int hy_y_size, int hy_z_size,
+	       double dy, double dz, double dt, double n)
     {
       for (auto v: param) {
-    	update(inplace_field, inplace_dim1, inplace_dim2, inplace_dim3,
-    	       in_field1, in1_dim1, in1_dim2, in1_dim3,
-    	       in_field2, in2_dim1, in2_dim2, in2_dim3,
-    	       d1, d2, dt, n, 
-    	       v.first, v.second);
+	auto drude_param_ptr = static_cast<DrudeElectricParam<T>*>(v.second);
+    	update(ex, ex_x_size, ex_y_size, ex_z_size,
+	       hz, hz_x_size, hz_y_size, hz_z_size,
+	       hy, hy_x_size, hy_y_size, hy_z_size,
+	       dy, dz, dt, n, 
+    	       v.first, *drude_param_ptr);
       }
     }
 
@@ -136,19 +125,17 @@ namespace gmes
 	   const T* const hy, int hy_x_size, int hy_y_size, int hy_z_size,
 	   double dy, double dz, double dt, double n, 
 	   const Index3& idx, 
-	   PwMaterialParam* const parameter)
+	   DrudeElectricParam<T>& drude_param)
     {
-      int i = idx[0], j = idx[1], k = idx[2];
+      const int i = idx[0], j = idx[1], k = idx[2];
 
-      DrudeElectricParam<T>* ptr;
-      ptr = static_cast<DrudeElectricParam<T>*>(parameter);
-      std::array<double, 3>& c = ptr->c;
+      const auto& c = drude_param.c;
       
-      T& e_now = ex(i,j,k);
-      update_q(e_now, ptr);
+      const T& e_now = ex(i,j,k);
+      update_q(e_now, drude_param);
       ex(i,j,k) = c[0] * ((hz(i+1,j+1,k) - hz(i+1,j,k)) / dy - 
 			  (hy(i+1,j,k+1) - hy(i+1,j,k)) / dz)
-	+ c[1] * dps_sum(static_cast<T>(0), ptr) + c[2] * e_now;
+	+ c[1] * dps_sum(static_cast<T>(0), drude_param) + c[2] * e_now;
     }
 
   protected:
@@ -161,20 +148,18 @@ namespace gmes
   {
   public:
     void
-    update_all(T* const inplace_field,
-	       int inplace_dim1, int inplace_dim2, int inplace_dim3,
-	       const T* const in_field1, 
-	       int in1_dim1, int in1_dim2, int in1_dim3,
-	       const T* const in_field2, 
-	       int in2_dim1, int in2_dim2, int in2_dim3,
-	       double d1, double d2, double dt, double n)
+    update_all(T* const ey, int ey_x_size, int ey_y_size, int ey_z_size,
+	       const T* const hx, int hx_x_size, int hx_y_size, int hx_z_size,
+	       const T* const hz, int hz_x_size, int hz_y_size, int hz_z_size,
+	       double dz, double dx, double dt, double n)
     {
       for (auto v: param) {
-    	update(inplace_field, inplace_dim1, inplace_dim2, inplace_dim3,
-    	       in_field1, in1_dim1, in1_dim2, in1_dim3,
-    	       in_field2, in2_dim1, in2_dim2, in2_dim3,
-    	       d1, d2, dt, n, 
-    	       v.first, v.second);
+	auto drude_param_ptr = static_cast<DrudeElectricParam<T>*>(v.second);
+    	update(ey, ey_x_size, ey_y_size, ey_z_size,
+	       hx, hx_x_size, hx_y_size, hx_z_size,
+	       hz, hz_x_size, hz_y_size, hz_z_size,
+	       dz, dx, dt, n,
+    	       v.first, *drude_param_ptr);
       }
     }
 
@@ -185,19 +170,17 @@ namespace gmes
 	   const T* const hz, int hz_x_size, int hz_y_size, int hz_z_size,
 	   double dz, double dx, double dt, double n,
 	   const Index3& idx, 
-	   PwMaterialParam* const parameter)
+	   DrudeElectricParam<T>& drude_param)
     {
-      int i = idx[0], j = idx[1], k = idx[2];
+      const int i = idx[0], j = idx[1], k = idx[2];
 
-      DrudeElectricParam<T>* ptr;
-      ptr = static_cast<DrudeElectricParam<T>*>(parameter);
-      std::array<double, 3>& c = ptr->c;
+      const auto& c = drude_param.c;
       
-      T& e_now = ey(i,j,k);
-      update_q(e_now, ptr);
+      const T& e_now = ey(i,j,k);
+      update_q(e_now, drude_param);
       ey(i,j,k) = c[0] * ((hx(i,j+1,k+1) - hx(i,j+1,k)) / dz - 
 			  (hz(i+1,j+1,k) - hz(i,j+1,k)) / dx)
-	+ c[1] * dps_sum(static_cast<T>(0), ptr) + c[2] * e_now;
+	+ c[1] * dps_sum(static_cast<T>(0), drude_param) + c[2] * e_now;
     }
 
   protected:
@@ -210,20 +193,18 @@ namespace gmes
   {
   public:
     void
-    update_all(T* const inplace_field,
-	       int inplace_dim1, int inplace_dim2, int inplace_dim3,
-	       const T* const in_field1, 
-	       int in1_dim1, int in1_dim2, int in1_dim3,
-	       const T* const in_field2, 
-	       int in2_dim1, int in2_dim2, int in2_dim3,
-	       double d1, double d2, double dt, double n)
+    update_all(T* const ez, int ez_x_size, int ez_y_size, int ez_z_size,
+	       const T* const hy, int hy_x_size, int hy_y_size, int hy_z_size,
+	       const T* const hx, int hx_x_size, int hx_y_size, int hx_z_size,
+	       double dx, double dy, double dt, double n)
     {
       for (auto v: param) {
-    	update(inplace_field, inplace_dim1, inplace_dim2, inplace_dim3,
-    	       in_field1, in1_dim1, in1_dim2, in1_dim3,
-    	       in_field2, in2_dim1, in2_dim2, in2_dim3,
-    	       d1, d2, dt, n, 
-    	       v.first, v.second);
+	auto drude_param_ptr = static_cast<DrudeElectricParam<T>*>(v.second);
+    	update(ez, ez_x_size, ez_y_size, ez_z_size,
+	       hy, hy_x_size, hy_y_size, hy_z_size,
+	       hx, hx_x_size, hx_y_size, hx_z_size,
+	       dx, dy, dt, n,
+    	       v.first, *drude_param_ptr);
       }
     }
 
@@ -234,19 +215,17 @@ namespace gmes
 	   const T* const hx, int hx_x_size, int hx_y_size, int hx_z_size,
 	   double dx, double dy, double dt, double n,
 	   const Index3& idx, 
-	   PwMaterialParam* const parameter)
+	   DrudeElectricParam<T>& drude_param)
     {
-      int i = idx[0], j = idx[1], k = idx[2];
+      const int i = idx[0], j = idx[1], k = idx[2];
 
-      DrudeElectricParam<T>* ptr;
-      ptr = static_cast<DrudeElectricParam<T>*>(parameter);
-      std::array<double, 3>& c = ptr->c;
+      const auto& c = drude_param.c;
       
-      T& e_now = ez(i,j,k);
-      update_q(e_now, ptr);
+      const T& e_now = ez(i,j,k);
+      update_q(e_now, drude_param);
       ez(i,j,k) = c[0] * ((hy(i+1,j,k+1) - hy(i,j,k+1)) / dx - 
 			  (hx(i,j+1,k+1) - hx(i,j,k+1)) / dy)
-	+ c[1] * dps_sum(static_cast<T>(0), ptr) + c[2] * e_now;
+	+ c[1] * dps_sum(static_cast<T>(0), drude_param) + c[2] * e_now;
     }
 
   protected:

@@ -64,52 +64,43 @@ namespace gmes
       param.clear();
     }
     
-    PwMaterial<T> *
+    PwMaterial<T>*
     attach(const int* const idx, int idx_size,
-	   const PwMaterialParam * const parameter)
+	   const PwMaterialParam * const pm_param_ptr)
     {
-      std::array<int, 3> index;
+      Index3 index;
       std::copy(idx, idx + idx_size, index.begin());
 
-      MapType::iterator iter = param.find(index);
-      if (iter != param.end()) {
-      	std::cerr << "Overwriting the existing index." << std::endl;
-      	delete static_cast<DcpAdeElectricParam<T> *>(iter->second);
-      	param.erase(iter);
-      }
+      auto dcp_param_ptr = static_cast<const DcpAdeElectricParam<T>* const>(pm_param_ptr);
+      auto new_param_ptr = new DcpAdeElectricParam<T>();
 
-      const DcpAdeElectricParam<T> * const DcpAdeElectricParameter_ptr
-	= static_cast<const DcpAdeElectricParam<T> * const>(parameter);
-      DcpAdeElectricParam<T> *param_ptr;
-      param_ptr = new DcpAdeElectricParam<T>();
+      new_param_ptr->eps_inf = dcp_param_ptr->eps_inf;
+      std::copy(dcp_param_ptr->a.begin(),
+		dcp_param_ptr->a.end(),
+		std::back_inserter(new_param_ptr->a));
+      std::copy(dcp_param_ptr->b.begin(),
+		dcp_param_ptr->b.end(),
+		std::back_inserter(new_param_ptr->b));
+      std::copy(dcp_param_ptr->c.begin(),
+		dcp_param_ptr->c.end(),
+		new_param_ptr->c.begin());
+      new_param_ptr->e_old = static_cast<T>(0);
+      new_param_ptr->q_old.resize(dcp_param_ptr->a.size(), static_cast<T>(0));
+      new_param_ptr->q_now.resize(dcp_param_ptr->a.size(), static_cast<T>(0));
+      new_param_ptr->p_old.resize(dcp_param_ptr->b.size(), static_cast<T>(0));
+      new_param_ptr->p_now.resize(dcp_param_ptr->b.size(), static_cast<T>(0));
 
-      param_ptr->eps_inf = DcpAdeElectricParameter_ptr->eps_inf;
-      std::copy(DcpAdeElectricParameter_ptr->a.begin(),
-		DcpAdeElectricParameter_ptr->a.end(),
-		std::back_inserter(param_ptr->a));
-      std::copy(DcpAdeElectricParameter_ptr->b.begin(),
-		DcpAdeElectricParameter_ptr->b.end(),
-		std::back_inserter(param_ptr->b));
-      std::copy(DcpAdeElectricParameter_ptr->c.begin(),
-		DcpAdeElectricParameter_ptr->c.end(),
-		param_ptr->c.begin());
-      param_ptr->e_old = static_cast<T>(0);
-      param_ptr->q_old.resize(param_ptr->a.size(), static_cast<T>(0));
-      param_ptr->q_now.resize(param_ptr->a.size(), static_cast<T>(0));
-      param_ptr->p_old.resize(param_ptr->b.size(), static_cast<T>(0));
-      param_ptr->p_now.resize(param_ptr->b.size(), static_cast<T>(0));
-
-      param.insert(std::make_pair(index, param_ptr));
+      param.insert(std::make_pair(index, new_param_ptr));
 
       return this;
     }
     
     T 
-    dps_sum(const T& init, const DcpAdeElectricParam<T> * const ptr) const
+    dps_sum(const T& init, const DcpAdeElectricParam<T>& dcp_param) const
     {
-      const std::vector<std::array<double, 3> >& a = ptr->a;
-      const std::vector<T>& q_old = ptr->q_old;
-      const std::vector<T>& q_now = ptr->q_now;
+      const auto& a = dcp_param.a;
+      const auto& q_old = dcp_param.q_old;
+      const auto& q_now = dcp_param.q_now;
       
       T sum(init);
       for (typename std::vector<T>::size_type i = 0; i < a.size(); ++i) {
@@ -120,11 +111,11 @@ namespace gmes
     }
       
     T 
-    cps_sum(const T& init, const DcpAdeElectricParam<T> * const ptr) const
+    cps_sum(const T& init, const DcpAdeElectricParam<T>& dcp_param) const
     {
-      const std::vector<std::array<double, 4> >& b = ptr->b;
-      const std::vector<T>& p_old = ptr->p_old;
-      const std::vector<T>& p_now = ptr->p_now;
+      const auto& b = dcp_param.b;
+      const auto& p_old = dcp_param.p_old;
+      const auto& p_now = dcp_param.p_now;
 
       T sum(init);
       for (typename std::vector<T>::size_type i = 0; i < b.size(); ++i) {
@@ -135,11 +126,11 @@ namespace gmes
     }
 
     void 
-    update_q(const T& e_now, DcpAdeElectricParam<T> * const ptr)
+    update_q(const T& e_now, DcpAdeElectricParam<T>& dcp_param)
     {
-      const std::vector<std::array<double, 3> >& a = ptr->a;
-      std::vector<T>& q_old = ptr->q_old;
-      std::vector<T>& q_now = ptr->q_now;
+      const auto& a = dcp_param.a;
+      auto& q_old = dcp_param.q_old;
+      auto& q_now = dcp_param.q_now;
 
       std::vector<T> q_new(a.size());
       for (typename std::vector<T>::size_type i = 0; i < a.size(); ++i) {
@@ -152,11 +143,11 @@ namespace gmes
     
     void 
     update_p(const T& e_old, const T& e_now, const T& e_new,
-	     DcpAdeElectricParam<T> * const ptr)
+	     DcpAdeElectricParam<T>& dcp_param)
     {
-      const std::vector<std::array<double, 4> >& b = ptr->b;
-      std::vector<T>& p_old = ptr->p_old;
-      std::vector<T>& p_now = ptr->p_now;
+      const auto& b = dcp_param.b;
+      auto& p_old = dcp_param.p_old;
+      auto& p_now = dcp_param.p_now;
     
       std::vector<T> p_new(b.size());
       for (typename std::vector<T>::size_type i = 0; i < b.size(); ++i) {
@@ -175,48 +166,44 @@ namespace gmes
   {
   public:
     void
-    update_all(T* const inplace_field,
-	       int inplace_dim1, int inplace_dim2, int inplace_dim3,
-	       const T* const in_field1, 
-	       int in1_dim1, int in1_dim2, int in1_dim3,
-	       const T* const in_field2, 
-	       int in2_dim1, int in2_dim2, int in2_dim3,
-	       double d1, double d2, double dt, double n)
+    update_all(T* const ex, int ex_x_size, int ex_y_size, int ex_z_size,
+	       const T* const hz, int hz_x_size, int hz_y_size, int hz_z_size,
+	       const T* const hy, int hy_x_size, int hy_y_size, int hy_z_size,
+	       double dy, double dz, double dt, double n)
     {
-      for (auto v: param) {
-    	update(inplace_field, inplace_dim1, inplace_dim2, inplace_dim3,
-    	       in_field1, in1_dim1, in1_dim2, in1_dim3,
-    	       in_field2, in2_dim1, in2_dim2, in2_dim3,
-    	       d1, d2, dt, n, 
-    	       v.first, v.second);
+      for (auto v: param) {   
+	auto dcp_param_ptr = static_cast<DcpAdeElectricParam<T>*>(v.second);
+    	update(ex, ex_x_size, ex_y_size, ex_z_size,
+	       hz, hz_x_size, hz_y_size, hz_z_size,
+	       hy, hy_x_size, hy_y_size, hy_z_size,
+	       dy, dz, dt, n,
+    	       v.first, *dcp_param_ptr);
       }
     }
 
   private:
     void 
-    update(T * const ex, int ex_x_size, int ex_y_size, int ex_z_size,
-	   const T * const hz, int hz_x_size, int hz_y_size, int hz_z_size,
-	   const T * const hy, int hy_x_size, int hy_y_size, int hy_z_size,
+    update(T* const ex, int ex_x_size, int ex_y_size, int ex_z_size,
+	   const T* const hz, int hz_x_size, int hz_y_size, int hz_z_size,
+	   const T* const hy, int hy_x_size, int hy_y_size, int hy_z_size,
 	   double dy, double dz, double dt, double n,
 	   const Index3& idx,
-	   PwMaterialParam * const parameter)
+	   DcpAdeElectricParam<T> dcp_param)
     {
-      int i = idx[0], j = idx[1], k = idx[2];
-      
-      DcpAdeElectricParam<T> *ptr;
-      ptr = static_cast<DcpAdeElectricParam<T> *>(parameter);
-      const std::array<double, 4>& c = ptr->c;
-      T& e_old = ptr->e_old;
+      const int i = idx[0], j = idx[1], k = idx[2];
+
+      const auto& c = dcp_param.c;
+      T& e_old = dcp_param.e_old;
  
       const T& e_now = ex(i,j,k);
       const T e_new = c[0] * ((hz(i+1,j+1,k) - hz(i+1,j,k)) / dy - 
 			      (hy(i+1,j,k+1) - hy(i+1,j,k)) / dz) 
-	+ c[1] * (dps_sum(static_cast<T>(0), ptr) + 
-		  cps_sum(static_cast<T>(0), ptr))
+	+ c[1] * (dps_sum(static_cast<T>(0), dcp_param) + 
+		  cps_sum(static_cast<T>(0), dcp_param))
 	+ c[2] * e_old + c[3] * e_now;
       
-      update_q(e_now, ptr);
-      update_p(e_old, e_now, e_new, ptr);
+      update_q(e_now, dcp_param);
+      update_p(e_old, e_now, e_new, dcp_param);
       
       e_old = e_now;
       ex(i,j,k) = e_new;
@@ -234,48 +221,44 @@ namespace gmes
   {
   public:
     void
-    update_all(T* const inplace_field,
-	       int inplace_dim1, int inplace_dim2, int inplace_dim3,
-	       const T* const in_field1, 
-	       int in1_dim1, int in1_dim2, int in1_dim3,
-	       const T* const in_field2, 
-	       int in2_dim1, int in2_dim2, int in2_dim3,
-	       double d1, double d2, double dt, double n)
+    update_all(T* const ey, int ey_x_size, int ey_y_size, int ey_z_size,
+	       const T* const hx, int hx_x_size, int hx_y_size, int hx_z_size,
+	       const T* const hz, int hz_x_size, int hz_y_size, int hz_z_size,
+	       double dz, double dx, double dt, double n)
     {
       for (auto v: param) {
-    	update(inplace_field, inplace_dim1, inplace_dim2, inplace_dim3,
-    	       in_field1, in1_dim1, in1_dim2, in1_dim3,
-    	       in_field2, in2_dim1, in2_dim2, in2_dim3,
-    	       d1, d2, dt, n, 
-    	       v.first, v.second);
+	auto dcp_param_ptr = static_cast<DcpAdeElectricParam<T>*>(v.second);
+    	update(ey, ey_x_size, ey_y_size, ey_z_size,
+	       hx, hx_x_size, hx_y_size, hx_z_size,
+	       hz, hz_x_size, hz_y_size, hz_z_size,
+	       dz, dx, dt, n,
+    	       v.first, *dcp_param_ptr);
       }
     }
 
   private:
     void 
-    update(T * const ey, int ey_x_size, int ey_y_size, int ey_z_size,
-	   const T * const hx, int hx_x_size, int hx_y_size, int hx_z_size,
-	   const T * const hz, int hz_x_size, int hz_y_size, int hz_z_size,
+    update(T* const ey, int ey_x_size, int ey_y_size, int ey_z_size,
+	   const T* const hx, int hx_x_size, int hx_y_size, int hx_z_size,
+	   const T* const hz, int hz_x_size, int hz_y_size, int hz_z_size,
 	   double dz, double dx, double dt, double n,
 	   const Index3& idx,
-	   PwMaterialParam * const parameter)
+	   DcpAdeElectricParam<T>& dcp_param)
     {
-      int i = idx[0], j = idx[1], k = idx[2];
+      const int i = idx[0], j = idx[1], k = idx[2];
       
-      DcpAdeElectricParam<T> *ptr;
-      ptr = static_cast<DcpAdeElectricParam<T> *>(parameter);
-      const std::array<double, 4>& c = ptr->c;
-      T& e_old = ptr->e_old;
+      const std::array<double, 4>& c = dcp_param.c;
+      T& e_old = dcp_param.e_old;
       
       const T& e_now = ey(i,j,k);
       T e_new = c[0] * ((hx(i,j+1,k+1) - hx(i,j+1,k)) / dz - 
 			(hz(i+1,j+1,k) - hz(i,j+1,k)) / dx)
-	+ c[1] * (dps_sum(static_cast<T>(0), ptr) + 
-		  cps_sum(static_cast<T>(0), ptr))
+	+ c[1] * (dps_sum(static_cast<T>(0), dcp_param) + 
+		  cps_sum(static_cast<T>(0), dcp_param))
 	+ c[2] * e_old + c[3] * e_now;
 
-      update_q(e_now, ptr);
-      update_p(e_old, e_now, e_new, ptr);
+      update_q(e_now, dcp_param);
+      update_p(e_old, e_now, e_new, dcp_param);
       
       e_old = e_now;
       ey(i,j,k) = e_new;
@@ -293,48 +276,44 @@ namespace gmes
   {
   public:
     void
-    update_all(T* const inplace_field,
-	       int inplace_dim1, int inplace_dim2, int inplace_dim3,
-	       const T* const in_field1, 
-	       int in1_dim1, int in1_dim2, int in1_dim3,
-	       const T* const in_field2, 
-	       int in2_dim1, int in2_dim2, int in2_dim3,
-	       double d1, double d2, double dt, double n)
+    update_all(T* const ez, int ez_x_size, int ez_y_size, int ez_z_size,
+	       const T* const hy, int hy_x_size, int hy_y_size, int hy_z_size,
+	       const T* const hx, int hx_x_size, int hx_y_size, int hx_z_size,
+	       double dx, double dy, double dt, double n)
     {
       for (auto v: param) {
-    	update(inplace_field, inplace_dim1, inplace_dim2, inplace_dim3,
-    	       in_field1, in1_dim1, in1_dim2, in1_dim3,
-    	       in_field2, in2_dim1, in2_dim2, in2_dim3,
-    	       d1, d2, dt, n, 
-    	       v.first, v.second);
+	auto dcp_param_ptr = static_cast<DcpAdeElectricParam<T>*>(v.second);
+    	update(ez, ez_x_size, ez_y_size, ez_z_size,
+	       hy, hy_x_size, hy_y_size, hy_z_size,
+	       hx, hx_x_size, hx_y_size, hx_z_size,
+	       dx, dy, dt, n,
+    	       v.first, *dcp_param_ptr);
       }
     }
 
   private:
     void 
-    update(T * const ez, int ez_x_size, int ez_y_size, int ez_z_size,
-	   const T * const hy, int hy_x_size, int hy_y_size, int hy_z_size,
-	   const T * const hx, int hx_x_size, int hx_y_size, int hx_z_size,
+    update(T* const ez, int ez_x_size, int ez_y_size, int ez_z_size,
+	   const T* const hy, int hy_x_size, int hy_y_size, int hy_z_size,
+	   const T* const hx, int hx_x_size, int hx_y_size, int hx_z_size,
 	   double dx, double dy, double dt, double n,
 	   const Index3& idx,
-	   PwMaterialParam * const parameter)
+	   DcpAdeElectricParam<T>& dcp_param)
     {
-      int i = idx[0], j = idx[1], k = idx[2];
-      
-      DcpAdeElectricParam<T> *ptr;
-      ptr = static_cast<DcpAdeElectricParam<T> *>(parameter);
-      const std::array<double, 4>& c = ptr->c;
-      T& e_old = ptr->e_old;
+      const int i = idx[0], j = idx[1], k = idx[2];
+
+      const auto& c = dcp_param.c;
+      T& e_old = dcp_param.e_old;
 
       const T& e_now = ez(i,j,k);
       T e_new = c[0] * ((hy(i+1,j,k+1) - hy(i,j,k+1)) / dx - 
 			(hx(i,j+1,k+1) - hx(i,j,k+1)) / dy)
-	+ c[1] * (dps_sum(static_cast<T>(0), ptr) + 
-		  cps_sum(static_cast<T>(0), ptr))
+	+ c[1] * (dps_sum(static_cast<T>(0), dcp_param) + 
+		  cps_sum(static_cast<T>(0), dcp_param))
 	+ c[2] * e_old + c[3] * e_now;
       
-      update_q(e_now, ptr);
-      update_p(e_old, e_now, e_new, ptr);
+      update_q(e_now, dcp_param);
+      update_p(e_old, e_now, e_new, dcp_param);
       
       e_old = e_now;
       ez(i,j,k) = e_new;
@@ -395,52 +374,43 @@ namespace gmes
       param.clear();
     }
     
-    PwMaterial<T> *
+    PwMaterial<T>*
     attach(const int* const idx, int idx_size,
-	   const PwMaterialParam * const parameter)
+	   const PwMaterialParam* const pm_param_ptr)
     {
-      std::array<int, 3> index;
+      Index3 index;
       std::copy(idx, idx + idx_size, index.begin());
 
-      MapType::iterator iter = param.find(index);
-      if (iter != param.end()) {
-      	std::cerr << "Overwriting the existing index." << std::endl;
-      	delete static_cast<DcpAde2ElectricParam<T> *>(iter->second);
-      	param.erase(iter);
-      }
+      auto dcp_param_ptr = static_cast<const DcpAde2ElectricParam<T> * const>(pm_param_ptr);
+      auto new_param_ptr = new DcpAde2ElectricParam<T>();
 
-      const DcpAde2ElectricParam<T> * const DcpAde2ElectricParameter_ptr
-	= static_cast<const DcpAde2ElectricParam<T> * const>(parameter);
-      DcpAde2ElectricParam<T> *param_ptr;
-      param_ptr = new DcpAde2ElectricParam<T>();
+      new_param_ptr->eps_inf = dcp_param_ptr->eps_inf;
+      std::copy(dcp_param_ptr->a.begin(),
+		dcp_param_ptr->a.end(),
+		std::back_inserter(new_param_ptr->a));
+      std::copy(dcp_param_ptr->b.begin(),
+		dcp_param_ptr->b.end(),
+		std::back_inserter(new_param_ptr->b));
+      std::copy(dcp_param_ptr->c.begin(),
+		dcp_param_ptr->c.end(),
+		new_param_ptr->c.begin());
+      new_param_ptr->e_old = static_cast<T>(0);
+      new_param_ptr->q_old.resize(dcp_param_ptr->a.size(), static_cast<T>(0));
+      new_param_ptr->q_now.resize(dcp_param_ptr->a.size(), static_cast<T>(0));
+      new_param_ptr->p_old.resize(dcp_param_ptr->b.size(), static_cast<T>(0));
+      new_param_ptr->p_now.resize(dcp_param_ptr->b.size(), static_cast<T>(0));
 
-      param_ptr->eps_inf = DcpAde2ElectricParameter_ptr->eps_inf;
-      std::copy(DcpAde2ElectricParameter_ptr->a.begin(),
-		DcpAde2ElectricParameter_ptr->a.end(),
-		std::back_inserter(param_ptr->a));
-      std::copy(DcpAde2ElectricParameter_ptr->b.begin(),
-		DcpAde2ElectricParameter_ptr->b.end(),
-		std::back_inserter(param_ptr->b));
-      std::copy(DcpAde2ElectricParameter_ptr->c.begin(),
-		DcpAde2ElectricParameter_ptr->c.end(),
-		param_ptr->c.begin());
-      param_ptr->e_old = static_cast<T>(0);
-      param_ptr->q_old.resize(param_ptr->a.size(), static_cast<T>(0));
-      param_ptr->q_now.resize(param_ptr->a.size(), static_cast<T>(0));
-      param_ptr->p_old.resize(param_ptr->b.size(), static_cast<T>(0));
-      param_ptr->p_now.resize(param_ptr->b.size(), static_cast<T>(0));
-
-      param.insert(std::make_pair(index, param_ptr));
+      param.insert(std::make_pair(index, new_param_ptr));
 
       return this;
     }
     
     T 
-    dps_sum(const T& init, const DcpAde2ElectricParam<T> * const ptr) const
+    dps_sum(const T& init, const DcpAde2ElectricParam<T>& dcp_param) const
     {
-      const Ade2CoeffA& a = ptr->a;
-      const std::vector<T>& q_old = ptr->q_old;
-      const std::vector<T>& q_now = ptr->q_now;
+      const auto& a = dcp_param.a;
+      const auto& q_old = dcp_param.q_old;
+      const auto& q_now = dcp_param.q_now;
       
       T sum(init);
       for (typename std::vector<T>::size_type i = 0; i < a.size(); ++i) {
@@ -451,11 +421,11 @@ namespace gmes
     }
     
     T 
-    cps_sum(const T& init, const DcpAde2ElectricParam<T> * const ptr) const
+    cps_sum(const T& init, const DcpAde2ElectricParam<T>& dcp_param) const
     {
-      const Ade2CoeffB& b = ptr->b;
-      const std::vector<T>& p_old = ptr->p_old;
-      const std::vector<T>& p_now = ptr->p_now;
+      const auto& b = dcp_param.b;
+      const auto& p_old = dcp_param.p_old;
+      const auto& p_now = dcp_param.p_now;
 
       T sum(init);
       for (typename std::vector<T>::size_type i = 0; i < b.size(); ++i) {
@@ -467,11 +437,11 @@ namespace gmes
 
     void 
     update_q(const T& e_old, const T& e_now, const T& e_new,
-	     DcpAde2ElectricParam<T> * const ptr)
+	     DcpAde2ElectricParam<T>& dcp_param)
     {
-      const Ade2CoeffA& a = ptr->a;
-      std::vector<T>& q_old = ptr->q_old;
-      std::vector<T>& q_now = ptr->q_now;
+      const auto& a = dcp_param.a;
+      auto& q_old = dcp_param.q_old;
+      auto& q_now = dcp_param.q_now;
 
       std::vector<T> q_new(a.size());
       for (typename std::vector<T>::size_type i = 0; i < a.size(); ++i) {
@@ -484,11 +454,11 @@ namespace gmes
     
     void 
     update_p(const T& e_old, const T& e_now, const T& e_new,
-	     DcpAde2ElectricParam<T> * const ptr)
+	     DcpAde2ElectricParam<T>& dcp_param)
     {
-      const Ade2CoeffB& b = ptr->b;
-      std::vector<T>& p_old = ptr->p_old;
-      std::vector<T>& p_now = ptr->p_now;
+      const Ade2CoeffB& b = dcp_param.b;
+      auto& p_old = dcp_param.p_old;
+      auto& p_now = dcp_param.p_now;
     
       std::vector<T> p_new(b.size());
       for (typename std::vector<T>::size_type i = 0; i < b.size(); ++i) {
@@ -507,48 +477,44 @@ namespace gmes
   {
   public:
     void
-    update_all(T* const inplace_field,
-	       int inplace_dim1, int inplace_dim2, int inplace_dim3,
-	       const T* const in_field1, 
-	       int in1_dim1, int in1_dim2, int in1_dim3,
-	       const T* const in_field2, 
-	       int in2_dim1, int in2_dim2, int in2_dim3,
-	       double d1, double d2, double dt, double n)
+    update_all(T* const ex, int ex_x_size, int ex_y_size, int ex_z_size,
+	       const T* const hz, int hz_x_size, int hz_y_size, int hz_z_size,
+	       const T* const hy, int hy_x_size, int hy_y_size, int hy_z_size,
+	       double dy, double dz, double dt, double n)
     {
       for (auto v: param) {
-    	update(inplace_field, inplace_dim1, inplace_dim2, inplace_dim3,
-    	       in_field1, in1_dim1, in1_dim2, in1_dim3,
-    	       in_field2, in2_dim1, in2_dim2, in2_dim3,
-    	       d1, d2, dt, n, 
-    	       v.first, v.second);
+	auto dcp_param_ptr = static_cast<DcpAde2ElectricParam<T>*>(v.second);
+    	update(ex, ex_x_size, ex_y_size, ex_z_size,
+	       hz, hz_x_size, hz_y_size, hz_z_size,
+	       hy, hy_x_size, hy_y_size, hy_z_size,
+	       dy, dz, dt, n,
+    	       v.first, *dcp_param_ptr);
       }
     }
 
   private:
     void 
-    update(T * const ex, int ex_x_size, int ex_y_size, int ex_z_size,
-	   const T * const hz, int hz_x_size, int hz_y_size, int hz_z_size,
-	   const T * const hy, int hy_x_size, int hy_y_size, int hy_z_size,
+    update(T* const ex, int ex_x_size, int ex_y_size, int ex_z_size,
+	   const T* const hz, int hz_x_size, int hz_y_size, int hz_z_size,
+	   const T* const hy, int hy_x_size, int hy_y_size, int hy_z_size,
 	   double dy, double dz, double dt, double n,
 	   const Index3& idx,
-	   PwMaterialParam * const parameter)
+	   DcpAde2ElectricParam<T>& dcp_param)
     {
-      int i = idx[0], j = idx[1], k = idx[2];
+      const int i = idx[0], j = idx[1], k = idx[2];
       
-      DcpAde2ElectricParam<T> *ptr;
-      ptr = static_cast<DcpAde2ElectricParam<T> *>(parameter);
-      const std::array<double, 4>& c = ptr->c;
-      T& e_old = ptr->e_old;
+      const auto& c = dcp_param.c;
+      T& e_old = dcp_param.e_old;
 
       const T& e_now = ex(i,j,k);
       const T e_new = c[0] * ((hz(i+1,j+1,k) - hz(i+1,j,k)) / dy - 
 			      (hy(i+1,j,k+1) - hy(i+1,j,k)) / dz) 
-	+ c[1] * (dps_sum(static_cast<T>(0), ptr) + 
-		  cps_sum(static_cast<T>(0), ptr))
+	+ c[1] * (dps_sum(static_cast<T>(0), dcp_param) + 
+		  cps_sum(static_cast<T>(0), dcp_param))
 	+ c[2] * e_old + c[3] * e_now;
       
-      update_q(e_old, e_now, e_new, ptr);
-      update_p(e_old, e_now, e_new, ptr);
+      update_q(e_old, e_now, e_new, dcp_param);
+      update_p(e_old, e_now, e_new, dcp_param);
       
       e_old = e_now;
       ex(i,j,k) = e_new;
@@ -566,48 +532,44 @@ namespace gmes
   {
   public:
     void
-    update_all(T* const inplace_field,
-	       int inplace_dim1, int inplace_dim2, int inplace_dim3,
-	       const T* const in_field1, 
-	       int in1_dim1, int in1_dim2, int in1_dim3,
-	       const T* const in_field2, 
-	       int in2_dim1, int in2_dim2, int in2_dim3,
-	       double d1, double d2, double dt, double n)
+    update_all(T* const ey, int ey_x_size, int ey_y_size, int ey_z_size,
+	       const T* const hx, int hx_x_size, int hx_y_size, int hx_z_size,
+	       const T* const hz, int hz_x_size, int hz_y_size, int hz_z_size,
+	       double dz, double dx, double dt, double n)
     {
       for (auto v: param) {
-    	update(inplace_field, inplace_dim1, inplace_dim2, inplace_dim3,
-    	       in_field1, in1_dim1, in1_dim2, in1_dim3,
-    	       in_field2, in2_dim1, in2_dim2, in2_dim3,
-    	       d1, d2, dt, n, 
-    	       v.first, v.second);
+	auto dcp_param_ptr = static_cast<DcpAde2ElectricParam<T>*>(v.second);
+    	update(ey, ey_x_size, ey_y_size, ey_z_size,
+	       hx, hx_x_size, hx_y_size, hx_z_size,
+	       hz, hz_x_size, hz_y_size, hz_z_size,
+	       dz, dx, dt, n,
+    	       v.first, *dcp_param_ptr);
       }
     }
 
   private:
     void 
-    update(T * const ey, int ey_x_size, int ey_y_size, int ey_z_size,
-	   const T * const hx, int hx_x_size, int hx_y_size, int hx_z_size,
-	   const T * const hz, int hz_x_size, int hz_y_size, int hz_z_size,
+    update(T* const ey, int ey_x_size, int ey_y_size, int ey_z_size,
+	   const T* const hx, int hx_x_size, int hx_y_size, int hx_z_size,
+	   const T* const hz, int hz_x_size, int hz_y_size, int hz_z_size,
 	   double dz, double dx, double dt, double n,
 	   const Index3& idx,
-	   PwMaterialParam * const parameter)
+	   DcpAde2ElectricParam<T>& dcp_param)
     {
-      int i = idx[0], j = idx[1], k = idx[2];
+      const int i = idx[0], j = idx[1], k = idx[2];
       
-      DcpAde2ElectricParam<T> *ptr;
-      ptr = static_cast<DcpAde2ElectricParam<T> *>(parameter);
-      const std::array<double, 4>& c = ptr->c;
-      T& e_old = ptr->e_old;
+      const auto& c = dcp_param.c;
+      T& e_old = dcp_param.e_old;
       
       const T& e_now = ey(i,j,k);
       T e_new = c[0] * ((hx(i,j+1,k+1) - hx(i,j+1,k)) / dz - 
 			(hz(i+1,j+1,k) - hz(i,j+1,k)) / dx)
-	+ c[1] * (dps_sum(static_cast<T>(0), ptr) + 
-		  cps_sum(static_cast<T>(0), ptr))
+	+ c[1] * (dps_sum(static_cast<T>(0), dcp_param) + 
+		  cps_sum(static_cast<T>(0), dcp_param))
 	+ c[2] * e_old + c[3] * e_now;
 
-      update_q(e_old, e_now, e_new, ptr);
-      update_p(e_old, e_now, e_new, ptr);
+      update_q(e_old, e_now, e_new, dcp_param);
+      update_p(e_old, e_now, e_new, dcp_param);
       
       e_old = e_now;
       ey(i,j,k) = e_new;
@@ -625,48 +587,44 @@ namespace gmes
   {
   public:
     void
-    update_all(T* const inplace_field,
-	       int inplace_dim1, int inplace_dim2, int inplace_dim3,
-	       const T* const in_field1, 
-	       int in1_dim1, int in1_dim2, int in1_dim3,
-	       const T* const in_field2, 
-	       int in2_dim1, int in2_dim2, int in2_dim3,
-	       double d1, double d2, double dt, double n)
+    update_all(T* const ez, int ez_x_size, int ez_y_size, int ez_z_size,
+	       const T* const hy, int hy_x_size, int hy_y_size, int hy_z_size,
+	       const T* const hx, int hx_x_size, int hx_y_size, int hx_z_size,
+	       double dx, double dy, double dt, double n)
     {
       for (auto v: param) {
-    	update(inplace_field, inplace_dim1, inplace_dim2, inplace_dim3,
-    	       in_field1, in1_dim1, in1_dim2, in1_dim3,
-    	       in_field2, in2_dim1, in2_dim2, in2_dim3,
-    	       d1, d2, dt, n, 
-    	       v.first, v.second);
+	auto dcp_param_ptr = static_cast<DcpAde2ElectricParam<T>*>(v.second);
+    	update(ez, ez_x_size, ez_y_size, ez_z_size,
+	       hy, hy_x_size, hy_y_size, hy_z_size,
+	       hx, hx_x_size, hx_y_size, hx_z_size,
+	       dx, dy, dt, n,
+    	       v.first, *dcp_param_ptr);
       }
     }
 
   private:
     void 
-    update(T * const ez, int ez_x_size, int ez_y_size, int ez_z_size,
-	   const T * const hy, int hy_x_size, int hy_y_size, int hy_z_size,
-	   const T * const hx, int hx_x_size, int hx_y_size, int hx_z_size,
+    update(T* const ez, int ez_x_size, int ez_y_size, int ez_z_size,
+	   const T* const hy, int hy_x_size, int hy_y_size, int hy_z_size,
+	   const T* const hx, int hx_x_size, int hx_y_size, int hx_z_size,
 	   double dx, double dy, double dt, double n,
 	   const Index3& idx,
-	   PwMaterialParam * const parameter)
+	   DcpAde2ElectricParam<T>& dcp_param)
     {
-      int i = idx[0], j = idx[1], k = idx[2];
+      const int i = idx[0], j = idx[1], k = idx[2];
       
-      DcpAde2ElectricParam<T> *ptr;
-      ptr = static_cast<DcpAde2ElectricParam<T> *>(parameter);
-      const std::array<double, 4>& c = ptr->c;
-      T& e_old = ptr->e_old;
+      const auto& c = dcp_param.c;
+      T& e_old = dcp_param.e_old;
 
       const T& e_now = ez(i,j,k);
       T e_new = c[0] * ((hy(i+1,j,k+1) - hy(i,j,k+1)) / dx - 
 			(hx(i,j+1,k+1) - hx(i,j,k+1)) / dy)
-	+ c[1] * (dps_sum(static_cast<T>(0), ptr) + 
-		  cps_sum(static_cast<T>(0), ptr))
+	+ c[1] * (dps_sum(static_cast<T>(0), dcp_param) + 
+		  cps_sum(static_cast<T>(0), dcp_param))
 	+ c[2] * e_old + c[3] * e_now;
       
-      update_q(e_old, e_now, e_new, ptr);
-      update_p(e_old, e_now, e_new, ptr);
+      update_q(e_old, e_now, e_new, dcp_param);
+      update_p(e_old, e_now, e_new, dcp_param);
       
       e_old = e_now;
       ez(i,j,k) = e_new;
@@ -722,53 +680,44 @@ namespace gmes
       param.clear();
     }
 
-    PwMaterial<T> *
+    PwMaterial<T>*
     attach(const int* const idx, int idx_size,
-	   const PwMaterialParam * const parameter)
+	   const PwMaterialParam* const pm_param_ptr)
     {
-      std::array<int, 3> index;
+      Index3 index;
       std::copy(idx, idx + idx_size, index.begin());
 
-      MapType::iterator iter = param.find(index);
-      if (iter != param.end()) {
-      	std::cerr << "Overwriting the existing index." << std::endl;
-      	delete static_cast<DcpPlrcElectricParam<T> *>(iter->second);
-      	param.erase(iter);
-      }
+      auto dcp_param_ptr = static_cast<const DcpPlrcElectricParam<T> * const>(pm_param_ptr);
+      auto new_param_ptr = new DcpPlrcElectricParam<T>();
 
-      const DcpPlrcElectricParam<T> * const DcpPlrcElectricParameter_ptr
-	= static_cast<const DcpPlrcElectricParam<T> * const>(parameter);
-      DcpPlrcElectricParam<T> *param_ptr;
-      param_ptr = new DcpPlrcElectricParam<T>();
-
-      param_ptr->eps_inf = DcpPlrcElectricParameter_ptr->eps_inf;
-      std::copy(DcpPlrcElectricParameter_ptr->a.begin(),
-		DcpPlrcElectricParameter_ptr->a.end(),
-		std::back_inserter(param_ptr->a));
-      std::copy(DcpPlrcElectricParameter_ptr->b.begin(),
-		DcpPlrcElectricParameter_ptr->b.end(),
-		std::back_inserter(param_ptr->b));
-      std::copy(DcpPlrcElectricParameter_ptr->c.begin(),
-		DcpPlrcElectricParameter_ptr->c.end(),
-		param_ptr->c.begin());
-      param_ptr->psi_dp_re.resize(param_ptr->a.size(), 0);
-      param_ptr->psi_dp_im.resize(param_ptr->a.size(), 0);
-      param_ptr->psi_cp_re.resize(param_ptr->b.size(), std::complex<double>(0));
-      param_ptr->psi_cp_im.resize(param_ptr->b.size(), std::complex<double>(0));
+      new_param_ptr->eps_inf = dcp_param_ptr->eps_inf;
+      std::copy(dcp_param_ptr->a.begin(),
+		dcp_param_ptr->a.end(),
+		std::back_inserter(new_param_ptr->a));
+      std::copy(dcp_param_ptr->b.begin(),
+		dcp_param_ptr->b.end(),
+		std::back_inserter(new_param_ptr->b));
+      std::copy(dcp_param_ptr->c.begin(),
+		dcp_param_ptr->c.end(),
+		new_param_ptr->c.begin());
+      new_param_ptr->psi_dp_re.resize(dcp_param_ptr->a.size(), 0);
+      new_param_ptr->psi_dp_im.resize(dcp_param_ptr->a.size(), 0);
+      new_param_ptr->psi_cp_re.resize(dcp_param_ptr->b.size(), std::complex<double>(0));
+      new_param_ptr->psi_cp_im.resize(dcp_param_ptr->b.size(), std::complex<double>(0));
       
-      param.insert(std::make_pair(index, param_ptr));
-
+      param.insert(std::make_pair(index, new_param_ptr));
+      
       return this;
     }
 
     void 
     update_psi_dp(const std::complex<double>& e_now, 
 		  const std::complex<double>& e_new,
-		  DcpPlrcElectricParam<T> * const ptr)
+		  DcpPlrcElectricParam<T>& dcp_param)
     {
-      const std::vector<std::array<double, 3> >& a = ptr->a;
-      std::vector<double>& psi_dp_re = ptr->psi_dp_re;
-      std::vector<double>& psi_dp_im = ptr->psi_dp_im;
+      const auto& a = dcp_param.a;
+      auto& psi_dp_re = dcp_param.psi_dp_re;
+      auto& psi_dp_im = dcp_param.psi_dp_im;
       
       for (typename std::vector<T>::size_type i = 0; i < a.size(); ++i) {
 	psi_dp_re[i] = a[i][0] * e_new.real() + a[i][1] * e_now.real() 
@@ -781,14 +730,13 @@ namespace gmes
     void 
     update_psi_cp(const std::complex<double>& e_now, 
 		  const std::complex<double>& e_new,
-		  DcpPlrcElectricParam<T> * const ptr)
+		  DcpPlrcElectricParam<T>& dcp_param)
     {
-      const std::vector<std::array<std::complex<double>, 3> >& b = ptr->b;
-      std::vector<std::complex<double> >& psi_cp_re = ptr->psi_cp_re;
-      std::vector<std::complex<double> >& psi_cp_im = ptr->psi_cp_im;
+      const auto& b = dcp_param.b;
+      auto& psi_cp_re = dcp_param.psi_cp_re;
+      auto& psi_cp_im = dcp_param.psi_cp_im;
       
-      for (typename std::vector<std::complex<double> >::size_type i = 0; 
-	   i < b.size(); ++i) {
+      for (typename std::vector<std::complex<double> >::size_type i = 0; i < b.size(); ++i) {
 	psi_cp_re[i] = b[i][0] * e_new.real() + b[i][1] * e_now.real()
 	  + b[i][2] * psi_cp_re[i];
 	psi_cp_im[i] = b[i][0] * e_new.imag() + b[i][1] * e_now.imag()
@@ -797,12 +745,12 @@ namespace gmes
     }
 
     std::complex<double> 
-    psi_total(const DcpPlrcElectricParam<T> * const ptr) const
+    psi_total(const DcpPlrcElectricParam<T>& dcp_param) const
     {
-      const std::vector<double>& psi_dp_re = ptr->psi_dp_re;
-      const std::vector<double>& psi_dp_im = ptr->psi_dp_im;
-      const std::vector<std::complex<double> >& psi_cp_re = ptr->psi_cp_re;
-      const std::vector<std::complex<double> >& psi_cp_im = ptr->psi_cp_im;
+      const auto& psi_dp_re = dcp_param.psi_dp_re;
+      const auto& psi_dp_im = dcp_param.psi_dp_im;
+      const auto& psi_cp_re = dcp_param.psi_cp_re;
+      const auto& psi_cp_im = dcp_param.psi_cp_im;
 
       double psi_re = 
 	std::accumulate(psi_dp_re.begin(), psi_dp_re.end(), 0.0) + 
@@ -837,46 +785,42 @@ namespace gmes
   {
   public:
     void
-    update_all(T* const inplace_field,
-	       int inplace_dim1, int inplace_dim2, int inplace_dim3,
-	       const T* const in_field1, 
-	       int in1_dim1, int in1_dim2, int in1_dim3,
-	       const T* const in_field2, 
-	       int in2_dim1, int in2_dim2, int in2_dim3,
-	       double d1, double d2, double dt, double n)
+    update_all(T* const ex, int ex_x_size, int ex_y_size, int ex_z_size,
+	       const T* const hz, int hz_x_size, int hz_y_size, int hz_z_size,
+	       const T* const hy, int hy_x_size, int hy_y_size, int hy_z_size,
+	       double dy, double dz, double dt, double n)
     {
       for (auto v: param) {
-    	update(inplace_field, inplace_dim1, inplace_dim2, inplace_dim3,
-    	       in_field1, in1_dim1, in1_dim2, in1_dim3,
-    	       in_field2, in2_dim1, in2_dim2, in2_dim3,
-    	       d1, d2, dt, n, 
-    	       v.first, v.second);
+	auto dcp_param_ptr = static_cast<DcpPlrcElectricParam<T>*>(v.second);
+    	update(ex, ex_x_size, ex_y_size, ex_z_size,
+	       hz, hz_x_size, hz_y_size, hz_z_size,
+	       hy, hy_x_size, hy_y_size, hy_z_size,
+	       dy, dz, dt, n,
+    	       v.first, *dcp_param_ptr);
       }
     }
 
   private:
     void 
     update(T* const ex, int ex_x_size, int ex_y_size, int ex_z_size,
-	   const T * const hz, int hz_x_size, int hz_y_size, int hz_z_size,
-	   const T * const hy, int hy_x_size, int hy_y_size, int hy_z_size,
+	   const T* const hz, int hz_x_size, int hz_y_size, int hz_z_size,
+	   const T* const hy, int hy_x_size, int hy_y_size, int hy_z_size,
 	   double dy, double dz, double dt, double n,
 	   const Index3& idx, 
-	   PwMaterialParam* const parameter)
+	   DcpPlrcElectricParam<T>& dcp_param)
     {
-      int i = idx[0], j = idx[1], k = idx[2];
+      const int i = idx[0], j = idx[1], k = idx[2];
       
-      DcpPlrcElectricParam<T> *ptr;
-      ptr = static_cast<DcpPlrcElectricParam<T> *>(parameter);
-      const std::array<double, 3>& c = ptr->c;
+      const std::array<double, 3>& c = dcp_param.c;
 
       const std::complex<double> e_now = ex(i,j,k);
       const std::complex<double> e_new = 
 	c[0] * ((hz(i+1,j+1,k) - hz(i+1,j,k)) / dy - 
 		(hy(i+1,j,k+1) - hy(i+1,j,k)) / dz) +
-	c[1] * e_now + c[2] * psi_total(ptr);
+	c[1] * e_now + c[2] * psi_total(dcp_param);
       
-      update_psi_dp(e_now, e_new, ptr);
-      update_psi_cp(e_now, e_new, ptr);
+      update_psi_dp(e_now, e_new, dcp_param);
+      update_psi_cp(e_now, e_new, dcp_param);
 
       assign(e_new, ex(i,j,k));
   }
@@ -892,46 +836,42 @@ namespace gmes
   {
   public:
     void
-    update_all(T* const inplace_field,
-	       int inplace_dim1, int inplace_dim2, int inplace_dim3,
-	       const T* const in_field1, 
-	       int in1_dim1, int in1_dim2, int in1_dim3,
-	       const T* const in_field2, 
-	       int in2_dim1, int in2_dim2, int in2_dim3,
-	       double d1, double d2, double dt, double n)
+    update_all(T* const ey, int ey_x_size, int ey_y_size, int ey_z_size,
+	       const T* const hx, int hx_x_size, int hx_y_size, int hx_z_size,
+	       const T* const hz, int hz_x_size, int hz_y_size, int hz_z_size,
+	       double dz, double dx, double dt, double n)
     {
       for (auto v: param) {
-    	update(inplace_field, inplace_dim1, inplace_dim2, inplace_dim3,
-    	       in_field1, in1_dim1, in1_dim2, in1_dim3,
-    	       in_field2, in2_dim1, in2_dim2, in2_dim3,
-    	       d1, d2, dt, n, 
-    	       v.first, v.second);
+	auto dcp_param_ptr = static_cast<DcpPlrcElectricParam<T>*>(v.second);
+    	update(ey, ey_x_size, ey_y_size, ey_z_size,
+	       hx, hx_x_size, hx_y_size, hx_z_size,
+	       hz, hz_x_size, hz_y_size, hz_z_size,
+	       dz, dx, dt, n,
+    	       v.first, *dcp_param_ptr);
       }
     }
 
   private:
     void 
-    update(T * const ey, int ey_x_size, int ey_y_size, int ey_z_size,
-	   const T * const hx, int hx_x_size, int hx_y_size, int hx_z_size,
-	   const T * const hz, int hz_x_size, int hz_y_size, int hz_z_size,
+    update(T* const ey, int ey_x_size, int ey_y_size, int ey_z_size,
+	   const T* const hx, int hx_x_size, int hx_y_size, int hx_z_size,
+	   const T* const hz, int hz_x_size, int hz_y_size, int hz_z_size,
 	   double dz, double dx, double dt, double n,
 	   const Index3& idx, 
-	   PwMaterialParam * const parameter)
+	   DcpPlrcElectricParam<T>& dcp_param)
     {
-      int i = idx[0], j = idx[1], k = idx[2];
+      const int i = idx[0], j = idx[1], k = idx[2];
       
-      DcpPlrcElectricParam<T> *ptr;
-      ptr = static_cast<DcpPlrcElectricParam<T> *>(parameter);
-      const std::array<double, 3>& c = ptr->c;
+      const auto& c = dcp_param.c;
 
-      const std::complex<double> e_now = ey(i,j,k);
-      const std::complex<double> e_new = 
+      const auto e_now = ey(i,j,k);
+      const auto e_new = 
 	c[0] * ((hx(i,j+1,k+1) - hx(i,j+1,k)) / dz - 
 		(hz(i+1,j+1,k) - hz(i,j+1,k)) / dx) +
-	c[1] * e_now + c[2] * psi_total(ptr);
+	c[1] * e_now + c[2] * psi_total(dcp_param);
 
-      update_psi_dp(e_now, e_new, ptr);
-      update_psi_cp(e_now, e_new, ptr);
+      update_psi_dp(e_now, e_new, dcp_param);
+      update_psi_cp(e_now, e_new, dcp_param);
 
       assign(e_new, ey(i,j,k));
     }
@@ -947,46 +887,42 @@ namespace gmes
   {
   public:
     void
-    update_all(T* const inplace_field,
-	       int inplace_dim1, int inplace_dim2, int inplace_dim3,
-	       const T* const in_field1, 
-	       int in1_dim1, int in1_dim2, int in1_dim3,
-	       const T* const in_field2, 
-	       int in2_dim1, int in2_dim2, int in2_dim3,
-	       double d1, double d2, double dt, double n)
+    update_all(T* const ez, int ez_x_size, int ez_y_size, int ez_z_size,
+	       const T* const hy, int hy_x_size, int hy_y_size, int hy_z_size,
+	       const T* const hx, int hx_x_size, int hx_y_size, int hx_z_size,
+	       double dx, double dy, double dt, double n)
     {
       for (auto v: param) {
-    	update(inplace_field, inplace_dim1, inplace_dim2, inplace_dim3,
-    	       in_field1, in1_dim1, in1_dim2, in1_dim3,
-    	       in_field2, in2_dim1, in2_dim2, in2_dim3,
-    	       d1, d2, dt, n, 
-    	       v.first, v.second);
+	auto dcp_param_ptr = static_cast<DcpPlrcElectricParam<T>*>(v.second);
+    	update(ez, ez_x_size, ez_y_size, ez_z_size,
+	       hy, hy_x_size, hy_y_size, hy_z_size,
+	       hx, hx_x_size, hx_y_size, hx_z_size,
+	       dx, dy, dt, n,
+    	       v.first, *dcp_param_ptr);
       }
     }
 
   private:
     void 
-    update(T * const ez, int ez_x_size, int ez_y_size, int ez_z_size,
-	   const T * const hy, int hy_x_size, int hy_y_size, int hy_z_size,
-	   const T * const hx, int hx_x_size, int hx_y_size, int hx_z_size,
+    update(T* const ez, int ez_x_size, int ez_y_size, int ez_z_size,
+	   const T* const hy, int hy_x_size, int hy_y_size, int hy_z_size,
+	   const T* const hx, int hx_x_size, int hx_y_size, int hx_z_size,
 	   double dx, double dy, double dt, double n,
 	   const Index3& idx, 
-	   PwMaterialParam * const parameter)
+	   DcpPlrcElectricParam<T>& dcp_param)
     {
-      int i = idx[0], j = idx[1], k = idx[2];
+      const int i = idx[0], j = idx[1], k = idx[2];
       
-      DcpPlrcElectricParam<T> *ptr;
-      ptr = static_cast<DcpPlrcElectricParam<T> *>(parameter);
-      const std::array<double, 3>& c = ptr->c;
+      const auto& c = dcp_param.c;
 
-      const std::complex<double> e_now = ez(i,j,k);
-      const std::complex<double> e_new = 
+      const auto e_now = ez(i,j,k);
+      const auto e_new = 
 	c[0] * ((hy(i+1,j,k+1) - hy(i,j,k+1)) / dx - 
 		(hx(i,j+1,k+1) - hx(i,j,k+1)) / dy) +
-	c[1] * e_now + c[2] * psi_total(ptr);
+	c[1] * e_now + c[2] * psi_total(dcp_param);
 
-      update_psi_dp(e_now, e_new, ptr);
-      update_psi_cp(e_now, e_new, ptr);
+      update_psi_dp(e_now, e_new, dcp_param);
+      update_psi_cp(e_now, e_new, dcp_param);
       
       assign(e_new, ez(i,j,k));
     }

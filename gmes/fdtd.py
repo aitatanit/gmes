@@ -14,7 +14,7 @@ from copy import deepcopy
 from math import sqrt
 from cmath import exp
 from numpy import ndindex, arange, inf, array
-from time import time
+from time import time, sleep
 
 import numpy as np
 
@@ -24,8 +24,7 @@ from file_io import Probe
 #from file_io import write_hdf5, snapshot
 from show import ShowLine, ShowPlane, Snapshot
 from material import Dummy
-
-import constant as const
+from constant import *
 
 
 class TimeStep(object):
@@ -99,16 +98,16 @@ class FDTD(object):
         """
         self._init_field_compnt()
         
-        self._updater = {const.Ex: self.update_ex, const.Ey: self.update_ey,
-                         const.Ez: self.update_ez, const.Hx: self.update_hx,
-                         const.Hy: self.update_hy, const.Hz: self.update_hz}
+        self._updater = {Ex: self.update_ex, Ey: self.update_ey,
+                         Ez: self.update_ez, Hx: self.update_hx,
+                         Hy: self.update_hy, Hz: self.update_hz}
         
-        self._chatter = {const.Ex: self.talk_with_ex_neighbors,
-                         const.Ey: self.talk_with_ey_neighbors,
-                         const.Ez: self.talk_with_ez_neighbors,
-                         const.Hx: self.talk_with_hx_neighbors,
-                         const.Hy: self.talk_with_hy_neighbors,
-                         const.Hz: self.talk_with_hz_neighbors}
+        self._chatter = {Ex: self.talk_with_ex_neighbors,
+                         Ey: self.talk_with_ey_neighbors,
+                         Ez: self.talk_with_ez_neighbors,
+                         Hx: self.talk_with_hx_neighbors,
+                         Hy: self.talk_with_hy_neighbors,
+                         Hz: self.talk_with_hz_neighbors}
         
         self.e_recorder = []
         self.h_recorder = []
@@ -320,8 +319,8 @@ class FDTD(object):
         """Set the significant electromagnetic field components.
         
         """
-        self.e_field_compnt = (const.Ex, const.Ey, const.Ez)
-        self.h_field_compnt = (const.Hx, const.Hy, const.Hz)
+        self.e_field_compnt = (Ex, Ey, Ez)
+        self.h_field_compnt = (Hx, Hy, Hz)
 
     def _dt_limit(self, space, eps_inf, mu_inf):
         """Courant stability bound of a time-step.
@@ -333,8 +332,8 @@ class FDTD(object):
         """
         # Pick out meaningful space-differential(s).
         # 0 for dx, 1 for dy, and 2 for dz.
-        ds = {const.Ex: (1, 2), const.Ey: (2, 0), const.Ez: (0, 1),
-              const.Hx: (1, 2), const.Hy: (2, 0), const.Hz: (0, 1)}
+        ds = {Ex: (1, 2), Ey: (2, 0), Ez: (0, 1),
+              Hx: (1, 2), Hy: (2, 0), Hz: (0, 1)}
         
         e_ds = set()
         for i in self.e_field_compnt:
@@ -500,12 +499,12 @@ class FDTD(object):
                 self.material_hz[type(pw_obj)] = pw_obj
 
     def init_material(self):
-        init_mat_func = {const.Ex: self.init_material_ex,
-                         const.Ey: self.init_material_ey,
-                         const.Ez: self.init_material_ez,
-                         const.Hx: self.init_material_hx,
-                         const.Hy: self.init_material_hy,
-                         const.Hz: self.init_material_hz}
+        init_mat_func = {Ex: self.init_material_ex,
+                         Ey: self.init_material_ey,
+                         Ez: self.init_material_ez,
+                         Hx: self.init_material_hx,
+                         Hy: self.init_material_hy,
+                         Hz: self.init_material_hz}
         
         for comp in self.e_field_compnt:
             if self.verbose:
@@ -590,12 +589,12 @@ class FDTD(object):
                 self.source_hz[type(pw_src)] = pw_src
             
     def init_source(self):
-        init_src_func = {const.Ex: self.init_source_ex,
-                         const.Ey: self.init_source_ey,
-                         const.Ez: self.init_source_ez,
-                         const.Hx: self.init_source_hx,
-                         const.Hy: self.init_source_hy,
-                         const.Hz: self.init_source_hz}
+        init_src_func = {Ex: self.init_source_ex,
+                         Ey: self.init_source_ey,
+                         Ez: self.init_source_ez,
+                         Hx: self.init_source_hx,
+                         Hy: self.init_source_hy,
+                         Hz: self.init_source_hz}
 
         for comp in self.e_field_compnt:
             init_src_func[comp]()
@@ -609,39 +608,39 @@ class FDTD(object):
         prefix: prefix of the recording file name. type: str
         
         """
-        spc2idx = {const.Ex: self.space.space_to_ex_index,
-                   const.Ey: self.space.space_to_ey_index,
-                   const.Ez: self.space.space_to_ez_index,
-                   const.Hx: self.space.space_to_hx_index,
-                   const.Hy: self.space.space_to_hy_index,
-                   const.Hz: self.space.space_to_hz_index}
+        spc2idx = {Ex: self.space.space_to_ex_index,
+                   Ey: self.space.space_to_ey_index,
+                   Ez: self.space.space_to_ez_index,
+                   Hx: self.space.space_to_hx_index,
+                   Hy: self.space.space_to_hy_index,
+                   Hz: self.space.space_to_hz_index}
         
-        idx2spc = {const.Ex: self.space.ex_index_to_space,
-                   const.Ey: self.space.ey_index_to_space,
-                   const.Ez: self.space.ez_index_to_space,
-                   const.Hx: self.space.hx_index_to_space,
-                   const.Hy: self.space.hy_index_to_space,
-                   const.Hz: self.space.hz_index_to_space}
+        idx2spc = {Ex: self.space.ex_index_to_space,
+                   Ey: self.space.ey_index_to_space,
+                   Ez: self.space.ez_index_to_space,
+                   Hx: self.space.hx_index_to_space,
+                   Hy: self.space.hy_index_to_space,
+                   Hz: self.space.hz_index_to_space}
 
-        validity = {const.Ex: 
-                    (lambda idx: in_range(idx, self.ex.shape, const.Ex)),
-                    const.Ey: 
-                    (lambda idx: in_range(idx, self.ey.shape, const.Ey)),
-                    const.Ez: 
-                    (lambda idx: in_range(idx, self.ez.shape, const.Ez)),
-                    const.Hx:
-                    (lambda idx: in_range(idx, self.hx.shape, const.Hx)),
-                    const.Hy: 
-                    (lambda idx: in_range(idx, self.hy.shape, const.Hy)),
-                    const.Hz: 
-                    (lambda idx: in_range(idx, self.hz.shape, const.Hz))}
+        validity = {Ex: 
+                    (lambda idx: in_range(idx, self.ex.shape, Ex)),
+                    Ey: 
+                    (lambda idx: in_range(idx, self.ey.shape, Ey)),
+                    Ez: 
+                    (lambda idx: in_range(idx, self.ez.shape, Ez)),
+                    Hx:
+                    (lambda idx: in_range(idx, self.hx.shape, Hx)),
+                    Hy: 
+                    (lambda idx: in_range(idx, self.hy.shape, Hy)),
+                    Hz: 
+                    (lambda idx: in_range(idx, self.hz.shape, Hz))}
 
-        field = {const.Ex: self.ex, const.Ey: self.ey, const.Ez: self.ez,
-                 const.Hx: self.hy, const.Hy: self.hy, const.Hz: self.hz}
+        field = {Ex: self.ex, Ey: self.ey, Ez: self.ez,
+                 Hx: self.hy, Hy: self.hy, Hz: self.hz}
 
-        postfix = {const.Ex: '_ex.dat', const.Ey: '_ey.dat',
-                   const.Ez: '_ez.dat', const.Hx: '_hx.dat',
-                   const.Hy: '_hy.dat', const.Hz: '_hz.dat'}
+        postfix = {Ex: '_ex.dat', Ey: '_ey.dat',
+                   Ez: '_ez.dat', Hx: '_hx.dat',
+                   Hy: '_hy.dat', Hz: '_hz.dat'}
         
         for comp in self.e_field_compnt:
             idx = spc2idx[comp](*p)
@@ -730,16 +729,16 @@ class FDTD(object):
             dest_spc = self.space.ex_index_to_space(0, self.ex.shape[1] - 1, 0)[1]
         
             src_spc = self.space.ex_index_to_space(0, 0, 0)[1]
-            src_spc = self.space.cart_comm.sendrecv(src_spc, dest, const.Ex.tag,
-                                                    None, src, const.Ex.tag)
+            src_spc = self.space.cart_comm.sendrecv(src_spc, dest, Ex.tag,
+                                                    None, src, Ex.tag)
             
             phase_shift = exp(1j * self.bloch[1] * (dest_spc - src_spc))
         else:
             phase_shift = 1
         
         self.ex[:, -1, :] = phase_shift * \
-        self.space.cart_comm.sendrecv(self.ex[:, 0, :], dest, const.Ex.tag,
-                                      None, src, const.Ex.tag)
+        self.space.cart_comm.sendrecv(self.ex[:, 0, :], dest, Ex.tag,
+                                      None, src, Ex.tag)
         
         # Send ex field data to -z direction and receive from +z direction.
         src, dest = self.space.cart_comm.Shift(2, -1)
@@ -750,16 +749,16 @@ class FDTD(object):
             dest_spc = self.space.ex_index_to_space(0, 0, self.ex.shape[2] - 1)[2]
         
             src_spc = self.space.ex_index_to_space(0, 0, 0)[2]
-            src_spc = self.space.cart_comm.sendrecv(src_spc, dest, const.Ex.tag,
-                                                    None, src, const.Ex.tag)
+            src_spc = self.space.cart_comm.sendrecv(src_spc, dest, Ex.tag,
+                                                    None, src, Ex.tag)
         
             phase_shift = exp(1j * self.bloch[2] * (dest_spc - src_spc))
         else:
             phase_shift = 1
         
         self.ex[:, :, -1] = phase_shift * \
-        self.space.cart_comm.sendrecv(self.ex[:, :, 0], dest, const.Ex.tag,
-                                      None, src, const.Ex.tag)
+        self.space.cart_comm.sendrecv(self.ex[:, :, 0], dest, Ex.tag,
+                                      None, src, Ex.tag)
         
     def talk_with_ey_neighbors(self):
         """Synchronize ey data.
@@ -776,16 +775,16 @@ class FDTD(object):
             dest_spc = self.space.ey_index_to_space(0, 0, self.ey.shape[2] - 1)[2]
         
             src_spc = self.space.ey_index_to_space(0, 0, 0)[2]
-            src_spc = self.space.cart_comm.sendrecv(src_spc, dest, const.Ey.tag,
-                                                    None, src, const.Ey.tag) 
+            src_spc = self.space.cart_comm.sendrecv(src_spc, dest, Ey.tag,
+                                                    None, src, Ey.tag) 
         
             phase_shift = exp(1j * self.bloch[2] * (dest_spc - src_spc))
         else:
             phase_shift = 1
             
         self.ey[:, :, -1] = phase_shift * \
-        self.space.cart_comm.sendrecv(self.ey[:, :, 0], dest, const.Ey.tag,
-                                      None, src, const.Ey.tag)
+        self.space.cart_comm.sendrecv(self.ey[:, :, 0], dest, Ey.tag,
+                                      None, src, Ey.tag)
         
         # Send ey field data to -x direction and receive from +x direction.
         src, dest = self.space.cart_comm.Shift(0, -1)
@@ -796,16 +795,16 @@ class FDTD(object):
             dest_spc = self.space.ey_index_to_space(self.ey.shape[0] - 1, 0, 0)[0]
         
             src_spc = self.space.ey_index_to_space(0, 0, 0)[0]
-            src_spc = self.space.cart_comm.sendrecv(src_spc, dest, const.Ey.tag,
-                                                    None, src, const.Ey.tag)
+            src_spc = self.space.cart_comm.sendrecv(src_spc, dest, Ey.tag,
+                                                    None, src, Ey.tag)
             
             phase_shift = exp(1j * self.bloch[0] * (dest_spc - src_spc))
         else:
             phase_shift = 1
             
         self.ey[-1, :, :] = phase_shift * \
-        self.space.cart_comm.sendrecv(self.ey[0, :, :], dest, const.Ey.tag,
-                                      None, src, const.Ey.tag)
+        self.space.cart_comm.sendrecv(self.ey[0, :, :], dest, Ey.tag,
+                                      None, src, Ey.tag)
         
     def talk_with_ez_neighbors(self):
         """Synchronize ez data.
@@ -822,16 +821,16 @@ class FDTD(object):
             dest_spc = self.space.ez_index_to_space(self.ez.shape[0] - 1, 0, 0)[0]
         
             src_spc = self.space.ez_index_to_space(0, 0, 0)[0]
-            src_spc = self.space.cart_comm.sendrecv(src_spc, dest, const.Ez.tag,
-                                                    None, src, const.Ez.tag) 
+            src_spc = self.space.cart_comm.sendrecv(src_spc, dest, Ez.tag,
+                                                    None, src, Ez.tag) 
             
             phase_shift = exp(1j * self.bloch[0] * (dest_spc - src_spc))
         else:
             phase_shift = 1
         
         self.ez[-1, :, :] = phase_shift * \
-        self.space.cart_comm.sendrecv(self.ez[0, :, :], dest, const.Ez.tag,
-                                      None, src, const.Ez.tag)
+        self.space.cart_comm.sendrecv(self.ez[0, :, :], dest, Ez.tag,
+                                      None, src, Ez.tag)
         
         # Send ez field data to -y direction and receive from +y direction.
         src, dest = self.space.cart_comm.Shift(1, -1)
@@ -842,16 +841,16 @@ class FDTD(object):
             dest_spc = self.space.ez_index_to_space(0, self.ez.shape[1] - 1, 0)[1]
         
             src_spc = self.space.ez_index_to_space(0, 0, 0)[1]
-            src_spc = self.space.cart_comm.sendrecv(src_spc, dest, const.Ez.tag,
-                                                    None, src, const.Ez.tag) 
+            src_spc = self.space.cart_comm.sendrecv(src_spc, dest, Ez.tag,
+                                                    None, src, Ez.tag) 
             
             phase_shift = exp(1j * self.bloch[1] * (dest_spc - src_spc))
         else:
             phase_shift = 1
 
         self.ez[:, -1, :] = phase_shift * \
-        self.space.cart_comm.sendrecv(self.ez[:, 0, :], dest, const.Ez.tag,
-                                      None, src, const.Ez.tag)
+        self.space.cart_comm.sendrecv(self.ez[:, 0, :], dest, Ez.tag,
+                                      None, src, Ez.tag)
         
     def talk_with_hx_neighbors(self):
         """Synchronize hx data.
@@ -868,16 +867,16 @@ class FDTD(object):
             dest_spc = self.space.hx_index_to_space(0, 0, 0)[1]
         
             src_spc = self.space.hx_index_to_space(0, self.hx.shape[1] - 1, 0)[1]
-            src_spc = self.space.cart_comm.sendrecv(src_spc, dest, const.Hx.tag,
-                                                    None, src, const.Hx.tag)
+            src_spc = self.space.cart_comm.sendrecv(src_spc, dest, Hx.tag,
+                                                    None, src, Hx.tag)
         
             phase_shift = exp(1j * self.bloch[1] * (dest_spc - src_spc))
         else:
             phase_shift = 1
         
         self.hx[:, 0, :] = phase_shift * \
-        self.space.cart_comm.sendrecv(self.hx[:, -1, :], dest, const.Hx.tag,
-                                      None, src, const.Hx.tag)
+        self.space.cart_comm.sendrecv(self.hx[:, -1, :], dest, Hx.tag,
+                                      None, src, Hx.tag)
             
         # Send hx field data to +z direction and receive from -z direction.    
         src, dest = self.space.cart_comm.Shift(2, 1)
@@ -888,16 +887,16 @@ class FDTD(object):
             dest_spc = self.space.hx_index_to_space(0, 0, 0)[2]
         
             src_spc = self.space.hx_index_to_space(0, 0, self.hx.shape[2] - 1)[2]
-            src_spc = self.space.cart_comm.sendrecv(src_spc, dest, const.Hx.tag,
-                                                    None, src, const.Hx.tag)
+            src_spc = self.space.cart_comm.sendrecv(src_spc, dest, Hx.tag,
+                                                    None, src, Hx.tag)
         
             phase_shift = exp(1j * self.bloch[2] * (dest_spc - src_spc))
         else:
             phase_shift = 1
         
         self.hx[:, :, 0] = phase_shift * \
-        self.space.cart_comm.sendrecv(self.hx[:, :, -1], dest, const.Hx.tag,
-                                      None, src, const.Hx.tag)
+        self.space.cart_comm.sendrecv(self.hx[:, :, -1], dest, Hx.tag,
+                                      None, src, Hx.tag)
             
     def talk_with_hy_neighbors(self):
         """Synchronize hy data.
@@ -914,16 +913,16 @@ class FDTD(object):
             dest_spc = self.space.hy_index_to_space(0, 0, 0)[2]
         
             src_spc = self.space.hy_index_to_space(0, 0, self.hy.shape[2] - 1)[2]
-            src_spc = self.space.cart_comm.sendrecv(src_spc, dest, const.Hy.tag,
-                                                    None, src, const.Hy.tag)
+            src_spc = self.space.cart_comm.sendrecv(src_spc, dest, Hy.tag,
+                                                    None, src, Hy.tag)
         
             phase_shift = exp(1j * self.bloch[2] * (dest_spc - src_spc))
         else:
             phase_shift = 1
         
         self.hy[:, :, 0] = phase_shift * \
-        self.space.cart_comm.sendrecv(self.hy[:, :, -1], dest, const.Hy.tag,
-                                      None, src, const.Hy.tag)
+        self.space.cart_comm.sendrecv(self.hy[:, :, -1], dest, Hy.tag,
+                                      None, src, Hy.tag)
             
         # Send hy field data to +x direction and receive from -x direction.
         src, dest = self.space.cart_comm.Shift(0, 1)
@@ -934,16 +933,16 @@ class FDTD(object):
             dest_spc = self.space.hy_index_to_space(0, 0, 0)[0]
         
             src_spc = self.space.hy_index_to_space(self.hy.shape[0] - 1, 0, 0)[0]
-            src_spc = self.space.cart_comm.sendrecv(src_spc, dest, const.Hy.tag,
-                                                    None, src, const.Hy.tag)
+            src_spc = self.space.cart_comm.sendrecv(src_spc, dest, Hy.tag,
+                                                    None, src, Hy.tag)
         
             phase_shift = exp(1j * self.bloch[0] * (dest_spc - src_spc))
         else:
             phase_shift = 1
         
         self.hy[0, :, :] = phase_shift * \
-        self.space.cart_comm.sendrecv(self.hy[-1, :, :], dest, const.Hy.tag,
-                                      None, src, const.Hy.tag)
+        self.space.cart_comm.sendrecv(self.hy[-1, :, :], dest, Hy.tag,
+                                      None, src, Hy.tag)
             
     def talk_with_hz_neighbors(self):
         """Synchronize hz data.
@@ -960,16 +959,16 @@ class FDTD(object):
             dest_spc = self.space.hz_index_to_space(0, 0, 0)[0]
         
             src_spc = self.space.hz_index_to_space(self.hz.shape[0] - 1, 0, 0)[0]
-            src_spc = self.space.cart_comm.sendrecv(src_spc, dest, const.Hz.tag,
-                                                    None, src, const.Hz.tag)
+            src_spc = self.space.cart_comm.sendrecv(src_spc, dest, Hz.tag,
+                                                    None, src, Hz.tag)
         
             phase_shift = exp(1j * self.bloch[0] * (dest_spc - src_spc))
         else:
             phase_shift = 1
         
         self.hz[0, :, :] = phase_shift * \
-        self.space.cart_comm.sendrecv(self.hz[-1, :, :], dest, const.Hz.tag,
-                                      None, src, const.Hz.tag)
+        self.space.cart_comm.sendrecv(self.hz[-1, :, :], dest, Hz.tag,
+                                      None, src, Hz.tag)
             
         # Send hz field data to +y direction and receive from -y direction.
         src, dest = self.space.cart_comm.Shift(1, 1)
@@ -980,16 +979,16 @@ class FDTD(object):
             dest_spc = self.space.hz_index_to_space(0, 0, 0)[1]
         
             src_spc = self.space.hz_index_to_space(0, self.hz.shape[1] - 1, 0)[1]
-            src_spc = self.space.cart_comm.sendrecv(src_spc, dest, const.Hz.tag,
-                                                    None, src, const.Hz.tag)
+            src_spc = self.space.cart_comm.sendrecv(src_spc, dest, Hz.tag,
+                                                    None, src, Hz.tag)
         
             phase_shift = exp(1j * self.bloch[1] * (dest_spc - src_spc))
         else:
             phase_shift = 1
         
         self.hz[:, 0, :] = phase_shift * \
-        self.space.cart_comm.sendrecv(self.hz[:, -1, :], dest, const.Hz.tag,
-                                      None, src, const.Hz.tag)
+        self.space.cart_comm.sendrecv(self.hz[:, -1, :], dest, Hz.tag,
+                                      None, src, Hz.tag)
         
     def step(self):
         self.time_step.half_step_up()
@@ -1027,16 +1026,16 @@ class FDTD(object):
         modulus: print n and t at every modulus steps.
 
         """
-        spc_to_idx = {const.Ex: self.space.space_to_ex_index,
-                      const.Ey: self.space.space_to_ey_index,
-                      const.Ez: self.space.space_to_ez_index,
-                      const.Hx: self.space.space_to_hx_index,
-                      const.Hy: self.space.space_to_hy_index,
-                      const.Hz: self.space.space_to_hz_index}
+        spc_to_idx = {Ex: self.space.space_to_ex_index,
+                      Ey: self.space.space_to_ey_index,
+                      Ez: self.space.space_to_ez_index,
+                      Hx: self.space.space_to_hx_index,
+                      Hy: self.space.space_to_hy_index,
+                      Hz: self.space.space_to_hz_index}
 
-        field = {const.Ex: self.ex, const.Ey: self.ey,
-                 const.Ez: self.ez, const.Hx: self.hx,
-                 const.Hy: self.hy, const.Hz: self.hz}
+        field = {Ex: self.ex, Ey: self.ey,
+                 Ez: self.ez, Hx: self.hx,
+                 Hy: self.hy, Hz: self.hz}
 
         idx = spc_to_idx[component](*point)
 
@@ -1096,7 +1095,7 @@ class FDTD(object):
         interval: Refresh rate of the plot in milliseconds.
 
         """
-        showcase = ShowLine(self, const.Ex, start, end, vrange, interval, 
+        showcase = ShowLine(self, Ex, start, end, vrange, interval, 
                             'Ex field', self._fig_id)
         self._fig_id += self.space.numprocs
         showcase.start()
@@ -1111,7 +1110,7 @@ class FDTD(object):
         interval: Refresh rate of the plot in milliseconds.
 
         """
-        showcase = ShowLine(self, const.Ey, start, end, vrange, interval, 
+        showcase = ShowLine(self, Ey, start, end, vrange, interval, 
                             'Ey field', self._fig_id)
         self._fig_id += self.space.numprocs
         showcase.start()
@@ -1126,7 +1125,7 @@ class FDTD(object):
         interval: Refresh rate of the plot in milliseconds.
 
         """
-        showcase = ShowLine(self, const.Ez, start, end, vrange, interval, 
+        showcase = ShowLine(self, Ez, start, end, vrange, interval, 
                             'Ez field', self._fig_id)
         self._fig_id += self.space.numprocs
         showcase.start()
@@ -1141,7 +1140,7 @@ class FDTD(object):
         interval: Refresh rate of the plot in milliseconds.
 
         """
-        showcase = ShowLine(self, const.Hx, start, end, vrange, interval, 
+        showcase = ShowLine(self, Hx, start, end, vrange, interval, 
                             'Hx field', self._fig_id)
         self._fig_id += self.space.numprocs
         showcase.start()
@@ -1156,7 +1155,7 @@ class FDTD(object):
         interval: Refresh rate of the plot in milliseconds.
 
         """
-        showcase = ShowLine(self, const.Hy, start, end, vrange, interval, 
+        showcase = ShowLine(self, Hy, start, end, vrange, interval, 
                             'Hy field', self._fig_id)
         self._fig_id += self.space.numprocs
         showcase.start()
@@ -1171,7 +1170,7 @@ class FDTD(object):
         interval: Refresh rate of the plot in milliseconds.
 
         """
-        showcase = ShowLine(self, const.Hz, start, end, vrange, interval, 
+        showcase = ShowLine(self, Hz, start, end, vrange, interval, 
                             'Hz field', self._fig_id)
         self._fig_id += self.space.numprocs
         showcase.start()
@@ -1188,7 +1187,7 @@ class FDTD(object):
         inerval: Refresh rates in millisecond.
 
         """
-        showcase = ShowPlane(self, const.Ex, axis, cut, vrange, 
+        showcase = ShowPlane(self, Ex, axis, cut, vrange, 
                              interval, 'Ex field', self._fig_id)
         self._fig_id += self.space.numprocs
         showcase.start()
@@ -1205,7 +1204,7 @@ class FDTD(object):
         inerval: Refresh rates in millisecond.
 
         """
-        showcase = ShowPlane(self, const.Ey, axis, cut, vrange, 
+        showcase = ShowPlane(self, Ey, axis, cut, vrange, 
                              interval, 'Ey field', self._fig_id)
         self._fig_id += self.space.numprocs
         showcase.start()
@@ -1222,7 +1221,7 @@ class FDTD(object):
         inerval: Refresh rates in millisecond.
 
         """
-        showcase = ShowPlane(self, const.Ez, axis, cut, vrange, 
+        showcase = ShowPlane(self, Ez, axis, cut, vrange, 
                              interval, 'Ez field', self._fig_id)
         self._fig_id += self.space.numprocs
         showcase.start()
@@ -1239,7 +1238,7 @@ class FDTD(object):
         inerval: Refresh rates in millisecond.
 
         """
-        showcase = ShowPlane(self, const.Hx, axis, cut, vrange, 
+        showcase = ShowPlane(self, Hx, axis, cut, vrange, 
                              interval, 'Hx field', self._fig_id)
         self._fig_id += self.space.numprocs
         showcase.start()
@@ -1256,10 +1255,11 @@ class FDTD(object):
         inerval: Refresh rates in millisecond.
 
         """
-        showcase = ShowPlane(self, const.Hy, axis, cut, vrange, 
+        showcase = ShowPlane(self, Hy, axis, cut, vrange, 
                              interval, 'Hy field', self._fig_id)
         self._fig_id += self.space.numprocs
         showcase.start()
+        sleep(0.1)
         return showcase
         
     def show_hz(self, axis, cut, vrange=(-1, 1), interval=2500):
@@ -1273,7 +1273,7 @@ class FDTD(object):
         inerval: Refresh rates in millisecond.
 
         """
-        showcase = ShowPlane(self, const.Hz, axis, cut, vrange, 
+        showcase = ShowPlane(self, Hz, axis, cut, vrange, 
                              interval, 'Hz field', self._fig_id)
         self._fig_id += self.space.numprocs
         showcase.start()
@@ -1290,7 +1290,7 @@ class FDTD(object):
         vrange: Specify the colorbar range. A tuple of length two.
         
         """
-        showcase = Snapshot(self, const.Ex, axis, cut, vrange, 
+        showcase = Snapshot(self, Ex, axis, cut, vrange, 
                             'Permittivity for Ex', self._fig_id)
         self._fig_id += self.space.numprocs
         showcase.start()
@@ -1307,7 +1307,7 @@ class FDTD(object):
         vrange: Specify the colorbar range. A tuple of length two.
         
         """
-        showcase = Snapshot(self, const.Ey, axis, cut, vrange, 
+        showcase = Snapshot(self, Ey, axis, cut, vrange, 
                             'Permittivity for Ey', self._fig_id)
         self._fig_id += self.space.numprocs
         showcase.start()
@@ -1324,7 +1324,7 @@ class FDTD(object):
         vrange: Specify the colorbar range. A tuple of length two.
         
         """
-        showcase = Snapshot(self, const.Ez, axis, cut, vrange, 
+        showcase = Snapshot(self, Ez, axis, cut, vrange, 
                             'Permittivity for Ez', self._fig_id)
         self._fig_id += self.space.numprocs
         showcase.start()
@@ -1341,7 +1341,7 @@ class FDTD(object):
         vrange: Specify the colorbar range. A tuple of length two.
         
         """
-        showcase = Snapshot(self, const.Hx, axis, cut, vrange, 
+        showcase = Snapshot(self, Hx, axis, cut, vrange, 
                             'Permittivity for Hx', self._fig_id)
         self._fig_id += self.space.numprocs
         showcase.start()
@@ -1358,7 +1358,7 @@ class FDTD(object):
         vrange: Specify the colorbar range. A tuple of length two.
         
         """
-        showcase = Snapshot(self, const.Hy, axis, cut, vrange, 
+        showcase = Snapshot(self, Hy, axis, cut, vrange, 
                             'Permittivity for Hy', self._fig_id)
         self._fig_id += self.space.numprocs
         showcase.start()
@@ -1375,7 +1375,7 @@ class FDTD(object):
         vrange: Specify the colorbar range. a tuple of length two.
         
         """
-        showcase = Snapshot(self, const.Hz, axis, cut, vrange, 
+        showcase = Snapshot(self, Hz, axis, cut, vrange, 
                             'Permittivity for Hz', self._fig_id)
         self._fig_id += self.space.numprocs
         showcase.start()
@@ -1521,34 +1521,34 @@ class FDTD(object):
                               low_idx[2]: high_idx[2]])
         
     def snapshot_ex(self, axis, cut):
-        if axis is const.X:
+        if axis is X:
             cut_idx = self.space.space_to_index(cut, 0, 0)[0]
             data = self.ex[cut_idx, :, :]
-        elif axis is const.Y:
+        elif axis is Y:
             cut_idx = self.space.space_to_index(0, cut, 0)[1]
             data = self.ex[:, cut_idx, :]
-        elif axis is const.Z:
+        elif axis is Z:
             cut_idx = self.space.space_to_index(0, 0, cut)[2]
             data = self.ex[:, :, cut_idx]
         else:
             pass
         
         filename = 't=' + str(self.time_step[1] * space.dt)
-        snapshot(data, filename, const.Ex)
+        snapshot(data, filename, Ex)
         
-    def snapshot_ey(self, axis=const.Z, cut=0, vrange=(-.1, .1), size=(400, 400)):
+    def snapshot_ey(self, axis=Z, cut=0, vrange=(-.1, .1), size=(400, 400)):
         pass
     
-    def snapshot_ez(self, axis=const.Z, cut=0, vrange=(-.1, .1), size=(400, 400)):
+    def snapshot_ez(self, axis=Z, cut=0, vrange=(-.1, .1), size=(400, 400)):
         pass
     
-    def snapshot_hx(self, axis=const.Z, cut=0, vrange=(-.1, .1), size=(400, 400)):
+    def snapshot_hx(self, axis=Z, cut=0, vrange=(-.1, .1), size=(400, 400)):
         pass
         
-    def snapshot_hy(self, axis=const.Z, cut=0, vrange=(-.1, .1), size=(400, 400)):
+    def snapshot_hy(self, axis=Z, cut=0, vrange=(-.1, .1), size=(400, 400)):
         pass
         
-    def snapshot_hz(self, axis=const.Z, cut=0, vrange=(-.1, .1), size=(400, 400)):
+    def snapshot_hz(self, axis=Z, cut=0, vrange=(-.1, .1), size=(400, 400)):
         pass
         
 
@@ -1560,8 +1560,8 @@ class TExFDTD(FDTD):
     
     """
     def _init_field_compnt(self):
-        self.e_field_compnt = (const.Ey, const.Ez)
-        self.h_field_compnt = (const.Hx,)
+        self.e_field_compnt = (Ey, Ez)
+        self.h_field_compnt = (Hx,)
 
         
 class TEyFDTD(FDTD):
@@ -1572,8 +1572,8 @@ class TEyFDTD(FDTD):
     
     """
     def _init_field_compnt(self):
-        self.e_field_compnt = (const.Ex, const.Ez)
-        self.h_field_compnt = (const.Hy,)
+        self.e_field_compnt = (Ex, Ez)
+        self.h_field_compnt = (Hy,)
 
 
 class TEzFDTD(FDTD):
@@ -1584,8 +1584,8 @@ class TEzFDTD(FDTD):
     
     """
     def _init_field_compnt(self):
-        self.e_field_compnt = (const.Ex, const.Ey)
-        self.h_field_compnt = (const.Hz,)
+        self.e_field_compnt = (Ex, Ey)
+        self.h_field_compnt = (Hz,)
 
 
 class TMxFDTD(FDTD):
@@ -1596,8 +1596,8 @@ class TMxFDTD(FDTD):
     
     """
     def _init_field_compnt(self):
-        self.e_field_compnt = (const.Ex,)
-        self.h_field_compnt = (const.Hy, const.Hz)
+        self.e_field_compnt = (Ex,)
+        self.h_field_compnt = (Hy, Hz)
 
         
 class TMyFDTD(FDTD):
@@ -1608,8 +1608,8 @@ class TMyFDTD(FDTD):
     
     """
     def _init_field_compnt(self):
-        self.e_field_compnt = (const.Ey,)
-        self.h_field_compnt = (const.Hz, const.Hx)
+        self.e_field_compnt = (Ey,)
+        self.h_field_compnt = (Hz, Hx)
 
 
 class TMzFDTD(FDTD):
@@ -1620,8 +1620,8 @@ class TMzFDTD(FDTD):
     
     """
     def _init_field_compnt(self):
-        self.e_field_compnt = (const.Ez,)
-        self.h_field_compnt = (const.Hx, const.Hy)
+        self.e_field_compnt = (Ez,)
+        self.h_field_compnt = (Hx, Hy)
 
 
 class TEMxFDTD(FDTD):
@@ -1632,8 +1632,8 @@ class TEMxFDTD(FDTD):
     
     """
     def _init_field_compnt(self):
-        self.e_field_compnt = (const.Ey,)
-        self.h_field_compnt = (const.Hz,)
+        self.e_field_compnt = (Ey,)
+        self.h_field_compnt = (Hz,)
 
         
 class TEMyFDTD(FDTD):
@@ -1644,8 +1644,8 @@ class TEMyFDTD(FDTD):
     
     """
     def _init_field_compnt(self):
-        self.e_field_compnt = (const.Ez,)
-        self.h_field_compnt = (const.Hx,)
+        self.e_field_compnt = (Ez,)
+        self.h_field_compnt = (Hx,)
 
         
 class TEMzFDTD(FDTD):
@@ -1656,8 +1656,8 @@ class TEMzFDTD(FDTD):
     
     """
     def _init_field_compnt(self):
-        self.e_field_compnt = (const.Ex,)
-        self.h_field_compnt = (const.Hy,)
+        self.e_field_compnt = (Ex,)
+        self.h_field_compnt = (Hy,)
 
 
 if __name__ == '__main__':

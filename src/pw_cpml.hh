@@ -40,40 +40,32 @@ namespace gmes
     ~CpmlElectric()
     {
       for (auto v: param) {
-	delete static_cast<CpmlElectricParam<T> *>(v.second);
+	delete static_cast<CpmlElectricParam<T>*>(v.second);
       }
       param.clear();
     }
     
-    PwMaterial<T> *
+    PwMaterial<T>*
     attach(const int* const idx, int idx_size, 
-	   const PwMaterialParam * const parameter)
+	   const PwMaterialParam* const pm_param_ptr)
     {
-      std::array<int, 3> index;
+      Index3 index;
       std::copy(idx, idx + idx_size, index.begin());
+      
+      auto cpml_param_ptr
+	= static_cast<const CpmlElectricParam<T>* const>(pm_param_ptr);
+      auto new_param_ptr = new CpmlElectricParam<T>();
+      new_param_ptr->eps_inf = cpml_param_ptr->eps_inf;
+      new_param_ptr->b1 = cpml_param_ptr->b1;
+      new_param_ptr->b2 = cpml_param_ptr->b2;
+      new_param_ptr->c1 = cpml_param_ptr->c1;
+      new_param_ptr->c2 = cpml_param_ptr->c2;
+      new_param_ptr->kappa1 = cpml_param_ptr->kappa1;
+      new_param_ptr->kappa2 = cpml_param_ptr->kappa2;
+      new_param_ptr->psi1 = static_cast<T>(0);
+      new_param_ptr->psi2 = static_cast<T>(0);
 
-      MapType::iterator iter = param.find(index);
-      if (iter != param.end()) {
-      	std::cerr << "Overwriting the existing index." << std::endl;
-      	delete static_cast<CpmlElectricParam<T> *>(iter->second);
-      	param.erase(iter);
-      }
-
-      const CpmlElectricParam<T> * const CpmlElectricParameter_ptr
-	= static_cast<const CpmlElectricParam<T> * const>(parameter);
-      CpmlElectricParam<T> *param_ptr;
-      param_ptr = new CpmlElectricParam<T>();
-      param_ptr->eps_inf = CpmlElectricParameter_ptr->eps_inf;
-      param_ptr->b1 = CpmlElectricParameter_ptr->b1;
-      param_ptr->b2 = CpmlElectricParameter_ptr->b2;
-      param_ptr->c1 = CpmlElectricParameter_ptr->c1;
-      param_ptr->c2 = CpmlElectricParameter_ptr->c2;
-      param_ptr->kappa1 = CpmlElectricParameter_ptr->kappa1;
-      param_ptr->kappa2 = CpmlElectricParameter_ptr->kappa2;
-      param_ptr->psi1 = static_cast<T>(0);
-      param_ptr->psi2 = static_cast<T>(0);
-
-      param.insert(std::make_pair(index, param_ptr));
+      param.insert(std::make_pair(index, new_param_ptr));
 
       return this;
     }
@@ -86,52 +78,48 @@ namespace gmes
   {
   public:
     void
-    update_all(T* const inplace_field,
-	       int inplace_dim1, int inplace_dim2, int inplace_dim3,
-	       const T* const in_field1, 
-	       int in1_dim1, int in1_dim2, int in1_dim3,
-	       const T* const in_field2, 
-	       int in2_dim1, int in2_dim2, int in2_dim3,
-	       double d1, double d2, double dt, double n)
+    update_all(T* const ex, int ex_x_size, int ex_y_size, int ex_z_size,
+	       const T* const hz, int hz_x_size, int hz_y_size, int hz_z_size,
+	       const T* const hy, int hy_x_size, int hy_y_size, int hy_z_size,
+	       double dy, double dz, double dt, double n)
     {
       for (auto v: param) {
-    	update(inplace_field, inplace_dim1, inplace_dim2, inplace_dim3,
-    	       in_field1, in1_dim1, in1_dim2, in1_dim3,
-    	       in_field2, in2_dim1, in2_dim2, in2_dim3,
-    	       d1, d2, dt, n, 
-    	       v.first, v.second);
+	auto cpml_param_ptr = static_cast<CpmlElectricParam<T>*>(v.second);
+    	update(ex, ex_x_size, ex_y_size, ex_z_size,
+	       hz, hz_x_size, hz_y_size, hz_z_size,
+	       hy, hy_x_size, hy_y_size, hy_z_size,
+	       dy, dz, dt, n,
+    	       v.first, *cpml_param_ptr);
       }
     }
 
   private:
     void 
-    update(T * const ex, int ex_x_size, int ex_y_size, int ex_z_size,
-	   const T * const hz, int hz_x_size, int hz_y_size, int hz_z_size,
-	   const T * const hy, int hy_x_size, int hy_y_size, int hy_z_size,
+    update(T* const ex, int ex_x_size, int ex_y_size, int ex_z_size,
+	   const T* const hz, int hz_x_size, int hz_y_size, int hz_z_size,
+	   const T* const hy, int hy_x_size, int hy_y_size, int hy_z_size,
 	   double dy, double dz, double dt, double n,
 	   const Index3& idx,
-	   PwMaterialParam * const parameter) const
+	   CpmlElectricParam<T>& cpml_param) const
     {
-      int i = idx[0], j = idx[1], k = idx[2];
+      const int i = idx[0], j = idx[1], k = idx[2];
 
-      CpmlElectricParam<T> *ptr;
-      ptr = static_cast<CpmlElectricParam<T> *>(parameter);
-      double eps_inf = ptr->eps_inf;
-      double by = ptr->b1;
-      double bz = ptr->b2;
-      double cy = ptr->c1;
-      double cz = ptr->c2;
-      double kappay = ptr->kappa1;
-      double kappaz = ptr->kappa2;
-      T& psi1 = ptr->psi1;
-      T& psi2 = ptr->psi2;
+      const double eps_inf = cpml_param.eps_inf;
+      const double by = cpml_param.b1;
+      const double bz = cpml_param.b2;
+      const double cy = cpml_param.c1;
+      const double cz = cpml_param.c2;
+      const double kappay = cpml_param.kappa1;
+      const double kappaz = cpml_param.kappa2;
+      T& psi1 = cpml_param.psi1;
+      T& psi2 = cpml_param.psi2;
 
       psi1 = by * psi1 + cy * (hz(i+1,j+1,k) - hz(i+1,j,k)) / dy;
       psi2 = bz * psi2 + cz * (hy(i+1,j,k+1) - hy(i+1,j,k)) / dz;
       
       ex(i,j,k) += dt / eps_inf * ((hz(i+1,j+1,k) - hz(i+1,j,k)) / dy / kappay -
-			       (hy(i+1,j,k+1) - hy(i+1,j,k)) / dz / kappaz +
-			       psi1 - psi2);
+				   (hy(i+1,j,k+1) - hy(i+1,j,k)) / dz / kappaz +
+				   psi1 - psi2);
     }
 
   protected:
@@ -142,52 +130,48 @@ namespace gmes
   {
   public:
     void
-    update_all(T* const inplace_field,
-	       int inplace_dim1, int inplace_dim2, int inplace_dim3,
-	       const T* const in_field1, 
-	       int in1_dim1, int in1_dim2, int in1_dim3,
-	       const T* const in_field2, 
-	       int in2_dim1, int in2_dim2, int in2_dim3,
-	       double d1, double d2, double dt, double n)
+    update_all(T* const ey, int ey_x_size, int ey_y_size, int ey_z_size,
+	       const T* const hx, int hx_x_size, int hx_y_size, int hx_z_size,
+	       const T* const hz, int hz_x_size, int hz_y_size, int hz_z_size,
+	       double dz, double dx, double dt, double n)
     {
       for (auto v: param) {
-    	update(inplace_field, inplace_dim1, inplace_dim2, inplace_dim3,
-    	       in_field1, in1_dim1, in1_dim2, in1_dim3,
-    	       in_field2, in2_dim1, in2_dim2, in2_dim3,
-    	       d1, d2, dt, n, 
-    	       v.first, v.second);
+	auto cpml_param_ptr = static_cast<CpmlElectricParam<T>*>(v.second);
+    	update(ey, ey_x_size, ey_y_size, ey_z_size,
+	       hx, hx_x_size, hx_y_size, hx_z_size,
+	       hz, hz_x_size, hz_y_size, hz_z_size,
+	       dz, dx, dt, n,
+    	       v.first, *cpml_param_ptr);
       }
     }
 
   private:
     void 
-    update(T * const ey, int ey_x_size, int ey_y_size, int ey_z_size,
-	   const T * const hx, int hx_x_size, int hx_y_size, int hx_z_size,
-	   const T * const hz, int hz_x_size, int hz_y_size, int hz_z_size,
+    update(T* const ey, int ey_x_size, int ey_y_size, int ey_z_size,
+	   const T* const hx, int hx_x_size, int hx_y_size, int hx_z_size,
+	   const T* const hz, int hz_x_size, int hz_y_size, int hz_z_size,
 	   double dz, double dx, double dt, double n,
 	   const Index3& idx,
-	   PwMaterialParam * const parameter) const
+	   CpmlElectricParam<T>& cpml_param) const
     {
-      int i = idx[0], j = idx[1], k = idx[2];
+      const int i = idx[0], j = idx[1], k = idx[2];
 
-      CpmlElectricParam<T> *ptr;
-      ptr = static_cast<CpmlElectricParam<T> *>(parameter);
-      double eps_inf = ptr->eps_inf;
-      double bz = ptr->b1;
-      double bx = ptr->b2;
-      double cz = ptr->c1;
-      double cx = ptr->c2;
-      double kappaz = ptr->kappa1;
-      double kappax = ptr->kappa2;
-      T& psi1 = ptr->psi1;
-      T& psi2 = ptr->psi2;
+      const double eps_inf = cpml_param.eps_inf;
+      const double bz = cpml_param.b1;
+      const double bx = cpml_param.b2;
+      const double cz = cpml_param.c1;
+      const double cx = cpml_param.c2;
+      const double kappaz = cpml_param.kappa1;
+      const double kappax = cpml_param.kappa2;
+      T& psi1 = cpml_param.psi1;
+      T& psi2 = cpml_param.psi2;
 
       psi1 = bz * psi1 + cz * (hx(i,j+1,k+1) - hx(i,j+1,k)) / dz;
       psi2 = bx * psi2 + cx * (hz(i+1,j+1,k) - hz(i,j+1,k)) / dx;
       
       ey(i,j,k) += dt / eps_inf * ((hx(i,j+1,k+1) - hx(i,j+1,k)) / dz / kappaz -
-			       (hz(i+1,j+1,k) - hz(i,j+1,k)) / dx / kappax +
-			       psi1 - psi2);
+				   (hz(i+1,j+1,k) - hz(i,j+1,k)) / dx / kappax +
+				   psi1 - psi2);
     }
 
   protected:
@@ -198,52 +182,48 @@ namespace gmes
   {
   public:
     void
-    update_all(T* const inplace_field,
-	       int inplace_dim1, int inplace_dim2, int inplace_dim3,
-	       const T* const in_field1, 
-	       int in1_dim1, int in1_dim2, int in1_dim3,
-	       const T* const in_field2, 
-	       int in2_dim1, int in2_dim2, int in2_dim3,
-	       double d1, double d2, double dt, double n)
+    update_all(T* const ez, int ez_x_size, int ez_y_size, int ez_z_size,
+	       const T* const hy, int hy_x_size, int hy_y_size, int hy_z_size,
+	       const T* const hx, int hx_x_size, int hx_y_size, int hx_z_size,
+	       double dx, double dy, double dt, double n)
     {
       for (auto v: param) {
-    	update(inplace_field, inplace_dim1, inplace_dim2, inplace_dim3,
-    	       in_field1, in1_dim1, in1_dim2, in1_dim3,
-    	       in_field2, in2_dim1, in2_dim2, in2_dim3,
-    	       d1, d2, dt, n, 
-    	       v.first, v.second);
+	auto cpml_param_ptr = static_cast<CpmlElectricParam<T>*>(v.second);
+	update(ez, ez_x_size, ez_y_size, ez_z_size,
+	       hy, hy_x_size, hy_y_size, hy_z_size,
+	       hx, hx_x_size, hx_y_size, hx_z_size,
+	       dx, dy, dt, n,
+    	       v.first, *cpml_param_ptr);
       }
     }
     
   private:
     void 
-    update(T * const ez, int ez_x_size, int ez_y_size, int ez_z_size,
-	   const T * const hy, int hy_x_size, int hy_y_size, int hy_z_size,
-	   const T * const hx, int hx_x_size, int hx_y_size, int hx_z_size,
+    update(T* const ez, int ez_x_size, int ez_y_size, int ez_z_size,
+	   const T* const hy, int hy_x_size, int hy_y_size, int hy_z_size,
+	   const T* const hx, int hx_x_size, int hx_y_size, int hx_z_size,
 	   double dx, double dy, double dt, double n,
 	   const Index3& idx,
-	   PwMaterialParam * const parameter) const
+	   CpmlElectricParam<T>& cpml_param) const
     {
-      int i = idx[0], j = idx[1], k = idx[2];
+      const int i = idx[0], j = idx[1], k = idx[2];
 
-      CpmlElectricParam<T> *ptr;
-      ptr = static_cast<CpmlElectricParam<T> *>(parameter);
-      double eps_inf = ptr->eps_inf;
-      double bx = ptr->b1;
-      double by = ptr->b2;
-      double cx = ptr->c1;
-      double cy = ptr->c2;
-      double kappax = ptr->kappa1;
-      double kappay = ptr->kappa2;
-      T& psi1 = ptr->psi1;
-      T& psi2 = ptr->psi2;
+      const double eps_inf = cpml_param.eps_inf;
+      const double bx = cpml_param.b1;
+      const double by = cpml_param.b2;
+      const double cx = cpml_param.c1;
+      const double cy = cpml_param.c2;
+      const double kappax = cpml_param.kappa1;
+      const double kappay = cpml_param.kappa2;
+      T& psi1 = cpml_param.psi1;
+      T& psi2 = cpml_param.psi2;
 
       psi1 = bx * psi1 + cx * (hy(i+1,j,k+1) - hy(i,j,k+1)) / dx;
       psi2 = by * psi2 + cy * (hx(i,j+1,k+1) - hx(i,j,k+1)) / dy;
       
       ez(i,j,k) += dt / eps_inf * ((hy(i+1,j,k+1) - hy(i,j,k+1)) / dx / kappax -
-			       (hx(i,j+1,k+1) - hx(i,j,k+1)) / dy / kappay +
-			       psi1 - psi2);
+				   (hx(i,j+1,k+1) - hx(i,j,k+1)) / dy / kappay +
+				   psi1 - psi2);
     }
 
   protected:
@@ -256,40 +236,31 @@ namespace gmes
     ~CpmlMagnetic()
     {
       for (auto v: param) {
-	delete static_cast<CpmlMagneticParam<T> *>(v.second);
+	delete static_cast<CpmlMagneticParam<T>*>(v.second);
       }
       param.clear();
     }
     
-    PwMaterial<T> *
+    PwMaterial<T>*
     attach(const int* const idx, int idx_size, 
-	   const PwMaterialParam * const parameter)
+	   const PwMaterialParam* const pm_param_ptr)
     {
-      std::array<int, 3> index;
+      Index3 index;
       std::copy(idx, idx + idx_size, index.begin());
 
-      MapType::iterator iter = param.find(index);
-      if (iter != param.end()) {
-      	std::cerr << "Overwriting the existing index." << std::endl;
-      	delete static_cast<CpmlMagneticParam<T> *>(iter->second);
-      	param.erase(iter);
-      }
+      auto cpml_param_ptr = static_cast<const CpmlMagneticParam<T>* const>(pm_param_ptr);
+      auto new_param_ptr = new CpmlMagneticParam<T>();
+      new_param_ptr->mu_inf = cpml_param_ptr->mu_inf;
+      new_param_ptr->b1 = cpml_param_ptr->b1;
+      new_param_ptr->b2 = cpml_param_ptr->b2;
+      new_param_ptr->c1 = cpml_param_ptr->c1;
+      new_param_ptr->c2 = cpml_param_ptr->c2;
+      new_param_ptr->kappa1 = cpml_param_ptr->kappa1;
+      new_param_ptr->kappa2 = cpml_param_ptr->kappa2;
+      new_param_ptr->psi1 = static_cast<T>(0);
+      new_param_ptr->psi2 = static_cast<T>(0);
 
-      const CpmlMagneticParam<T> * const CpmlMagneticParameter_ptr
-	= static_cast<const CpmlMagneticParam<T> * const>(parameter);
-      CpmlMagneticParam<T> * param_ptr;
-      param_ptr = new CpmlMagneticParam<T>();
-      param_ptr->mu_inf = CpmlMagneticParameter_ptr->mu_inf;
-      param_ptr->b1 = CpmlMagneticParameter_ptr->b1;
-      param_ptr->b2 = CpmlMagneticParameter_ptr->b2;
-      param_ptr->c1 = CpmlMagneticParameter_ptr->c1;
-      param_ptr->c2 = CpmlMagneticParameter_ptr->c2;
-      param_ptr->kappa1 = CpmlMagneticParameter_ptr->kappa1;
-      param_ptr->kappa2 = CpmlMagneticParameter_ptr->kappa2;
-      param_ptr->psi1 = static_cast<T>(0);
-      param_ptr->psi2 = static_cast<T>(0);
-
-      param.insert(std::make_pair(index, param_ptr));
+      param.insert(std::make_pair(index, new_param_ptr));
 
       return this;
     }
@@ -302,52 +273,48 @@ namespace gmes
   {
   public:
     void
-    update_all(T* const inplace_field,
-	       int inplace_dim1, int inplace_dim2, int inplace_dim3,
-	       const T* const in_field1, 
-	       int in1_dim1, int in1_dim2, int in1_dim3,
-	       const T* const in_field2, 
-	       int in2_dim1, int in2_dim2, int in2_dim3,
-	       double d1, double d2, double dt, double n)
+    update_all(T* const hx, int hx_x_size, int hx_y_size, int hx_z_size,
+	       const T* const ez, int ez_x_size, int ez_y_size, int ez_z_size,
+	       const T* const ey, int ey_x_size, int ey_y_size, int ey_z_size,
+	       double dy, double dz, double dt, double n)
     {
       for (auto v: param) {
-    	update(inplace_field, inplace_dim1, inplace_dim2, inplace_dim3,
-    	       in_field1, in1_dim1, in1_dim2, in1_dim3,
-    	       in_field2, in2_dim1, in2_dim2, in2_dim3,
-    	       d1, d2, dt, n, 
-    	       v.first, v.second);
+	auto cpml_param_ptr = static_cast<CpmlMagneticParam<T>*>(v.second);
+    	update(hx, hx_x_size, hx_y_size, hx_z_size,
+	       ez, ez_x_size, ez_y_size, ez_z_size,
+	       ey, ey_x_size, ey_y_size, ey_z_size,
+	       dy, dz, dt, n,
+    	       v.first, *cpml_param_ptr);
       }
     }
 
   private:
     void 
-    update(T * const hx, int hx_x_size, int hx_y_size, int hx_z_size,
-	   const T * const ez, int ez_x_size, int ez_y_size, int ez_z_size,
-	   const T * const ey, int ey_x_size, int ey_y_size, int ey_z_size,
+    update(T* const hx, int hx_x_size, int hx_y_size, int hx_z_size,
+	   const T* const ez, int ez_x_size, int ez_y_size, int ez_z_size,
+	   const T* const ey, int ey_x_size, int ey_y_size, int ey_z_size,
 	   double dy, double dz, double dt, double n,
 	   const Index3& idx,
-	   PwMaterialParam * const parameter) const
+	   CpmlMagneticParam<T>& cpml_param) const
     {
-      int i = idx[0], j = idx[1], k = idx[2];
+      const int i = idx[0], j = idx[1], k = idx[2];
 
-      CpmlMagneticParam<T> *ptr;
-      ptr = static_cast<CpmlMagneticParam<T> *>(parameter);
-      double mu_inf = ptr->mu_inf;
-      double by = ptr->b1;
-      double bz = ptr->b2;
-      double cy = ptr->c1;
-      double cz = ptr->c2;
-      double kappay = ptr->kappa1;
-      double kappaz = ptr->kappa2;
-      T& psi1 = ptr->psi1;
-      T& psi2 = ptr->psi2;
+      const double mu_inf = cpml_param.mu_inf;
+      const double by = cpml_param.b1;
+      const double bz = cpml_param.b2;
+      const double cy = cpml_param.c1;
+      const double cz = cpml_param.c2;
+      const double kappay = cpml_param.kappa1;
+      const double kappaz = cpml_param.kappa2;
+      T& psi1 = cpml_param.psi1;
+      T& psi2 = cpml_param.psi2;
 
       psi1 = by * psi1 + cy * (ez(i,j,k-1) - ez(i,j-1,k-1)) / dy;
       psi2 = bz * psi2 + cz * (ey(i,j-1,k) - ey(i,j-1,k-1)) / dz;
 
       hx(i,j,k) -= dt / mu_inf * ((ez(i,j,k-1) - ez(i,j-1,k-1)) / dy / kappay -
-			      (ey(i,j-1,k) - ey(i,j-1,k-1)) / dz / kappaz +
-			      psi1 - psi2);
+				  (ey(i,j-1,k) - ey(i,j-1,k-1)) / dz / kappaz +
+				  psi1 - psi2);
     }
 
   protected:
@@ -358,52 +325,48 @@ namespace gmes
   {
   public:
     void
-    update_all(T* const inplace_field,
-	       int inplace_dim1, int inplace_dim2, int inplace_dim3,
-	       const T* const in_field1, 
-	       int in1_dim1, int in1_dim2, int in1_dim3,
-	       const T* const in_field2, 
-	       int in2_dim1, int in2_dim2, int in2_dim3,
-	       double d1, double d2, double dt, double n)
+    update_all(T* const hy, int hy_x_size, int hy_y_size, int hy_z_size,
+	       const T* const ex, int ex_x_size, int ex_y_size, int ex_z_size,
+	       const T* const ez, int ez_x_size, int ez_y_size, int ez_z_size,
+	       double dz, double dx, double dt, double n)
     {
       for (auto v: param) {
-    	update(inplace_field, inplace_dim1, inplace_dim2, inplace_dim3,
-    	       in_field1, in1_dim1, in1_dim2, in1_dim3,
-    	       in_field2, in2_dim1, in2_dim2, in2_dim3,
-    	       d1, d2, dt, n, 
-    	       v.first, v.second);
+	auto cpml_param_ptr = static_cast<CpmlMagneticParam<T>*>(v.second);
+    	update(hy, hy_x_size, hy_y_size, hy_z_size,
+	       ex, ex_x_size, ex_y_size, ex_z_size,
+	       ez, ez_x_size, ez_y_size, ez_z_size,
+	       dz, dx, dt, n,
+    	       v.first, *cpml_param_ptr);
       }
     }
 
   private:
     void 
-    update(T * const hy, int hy_x_size, int hy_y_size, int hy_z_size,
-	   const T * const ex, int ex_x_size, int ex_y_size, int ex_z_size,
-	   const T * const ez, int ez_x_size, int ez_y_size, int ez_z_size,
+    update(T* const hy, int hy_x_size, int hy_y_size, int hy_z_size,
+	   const T* const ex, int ex_x_size, int ex_y_size, int ex_z_size,
+	   const T* const ez, int ez_x_size, int ez_y_size, int ez_z_size,
 	   double dz, double dx, double dt, double n,
 	   const Index3& idx,
-	   PwMaterialParam * const parameter) const
+	   CpmlMagneticParam<T>& cpml_param) const
     {
-      int i = idx[0], j = idx[1], k = idx[2];
+      const int i = idx[0], j = idx[1], k = idx[2];
 
-      CpmlMagneticParam<T> *ptr;
-      ptr = static_cast<CpmlMagneticParam<T> *>(parameter);
-      double mu_inf = ptr->mu_inf;
-      double bz = ptr->b1;
-      double bx = ptr->b2;
-      double cz = ptr->c1;
-      double cx = ptr->c2;
-      double kappaz = ptr->kappa1;
-      double kappax = ptr->kappa2;
-      T& psi1 = ptr->psi1;
-      T& psi2 = ptr->psi2;
+      const double mu_inf = cpml_param.mu_inf;
+      const double bz = cpml_param.b1;
+      const double bx = cpml_param.b2;
+      const double cz = cpml_param.c1;
+      const double cx = cpml_param.c2;
+      const double kappaz = cpml_param.kappa1;
+      const double kappax = cpml_param.kappa2;
+      T& psi1 = cpml_param.psi1;
+      T& psi2 = cpml_param.psi2;
 
       psi1 = bz * psi1 + cz * (ex(i-1,j,k) - ex(i-1,j,k-1)) / dz;
       psi2 = bx * psi2 + cx * (ez(i,j,k-1) - ez(i-1,j,k-1)) / dx;
 
       hy(i,j,k) -= dt / mu_inf * ((ex(i-1,j,k) - ex(i-1,j,k-1)) / dz / kappaz -
-			      (ez(i,j,k-1) - ez(i-1,j,k-1)) / dx / kappax +
-			      psi1 - psi2);
+				  (ez(i,j,k-1) - ez(i-1,j,k-1)) / dx / kappax +
+				  psi1 - psi2);
     }
 
   protected:
@@ -414,20 +377,18 @@ namespace gmes
   {
   public:
     void
-    update_all(T* const inplace_field,
-	       int inplace_dim1, int inplace_dim2, int inplace_dim3,
-	       const T* const in_field1, 
-	       int in1_dim1, int in1_dim2, int in1_dim3,
-	       const T* const in_field2, 
-	       int in2_dim1, int in2_dim2, int in2_dim3,
-	       double d1, double d2, double dt, double n)
+    update_all(T* const hz, int hz_x_size, int hz_y_size, int hz_z_size,
+	       const T* const ey, int ey_x_size, int ey_y_size, int ey_z_size,
+	       const T* const ex, int ex_x_size, int ex_y_size, int ex_z_size,
+	       double dx, double dy, double dt, double n)
     {
       for (auto v: param) {
-    	update(inplace_field, inplace_dim1, inplace_dim2, inplace_dim3,
-    	       in_field1, in1_dim1, in1_dim2, in1_dim3,
-    	       in_field2, in2_dim1, in2_dim2, in2_dim3,
-    	       d1, d2, dt, n, 
-    	       v.first, v.second);
+	auto cpml_param_ptr = static_cast<CpmlMagneticParam<T>*>(v.second);
+    	update(hz, hz_x_size, hz_y_size, hz_z_size,
+	       ey, ey_x_size, ey_y_size, ey_z_size,
+	       ex, ex_x_size, ex_y_size, ex_z_size,
+	       dx, dy, dt, n,
+    	       v.first, *cpml_param_ptr);
       }
     }
 
@@ -436,26 +397,24 @@ namespace gmes
 
   private:
     void 
-    update(T * const hz, int hz_x_size, int hz_y_size, int hz_z_size,
-	   const T * const ey, int ey_x_size, int ey_y_size, int ey_z_size,
-	   const T * const ex, int ex_x_size, int ex_y_size, int ex_z_size,
+    update(T* const hz, int hz_x_size, int hz_y_size, int hz_z_size,
+	   const T* const ey, int ey_x_size, int ey_y_size, int ey_z_size,
+	   const T* const ex, int ex_x_size, int ex_y_size, int ex_z_size,
 	   double dx, double dy, double dt, double n,
 	   const Index3& idx,
-	   PwMaterialParam * const parameter) const
+	   CpmlMagneticParam<T>& cpml_param) const
     {
-      int i = idx[0], j = idx[1], k = idx[2];
+      const int i = idx[0], j = idx[1], k = idx[2];
 
-      CpmlMagneticParam<T> *ptr;
-      ptr = static_cast<CpmlMagneticParam<T> *>(parameter);
-      double mu_inf = ptr->mu_inf;
-      double bx = ptr->b1;
-      double by = ptr->b2;
-      double cx = ptr->c1;
-      double cy = ptr->c2;
-      double kappax = ptr->kappa1;
-      double kappay = ptr->kappa2;
-      T& psi1 = ptr->psi1;
-      T& psi2 = ptr->psi2;
+      const double mu_inf = cpml_param.mu_inf;
+      const double bx = cpml_param.b1;
+      const double by = cpml_param.b2;
+      const double cx = cpml_param.c1;
+      const double cy = cpml_param.c2;
+      const double kappax = cpml_param.kappa1;
+      const double kappay = cpml_param.kappa2;
+      T& psi1 = cpml_param.psi1;
+      T& psi2 = cpml_param.psi2;
 
       psi1 = bx * psi1 + cx * (ey(i,j-1,k) - ey(i-1,j-1,k)) / dx;
       psi2 = by * psi2 + cy * (ex(i-1,j,k) - ex(i-1,j-1,k)) / dy;

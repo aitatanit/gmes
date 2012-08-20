@@ -1,14 +1,16 @@
 #ifndef PW_MATERIAL_HH_
 #define PW_MATERIAL_HH_
 
+// #include <algorithm>
 #include <array>
-#include <numeric>
+// #include <functional>
+// #include <iterator>
+// #include <utility>
+// #include <vector>
 #include <map>
 
 namespace gmes 
 {
-  typedef std::array<int, 3> Index3;
-
   struct PwMaterialParam
   {
   }; // struct PwMaterialParam
@@ -25,26 +27,38 @@ namespace gmes
     double mu_inf;
   }; // template MagneticParam
 
+  typedef std::array<int, 3> Index3;
+  
   struct ltidx
   {
-    bool 
+    bool
     operator()(const Index3& l, const Index3& r) const
     {
       return l[0] < r[0] || (l[0] == r[0] && (l[1] < r[1] || (l[1] == r[1] && l[2] < r[2])));
     }
   }; // struct ltidx
 
-  typedef std::map<Index3, PwMaterialParam*, ltidx> MapType;
+  typedef std::pair<Index3, PwMaterialParam*> IdxParamType;
+  typedef std::map<Index3, PwMaterialParam*> IdxParamCont;
+  // typedef std::vector<IdxParamType> IdxParamCont;
 
+  // struct find_idx: std::unary_function<IdxParamType, bool> {
+  //   Index3 idx;
+  //   find_idx(const Index3& idx): idx(idx) {}
+
+  //   bool operator() (const IdxParamType& ip) const {
+  //     return ip.first == idx;
+  //   }
+  // }; // struct find_idx
+  
   template<class T> 
   class PwMaterial 
   {
   public:
     virtual
-    ~PwMaterial()
-    {
-    }
+    ~PwMaterial() {}
 
+    // TODO: just copy PwMaterialParam*.
     virtual PwMaterial<T>*
     attach(const int* const idx, int idx_size,
 	   const PwMaterialParam* const parameter) = 0;
@@ -57,65 +71,64 @@ namespace gmes
 	       const T* const in_field2, 
 	       int in2_dim1, int in2_dim2, int in2_dim3,
 	       double d1, double d2, double dt, double n) = 0;
-
-    bool
-    has_it(const int* const idx, int idx_size) const
-    {
-      Index3 index;
-      std::copy(idx, idx + idx_size, index.begin());
-      return param.find(index) != param.end();
-    }
     
+    IdxParamCont::const_iterator
+    find(const Index3& idx) const
+    {
+      // auto it = std::find_if(param.begin(), param.end(), find_idx(idx));
+      auto it = param.find(idx);
+      return it;
+    }
+
     PwMaterial<T>*
     merge(const PwMaterial<T>* const pm)
     {
+      // std::copy(pm->param.begin(), pm->param.end(), std::back_inserter(param));
       for (auto v: pm->param) {
-      	attach(v.first.data(), v.first.size(), v.second);
+        attach(v.first.data(), v.first.size(), v.second);
       }
       return this;
     }
 
-    MapType::size_type
+    IdxParamCont::size_type
     idx_size() const
     {
       return param.size();
     }
 
-    MapType::const_iterator
-    begin() const
-    {
-      return param.begin();
-    }
+    // IdxParamCont::const_iterator
+    // begin() const
+    // {
+    //   return param.begin();
+    // }
     
-    MapType::const_iterator
-    end() const
-    {
-      return param.end();
-    }
+    // IdxParamCont::const_iterator
+    // end() const
+    // {
+    //   return param.end();
+    // }
 
   protected:
-    MapType param;
+    IdxParamCont param;
   }; // template PwMaterial
 
   template <typename T> class MaterialElectric: public PwMaterial<T> 
   {
   public:
-    ~MaterialElectric()
-    {
-    }
-
     double 
     get_eps_inf(const int* const idx, int idx_size) const
     {
       Index3 index;
       std::copy(idx, idx + idx_size, index.begin());
       
-      auto it = param.find(index);
+      auto it = find(index);
       if (it == param.end())
 	return 0;
       else
 	return static_cast<ElectricParam<T>*>(it->second)->eps_inf;
     }
+
+    using PwMaterial<T>::find;
 
   protected:
     using PwMaterial<T>::param;
@@ -124,22 +137,20 @@ namespace gmes
   template <typename T> class MaterialMagnetic: public PwMaterial<T> 
   {
   public:
-    ~MaterialMagnetic() 
-    {
-    }
-
     double 
     get_mu_inf(const int* const idx, int idx_size) const
     {
       Index3 index;
       std::copy(idx, idx + idx_size, index.begin());
 
-      auto it = param.find(index);
+      auto it = find(index);
       if (it == param.end())
 	return 0;
       else
 	return static_cast<MagneticParam<T>*>(it->second)->mu_inf;
     }
+
+    using PwMaterial<T>::find;
 
   protected:
     using PwMaterial<T>::param;
