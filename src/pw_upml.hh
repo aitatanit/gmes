@@ -20,27 +20,34 @@
 
 namespace gmes
 {
-  template <typename T> struct UpmlElectricParam: public ElectricParam<T>
+  template <typename T> 
+  struct UpmlElectricParam: public ElectricParam<T>
   {
     double c1, c2, c3, c4, c5, c6;
     T d;
-  };
+  }; // template UpmlElectricParam
 
-  template <typename T> struct UpmlMagneticParam: public MagneticParam<T>
+  template <typename T> 
+  struct UpmlMagneticParam: public MagneticParam<T>
   {
     double c1, c2, c3, c4, c5, c6;
     T b;
-  };
+  }; // template UpmlMagneticParam
 
-  template <typename T> class UpmlElectric: public MaterialElectric<T>
+  template <typename T> 
+  class UpmlElectric: public MaterialElectric<T>
   {
   public:
-    ~UpmlElectric()
+    double
+    get_eps_inf(const int* const idx, int idx_size) const
     {
-      for (auto v: param) {
-    	delete static_cast<UpmlElectricParam<T>*>(v.second);
-      }
-      param.clear();
+      Index3 index;
+      std::copy(idx, idx + idx_size, index.begin());
+      const int i = position(index);
+      if (i < 0)
+	return 0;
+      else
+	return param_list[i].eps_inf;
     }
 
     PwMaterial<T>*
@@ -50,28 +57,31 @@ namespace gmes
       Index3 index;
       std::copy(idx, idx + idx_size, index.begin());
       
-      auto upml_param_ptr = static_cast<const UpmlElectricParam<T>*>(pm_param_ptr);
-      auto new_param_ptr = new UpmlElectricParam<T>();
+      const auto& upml_param = *static_cast<const UpmlElectricParam<T>*>(pm_param_ptr);
 
-      new_param_ptr->eps_inf = upml_param_ptr->eps_inf;
-      new_param_ptr->c1 = upml_param_ptr->c1;
-      new_param_ptr->c2 = upml_param_ptr->c2;
-      new_param_ptr->c3 = upml_param_ptr->c3;
-      new_param_ptr->c4 = upml_param_ptr->c4;
-      new_param_ptr->c5 = upml_param_ptr->c5;
-      new_param_ptr->c6 = upml_param_ptr->c6;
-      new_param_ptr->d = static_cast<T>(0);
-
-      param.insert(std::make_pair(index, new_param_ptr));
+      idx_list.push_back(index);
+      param_list.push_back(upml_param);
 
       return this;
     }
 
-  protected:
-    using MaterialElectric<T>::param;
-  };
+    PwMaterial<T>*
+    merge(const PwMaterial<T>* const pm_ptr)
+    {
+      auto upml_ptr = static_cast<const UpmlElectric<T>*>(pm_ptr);
+      std::copy(upml_ptr->idx_list.begin(), upml_ptr->idx_list.end(), std::back_inserter(idx_list));
+      std::copy(upml_ptr->param_list.begin(), upml_ptr->param_list.end(), std::back_inserter(param_list));
+      return this;
+    }
 
-  template <typename T> class UpmlEx: public UpmlElectric<T>
+  protected:
+    using MaterialElectric<T>::position;
+    using MaterialElectric<T>::idx_list;
+    std::vector<UpmlElectricParam<T> > param_list;
+  }; // template UpmlElectric
+
+  template <typename T> 
+  class UpmlEx: public UpmlElectric<T>
   {
   public:
     virtual void
@@ -80,13 +90,12 @@ namespace gmes
 	       const T* const hy, int hy_x_size, int hy_y_size, int hy_z_size,
 	       double dy, double dz, double dt, double n)
     {
-      for (auto v: param) { 
-	auto upml_param_ptr = static_cast<UpmlElectricParam<T>*>(v.second);
+       for (auto idx = idx_list.begin(), param = param_list.begin();
+	   idx != idx_list.end(); ++idx, ++param) {
     	update(ex, ex_x_size, ex_y_size, ex_z_size,
 	       hz, hz_x_size, hz_y_size, hz_z_size,
 	       hy, hy_x_size, hy_y_size, hy_z_size,
-	       dy, dz, dt, n,
-    	       v.first, *upml_param_ptr);
+	       dy, dz, dt, n, *idx, *param);
       }
     }
 
@@ -118,10 +127,12 @@ namespace gmes
     }
     
   protected:
-    using UpmlElectric<T>::param;
-  };
+    using UpmlElectric<T>::idx_list;
+    using UpmlElectric<T>::param_list;
+  }; // template UpmlEx
 
-  template <typename T> class UpmlEy: public UpmlElectric<T>
+  template <typename T> 
+  class UpmlEy: public UpmlElectric<T>
   {
     virtual void
     update_all(T* const ey, int ey_x_size, int ey_y_size, int ey_z_size,
@@ -129,13 +140,12 @@ namespace gmes
 	       const T* const hz, int hz_x_size, int hz_y_size, int hz_z_size,
 	       double dz, double dx, double dt, double n)
     {
-      for (auto v: param) {
-	auto upml_param_ptr = static_cast<UpmlElectricParam<T>*>(v.second);
+      for (auto idx = idx_list.begin(), param = param_list.begin();
+	   idx != idx_list.end(); ++idx, ++param) {
     	update(ey, ey_x_size, ey_y_size, ey_z_size,
 	       hx, hx_x_size, hx_y_size, hx_z_size,
 	       hz, hz_x_size, hz_y_size, hz_z_size,
-	       dz, dx, dt, n,
-    	       v.first, *upml_param_ptr);
+	       dz, dx, dt, n, *idx, *param);
       }
     }
 
@@ -167,10 +177,12 @@ namespace gmes
     }
 
   protected:
-    using UpmlElectric<T>::param;
-  };
+    using UpmlElectric<T>::idx_list;
+    using UpmlElectric<T>::param_list;
+  }; // template UpmlEy
 
-  template <typename T> class UpmlEz: public UpmlElectric<T>
+  template <typename T> 
+  class UpmlEz: public UpmlElectric<T>
   {
   public:
     virtual void
@@ -179,13 +191,12 @@ namespace gmes
 	       const T* const hx, int hx_x_size, int hx_y_size, int hx_z_size,
 	       double dx, double dy, double dt, double n)
     {
-      for (auto v: param) {
-	auto upml_param_ptr = static_cast<UpmlElectricParam<T>*>(v.second);
+      for (auto idx = idx_list.begin(), param = param_list.begin();
+	   idx != idx_list.end(); ++idx, ++param) {
     	update(ez, ez_x_size, ez_y_size, ez_z_size,
 	       hy, hy_x_size, hy_y_size, hy_z_size,
 	       hx, hx_x_size, hx_y_size, hx_z_size,
-	       dx, dy, dt, n,
-    	       v.first, *upml_param_ptr);
+	       dx, dy, dt, n, *idx, *param);
       }
     }
 
@@ -217,18 +228,24 @@ namespace gmes
     }
 
   protected:
-    using UpmlElectric<T>::param;
+    using UpmlElectric<T>::idx_list;
+    using UpmlElectric<T>::param_list;
   };
 
-  template <typename T> class UpmlMagnetic: public MaterialMagnetic<T>
+  template <typename T> 
+  class UpmlMagnetic: public MaterialMagnetic<T>
   {
   public:
-    ~UpmlMagnetic()
+    double
+    get_mu_inf(const int* const idx, int idx_size) const
     {
-      for (auto v: param) {
-    	delete static_cast<UpmlMagneticParam<T>*>(v.second);
-      }
-      param.clear();
+      Index3 index;
+      std::copy(idx, idx + idx_size, index.begin());
+      const int i = position(index);
+      if (i < 0)
+	return 0;
+      else
+	return param_list[i].mu_inf;
     }
 
     PwMaterial<T>*
@@ -238,28 +255,31 @@ namespace gmes
       Index3 index;
       std::copy(idx, idx + idx_size, index.begin());
       
-      auto upml_param_ptr = static_cast<const UpmlMagneticParam<T>*>(pm_param_ptr);
-      auto new_param_ptr = new UpmlMagneticParam<T>();
-
-      new_param_ptr->mu_inf = upml_param_ptr->mu_inf;
-      new_param_ptr->c1 = upml_param_ptr->c1;
-      new_param_ptr->c2 = upml_param_ptr->c2;
-      new_param_ptr->c3 = upml_param_ptr->c3;
-      new_param_ptr->c4 = upml_param_ptr->c4;
-      new_param_ptr->c5 = upml_param_ptr->c5;
-      new_param_ptr->c6 = upml_param_ptr->c6;
-      new_param_ptr->b = static_cast<T>(0);
-
-      param.insert(std::make_pair(index, new_param_ptr));
+      const auto& upml_param = *static_cast<const UpmlMagneticParam<T>*>(pm_param_ptr);
+      
+      idx_list.push_back(index);
+      param_list.push_back(upml_param);
 
       return this;
     }
 
-  protected:
-    using MaterialMagnetic<T>::param;
-  };
+    PwMaterial<T>*
+    merge(const PwMaterial<T>* const pm_ptr)
+    {
+      auto upml_ptr = static_cast<const UpmlMagnetic<T>*>(pm_ptr);
+      std::copy(upml_ptr->idx_list.begin(), upml_ptr->idx_list.end(), std::back_inserter(idx_list));
+      std::copy(upml_ptr->param_list.begin(), upml_ptr->param_list.end(), std::back_inserter(param_list));
+      return this;
+    }
 
-  template <typename T> class UpmlHx: public UpmlMagnetic<T>
+  protected:
+    using MaterialMagnetic<T>::position;
+    using MaterialMagnetic<T>::idx_list;
+    std::vector<UpmlMagneticParam<T> > param_list;
+  }; // template UpmlMagnetic
+
+  template <typename T> 
+  class UpmlHx: public UpmlMagnetic<T>
   {
     virtual void
     update_all(T* const hx, int hx_x_size, int hx_y_size, int hx_z_size,
@@ -267,13 +287,12 @@ namespace gmes
 	       const T* const ey, int ey_x_size, int ey_y_size, int ey_z_size,
 	       double dy, double dz, double dt, double n)
     {
-      for (auto v: param) {
-	auto upml_param_ptr = static_cast<UpmlMagneticParam<T>*>(v.second);
+      for (auto idx = idx_list.begin(), param = param_list.begin();
+	   idx != idx_list.end(); ++idx, ++param) {
     	update(hx, hx_x_size, hx_y_size, hx_z_size,
 	       ez, ez_x_size, ez_y_size, ez_z_size,
 	       ey, ey_x_size, ey_y_size, ey_z_size,
-	       dy, dz, dt, n,
-    	       v.first, *upml_param_ptr);
+	       dy, dz, dt, n, *idx, *param);
       }
     }
 
@@ -305,10 +324,12 @@ namespace gmes
     }
 
   protected:
-    using UpmlMagnetic<T>::param;
-  };
+    using UpmlMagnetic<T>::idx_list;
+    using UpmlMagnetic<T>::param_list;
+  }; // template UpmlHx
 
-  template <typename T> class UpmlHy: public UpmlMagnetic<T>
+  template <typename T> 
+  class UpmlHy: public UpmlMagnetic<T>
   {
   public:
     virtual void
@@ -317,13 +338,12 @@ namespace gmes
 	       const T* const ez, int ez_x_size, int ez_y_size, int ez_z_size,
 	       double dz, double dx, double dt, double n)
     {
-      for (auto v: param) {
-	auto upml_param_ptr = static_cast<UpmlMagneticParam<T>*>(v.second);
-    	update(hy, hy_x_size, hy_y_size, hy_z_size,
+      for (auto idx = idx_list.begin(), param = param_list.begin();
+	   idx != idx_list.end(); ++idx, ++param) {
+      	update(hy, hy_x_size, hy_y_size, hy_z_size,
 	       ex, ex_x_size, ex_y_size, ex_z_size,
 	       ez, ez_x_size, ez_y_size, ez_z_size,
-	       dz, dx, dt, n,
-    	       v.first, *upml_param_ptr);
+	       dz, dx, dt, n, *idx, *param);
       }
     }
 
@@ -355,10 +375,12 @@ namespace gmes
     }
 
   protected:
-    using UpmlMagnetic<T>::param;
-  };
+    using UpmlMagnetic<T>::idx_list;
+    using UpmlMagnetic<T>::param_list;
+  }; // template UpmlHy
 
-  template <typename T> class UpmlHz: public UpmlMagnetic<T>
+  template <typename T> 
+  class UpmlHz: public UpmlMagnetic<T>
   {
   public:
     virtual void
@@ -367,13 +389,12 @@ namespace gmes
 	       const T* const ex, int ex_x_size, int ex_y_size, int ex_z_size,
 	       double dx, double dy, double dt, double n)
     {
-      for (auto v: param) {
-	auto upml_param_ptr = static_cast<UpmlMagneticParam<T>*>(v.second);
+      for (auto idx = idx_list.begin(), param = param_list.begin();
+	   idx != idx_list.end(); ++idx, ++param) {
     	update(hz, hz_x_size, hz_y_size, hz_z_size,
 	       ey, ey_x_size, ey_y_size, ey_z_size,
 	       ex, ex_x_size, ex_y_size, ex_z_size,
-	       dx, dy, dt, n,
-    	       v.first, *upml_param_ptr);
+	       dx, dy, dt, n, *idx, *param);
       }
     }
 
@@ -405,7 +426,8 @@ namespace gmes
     }
 
   protected:
-    using UpmlMagnetic<T>::param;
+    using UpmlMagnetic<T>::idx_list;
+    using UpmlMagnetic<T>::param_list;
   };
 }
 

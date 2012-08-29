@@ -329,7 +329,7 @@ cdef class GeomBoxTree(object):
         above the partition, respectively.
         
         """
-        small = 1e-6 # only 1e-6 works
+        small = 1e-7
         best_partition = None
         
         n1 = n2 = len(node.geom_list)
@@ -382,7 +382,7 @@ cdef class GeomBoxTree(object):
                 best = i
         
         # Don't do anything if division makes the worst case worse or if
-        # it fails to improve the best case:       
+        # it fails to improve the best case:
         if division[best][0] is None:
             return None, None
         
@@ -679,9 +679,10 @@ cdef class Cone(GeometricObject):
         """
         h = .5 * self.height
         
+        # radial is a vector consisting of Cartesian unit vectors
+        # which are orthogonal to the self.axis.
         r = np.ones((3,), np.double)
-        radial = r - np.dot(r, self.axis) * self.axis
-        radial /= np.linalg.norm(radial)
+        radial = r - self.axis * r
 
         # bounding box for -h*axis cylinder end
         tmpBox1 = GeomBox(low=self.center, high=self.center)
@@ -969,7 +970,7 @@ cdef class Boundary(GeometricObject):
     cdef public list box_list
     cdef public bint minus_x, plus_x, minus_y, plus_y, minus_z, plus_z
 
-    def __init__(self, material, thickness=0,
+    def __init__(self, material, thickness=1,
                  plus_x=True, minus_x=True,
                  plus_y=True, minus_y=True,
                  plus_z=True, minus_z=True):

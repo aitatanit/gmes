@@ -20,28 +20,35 @@
 
 namespace gmes
 {
-  template <typename T> struct DrudeElectricParam: public ElectricParam<T>
+  template <typename T> 
+  struct DrudeElectricParam: public ElectricParam<T>
   {
     std::vector<std::array<double, 3> > a;
     std::array<double, 3> c;
     std::vector<T> q_now, q_new;
   }; // template DrudeElectricParam
 
-  template <typename T> struct DrudeMagneticParam: public MagneticParam<T>
+  template <typename T> 
+  struct DrudeMagneticParam: public MagneticParam<T>
   {
   }; // template DrudeMagneticParam
 
-  template <typename T> class DrudeElectric: public MaterialElectric<T>
+  template <typename T> 
+  class DrudeElectric: public MaterialElectric<T>
   {
   public:
-    ~DrudeElectric()
+    double
+    get_eps_inf(const int* const idx, int idx_size) const
     {
-      for (auto v: param) {
-	delete static_cast<DrudeElectricParam<T> *>(v.second);
-      }
-      param.clear();
+      Index3 index;
+      std::copy(idx, idx + idx_size, index.begin());
+      const int i = position(index);
+      if (i < 0)
+	return 0;
+      else
+	return param_list[i].eps_inf;
     }
-    
+
     PwMaterial<T>*
     attach(const int* const idx, int idx_size,
 	   const PwMaterialParam* const pm_param_ptr)
@@ -49,22 +56,22 @@ namespace gmes
       Index3 index;
       std::copy(idx, idx + idx_size, index.begin());
 
-      auto drude_param_ptr = static_cast<const DrudeElectricParam<T>* const>(pm_param_ptr);
-      auto new_param_ptr = new DrudeElectricParam<T>();
-      new_param_ptr->eps_inf = drude_param_ptr->eps_inf;
-      std::copy(drude_param_ptr->a.begin(),
-		drude_param_ptr->a.end(),
-		std::back_inserter(new_param_ptr->a));
-      std::copy(drude_param_ptr->c.begin(),
-		drude_param_ptr->c.end(),
-		new_param_ptr->c.begin());
-      new_param_ptr->q_now.resize(drude_param_ptr->a.size(), static_cast<T>(0));
-      new_param_ptr->q_new.resize(drude_param_ptr->a.size(), static_cast<T>(0));
+      const auto& drude_param = *static_cast<const DrudeElectricParam<T>*>(pm_param_ptr);
 
-      param.insert(std::make_pair(index, new_param_ptr));
+      idx_list.push_back(index);
+      param_list.push_back(drude_param);
 
       return this;
     };
+
+    PwMaterial<T>*
+    merge(const PwMaterial<T>* const pm_ptr)
+    {
+      auto drude_ptr = static_cast<const DrudeElectric<T>*>(pm_ptr);
+      std::copy(drude_ptr->idx_list.begin(), drude_ptr->idx_list.end(), std::back_inserter(idx_list));
+      std::copy(drude_ptr->param_list.begin(), drude_ptr->param_list.end(), std::back_inserter(param_list));
+      return this;
+    }
 
     T 
     dps_sum(const T& init, const DrudeElectricParam<T>& drude_param) const
@@ -96,10 +103,13 @@ namespace gmes
     }
 
   protected:
-    using MaterialElectric<T>::param;
+    using MaterialElectric<T>::position;
+    using MaterialElectric<T>::idx_list;
+    std::vector<DrudeElectricParam<T> > param_list;
   }; // template DrudeElectric
 
-  template <typename T> class DrudeEx: public DrudeElectric<T>
+  template <typename T> 
+  class DrudeEx: public DrudeElectric<T>
   {
   public:
     void
@@ -108,13 +118,12 @@ namespace gmes
 	       const T* const hy, int hy_x_size, int hy_y_size, int hy_z_size,
 	       double dy, double dz, double dt, double n)
     {
-      for (auto v: param) {
-	auto drude_param_ptr = static_cast<DrudeElectricParam<T>*>(v.second);
+      for (auto idx = idx_list.begin(), param = param_list.begin();
+	   idx != idx_list.end(); ++idx, ++param) {
     	update(ex, ex_x_size, ex_y_size, ex_z_size,
 	       hz, hz_x_size, hz_y_size, hz_z_size,
 	       hy, hy_x_size, hy_y_size, hy_z_size,
-	       dy, dz, dt, n, 
-    	       v.first, *drude_param_ptr);
+	       dy, dz, dt, n, *idx, *param);
       }
     }
 
@@ -139,12 +148,14 @@ namespace gmes
     }
 
   protected:
-    using DrudeElectric<T>::param;
+    using DrudeElectric<T>::idx_list;
+    using DrudeElectric<T>::param_list;
     using DrudeElectric<T>::update_q;
     using DrudeElectric<T>::dps_sum;
   }; // template DrudeEx
 
-  template <typename T> class DrudeEy: public DrudeElectric<T>
+  template <typename T> 
+  class DrudeEy: public DrudeElectric<T>
   {
   public:
     void
@@ -153,13 +164,12 @@ namespace gmes
 	       const T* const hz, int hz_x_size, int hz_y_size, int hz_z_size,
 	       double dz, double dx, double dt, double n)
     {
-      for (auto v: param) {
-	auto drude_param_ptr = static_cast<DrudeElectricParam<T>*>(v.second);
+      for (auto idx = idx_list.begin(), param = param_list.begin();
+	   idx != idx_list.end(); ++idx, ++param) {
     	update(ey, ey_x_size, ey_y_size, ey_z_size,
 	       hx, hx_x_size, hx_y_size, hx_z_size,
 	       hz, hz_x_size, hz_y_size, hz_z_size,
-	       dz, dx, dt, n,
-    	       v.first, *drude_param_ptr);
+	       dz, dx, dt, n, *idx, *param);
       }
     }
 
@@ -184,7 +194,8 @@ namespace gmes
     }
 
   protected:
-    using DrudeElectric<T>::param;
+    using DrudeElectric<T>::idx_list;
+    using DrudeElectric<T>::param_list;
     using DrudeElectric<T>::update_q;
     using DrudeElectric<T>::dps_sum;
   }; // template DrudeEy
@@ -198,13 +209,12 @@ namespace gmes
 	       const T* const hx, int hx_x_size, int hx_y_size, int hx_z_size,
 	       double dx, double dy, double dt, double n)
     {
-      for (auto v: param) {
-	auto drude_param_ptr = static_cast<DrudeElectricParam<T>*>(v.second);
+      for (auto idx = idx_list.begin(), param = param_list.begin();
+	   idx != idx_list.end(); ++idx, ++param) {
     	update(ez, ez_x_size, ez_y_size, ez_z_size,
 	       hy, hy_x_size, hy_y_size, hy_z_size,
 	       hx, hx_x_size, hx_y_size, hx_z_size,
-	       dx, dy, dt, n,
-    	       v.first, *drude_param_ptr);
+	       dx, dy, dt, n, *idx, *param);
       }
     }
 
@@ -229,20 +239,24 @@ namespace gmes
     }
 
   protected:
-    using DrudeElectric<T>::param;
+    using DrudeElectric<T>::idx_list;
+    using DrudeElectric<T>::param_list;
     using DrudeElectric<T>::update_q;
     using DrudeElectric<T>::dps_sum;
   }; // template DrudeEz
 
-  template <typename T> class DrudeHx: public DielectricHx<T>
+  template <typename T> 
+  class DrudeHx: public DielectricHx<T>
   {
   }; // template DrudeHx
 
-  template <typename T> class DrudeHy: public DielectricHy<T>
+  template <typename T> 
+  class DrudeHy: public DielectricHy<T>
   {
   }; // template DrudeHy
 
-  template <typename T> class DrudeHz: public DielectricHz<T>
+  template <typename T> 
+  class DrudeHz: public DielectricHz<T>
   {
   }; // template DrudeHz
 } // namespace gmes

@@ -1096,7 +1096,7 @@ class FDTD(object):
 
         """
         showcase = ShowLine(self, Ex, start, end, vrange, interval, 
-                            'Ex field', self._fig_id)
+                            'ex field', self._fig_id)
         self._fig_id += self.space.numprocs
         showcase.start()
         return showcase
@@ -1111,7 +1111,7 @@ class FDTD(object):
 
         """
         showcase = ShowLine(self, Ey, start, end, vrange, interval, 
-                            'Ey field', self._fig_id)
+                            'ey field', self._fig_id)
         self._fig_id += self.space.numprocs
         showcase.start()
         return showcase
@@ -1126,7 +1126,7 @@ class FDTD(object):
 
         """
         showcase = ShowLine(self, Ez, start, end, vrange, interval, 
-                            'Ez field', self._fig_id)
+                            'ez field', self._fig_id)
         self._fig_id += self.space.numprocs
         showcase.start()
         return showcase
@@ -1141,7 +1141,7 @@ class FDTD(object):
 
         """
         showcase = ShowLine(self, Hx, start, end, vrange, interval, 
-                            'Hx field', self._fig_id)
+                            'hx field', self._fig_id)
         self._fig_id += self.space.numprocs
         showcase.start()
         return showcase
@@ -1156,7 +1156,7 @@ class FDTD(object):
 
         """
         showcase = ShowLine(self, Hy, start, end, vrange, interval, 
-                            'Hy field', self._fig_id)
+                            'hy field', self._fig_id)
         self._fig_id += self.space.numprocs
         showcase.start()
         return showcase
@@ -1171,7 +1171,7 @@ class FDTD(object):
 
         """
         showcase = ShowLine(self, Hz, start, end, vrange, interval, 
-                            'Hz field', self._fig_id)
+                            'hz field', self._fig_id)
         self._fig_id += self.space.numprocs
         showcase.start()
         return showcase
@@ -1188,7 +1188,7 @@ class FDTD(object):
 
         """
         showcase = ShowPlane(self, Ex, axis, cut, vrange, 
-                             interval, 'Ex field', self._fig_id)
+                             interval, 'ex field', self._fig_id)
         self._fig_id += self.space.numprocs
         showcase.start()
         return showcase
@@ -1205,7 +1205,7 @@ class FDTD(object):
 
         """
         showcase = ShowPlane(self, Ey, axis, cut, vrange, 
-                             interval, 'Ey field', self._fig_id)
+                             interval, 'ey field', self._fig_id)
         self._fig_id += self.space.numprocs
         showcase.start()
         return showcase
@@ -1222,7 +1222,7 @@ class FDTD(object):
 
         """
         showcase = ShowPlane(self, Ez, axis, cut, vrange, 
-                             interval, 'Ez field', self._fig_id)
+                             interval, 'ez field', self._fig_id)
         self._fig_id += self.space.numprocs
         showcase.start()
         return showcase
@@ -1239,7 +1239,7 @@ class FDTD(object):
 
         """
         showcase = ShowPlane(self, Hx, axis, cut, vrange, 
-                             interval, 'Hx field', self._fig_id)
+                             interval, 'hx field', self._fig_id)
         self._fig_id += self.space.numprocs
         showcase.start()
         return showcase
@@ -1256,7 +1256,7 @@ class FDTD(object):
 
         """
         showcase = ShowPlane(self, Hy, axis, cut, vrange, 
-                             interval, 'Hy field', self._fig_id)
+                             interval, 'hy field', self._fig_id)
         self._fig_id += self.space.numprocs
         showcase.start()
         sleep(0.1)
@@ -1274,7 +1274,7 @@ class FDTD(object):
 
         """
         showcase = ShowPlane(self, Hz, axis, cut, vrange, 
-                             interval, 'Hz field', self._fig_id)
+                             interval, 'hz field', self._fig_id)
         self._fig_id += self.space.numprocs
         showcase.start()
         return showcase

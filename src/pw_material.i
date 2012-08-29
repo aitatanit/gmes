@@ -13,11 +13,11 @@
 #include "pw_dcp.hh"
 %}
 
-%include "complex.i"
+%include "std_complex.i"
 %include "numpy.i"
 
 %numpy_typemaps(std::complex<double>, NPY_CDOUBLE, int)
-%apply size_t { gmes::IdxParamCont::size_type }; 
+%apply size_t { gmes::IdxCnt::size_type }; 
 
 %init %{
 import_array();
@@ -87,49 +87,6 @@ import_array();
 %template(PwMaterial ## postfix) gmes::PwMaterial<T >;
 %template(MaterialElectric ## postfix) gmes::MaterialElectric<T >;
 %template(MaterialMagnetic ## postfix) gmes::MaterialMagnetic<T >;
-
-// %extend gmes::PwMaterial<T >
-// {
-//   gmes::IdxParamCont::const_iterator* 
-//     _begin() 
-//   {
-//     return new gmes::IdxParamCont::const_iterator($self->begin());
-//   }
-
-//   gmes::IdxParamCont::const_iterator*
-//     _end()
-//   {
-//     return new gmes::IdxParamCont::const_iterator($self->end());
-//   }
-   
-//   PyObject* 
-//     _deref(gmes::IdxParamCont::const_iterator* it)
-//   {
-//     return Py_BuildValue("(i,i,i)", 
-// 			 (*it)->first[0], (*it)->first[1], (*it)->first[2]);
-//   }
-
-//   bool 
-//     _compref(gmes::IdxParamCont::const_iterator* lhs,
-// 	     gmes::IdxParamCont::const_iterator* rhs)
-//   {
-//     return *lhs == *rhs;
-//   }
-
-//   void
-//     _incref(gmes::IdxParamCont::const_iterator* it)
-//   {
-//     ++(*it);
-//   }
-
-//   %pythoncode %{
-//     def iteridx(self):
-//         it = self._begin()
-//         while not self._compref(it, self._end()):
-//             yield self._deref(it)
-//             self._incref(it)
-//   %}
-// };
 
 %template(DummyElectricParam ## postfix) gmes::DummyElectricParam<T >;
 %template(DummyMagneticParam ## postfix) gmes::DummyMagneticParam<T >;

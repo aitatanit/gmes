@@ -9,27 +9,34 @@
 
 namespace gmes
 {
-  template <typename T> struct ConstElectricParam: public ElectricParam<T>
+  template <typename T> 
+  struct ConstElectricParam: public ElectricParam<T>
   {
     T value;
   }; // template ConstElectricParam
     
-  template <typename T> struct ConstMagneticParam: public MagneticParam<T>
+  template <typename T> 
+  struct ConstMagneticParam: public MagneticParam<T>
   {
     T value;
   }; // template ConstMagneticParam
 
-  template <typename T> class ConstElectric: public MaterialElectric<T>
+  template <typename T> 
+  class ConstElectric: public MaterialElectric<T>
   {
   public:
-    ~ConstElectric()
+    double
+    get_eps_inf(const int* const idx, int idx_size) const
     {
-      for (auto v: param) {
-	delete static_cast<ConstElectricParam<T> *>(v.second);
-      }
-      param.clear();
+      Index3 index;
+      std::copy(idx, idx + idx_size, index.begin());
+      const int i = position(index);
+      if (i < 0)
+	return 0;
+      else
+	return param_list[i].eps_inf;
     }
-    
+
     PwMaterial<T>*
     attach(const int* const idx, int idx_size, 
 	   const PwMaterialParam* const pm_param_ptr)
@@ -37,17 +44,23 @@ namespace gmes
       Index3 index;
       std::copy(idx, idx + idx_size, index.begin());
 
-      auto const_param_ptr = static_cast<const ConstElectricParam<T>*>(pm_param_ptr);
-      auto new_param_ptr = new ConstElectricParam<T>();
-
-      new_param_ptr->eps_inf = const_param_ptr->eps_inf;
-      new_param_ptr->value = const_param_ptr->value;
-
-      param.insert(std::make_pair(index, new_param_ptr));
+      const auto& const_param = *static_cast<const ConstElectricParam<T>*>(pm_param_ptr);
+      
+      idx_list.push_back(index);
+      param_list.push_back(const_param);
 
       return this;
     }
     
+    PwMaterial<T>*
+    merge(const PwMaterial<T>* const pm_ptr)
+    {
+      auto const_ptr = static_cast<const ConstElectric<T>*>(pm_ptr);
+      std::copy(const_ptr->idx_list.begin(), const_ptr->idx_list.end(), std::back_inserter(idx_list));
+      std::copy(const_ptr->param_list.begin(), const_ptr->param_list.end(), std::back_inserter(param_list));
+      return this;
+    }
+
     void
     update_all(T* const inplace_field,
 	       int inplace_dim1, int inplace_dim2, int inplace_dim3,
@@ -57,13 +70,12 @@ namespace gmes
 	       int in2_dim1, int in2_dim2, int in2_dim3,
 	       double d1, double d2, double dt, double n)
     {
-      for (auto v: param) {
-	const auto const_param_ptr = static_cast<ConstElectricParam<T>*>(v.second);
+      for (auto idx = idx_list.begin(), param = param_list.begin();
+	   idx != idx_list.end(); ++idx, ++param) {
     	update(inplace_field, inplace_dim1, inplace_dim2, inplace_dim3,
     	       in_field1, in1_dim1, in1_dim2, in1_dim3,
     	       in_field2, in2_dim1, in2_dim2, in2_dim3,
-    	       d1, d2, dt, n, 
-    	       v.first, *const_param_ptr);
+    	       d1, d2, dt, n, *idx, *param);
       }
     }
 
@@ -82,32 +94,42 @@ namespace gmes
     }
 
   protected:
-    using MaterialElectric<T>::param;
+    using MaterialElectric<T>::position;
+    using MaterialElectric<T>::idx_list;
+    std::vector<ConstElectricParam<T> > param_list;
   }; // template ConstElectric
 
-  template <typename T> class ConstEx: public ConstElectric<T>
+  template <typename T> 
+  class ConstEx: public ConstElectric<T>
   {
   }; // template ConstEx
 
-  template <typename T> class ConstEy: public ConstElectric<T>
+  template <typename T> 
+  class ConstEy: public ConstElectric<T>
   {
   }; // template ConstEy
 
-  template <typename T> class ConstEz: public ConstElectric<T>
+  template <typename T> 
+  class ConstEz: public ConstElectric<T>
   {
   }; // template ConstEz
 
-  template <typename T> class ConstMagnetic: public MaterialMagnetic<T>
+  template <typename T> 
+  class ConstMagnetic: public MaterialMagnetic<T>
   {
   public:
-    ~ConstMagnetic()
+    double
+    get_mu_inf(const int* const idx, int idx_size) const
     {
-      for (auto v: param) {
-	delete static_cast<ConstMagneticParam<T> *>(v.second);
-      }
-      param.clear();
+      Index3 index;
+      std::copy(idx, idx + idx_size, index.begin());
+      const int i = position(index);
+      if (i < 0)
+	return 0;
+      else
+	return param_list[i].mu_inf;
     }
-    
+
     PwMaterial<T>*
     attach(const int* const idx, int idx_size, 
 	   const PwMaterialParam* const pm_param_ptr)
@@ -115,13 +137,10 @@ namespace gmes
       Index3 index;
       std::copy(idx, idx + idx_size, index.begin());
 
-      auto const_param_ptr = static_cast<const ConstMagneticParam<T>*>(pm_param_ptr);
-      auto new_param_ptr = new ConstMagneticParam<T>();
+      const auto& const_param = *static_cast<const ConstMagneticParam<T>*>(pm_param_ptr);
 
-      new_param_ptr->mu_inf = const_param_ptr->mu_inf;
-      new_param_ptr->value = const_param_ptr->value;
-
-      param.insert(std::make_pair(index, new_param_ptr));
+      idx_list.push_back(index);
+      param_list.push_back(const_param);
 
       return this;
     }
@@ -135,13 +154,12 @@ namespace gmes
 	       int in2_dim1, int in2_dim2, int in2_dim3,
 	       double d1, double d2, double dt, double n)
     {
-      for (auto v: param) {
-	const auto const_param_ptr = static_cast<ConstMagneticParam<T>*>(v.second);
+      for (auto idx = idx_list.begin(), param = param_list.begin();
+	   idx != idx_list.end(); ++idx, ++param) {
     	update(inplace_field, inplace_dim1, inplace_dim2, inplace_dim3,
     	       in_field1, in1_dim1, in1_dim2, in1_dim3,
     	       in_field2, in2_dim1, in2_dim2, in2_dim3,
-    	       d1, d2, dt, n, 
-    	       v.first, *const_param_ptr);
+    	       d1, d2, dt, n, *idx, *param);
       }
     }
 
@@ -160,7 +178,9 @@ namespace gmes
     }
 
   protected:
-    using MaterialMagnetic<T>::param;
+    using MaterialMagnetic<T>::position;
+    using MaterialMagnetic<T>::idx_list;
+    std::vector<ConstMagneticParam<T> > param_list;
   }; // template ConstMagnetic
 
   template <typename T> class ConstHx: public ConstMagnetic<T>

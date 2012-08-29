@@ -21,28 +21,35 @@
 
 namespace gmes
 {
-  template <typename T> struct LorentzElectricParam: public ElectricParam<T>
+  template <typename T> 
+  struct LorentzElectricParam: public ElectricParam<T>
   {
     std::vector<std::array<double, 3> > a;
     std::array<double, 3> c;
     std::vector<T> l_now, l_new;
   }; // template LorentzElectricParam
 
-  template <typename T> struct LorentzMagneticParam: public MagneticParam<T>
+  template <typename T> 
+  struct LorentzMagneticParam: public MagneticParam<T>
   {
   }; // template LorentzMagneticParam
 
-  template <typename T> class LorentzElectric: public MaterialElectric<T>
+  template <typename T> 
+  class LorentzElectric: public MaterialElectric<T>
   {
   public:
-    ~LorentzElectric()
+    double
+    get_eps_inf(const int* const idx, int idx_size) const
     {
-      for (auto v: param) {
-	delete static_cast<LorentzElectricParam<T> *>(v.second);
-      }
-      param.clear();
+      Index3 index;
+      std::copy(idx, idx + idx_size, index.begin());
+      const int i = position(index);
+      if (i < 0)
+	return 0;
+      else
+	return param_list[i].eps_inf;
     }
-    
+
     PwMaterial<T>*
     attach(const int* const idx, int idx_size,
 	   const PwMaterialParam* const pm_param_ptr)
@@ -50,30 +57,34 @@ namespace gmes
       Index3 index;
       std::copy(idx, idx + idx_size, index.begin());
 
-      auto lorentz_param_ptr = static_cast<const LorentzElectricParam<T> * const>(pm_param_ptr);
-      auto new_param_ptr = new LorentzElectricParam<T>();
+      const auto& lorentz_param = *static_cast<const LorentzElectricParam<T> * const>(pm_param_ptr);
 
-      new_param_ptr->eps_inf = lorentz_param_ptr->eps_inf;
-      std::copy(lorentz_param_ptr->a.begin(),
-		lorentz_param_ptr->a.end(),
-		std::back_inserter(new_param_ptr->a));
-      std::copy(lorentz_param_ptr->c.begin(),
-		lorentz_param_ptr->c.end(),
-		new_param_ptr->c.begin());
-      new_param_ptr->l_now.resize(lorentz_param_ptr->a.size(), static_cast<T>(0));
-      new_param_ptr->l_new.resize(lorentz_param_ptr->a.size(), static_cast<T>(0));
-
-      param.insert(std::make_pair(index, new_param_ptr));
+      idx_list.push_back(index);
+      param_list.push_back(lorentz_param);
 
       return this;
     };
+
+    PwMaterial<T>*
+    merge(const PwMaterial<T>* const pm_ptr)
+    {
+      auto lorentz_ptr 
+	= static_cast<const LorentzElectric<T>*>(pm_ptr);
+      std::copy(lorentz_ptr->idx_list.begin(), 
+		lorentz_ptr->idx_list.end(), 
+		std::back_inserter(idx_list));
+      std::copy(lorentz_ptr->param_list.begin(), 
+		lorentz_ptr->param_list.end(), 
+		std::back_inserter(param_list));
+      return this;
+    }
 
     T 
     lps_sum(const T& init, const LorentzElectricParam<T>& lorentz_param) const
     {
       const auto& a = lorentz_param.a;
-      const std::vector<T>& l_now = lorentz_param.l_now;
-      const std::vector<T>& l_new = lorentz_param.l_new;
+      const auto& l_now = lorentz_param.l_now;
+      const auto& l_new = lorentz_param.l_new;
       
       T sum(init);
       for (typename std::vector<T>::size_type i = 0; i < a.size(); ++i)	{
@@ -87,10 +98,10 @@ namespace gmes
     update_l(const T& e_now, LorentzElectricParam<T>& lorentz_param)
     {
       const auto& a = lorentz_param.a;
-      std::vector<T>& l_now = lorentz_param.l_now;
-      std::vector<T>& l_new = lorentz_param.l_new;
+      auto& l_now = lorentz_param.l_now;
+      auto& l_new = lorentz_param.l_new;
 
-      const std::vector<T> l_old(l_now);
+      const auto l_old = l_now;
       std::copy(l_new.begin(), l_new.end(), l_now.begin());
       for (typename std::vector<T>::size_type i = 0; i < a.size(); ++i)	{
 	l_new[i] = a[i][0] * l_old[i] + a[i][1] * l_now[i] + a[i][2] * e_now;
@@ -98,10 +109,13 @@ namespace gmes
     }
 
   protected:
-    MaterialElectric<T>::param;
+    using MaterialElectric<T>::position;
+    using MaterialElectric<T>::idx_list;
+    std::vector<LorentzElectricParam<T> > param_list;
   }; // template LorentzElectric
 
-  template <typename T> class LorentzEx: public LorentzElectric<T>
+  template <typename T> 
+  class LorentzEx: public LorentzElectric<T>
   {
   public:
     void
@@ -110,13 +124,12 @@ namespace gmes
 	       const T* const hy, int hy_x_size, int hy_y_size, int hy_z_size,
 	       double dy, double dz, double dt, double n)
     {
-      for (auto v: param) {
-	auto lorentz_param_ptr = static_cast<LorentzElectricParam<T>*>(v.second);
+      for (auto idx = idx_list.begin(), param = param_list.begin();
+	   idx != idx_list.end(); ++idx, ++param) {
     	update(ex, ex_x_size, ex_y_size, ex_z_size,
 	       hz, hz_x_size, hz_y_size, hz_z_size,
 	       hy, hy_x_size, hy_y_size, hy_z_size,
-	       dy, dz, dt, n,
-    	       v.first, *lorentz_param_ptr);
+	       dy, dz, dt, n, *idx, *param);
       }
     }
 
@@ -141,12 +154,14 @@ namespace gmes
     }
 
   protected:
-    using LorentzElectric<T>::param;
+    using LorentzElectric<T>::idx_list;
+    using LorentzElectric<T>::param_list;
     using LorentzElectric<T>::update_l;
     using LorentzElectric<T>::lps_sum;
   }; // template LorentzEx
 
-  template <typename T> class LorentzEy: public LorentzElectric<T>
+  template <typename T> 
+  class LorentzEy: public LorentzElectric<T>
   {
   public:
     void
@@ -155,13 +170,12 @@ namespace gmes
 	       const T* const hz, int hz_x_size, int hz_y_size, int hz_z_size,
 	       double dz, double dx, double dt, double n)
     {
-      for (auto v: param) {
-	auto lorentz_param_ptr = static_cast<LorentzElectricParam<T>*>(v.second);
+      for (auto idx = idx_list.begin(), param = param_list.begin();
+	   idx != idx_list.end(); ++idx, ++param) {
 	update(ey, ey_x_size, ey_y_size, ey_z_size,
 	       hx, hx_x_size, hx_y_size, hx_z_size,
 	       hz, hz_x_size, hz_y_size, hz_z_size,
-	       dz, dx, dt, n,
-	       v.first, *lorentz_param_ptr);
+	       dz, dx, dt, n, *idx, *param);
       }
     }
 
@@ -186,12 +200,14 @@ namespace gmes
     }
     
   protected:
-    using LorentzElectric<T>::param;
+    using LorentzElectric<T>::idx_list;
+    using LorentzElectric<T>::param_list;
     using LorentzElectric<T>::update_l;
     using LorentzElectric<T>::lps_sum;
   }; // template LorentzEy
 
-  template <typename T> class LorentzEz: public LorentzElectric<T>
+  template <typename T> 
+  class LorentzEz: public LorentzElectric<T>
   {
   public:
     void
@@ -200,13 +216,12 @@ namespace gmes
 	       const T* const hx, int hx_x_size, int hx_y_size, int hx_z_size,
 	       double dx, double dy, double dt, double n)
     {
-      for (auto v: param) {
-	auto lorentz_param_ptr = static_cast<LorentzElectricParam<T>*>(v.second);
+      for (auto idx = idx_list.begin(), param = param_list.begin();
+	   idx != idx_list.end(); ++idx, ++param) {
     	update(ez, ez_x_size, ez_y_size, ez_z_size,
 	       hy, hy_x_size, hy_y_size, hy_z_size,
 	       hx, hx_x_size, hx_y_size, hx_z_size,
-	       dx, dy, dt, n,
-    	       v.first, *lorentz_param_ptr);
+	       dx, dy, dt, n, *idx, *param);
       }
     }
 
@@ -231,20 +246,24 @@ namespace gmes
     }
 
   protected:
-    using LorentzElectric<T>::param;
+    using LorentzElectric<T>::idx_list;
+    using LorentzElectric<T>::param_list;
     using LorentzElectric<T>::update_l;
     using LorentzElectric<T>::lps_sum;
   }; // template LorentzEz
 
-  template <typename T> class LorentzHx: public DielectricHx<T>
+  template <typename T> 
+  class LorentzHx: public DielectricHx<T>
   {
   }; // template LorentzHx
 
-  template <typename T> class LorentzHy: public DielectricHy<T>
+  template <typename T> 
+  class LorentzHy: public DielectricHy<T>
   {
   }; // template LorentzHy
 
-  template <typename T> class LorentzHz: public DielectricHz<T>
+  template <typename T>
+  class LorentzHz: public DielectricHz<T>
   {
   }; // template LorentzHz
 } // namespace gmes

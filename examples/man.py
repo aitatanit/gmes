@@ -38,6 +38,10 @@ my_fdtd.init()
 #s = pstats.Stats('man.prof')
 #s.strip_dirs().sort_stats('time').print_stats()
 
-my_fdtd.show_permittivity_ex(axis=constant.X, cut=0)
-my_fdtd.show_permittivity_ex(axis=constant.Y, cut=0)
-my_fdtd.show_permittivity_ex(axis=constant.Z, cut=0)
+# my_fdtd.show_permittivity_ex(axis=constant.X, cut=0)
+# my_fdtd.show_permittivity_ex(axis=constant.Y, cut=0)
+# my_fdtd.show_permittivity_ex(axis=constant.Z, cut=0)
+
+print 'done'
+import time
+time.sleep(60)

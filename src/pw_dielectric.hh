@@ -8,7 +8,6 @@
 #ifndef PW_DIELECTRIC_HH_
 #define PW_DIELECTRIC_HH_
 
-#include <iostream>
 #include <utility>
 #include "pw_material.hh"
 
@@ -21,23 +20,30 @@
 
 namespace gmes
 {
-  template <typename T> struct DielectricElectricParam: ElectricParam<T>
+  template <typename T> 
+  struct DielectricElectricParam: ElectricParam<T>
   {
   }; // template DielectricElectricParam
     
-  template <typename T> struct DielectricMagneticParam: MagneticParam<T>
+  template <typename T> 
+  struct DielectricMagneticParam: MagneticParam<T>
   {
   }; // template DielectricMagneticParam
 
-  template <typename T> class DielectricElectric: public MaterialElectric<T>
+  template <typename T>
+  class DielectricElectric: public MaterialElectric<T>
   {
   public:
-    ~DielectricElectric()
+    double
+    get_eps_inf(const int* const idx, int idx_size) const
     {
-      for (auto v: param) {
-      	delete static_cast<DielectricElectricParam<T>*>(v.second);
-      }
-      param.clear();
+      Index3 index;
+      std::copy(idx, idx + idx_size, index.begin());
+      const int i = position(index);
+      if (i < 0)
+	return 0;
+      else
+	return param_list[i].eps_inf;
     }
 
     PwMaterial<T>*
@@ -47,20 +53,36 @@ namespace gmes
       Index3 index;
       std::copy(idx, idx + idx_size, index.begin());
 
-      auto new_param_ptr = new DielectricElectricParam<T>();
-      new_param_ptr->eps_inf 
-	= static_cast<const DielectricElectricParam<T>*>(pm_param_ptr)->eps_inf;
+      const auto& dielectric_param = *static_cast<const DielectricElectricParam<T>*>(pm_param_ptr);
 
-      param.insert(std::make_pair(index, new_param_ptr));
+      idx_list.push_back(index);
+      param_list.push_back(dielectric_param);
 
       return this;
     }
     
+    PwMaterial<T>*
+    merge(const PwMaterial<T>* const pm_ptr)
+    {
+      auto dielectric_ptr 
+	= static_cast<const DielectricElectric<T>*>(pm_ptr);
+      std::copy(dielectric_ptr->idx_list.begin(), 
+		dielectric_ptr->idx_list.end(), 
+		std::back_inserter(idx_list));
+      std::copy(dielectric_ptr->param_list.begin(), 
+		dielectric_ptr->param_list.end(), 
+		std::back_inserter(param_list));
+      return this;
+    }
+
   protected:
-    using MaterialElectric<T>::param;
+    using MaterialElectric<T>::position;
+    using MaterialElectric<T>::idx_list;
+    std::vector<DielectricElectricParam<T> > param_list;
   }; // template DielectricElectric
 
-  template <typename T> class DielectricEx: public DielectricElectric<T>
+  template <typename T> 
+  class DielectricEx: public DielectricElectric<T>
   {
   public:
     void
@@ -69,16 +91,15 @@ namespace gmes
 	       const T* const hy, int hy_x_size, int hy_y_size, int hy_z_size,
 	       double dy, double dz, double dt, double n)
     {
-      for (auto v: param) {
-	const auto dielectric_param_ptr = static_cast<DielectricElectricParam<T>*>(v.second);
+      for (auto idx = idx_list.begin(), param = param_list.begin();
+	   idx != idx_list.end(); ++idx, ++param) {
     	update(ex, ex_x_size, ex_y_size, ex_z_size,
 	       hz, hz_x_size, hz_y_size, hz_z_size,
 	       hy, hy_x_size, hy_y_size, hy_z_size,
-	       dy, dz, dt, n,
-    	       v.first, *dielectric_param_ptr);
+	       dy, dz, dt, n, *idx, *param);
       }
     }
-
+    
   private:
     void 
     update(T* const ex, int ex_x_size, int ex_y_size, int ex_z_size,
@@ -94,12 +115,14 @@ namespace gmes
       ex(i,j,k) += dt / eps_inf * ((hz(i+1,j+1,k) - hz(i+1,j,k)) / dy - 
 				   (hy(i+1,j,k+1) - hy(i+1,j,k)) / dz);
     }
-
+    
   protected:
-    using DielectricElectric<T>::param;
+    using DielectricElectric<T>::idx_list;
+    using DielectricElectric<T>::param_list;
   }; // template DielectricEx
 
-  template <typename T> class DielectricEy: public DielectricElectric<T>
+  template <typename T>
+  class DielectricEy: public DielectricElectric<T>
   {
   public:
     void
@@ -108,13 +131,12 @@ namespace gmes
 	       const T* const hz, int hz_x_size, int hz_y_size, int hz_z_size,
 	       double dz, double dx, double dt, double n)
     {
-      for (auto v: param) {
-	const auto dielectric_param_ptr = static_cast<DielectricElectricParam<T>*>(v.second);
+      for (auto idx = idx_list.begin(), param = param_list.begin();
+	   idx != idx_list.end(); ++idx, ++param) {
       	update(ey, ey_x_size, ey_y_size, ey_z_size,
 	       hx, hx_x_size, hx_y_size, hx_z_size,
 	       hz, hz_x_size, hz_y_size, hz_z_size,
-	       dz, dx, dt, n,
-      	       v.first, *dielectric_param_ptr);
+	       dz, dx, dt, n, *idx, *param);
       }
     }
 
@@ -135,10 +157,12 @@ namespace gmes
     }
 
   protected:
-    using DielectricElectric<T>::param;
+    using DielectricElectric<T>::idx_list;
+    using DielectricElectric<T>::param_list;
   }; // template DielectricEy
 
-  template <typename T> class DielectricEz: public DielectricElectric<T>
+  template <typename T> 
+  class DielectricEz: public DielectricElectric<T>
   {
   public:
     void
@@ -147,17 +171,15 @@ namespace gmes
 	       const T* const hx, int hx_x_size, int hx_y_size, int hx_z_size,
 	       double dx, double dy, double dt, double n)
     {
-      for (auto v: param) {
-	// std::cerr << "update of DielectricEz\n"; // DEBUG
-	// std::cerr << v.first[0] << " " << v.first[1] << " " << v.first[2] << "\n";
-	const auto dielectric_param_ptr = static_cast<DielectricElectricParam<T>*>(v.second);
+      for (auto idx = idx_list.begin(), param = param_list.begin();
+	   idx != idx_list.end(); ++idx, ++param) {
 	update(ez, ez_x_size, ez_y_size, ez_z_size,
 	       hy, hy_x_size, hy_y_size, hy_z_size,
 	       hx, hx_x_size, hx_y_size, hx_z_size,
 	       dx, dy, dt, n,
-      	       v.first, *dielectric_param_ptr);
+      	       *idx, *param);
       }
-  }
+    }
 
   private:
     void 
@@ -176,18 +198,24 @@ namespace gmes
     }
 
   protected:
-    using DielectricElectric<T>::param;
+    using DielectricElectric<T>::idx_list;
+    using DielectricElectric<T>::param_list;
   }; // template DielectricEz
 
-  template <typename T> class DielectricMagnetic: public MaterialMagnetic<T>
+  template <typename T> 
+  class DielectricMagnetic: public MaterialMagnetic<T>
   {
   public:
-    ~DielectricMagnetic()
+    double
+    get_mu_inf(const int* const idx, int idx_size) const
     {
-      for (auto v: param) {
-      	delete static_cast<DielectricMagneticParam<T>*>(v.second);
-      }
-      param.clear();
+      Index3 index;
+      std::copy(idx, idx + idx_size, index.begin());
+      const int i = position(index);
+      if (i < 0)
+	return 0;
+      else
+	return param_list[i].mu_inf;
     }
 
     PwMaterial<T>*
@@ -196,21 +224,32 @@ namespace gmes
     {
       Index3 index;
       std::copy(idx, idx + idx_size, index.begin());
-
-      auto new_param_ptr = new DielectricMagneticParam<T>();
-      new_param_ptr->mu_inf 
-	= static_cast<const DielectricMagneticParam<T>*>(pm_param_ptr)->mu_inf;
-
-      param.insert(std::make_pair(index, new_param_ptr));
-
+      
+      const auto& dielectric_param = *static_cast<const DielectricMagneticParam<T>*>(pm_param_ptr);
+      
+      idx_list.push_back(index);
+      param_list.push_back(dielectric_param);
+      
       return this;
     }
     
-  protected:
-    using MaterialMagnetic<T>::param;
-  }; // template DielectricElectric
+    PwMaterial<T>*
+    merge(const PwMaterial<T>* const pm_ptr)
+    {
+      auto dielectric_ptr = static_cast<const DielectricMagnetic<T>*>(pm_ptr);
+      std::copy(dielectric_ptr->idx_list.begin(), dielectric_ptr->idx_list.end(), std::back_inserter(idx_list));
+      std::copy(dielectric_ptr->param_list.begin(), dielectric_ptr->param_list.end(), std::back_inserter(param_list));
+      return this;
+    }
 
-  template <typename T> class DielectricHx: public DielectricMagnetic<T>
+  protected:
+    using MaterialMagnetic<T>::position;
+    using MaterialMagnetic<T>::idx_list;
+    std::vector<DielectricMagneticParam<T> > param_list;
+  }; // template DielectriMagnetic
+
+  template <typename T> 
+  class DielectricHx: public DielectricMagnetic<T>
   {
   public:
     void
@@ -219,15 +258,12 @@ namespace gmes
 	       const T* const ey, int ey_x_size, int ey_y_size, int ey_z_size,
 	       double dy, double dz, double dt, double n)
     {
-      for (auto v: param) {
- 	// std::cerr << "update of DielectricHx\n"; // DEBUG
-	// std::cerr << v.first[0] << " " << v.first[1] << " " << v.first[2] << "\n";
-	const auto dielectric_param_ptr = static_cast<DielectricMagneticParam<T>*>(v.second);
+      for (auto idx = idx_list.begin(), param = param_list.begin();
+	   idx != idx_list.end(); ++idx, ++param) {
       	update(hx, hx_x_size, hx_y_size, hx_z_size,
 	       ez, ez_x_size, ez_y_size, ez_z_size,
 	       ey, ey_x_size, ey_y_size, ey_z_size,
-	       dy, dz, dt, n,
-      	       v.first, *dielectric_param_ptr);
+	       dy, dz, dt, n, *idx, *param);
       }
     }
 
@@ -248,10 +284,12 @@ namespace gmes
     }
 
   protected:
-    using DielectricMagnetic<T>::param;
+    using DielectricMagnetic<T>::idx_list;
+    using DielectricMagnetic<T>::param_list;
   }; // template DielectricHx
 
-  template <typename T> class DielectricHy: public DielectricMagnetic<T>
+  template <typename T> 
+  class DielectricHy: public DielectricMagnetic<T>
   {
   public:
     void
@@ -260,15 +298,12 @@ namespace gmes
 	       const T* const ez, int ez_x_size, int ez_y_size, int ez_z_size,
 	       double dz, double dx, double dt, double n)
     {
-      for (auto v: param) {
-	// std::cerr << "update of DielectricHy\n"; // DEBUG
-	// std::cerr << v.first[0] << " " << v.first[1] << " " << v.first[2] << "\n";
-	const auto dielectric_param_ptr = static_cast<DielectricMagneticParam<T>*>(v.second);
+      for (auto idx = idx_list.begin(), param = param_list.begin();
+	   idx != idx_list.end(); ++idx, ++param) {
       	update(hy, hy_x_size, hy_y_size, hy_z_size,
 	       ex, ex_x_size, ex_y_size, ex_z_size,
 	       ez, ez_x_size, ez_y_size, ez_z_size,
-	       dz, dx, dt, n,
-      	       v.first, *dielectric_param_ptr);
+	       dz, dx, dt, n, *idx, *param);
       }
     }
 
@@ -289,10 +324,12 @@ namespace gmes
     }
 
   protected:
-    using DielectricMagnetic<T>::param;
+    using DielectricMagnetic<T>::idx_list;
+    using DielectricMagnetic<T>::param_list;
   }; // template DielectricHy
 
-  template <typename T> class DielectricHz: public DielectricMagnetic<T>
+  template <typename T> 
+  class DielectricHz: public DielectricMagnetic<T>
   {
   public:
     void
@@ -301,13 +338,12 @@ namespace gmes
 	       const T* const ex, int ex_x_size, int ex_y_size, int ex_z_size,
 	       double dx, double dy, double dt, double n)
     {
-      for (auto v: param) {
-	const auto dielectric_param_ptr = static_cast<DielectricMagneticParam<T>*>(v.second);
+      for (auto idx = idx_list.begin(), param = param_list.begin();
+	   idx != idx_list.end(); ++idx, ++param) {
     	update(hz, hz_x_size, hz_y_size, hz_z_size,
 	       ey, ey_x_size, ey_y_size, ey_z_size,
 	       ex, ex_x_size, ex_y_size, ex_z_size,
-	       dx, dy, dt, n,
-    	       v.first, *dielectric_param_ptr);
+	       dx, dy, dt, n, *idx, *param);
       }
     }
 
@@ -328,7 +364,8 @@ namespace gmes
     }
 
   protected:
-    using DielectricMagnetic<T>::param;
+    using DielectricMagnetic<T>::idx_list;
+    using DielectricMagnetic<T>::param_list;
   }; // template DielectricHz
 } // namespace gmes
 

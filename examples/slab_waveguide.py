@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-"""A simple example showing the Ez field in a dielectric waveguide.
+"""A simple example showing the Ez field in a dielectric slab waveguide.
 
 This is a GMES version of the script in Fig.12 of
 
@@ -17,13 +17,13 @@ from gmes import *
 
 space = Cartesian(size=(16,8,0), resolution=10)
 geom_list = [DefaultMedium(material=Dielectric()),
-             Block(material=Dielectric(12), 
+             Block(material=Dielectric(12),
                    size=(inf, 1, inf)),
-             Boundary(material=Cpml(), thickness=1)]
+             Boundary(material=Cpml())]
 src_list = [PointSource(src_time=Continuous(freq=0.15),
-                        component=Jz,
+                        component=Ez,
                         center=(-7,0,0))]
 my_fdtd = TMzFDTD(space, geom_list, src_list)
 my_fdtd.init()
-my_fdtd.show_ez(Z, 0, vrange=(-0.05,0.05))
+my_fdtd.show_ez(Z, 0)
 my_fdtd.step_until_t(200)
