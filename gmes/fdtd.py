@@ -64,7 +64,7 @@ class FDTD(object):
     space -- geometry.Cartesian instance
     cmplx -- Boolean of whether field is complex. Determined by the 
         space.period.
-    dx, dy, dz -- space differentials
+    dr -- space differentials: dx, dy, dz
     dt -- time-step size
     courant_ratio -- the ratio of dt to Courant stability bound
     bloch -- Bloch wave vector
@@ -118,9 +118,7 @@ class FDTD(object):
                 
         self._fig_id = int(self.space.my_id)
             
-        self.dx = float(space.dx)
-        self.dy = float(space.dy)
-        self.dz = float(space.dz)
+        self.dx, self.dy, self.dz = self.space.dr
 
         default_medium = (i for i in geom_list 
                           if isinstance(i, DefaultMedium)).next()
@@ -189,8 +187,7 @@ class FDTD(object):
             S = c * time_step_size / ds
             ref_n = sqrt(eps_inf)
             self.bloch = np.array(bloch, np.double)
-            self.bloch = 2 * ref_n / ds \
-                * np.arcsin(np.sin(self.bloch * S * ds / 2) / S)
+            self.bloch = 2 * ref_n / ds * np.arcsin(np.sin(self.bloch * S * ds / 2) / S)
             
         if self.verbose:
             print 'Bloch wave vector is', self.bloch
@@ -210,6 +207,8 @@ class FDTD(object):
             for so in self.src_list:
                 so.display_info()
 
+        self.pw_material = {}
+
     def init(self):
         """Initialize sources.
 
@@ -225,95 +224,39 @@ class FDTD(object):
         self.hy = self.space.get_hy_storage(self.h_field_compnt, self.cmplx)
         self.hz = self.space.get_hz_storage(self.h_field_compnt, self.cmplx)
         
+        self.field = {Ex: self.ex, Ey: self.ey, Ez: self.ez,
+                      Hx: self.hx, Hy: self.hy, Hz: self.hz}
+
         if self.verbose:
             print 'done.'
             
         if self.verbose:
-            print 'ex field:', self.ex.dtype, self.ex.shape 
-            print 'ey field:', self.ey.dtype, self.ey.shape 
-            print 'ez field:', self.ez.dtype, self.ez.shape
-            print 'hx field:', self.hx.dtype, self.hx.shape
-            print 'hy field:', self.hy.dtype, self.hy.shape
-            print 'hz field:', self.hz.dtype, self.hz.shape
+            for comp in self.field:
+                print comp.__name__, 'field:', self.field[comp].dtype, self.field[comp].shape 
 
         if self.verbose:
             print 'Mapping the piecewise material.',
             print 'This will take some times...'
 
-        self.material_ex = {}
-        self.material_ey = {}
-        self.material_ez = {}
-        self.material_hx = {}
-        self.material_hy = {}
-        self.material_hz = {}
-
         self.init_material()
-        
-        if self.verbose:
-            print 'done.'
-
-        # pw_material information for electromagnetic fields
-        if self.verbose:
-            print 'ex material:',
-            self._print_pw_obj(self.material_ex)
-
-            print 'ey material:',
-            self._print_pw_obj(self.material_ey)
-
-            print 'ez material:',
-            self._print_pw_obj(self.material_ez)
-
-            print 'hx material:',
-            self._print_pw_obj(self.material_hx)
-
-            print 'hy material:',
-            self._print_pw_obj(self.material_hy)
-
-            print 'hz material:',
-            self._print_pw_obj(self.material_hz)
-
         
         if self.verbose:
             print 'Mapping the pointwise source...',
             
-        self.source_ex = {}
-        self.source_ey = {}
-        self.source_ez = {}
-        self.source_hx = {}
-        self.source_hy = {}
-        self.source_hz = {}
+        self.pw_source = {}
 
         self.init_source()
 
-        if self.verbose:
-            print 'done.'
-    
-        # pw_source information for electromagnetic fields
-        if self.verbose:
-            print 'ex source:',
-            self._print_pw_obj(self.source_ex)
-
-            print 'ey source:',
-            self._print_pw_obj(self.source_ey)
-
-            print 'ez source:',
-            self._print_pw_obj(self.source_ez)
-
-            print 'hx source:',
-            self._print_pw_obj(self.source_hx)
-
-            print 'hy source:',
-            self._print_pw_obj(self.source_hy)
-
-            print 'hz source:',
-            self._print_pw_obj(self.source_hz)
-
     def _print_pw_obj(self, pw_obj):
-        print_count = 0
+        """Print information of the piecewise material and source.
+
+        """
         for o in pw_obj.itervalues():
-            print type(o), 'with', o.idx_size(), 'point(s).'
-            print_count += 1
-        if print_count == 0: print
+            print o.name(), 'at', o.idx_size(), 'point(s).',
+        if len(pw_obj):
+            print
+        else:
+            print None
 
     def _init_field_compnt(self):
         """Set the significant electromagnetic field components.
@@ -344,7 +287,7 @@ class FDTD(object):
 
         non_inf = e_ds.intersection(h_ds)
 
-        dr = array((space.dx, space.dy, space.dz), np.double)
+        dr = array(space.dr, np.double)
         for i in range(3):
             if i not in non_inf: dr[i] = inf
         
@@ -382,9 +325,10 @@ class FDTD(object):
         """Set up the update mechanism for Ex field.
         
         Set up the update mechanism for Ex field and stores the result
-        at self.material_ex.
+        at self.pw_material[Ex].
         
         """
+        self.pw_material[Ex] = {}
         shape = self.ex.shape
         for idx in ndindex(shape):
             spc = self.space.ex_index_to_space(*idx)
@@ -393,18 +337,19 @@ class FDTD(object):
                 mat_obj = Dummy(mat_obj.eps_inf, mat_obj.mu_inf)
             pw_obj = mat_obj.get_pw_material_ex(idx, spc, underneath, self.cmplx)
             
-            if self.material_ex.has_key(type(pw_obj)):
-                self.material_ex[type(pw_obj)].merge(pw_obj)
+            if self.pw_material[Ex].has_key(type(pw_obj)):
+                self.pw_material[Ex][type(pw_obj)].merge(pw_obj)
             else:
-                self.material_ex[type(pw_obj)] = pw_obj
+                self.pw_material[Ex][type(pw_obj)] = pw_obj
 
     def init_material_ey(self):
         """Set up the update mechanism for Ey field.
         
         Set up the update mechanism for Ey field and stores the result
-        at self.material_ey.
+        at self.pw_material[Ey].
         
         """
+        self.pw_material[Ey] = {}
         shape = self.ey.shape
         for idx in ndindex(shape):
             spc = self.space.ey_index_to_space(*idx)
@@ -413,18 +358,19 @@ class FDTD(object):
                 mat_obj = Dummy(mat_obj.eps_inf, mat_obj.mu_inf)
             pw_obj = mat_obj.get_pw_material_ey(idx, spc, underneath, self.cmplx)
 
-            if self.material_ey.has_key(type(pw_obj)):
-                self.material_ey[type(pw_obj)].merge(pw_obj)
+            if self.pw_material[Ey].has_key(type(pw_obj)):
+                self.pw_material[Ey][type(pw_obj)].merge(pw_obj)
             else:
-                self.material_ey[type(pw_obj)] = pw_obj
+                self.pw_material[Ey][type(pw_obj)] = pw_obj
 
     def init_material_ez(self):
         """Set up the update mechanism for Ez field.
         
         Set up the update mechanism for Ez field and stores the result
-        at self.material_ez.
+        at self.pw_material[Ez].
         
         """
+        self.pw_material[Ez] = {}
         shape = self.ez.shape
         for idx in ndindex(shape):
             spc = self.space.ez_index_to_space(*idx)
@@ -433,18 +379,19 @@ class FDTD(object):
                 mat_obj = Dummy(mat_obj.eps_inf, mat_obj.mu_inf)
             pw_obj = mat_obj.get_pw_material_ez(idx, spc, underneath, self.cmplx)
 
-            if self.material_ez.has_key(type(pw_obj)):
-                self.material_ez[type(pw_obj)].merge(pw_obj)
+            if self.pw_material[Ez].has_key(type(pw_obj)):
+                self.pw_material[Ez][type(pw_obj)].merge(pw_obj)
             else:
-                self.material_ez[type(pw_obj)] = pw_obj
+                self.pw_material[Ez][type(pw_obj)] = pw_obj
 
     def init_material_hx(self):
         """Set up the update mechanism for Hx field.
         
         Set up the update mechanism for Hx field and stores the result
-        at self.material_hx.
+        at self.pw_material[Hx].
         
         """
+        self.pw_material[Hx] = {}
         shape = self.hx.shape
         for idx in ndindex(shape):
             spc = self.space.hx_index_to_space(*idx)
@@ -453,18 +400,19 @@ class FDTD(object):
                 mat_obj = Dummy(mat_obj.eps_inf, mat_obj.mu_inf)
             pw_obj = mat_obj.get_pw_material_hx(idx, spc, underneath, self.cmplx)
 
-            if self.material_hx.has_key(type(pw_obj)):
-                self.material_hx[type(pw_obj)].merge(pw_obj)
+            if self.pw_material[Hx].has_key(type(pw_obj)):
+                self.pw_material[Hx][type(pw_obj)].merge(pw_obj)
             else:
-                self.material_hx[type(pw_obj)] = pw_obj
+                self.pw_material[Hx][type(pw_obj)] = pw_obj
 
     def init_material_hy(self):
         """Set up the update mechanism for Hy field.
         
         Set up the update mechanism for Hy field and stores the result
-        at self.material_hy.
+        at self.pw_material[Hy].
         
         """
+        self.pw_material[Hy] = {}
         shape = self.hy.shape
         for idx in ndindex(shape):
             spc = self.space.hy_index_to_space(*idx)
@@ -473,30 +421,31 @@ class FDTD(object):
                 mat_obj = Dummy(mat_obj.eps_inf, mat_obj.mu_inf)
             pw_obj = mat_obj.get_pw_material_hy(idx, spc, underneath, self.cmplx)
 
-            if self.material_hy.has_key(type(pw_obj)):
-                self.material_hy[type(pw_obj)].merge(pw_obj)
+            if self.pw_material[Hy].has_key(type(pw_obj)):
+                self.pw_material[Hy][type(pw_obj)].merge(pw_obj)
             else:
-                self.material_hy[type(pw_obj)] = pw_obj
+                self.pw_material[Hy][type(pw_obj)] = pw_obj
 
     def init_material_hz(self):
         """Set up the update mechanism for Hz field.
         
         Set up the update mechanism for Hz field and stores the result
-        at self.material_hz.
+        at self.pw_material[Hz].
         
         """
+        self.pw_material[Hz] = {}
         shape = self.hz.shape
         for idx in ndindex(shape):
             spc = self.space.hz_index_to_space(*idx)
             mat_obj, underneath = self.geom_tree.material_of_point(spc)
             if idx[0] == 0 or idx[1] == 0:
                 mat_obj = Dummy(mat_obj.eps_inf, mat_obj.mu_inf)
-            pw_obj = mat_obj.get_pw_material_hz(idx, spc, underneath, self.cmplx)
+            pw_obj = mat_obj.get_pw_pw_material[Hz](idx, spc, underneath, self.cmplx)
 
-            if self.material_hz.has_key(type(pw_obj)):
-                self.material_hz[type(pw_obj)].merge(pw_obj)
+            if self.pw_material[Hz].has_key(type(pw_obj)):
+                self.pw_material[Hz][type(pw_obj)].merge(pw_obj)
             else:
-                self.material_hz[type(pw_obj)] = pw_obj
+                self.pw_material[Hz][type(pw_obj)] = pw_obj
 
     def init_material(self):
         init_mat_func = {Ex: self.init_material_ex,
@@ -510,83 +459,95 @@ class FDTD(object):
             if self.verbose:
                 print 'Mapping materials for', comp.__name__, 'field'
             init_mat_func[comp]()
+            
+            if self.verbose:
+                self._print_pw_obj(self.pw_material[comp])
 
         for comp in self.h_field_compnt:
             if self.verbose:
                 print 'Mapping materials for', comp.__name__, 'field'
             init_mat_func[comp]()
 
+            if self.verbose:
+                self._print_pw_obj(self.pw_material[comp])
+
     def init_source_ex(self):
+        self.pw_source[Ex] = {}
         for so in self.src_list:
             pw_src = so.get_pw_source_ex(self.ex, self.space, self.geom_tree)
 
             if pw_src is None:
                 continue
 
-            if self.source_ex.has_key(type(pw_src)):
-                self.source_ex[type(pw_src)].merge(pw_src)
+            if self.pw_source[Ex].has_key(type(pw_src)):
+                self.pw_source[Ex][type(pw_src)].merge(pw_src)
             else:
-                self.source_ex[type(pw_src)] = pw_src
+                self.pw_source[Ex][type(pw_src)] = pw_src
             
     def init_source_ey(self):
+        self.pw_source[Ey] = {}
         for so in self.src_list:
             pw_src = so.get_pw_source_ey(self.ey, self.space, self.geom_tree)
             
             if pw_src is None:
                 continue
 
-            if self.source_ey.has_key(type(pw_src)):
-                self.source_ey[type(pw_src)].merge(pw_src)
+            if self.pw_source[Ey].has_key(type(pw_src)):
+                self.pw_source[Ey][type(pw_src)].merge(pw_src)
             else:
-                self.source_ey[type(pw_src)] = pw_src
+                self.pw_source[Ey][type(pw_src)] = pw_src
 
     def init_source_ez(self):
+        self.pw_source[Ez] = {}
         for so in self.src_list:
             pw_src = so.get_pw_source_ez(self.ez, self.space, self.geom_tree)
 
             if pw_src is None:
                 continue
 
-            if self.source_ez.has_key(type(pw_src)):
-                self.source_ez[type(pw_src)].merge(pw_src)
+            if self.pw_source[Ez].has_key(type(pw_src)):
+                self.pw_source[Ez][type(pw_src)].merge(pw_src)
             else:
-                self.source_ez[type(pw_src)] = pw_src
+                self.pw_source[Ez][type(pw_src)] = pw_src
 
     def init_source_hx(self):
+        self.pw_source[Hx] = {}
         for so in self.src_list:
             pw_src = so.get_pw_source_hx(self.hx, self.space, self.geom_tree)
 
             if pw_src is None:
                 continue
 
-            if self.source_hx.has_key(type(pw_src)):
-                self.source_hx[type(pw_src)].merge(pw_src)
+            if self.pw_source[Hx].has_key(type(pw_src)):
+                self.pw_source[Hx][type(pw_src)].merge(pw_src)
             else:
-                self.source_hx[type(pw_src)] = pw_src
+                self.pw_source[Hx][type(pw_src)] = pw_src
             
     def init_source_hy(self):
+        self.pw_source[Hy] = {}
         for so in self.src_list:
             pw_src = so.get_pw_source_hy(self.hy, self.space, self.geom_tree)
 
             if pw_src is None:
                 continue
 
-            if self.source_hy.has_key(type(pw_src)):
-                self.source_hy[type(pw_src)].merge(pw_src)
+            if self.pw_source[Hy].has_key(type(pw_src)):
+                self.pw_source[Hy][type(pw_src)].merge(pw_src)
             else:
-                self.source_hy[type(pw_src)] = pw_src
+                self.pw_source[Hy][type(pw_src)] = pw_src
             
     def init_source_hz(self):
+        self.pw_source[Hz] = {}
         for so in self.src_list:
             pw_src = so.get_pw_source_hz(self.hz, self.space, self.geom_tree)
 
             if pw_src is None:
                 continue
 
-            if self.source_hz.has_key(type(pw_src)):
-                self.source_hz[type(pw_src)].merge(pw_src)
+            if self.pw_source[Hz].has_key(type(pw_src)):
+                self.pw_source[Hz][type(pw_src)].merge(pw_src)
             else:
-                self.source_hz[type(pw_src)] = pw_src
+                self.pw_source[Hz][type(pw_src)] = pw_src
             
     def init_source(self):
         init_src_func = {Ex: self.init_source_ex,
@@ -597,10 +558,18 @@ class FDTD(object):
                          Hz: self.init_source_hz}
 
         for comp in self.e_field_compnt:
+            if self.verbose:
+                print 'Mapping sources for', comp.__name__, 'field.'
             init_src_func[comp]()
-            
+            if self.verbose:
+                self._print_pw_obj(self.pw_source[comp])
+ 
         for comp in self.h_field_compnt:
+            if self.verbose:
+                print 'Mapping sources for', comp.__name__, 'field.'
             init_src_func[comp]()
+            if self.verbose:
+                self._print_pw_obj(self.pw_source[comp])
         
     def set_probe(self, p, prefix):
         """
@@ -635,9 +604,6 @@ class FDTD(object):
                     Hz: 
                     (lambda idx: in_range(idx, self.hz.shape, Hz))}
 
-        field = {Ex: self.ex, Ey: self.ey, Ez: self.ez,
-                 Hx: self.hy, Hy: self.hy, Hz: self.hz}
-
         postfix = {Ex: '_ex.dat', Ey: '_ey.dat',
                    Ez: '_ez.dat', Hx: '_hx.dat',
                    Hy: '_hy.dat', Hz: '_hz.dat'}
@@ -646,7 +612,7 @@ class FDTD(object):
             idx = spc2idx[comp](*p)
             if validity[comp](idx):
                 filename = prefix + postfix[comp]
-                recorder = Probe(idx, field[comp], filename)
+                recorder = Probe(idx, self.field[comp], filename)
                 loc = idx2spc[comp](*idx)
                 recorder.write_header(loc, self.time_step.dt)
                 self.e_recorder.append(recorder)
@@ -655,62 +621,62 @@ class FDTD(object):
             idx = spc2idx[comp](*p)
             if validity[comp](idx):
                 filename = prefix + postfix[comp]
-                recorder = Probe(idx, field[comp], filename)
+                recorder = Probe(idx, self.field[comp], filename)
                 loc = idx2spc[comp](*idx)
                 recorder.write_header(loc, self.time_step.dt)
                 self.h_recorder.append(recorder)
 
     def update_ex(self):
-        for pw_obj in self.material_ex.itervalues():
+        for pw_obj in self.pw_material[Ex].itervalues():
             pw_obj.update_all(self.ex, self.hz, self.hy, self.dy, self.dz, 
                               self.time_step.dt, self.time_step.n)
 
-        for pw_obj in self.source_ex.itervalues():
+        for pw_obj in self.pw_source[Ex].itervalues():
             pw_obj.update_all(self.ex, self.hz, self.hy, self.dy, self.dz, 
                               self.time_step.dt, self.time_step.n)
         
     def update_ey(self):
-        for pw_obj in self.material_ey.itervalues():
+        for pw_obj in self.pw_material[Ey].itervalues():
             pw_obj.update_all(self.ey, self.hx, self.hz, self.dz, self.dx,
                               self.time_step.dt, self.time_step.n)
 		
-        for pw_obj in self.source_ey.itervalues():
+        for pw_obj in self.pw_source[Ey].itervalues():
             pw_obj.update_all(self.ey, self.hx, self.hz, self.dz, self.dx,
                               self.time_step.dt, self.time_step.n)
 
     def update_ez(self):
-        for pw_obj in self.material_ez.itervalues():
+        for pw_obj in self.pw_material[Ez].itervalues():
             pw_obj.update_all(self.ez, self.hy, self.hx, self.dx, self.dy,
                               self.time_step.dt, self.time_step.n)
 
-        for pw_obj in self.source_ez.itervalues():
+        for pw_obj in self.pw_source[Ez].itervalues():
             pw_obj.update_all(self.ez, self.hy, self.hx, self.dx, self.dy,
                               self.time_step.dt, self.time_step.n)
         
     def update_hx(self):
-        for pw_obj in self.material_hx.itervalues():
+        for pw_obj in self.pw_material[Hx].itervalues():
             pw_obj.update_all(self.hx, self.ez, self.ey, self.dy, self.dz, 
                               self.time_step.dt, self.time_step.n)
 
-        for pw_obj in self.source_hx.itervalues():
+        for pw_obj in self.pw_source[Hx].itervalues():
             pw_obj.update_all(self.hx, self.ez, self.ey, self.dy, self.dz, 
                               self.time_step.dt, self.time_step.n)
 		
     def update_hy(self):
-        for pw_obj in self.material_hy.itervalues():
+        for pw_obj in self.pw_material[Hy].itervalues():
             pw_obj.update_all(self.hy, self.ex, self.ez, self.dz, self.dx,
                               self.time_step.dt, self.time_step.n)
 
-        for pw_obj in self.source_hy.itervalues():
+        for pw_obj in self.pw_source[Hy].itervalues():
             pw_obj.update_all(self.hy, self.ex, self.ez, self.dz, self.dx,
                               self.time_step.dt, self.time_step.n)
 		
     def update_hz(self):
-        for pw_obj in self.material_hz.itervalues():
+        for pw_obj in self.pw_material[Hz].itervalues():
             pw_obj.update_all(self.hz, self.ey, self.ex, self.dx, self.dy, 
                               self.time_step.dt, self.time_step.n)
 
-        for pw_obj in self.source_hz.itervalues():
+        for pw_obj in self.pw_source[Hz].itervalues():
             pw_obj.update_all(self.hz, self.ey, self.ex, self.dx, self.dy, 
                               self.time_step.dt, self.time_step.n)
 
@@ -1085,100 +1051,29 @@ class FDTD(object):
 
         print 'Elapsed time: %f s, (%d timesteps)' % (et - st, en - sn)
 
-    def show_line_ex(self, start, end, vrange=(-1, 1), interval=2500):
-        """Show the real value of the ex along the line.
+    def show_field_line(self, comp, start, end, vrange=(-1,1), interval=2500):
+        """Show the real value of the feild along the line.
 
-
+        comp: field component
         start: The start point of the probing line.
         end: The end point of the probing line.
         vrange: Plot range of the y axis.
         interval: Refresh rate of the plot in milliseconds.
 
         """
-        showcase = ShowLine(self, Ex, start, end, vrange, interval, 
-                            'ex field', self._fig_id)
+        title = {Ex: 'Ex field', Ey: 'Ey field', Ez: 'Ez field',
+                 Hx: 'Hx field', Hy: 'Hy field', Hz: 'Hz field'}
+
+        showcase = ShowLine(self, comp, start, end, vrange, interval, 
+                            title[comp], self._fig_id)
         self._fig_id += self.space.numprocs
         showcase.start()
         return showcase
-		
-    def show_line_ey(self, start, end, vrange=(-1, 1), interval=2500):
-        """Show the real value of the ey along the line.
-
-        start: The start point of the probing line.
-        end: The end point of the probing line.
-        vrange: Plot range of the y axis.
-        interval: Refresh rate of the plot in milliseconds.
-
-        """
-        showcase = ShowLine(self, Ey, start, end, vrange, interval, 
-                            'ey field', self._fig_id)
-        self._fig_id += self.space.numprocs
-        showcase.start()
-        return showcase
-		
-    def show_line_ez(self, start, end, vrange=(-1, 1), interval=2500):
-        """Show the real value of the ez along the line.
-
-        start: The start point of the probing line.
-        end: The end point of the probing line.
-        vrange: Plot range of the y axis.
-        interval: Refresh rate of the plot in milliseconds.
-
-        """
-        showcase = ShowLine(self, Ez, start, end, vrange, interval, 
-                            'ez field', self._fig_id)
-        self._fig_id += self.space.numprocs
-        showcase.start()
-        return showcase
-		
-    def show_line_hx(self, start, end, vrange=(-1, 1), interval=2500):
-        """Show the real value of the hx along the line.
-
-        start: The start point of the probing line.
-        end: The end point of the probing line.
-        vrange: Plot range of the y axis.
-        interval: Refresh rate of the plot in milliseconds.
-
-        """
-        showcase = ShowLine(self, Hx, start, end, vrange, interval, 
-                            'hx field', self._fig_id)
-        self._fig_id += self.space.numprocs
-        showcase.start()
-        return showcase
-		
-    def show_line_hy(self, start, end, vrange=(-1, 1), interval=2500):
-        """Show the real value of the hy along the line.
-
-        start: The start point of the probing line.
-        end: The end point of the probing line.
-        vrange: Plot range of the y axis.
-        interval: Refresh rate of the plot in milliseconds.
-
-        """
-        showcase = ShowLine(self, Hy, start, end, vrange, interval, 
-                            'hy field', self._fig_id)
-        self._fig_id += self.space.numprocs
-        showcase.start()
-        return showcase
-		
-    def show_line_hz(self, start, end, vrange=(-1, 1), interval=2500):
-        """Show the real value of the hz along the line.
-
-        start: The start point of the probing line.
-        end: The end point of the probing line.
-        vrange: Plot range of the y axis.
-        interval: Refresh rate of the plot in milliseconds.
-
-        """
-        showcase = ShowLine(self, Hz, start, end, vrange, interval, 
-                            'hz field', self._fig_id)
-        self._fig_id += self.space.numprocs
-        showcase.start()
-        return showcase
-
-    def show_ex(self, axis, cut, vrange=(-1, 1), interval=2500):
+    
+    def show_field(self, comp, axis, cut, vrange=(-1, 1), interval=2500):
         """Show the real value of the ex on the plone.
 
+        comp: field component
         axis: Specify the normal axis to the show plane.
             This should be one of the gmes.constant.Directional.
         cut: A scalar value which specifies the cut position on the 
@@ -1187,15 +1082,19 @@ class FDTD(object):
         inerval: Refresh rates in millisecond.
 
         """
-        showcase = ShowPlane(self, Ex, axis, cut, vrange, 
-                             interval, 'ex field', self._fig_id)
+        title = {Ex: 'Ex field', Ey: 'Ey field', Ez: 'Ez field',
+                 Hx: 'Hx field', Hy: 'Hy field', Hz: 'Hz field'}
+
+        showcase = ShowLine(self, comp, start, end, vrange, interval, 
+                            title[comp], self._fig_id)
         self._fig_id += self.space.numprocs
         showcase.start()
         return showcase
-        
-    def show_ey(self, axis, cut, vrange=(-1, 1), interval=2500):
-        """Show the real value of the ey on the plone.
+    
+    def show_field(self, comp, axis, cut, vrange=(-1, 1), interval=2500):
+        """Show the real value of the ex on the plone.
 
+        comp: field component
         axis: Specify the normal axis to the show plane.
             This should be one of the gmes.constant.Directional.
         cut: A scalar value which specifies the cut position on the 
@@ -1204,85 +1103,20 @@ class FDTD(object):
         inerval: Refresh rates in millisecond.
 
         """
-        showcase = ShowPlane(self, Ey, axis, cut, vrange, 
-                             interval, 'ey field', self._fig_id)
+        title = {Ex: 'Ex field', Ey: 'Ey field', Ez: 'Ez field',
+                 Hx: 'Hx field', Hy: 'Hy field', Hz: 'Hz field'}
+        
+        showcase = ShowPlane(self, comp, axis, cut, vrange, 
+                             interval, title[comp], self._fig_id)
         self._fig_id += self.space.numprocs
         showcase.start()
         return showcase
-        
-    def show_ez(self, axis, cut, vrange=(-1, 1), interval=2500):
-        """Show the real value of the ez on the plone.
 
-        axis: Specify the normal axis to the show plane.
-            This should be one of the gmes.constant.Directional.
-        cut: A scalar value which specifies the cut position on the 
-            axis. 
-        vrange: Specify the colorbar range.
-        inerval: Refresh rates in millisecond.
-
-        """
-        showcase = ShowPlane(self, Ez, axis, cut, vrange, 
-                             interval, 'ez field', self._fig_id)
-        self._fig_id += self.space.numprocs
-        showcase.start()
-        return showcase
-        
-    def show_hx(self, axis, cut, vrange=(-1, 1), interval=2500):
-        """Show the real value of the hx on the plone.
-
-        axis: Specify the normal axis to the show plane.
-            This should be one of the gmes.constant.Directional.
-        cut: A scalar value which specifies the cut position on the 
-            axis. 
-        vrange: Specify the colorbar range.
-        inerval: Refresh rates in millisecond.
-
-        """
-        showcase = ShowPlane(self, Hx, axis, cut, vrange, 
-                             interval, 'hx field', self._fig_id)
-        self._fig_id += self.space.numprocs
-        showcase.start()
-        return showcase
-        
-    def show_hy(self, axis, cut, vrange=(-1, 1), interval=2500):
-        """Show the real value of the hy on the plone.
-
-        axis: Specify the normal axis to the show plane.
-            This should be one of the gmes.constant.Directional.
-        cut: A scalar value which specifies the cut position on the 
-            axis. 
-        vrange: Specify the colorbar range.
-        inerval: Refresh rates in millisecond.
-
-        """
-        showcase = ShowPlane(self, Hy, axis, cut, vrange, 
-                             interval, 'hy field', self._fig_id)
-        self._fig_id += self.space.numprocs
-        showcase.start()
-        sleep(0.1)
-        return showcase
-        
-    def show_hz(self, axis, cut, vrange=(-1, 1), interval=2500):
-        """Show the real value of the hz on the plone.
-
-        axis: Specify the normal axis to the show plane.
-            This should be one of the gmes.constant.Directional.
-        cut: A scalar value which specifies the cut position on the 
-            axis. 
-        vrange: Specify the colorbar range.
-        inerval: Refresh rates in millisecond.
-
-        """
-        showcase = ShowPlane(self, Hz, axis, cut, vrange, 
-                             interval, 'hz field', self._fig_id)
-        self._fig_id += self.space.numprocs
-        showcase.start()
-        return showcase
-        
-    def show_permittivity_ex(self, axis, cut, vrange=None):
+    def show_permittivity(self, comp, axis, cut, vrange=None):
         """Show permittivity for the ex on the plane.
 
         Keyword arguments:
+        comp: field component
         axis: Specify the normal axis to the show plane.
             This should be one of the gmes.constant.Directional.
         cut: A scalar value which specifies the cut position on the 
@@ -1290,273 +1124,96 @@ class FDTD(object):
         vrange: Specify the colorbar range. A tuple of length two.
         
         """
-        showcase = Snapshot(self, Ex, axis, cut, vrange, 
-                            'Permittivity for Ex', self._fig_id)
+        title = {Ex: 'Permittivity for Ex field', 
+                 Ey: 'Permittivity for Ey field', 
+                 Ez: 'Permittivity for Ez field',
+                 Hx: 'Permittivity for Hx field', 
+                 Hy: 'Permittivity for Hy field', 
+                 Hz: 'Permittivity for Hz field'}
+        
+        showcase = Snapshot(self, comp, axis, cut, vrange, 
+                            title[comp], self._fig_id)
         self._fig_id += self.space.numprocs
         showcase.start()
         return showcase
         
-    def show_permittivity_ey(self, axis, cut, vrange=None):
-        """Show permittivity for the ey on the plane.
+    def write_field(self, comp, low=None, high=None, prefix=None, postfix=None):
+        """Dump the field values on a file.
 
-        Keyword arguments:
-        axis: Specify the normal axis to the show plane.
-            This should be one of the gmes.constant.Directional.
-        cut: A scalar value which specifies the cut position on the 
-            axis.
-        vrange: Specify the colorbar range. A tuple of length two.
-        
+        comp: component of the field
+        low: coordinate of lower boundary
+        high: coordinate of higher boundary
+        prefix: prefix of the output filename
+        postfix: postfix of the output filename
+
         """
-        showcase = Snapshot(self, Ey, axis, cut, vrange, 
-                            'Permittivity for Ey', self._fig_id)
-        self._fig_id += self.space.numprocs
-        showcase.start()
-        return showcase
-            
-    def show_permittivity_ez(self, axis, cut, vrange=None):
-        """Show permittivity for the ez on the plane.
-
-        Keyword arguments:
-        axis: Specify the normal axis to the show plane.
-            This should be one of the gmes.constant.Directional.
-        cut: A scalar value which specifies the cut position on the 
-            axis.
-        vrange: Specify the colorbar range. A tuple of length two.
+        spc2idx = {Ex: self.space.space_to_ex_index,
+                   Ey: self.space.space_to_ey_index,
+                   Ez: self.space.space_to_ez_index,
+                   Hx: self.space.space_to_hx_index,
+                   Hy: self.space.space_to_hy_index,
+                   Hz: self.space.space_to_hz_index}
         
-        """
-        showcase = Snapshot(self, Ez, axis, cut, vrange, 
-                            'Permittivity for Ez', self._fig_id)
-        self._fig_id += self.space.numprocs
-        showcase.start()
-        return showcase
-
-    def show_permeability_hx(self, axis, cut, vrange=None):
-        """Show permeability for the hx on the plane.
-
-        Keyword arguments:
-        axis: Specify the normal axis to the show plane.
-            This should be one of the gmes.constant.Directional.
-        cut: A scalar value which specifies the cut position on the 
-            axis.
-        vrange: Specify the colorbar range. A tuple of length two.
-        
-        """
-        showcase = Snapshot(self, Hx, axis, cut, vrange, 
-                            'Permittivity for Hx', self._fig_id)
-        self._fig_id += self.space.numprocs
-        showcase.start()
-        return showcase
-        
-    def show_permeability_hy(self, axis, cut, vrange=None):
-        """Show permeability for the hy on the plane.
-
-        Keyword arguments:
-        axis: Specify the normal axis to the show plane.
-            This should be one of the gmes.constant.Directional.
-        cut: A scalar value which specifies the cut position on the 
-            axis.
-        vrange: Specify the colorbar range. A tuple of length two.
-        
-        """
-        showcase = Snapshot(self, Hy, axis, cut, vrange, 
-                            'Permittivity for Hy', self._fig_id)
-        self._fig_id += self.space.numprocs
-        showcase.start()
-        return showcase
-            
-    def show_permeability_hz(self, axis, cut, vrange=None):
-        """Show permeability for the hz on the plane.
-
-        Keyword arguments:
-        axis: Specify the normal axis to the show plane.
-            This should be one of the gmes.constant.Directional.
-        cut: A scalar value which specifies the cut position on the 
-            axis.
-        vrange: Specify the colorbar range. a tuple of length two.
-        
-        """
-        showcase = Snapshot(self, Hz, axis, cut, vrange, 
-                            'Permittivity for Hz', self._fig_id)
-        self._fig_id += self.space.numprocs
-        showcase.start()
-        return showcase
-        
-    def write_ex(self, low=None, high=None, prefix=None, postfix=None):
+        field_name = {Ex: 'ex', Ey: 'ey', Ez: 'ez',
+                      Hx: 'hx', Hy: 'hy', Hz: 'hz'}
+                   
         if low is None:
             low_idx = (0, 0, 0)
         else:
-            low_idx = self.space.space_to_ex_index(low)
+            low_idx = spc2idx[comp](low)
             
         if low is None:
-            high_idx = self.ex.shape
+            high_idx = self.field[comp].shape
         else:
-            high_idx = self.space.space_to_ex_index(high)
+            high_idx = [i + 1 for i in self.spc2idx[comp](high)]
         
-        high_idx = [i + 1 for i in high_idx]
-        
-        name = 'ex'
+        name = field_name[comp]
         if prefix is not None:
             name = prefix + name
         if postfix is not None:
             name = name + postfix
-        
-        np.save(name, self.ex[low_idx[0]: high_idx[0],
-                              low_idx[1]: high_idx[1],
-                              low_idx[2]: high_idx[2]])
+            
+        np.save(name, self.field[comp][low_idx[0]: high_idx[0],
+                                       low_idx[1]: high_idx[1],
+                                       low_idx[2]: high_idx[2]])
     	
-    def write_ey(self, low=None, high=None, prefix=None, postfix=None):    
-        if low is None:
-            low_idx = (0, 0, 0)
-        else:
-            low_idx = self.space.space_to_ey_index(low)
-            
-        if low is None:
-            high_idx = self.ey.shape
-        else:
-            high_idx = self.space.space_to_ey_index(high)
-        
-        high_idx = [i + 1 for i in high_idx]
-        
-        name = 'ey'
-        if prefix is not None:
-            name = prefix + name
-        if postfix is not None:
-            name = name + postfix
-            
-        np.save(name, self.ey[low_idx[0]: high_idx[0],
-                              low_idx[1]: high_idx[1],
-                              low_idx[2]: high_idx[2]])
+    def snapshot_field(self, comp, axis, cut):
+        """Take a snapshot of a field.
 
-        	
-    def write_ez(self, low=None, high=None, prefix=None, postfix=None):
-        if low is None:
-            low_idx = (0, 0, 0)
-        else:
-            low_idx = self.space.space_to_ez_index(low)
-            
-        if low is None:
-            high_idx = self.ez.shape
-        else:
-            high_idx = self.space.space_to_ez_index(high)
-        
-        high_idx = [i + 1 for i in high_idx]
-        
-        name = 'ez'
-        if prefix is not None:
-            name = prefix + name
-        if postfix is not None:
-            name = name + postfix
-            
-        np.save(name, self.ez[low_idx[0]: high_idx[0],
-                              low_idx[1]: high_idx[1],
-                              low_idx[2]: high_idx[2]])
+        comp: field component
+        axis: normal axis to the snapshot plane
+        cut: coordinate of axis to take a snoptshot
 
-    def write_hx(self, low=None, high=None, prefix=None, postfix=None):
-        if low is None:
-            low_idx = (0, 0, 0)
-        else:
-            low_idx = self.space.space_to_hx_index(low)
-            
-        if low is None:
-            high_idx = self.hx.shape
-        else:
-            high_idx = self.space.space_to_hx_index(high)
+        """
+        spc2idx = {Ex: self.space.space_to_ex_index,
+                   Ey: self.space.space_to_ey_index,
+                   Ez: self.space.space_to_ez_index,
+                   Hx: self.space.space_to_hx_index,
+                   Hy: self.space.space_to_hy_index,
+                   Hz: self.space.space_to_hz_index}
         
-        high_idx = [i + 1 for i in high_idx]
-        
-        name = 'hx'
-        if prefix is not None:
-            name = prefix + name
-        if postfix is not None:
-            name = name + postfix
-            
-        np.save(name, self.hx[low_idx[0]: high_idx[0],
-                              low_idx[1]: high_idx[1],
-                              low_idx[2]: high_idx[2]])
-    	
-    def write_hy(self, low=None, high=None, prefix=None, postfix=None):
-        if low is None:
-            low_idx = (0, 0, 0)
-        else:
-            low_idx = self.space.space_to_hy_index(low)
-            
-        if low is None:
-            high_idx = self.hy.shape
-        else:
-            high_idx = self.space.space_to_hy_index(high)
-        
-        high_idx = [i + 1 for i in high_idx]
-        
-        name = 'hy'
-        if prefix is not None:
-            name = prefix + name
-        if postfix is not None:
-            name = name + postfix
-            
-        np.save(name, self.hy[low_idx[0]: high_idx[0],
-                              low_idx[1]: high_idx[1],
-                              low_idx[2]: high_idx[2]])
-    	
-    def write_hz(self, low=None, high=None, prefix=None, postfix=None):
-        if low is None:
-            low_idx = (0, 0, 0)
-        else:
-            low_idx = self.space.space_to_hz_index(low)
-            
-        if low is None:
-            high_idx = self.hz.shape
-        else:
-            high_idx = self.space.space_to_hz_index(high)
-        
-        high_idx = [i + 1 for i in high_idx]
-        
-        name = 'hz'
-        if prefix is not None:
-            name = prefix + name
-        if postfix is not None:
-            name = name + postfix
-            
-        np.save(name, self.hz[low_idx[0]: high_idx[0],
-                              low_idx[1]: high_idx[1],
-                              low_idx[2]: high_idx[2]])
-        
-    def snapshot_ex(self, axis, cut):
         if axis is X:
-            cut_idx = self.space.space_to_index(cut, 0, 0)[0]
-            data = self.ex[cut_idx, :, :]
+            cut_idx = spc2idx[comp](cut, 0, 0)[0]
+            data = self.field[comp][cut_idx, :, :]
         elif axis is Y:
-            cut_idx = self.space.space_to_index(0, cut, 0)[1]
-            data = self.ex[:, cut_idx, :]
+            cut_idx = spc2idx[comp](0, cut, 0)[1]
+            data = self.field[comp][:, cut_idx, :]
         elif axis is Z:
-            cut_idx = self.space.space_to_index(0, 0, cut)[2]
-            data = self.ex[:, :, cut_idx]
+            cut_idx = spc2idx[comp](0, 0, cut)[2]
+            data = self.field[comp][:, :, cut_idx]
         else:
-            pass
-        
+            raise TypeError
+
         filename = 't=' + str(self.time_step[1] * space.dt)
-        snapshot(data, filename, Ex)
-        
-    def snapshot_ey(self, axis=Z, cut=0, vrange=(-.1, .1), size=(400, 400)):
-        pass
-    
-    def snapshot_ez(self, axis=Z, cut=0, vrange=(-.1, .1), size=(400, 400)):
-        pass
-    
-    def snapshot_hx(self, axis=Z, cut=0, vrange=(-.1, .1), size=(400, 400)):
-        pass
-        
-    def snapshot_hy(self, axis=Z, cut=0, vrange=(-.1, .1), size=(400, 400)):
-        pass
-        
-    def snapshot_hz(self, axis=Z, cut=0, vrange=(-.1, .1), size=(400, 400)):
-        pass
+        snapshot(data, filename, comp)
         
 
 class TExFDTD(FDTD):
     """2-D fdtd which has transverse-electric mode with respect to x.
     
-    Assume that the structure and incident wave are uniform in the x 
-    direction. TExFDTD updates only Ey, Ez, and Hx field components.
+    Assume that the structure and incident wave are uniform in 
+    the x direction. TExFDTD updates only Ey, Ez, and Hx field 
+    components.
     
     """
     def _init_field_compnt(self):
@@ -1567,8 +1224,9 @@ class TExFDTD(FDTD):
 class TEyFDTD(FDTD):
     """2-D FDTD which has transverse-electric mode with respect to y.
     
-    Assume that the structure and incident wave are uniform in the y direction.
-    TEyFDTD updates only Ez, Ex, and Hy field components.
+    Assume that the structure and incident wave are uniform in the
+    y direction. TEyFDTD updates only Ez, Ex, and Hy field 
+    components.
     
     """
     def _init_field_compnt(self):
@@ -1579,8 +1237,9 @@ class TEyFDTD(FDTD):
 class TEzFDTD(FDTD):
     """2-D FDTD which has transverse-electric mode with respect to z.
 
-    Assume that the structure and incident wave are uniform in the z direction.
-    TEzFDTD updates only Ex, Ey, and Hz field components.
+    Assume that the structure and incident wave are uniform in the
+    z direction. TEzFDTD updates only Ex, Ey, and Hz field 
+    components.
     
     """
     def _init_field_compnt(self):
@@ -1591,8 +1250,9 @@ class TEzFDTD(FDTD):
 class TMxFDTD(FDTD):
     """2-D FDTD which has transverse-magnetic mode with respect to x.
 
-    Assume that the structure and incident wave are uniform in the x direction.
-    TMxFDTD updates only Hy, Hz, and Ex field components.
+    Assume that the structure and incident wave are uniform in the
+    x direction. TMxFDTD updates only Hy, Hz, and Ex field 
+    components.
     
     """
     def _init_field_compnt(self):
@@ -1603,8 +1263,9 @@ class TMxFDTD(FDTD):
 class TMyFDTD(FDTD):
     """2-D FDTD which has transverse-magnetic mode with respect to y
 
-    Assume that the structure and incident wave are uniform in the y direction.
-    TMyFDTD updates only Hz, Hx, and Ey field components.
+    Assume that the structure and incident wave are uniform in the
+    y direction. TMyFDTD updates only Hz, Hx, and Ey field 
+    components.
     
     """
     def _init_field_compnt(self):
@@ -1615,8 +1276,9 @@ class TMyFDTD(FDTD):
 class TMzFDTD(FDTD):
     """2-D FDTD which has transverse-magnetic mode with respect to z
     
-    Assume that the structure and incident wave are uniform in the z direction.
-    TMzFDTD updates only Hx, Hy, and Ez field components.
+    Assume that the structure and incident wave are uniform in the
+    z direction. TMzFDTD updates only Hx, Hy, and Ez field 
+    components.
     
     """
     def _init_field_compnt(self):
@@ -1627,8 +1289,9 @@ class TMzFDTD(FDTD):
 class TEMxFDTD(FDTD):
     """y-polarized and x-directed one dimensional fdtd class
 
-    Assume that the structure and incident wave are uniform in transverse 
-    direction. TEMxFDTD updates only Ey and Hz field components.
+    Assume that the structure and incident wave are uniform in 
+    transverse direction. TEMxFDTD updates only Ey and Hz field 
+    components.
     
     """
     def _init_field_compnt(self):
@@ -1639,8 +1302,9 @@ class TEMxFDTD(FDTD):
 class TEMyFDTD(FDTD):
     """z-polarized and y-directed one dimensional fdtd class
 
-    Assume that the structure and incident wave are uniform in transverse 
-    direction. TEMyFDTD updates only Ez and Hx field components.
+    Assume that the structure and incident wave are uniform in 
+    transverse direction. TEMyFDTD updates only Ez and Hx field
+    components.
     
     """
     def _init_field_compnt(self):
@@ -1651,8 +1315,9 @@ class TEMyFDTD(FDTD):
 class TEMzFDTD(FDTD):
     """x-polarized and z-directed one dimensional fdtd class
     
-    Assume that the structure and incident wave are uniform in transverse 
-    direction. TEMzFDTD updates only Ex and Hy field components.
+    Assume that the structure and incident wave are uniform in 
+    transverse direction. TEMzFDTD updates only Ex and Hy field
+    components.
     
     """
     def _init_field_compnt(self):

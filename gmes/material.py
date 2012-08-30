@@ -471,7 +471,7 @@ class Pml(Material, Compound):
         self.half_size = array(half_size, np.double)
         
         self.dt = space.dt
-        self.dw = array((space.dx, space.dy, space.dz), np.double)
+        self.dw = array(space.dr, np.double)
         self.sigma_max = self.sigma_max_ratio * self.get_sigma_opt()
         
         self.initialized = True

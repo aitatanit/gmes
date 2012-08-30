@@ -14,7 +14,7 @@ print 'starting initialization:', start_time
 from sys import argv
 from math import pi, sin, cos
 from numpy import inf
-from gmes import material, geometry, fdtd, source, constant
+from gmes import *
 
 ORDINAL = float(argv[1])
 NJOBS = float(argv[2])
@@ -23,40 +23,38 @@ SIZE = (x_size, y_size, 0)
 angle = 0
 wl= 10 + (50 - 10) * ORDINAL / NJOBS
 k0 = 2 * pi / wl
-air = material.Dielectric()
-gold = material.GoldRc(a=20e-9)
-host = geometry.DefaultMedium(material=air)
-cylinder = geometry.Cylinder(center=(0, 0, 0),
-                             axis=(1, 0, 0),
-                             radius=1000,
-                             height=1,
-                             material=gold)
-boundary = geometry.Boundary(material=material.Cpml(),
-                             thickness=1,
-                             minus_y=False, plus_y=False)
+air = Dielectric()
+gold = GoldRc(a=20e-9)
+host = DefaultMedium(material=air)
+cylinder = Cylinder(center=(0, 0, 0),
+                    axis=(1, 0, 0),
+                    radius=1000,
+                    height=1,
+                    material=gold)
+boundary = Boundary(material=Cpml(),
+                    minus_y=False, plus_y=False)
 
-space = geometry.Cartesian(size=SIZE, resolution=100, parallel=True)
+space = Cartesian(size=SIZE, resolution=100, parallel=True)
 geom_list = (host, cylinder, boundary)
-source_list = (source.GaussianBeam(
-    src_time=source.Continuous(freq=1/wl,
-                               width=50),
-    directivity=constant.MinusX,
-    center=(0.6, 0, 0),
-    size=(0, y_size + 1, 1),
-    direction=(-1 * cos(angle), sin(angle), 0),
-    polarization=(0, 0, 1)),)
+source_list = [GaussianBeam(
+        src_time=Continuous(freq=1/wl, width=50),
+        directivity=MinusX,
+        center=(0.6, 0, 0),
+        size=(0, y_size + 1, 1),
+        direction=(-1 * cos(angle), sin(angle), 0),
+        polarization=(0, 0, 1))]
 
-my_fdtd = fdtd.TMzFDTD(space,
-                       geom_list,
-                       source_list,
-                       bloch=(0, k0 * sin(angle), 0))
+my_fdtd = TMzFDTD(space,
+                  geom_list,
+                  source_list,
+                  bloch=(0, k0 * sin(angle), 0))
 
 # directory = os.path.dirname(__file__) + '/../data'
 # my_fdtd.set_probe((0.7, 0, 0), directory + '/r_wl=%f' % wl)
 # my_fdtd.set_probe((-0.7, 0, 0), directory + '/t_wl=%f' % wl)
 
 # if os.uname()[1] == 'magi':
-#     my_fdtd.show_ez(constant.Z, 0)
+#     my_fdtd.show_ez(Z, 0)
 
 end_time = datetime.now()
 print 'ending initialization:', end_time

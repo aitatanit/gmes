@@ -1,14 +1,14 @@
 /* This implementation is based on the following article.
  *
- * M. Okoniewski and E. Okoniewska, "Drude dispersion in ADE FDTD revisited,"
- * Electronics Letters, vol. 42, no. 9, pp. 503-504, 2006.
+ * M. Okoniewski and E. Okoniewska, "Drude dispersion in ADE FDTD 
+ * revisited," Electron. Lett., 42, 503-504, (2006).
  */
 
 #ifndef PW_DRUDE_HH_
 #define PW_DRUDE_HH_
 
+#include <array>
 #include <vector>
-
 #include "pw_dielectric.hh"
 
 #define ex(i,j,k) ex[ex_y_size==1?0:((i)*ex_y_size+(j))*ex_z_size+(k)]
@@ -37,6 +37,12 @@ namespace gmes
   class DrudeElectric: public MaterialElectric<T>
   {
   public:
+    const std::string& 
+    name() const
+    {
+      return DrudeElectric<T>::tag;
+    }
+
     double
     get_eps_inf(const int* const idx, int idx_size) const
     {
@@ -106,7 +112,13 @@ namespace gmes
     using MaterialElectric<T>::position;
     using MaterialElectric<T>::idx_list;
     std::vector<DrudeElectricParam<T> > param_list;
+
+  private:
+    static const std::string tag; // "DrudeElectric"
   }; // template DrudeElectric
+
+  template <typename T>
+  const std::string DrudeElectric<T>::tag = "DrudeElectric";
 
   template <typename T> 
   class DrudeEx: public DrudeElectric<T>
@@ -248,17 +260,54 @@ namespace gmes
   template <typename T> 
   class DrudeHx: public DielectricHx<T>
   {
+  public:
+    const std::string& 
+    name() const
+    {
+      return DrudeHx<T>::tag;
+    }
+
+  private:
+    static const std::string tag; // "DrudeMagnetic"
   }; // template DrudeHx
+
+  template <typename T>
+  const std::string DrudeHx<T>::tag = "DrudeMagnetic";
 
   template <typename T> 
   class DrudeHy: public DielectricHy<T>
   {
+  public:
+    const std::string& 
+    name() const
+    {
+      return DrudeHy<T>::tag;
+    }
+
+  private:
+    static const std::string tag; // "DrudeMagnetic"
   }; // template DrudeHy
+
+  template <typename T>
+  const std::string DrudeHy<T>::tag = "DrudeMagnetic";
 
   template <typename T> 
   class DrudeHz: public DielectricHz<T>
   {
+  public:
+    const std::string& 
+    name() const
+    {
+      return DrudeHz<T>::tag;
+    }
+
+  private:
+    static const std::string tag; // "DrudeMagnetic"
   }; // template DrudeHz
+
+  template <typename T>
+  const std::string DrudeHz<T>::tag = "DrudeMagnetic";
+
 } // namespace gmes
 
 #undef ex

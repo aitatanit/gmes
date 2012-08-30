@@ -1,8 +1,8 @@
 /* This implementation is based on the following article.
  *
- * K. S. Yee, "Numerical solution of initial boundary value problems involving
- * Maxwell's equations in isotropic media," IEEE Transactions on Antennas and 
- * Propagation, vol. 14, no. 3, pp. 302-307, May. 1966.
+ * K. S. Yee, "Numerical solution of initial boundary value 
+ * problems involving Maxwell¡¯s equations in isotropic media," 
+ * IEEE Trans. Antennas Propag. 14, 302-307 (1966).
  */
 
 #ifndef PW_DIELECTRIC_HH_
@@ -34,6 +34,12 @@ namespace gmes
   class DielectricElectric: public MaterialElectric<T>
   {
   public:
+    const std::string& 
+    name() const
+    {
+      return DielectricElectric<T>::tag;
+    }
+
     double
     get_eps_inf(const int* const idx, int idx_size) const
     {
@@ -79,7 +85,13 @@ namespace gmes
     using MaterialElectric<T>::position;
     using MaterialElectric<T>::idx_list;
     std::vector<DielectricElectricParam<T> > param_list;
+
+  private:
+    static const std::string tag; // "DielectricElectric"
   }; // template DielectricElectric
+
+  template <typename T>
+  const std::string DielectricElectric<T>::tag = "DielectricElectric";
 
   template <typename T> 
   class DielectricEx: public DielectricElectric<T>
@@ -206,6 +218,12 @@ namespace gmes
   class DielectricMagnetic: public MaterialMagnetic<T>
   {
   public:
+    const std::string& 
+    name() const 
+    {
+      return DielectricMagnetic<T>::tag;
+    }
+
     double
     get_mu_inf(const int* const idx, int idx_size) const
     {
@@ -246,7 +264,13 @@ namespace gmes
     using MaterialMagnetic<T>::position;
     using MaterialMagnetic<T>::idx_list;
     std::vector<DielectricMagneticParam<T> > param_list;
+
+  private:
+    static const std::string tag; // "DielectricMagnetic"
   }; // template DielectriMagnetic
+
+  template <typename T>
+  const std::string DielectricMagnetic<T>::tag = "DielectricMagnetic";
 
   template <typename T> 
   class DielectricHx: public DielectricMagnetic<T>

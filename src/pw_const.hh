@@ -25,6 +25,12 @@ namespace gmes
   class ConstElectric: public MaterialElectric<T>
   {
   public:
+    const std::string& 
+    name() const
+    {
+      return ConstElectric<T>::tag;
+    }
+
     double
     get_eps_inf(const int* const idx, int idx_size) const
     {
@@ -97,7 +103,13 @@ namespace gmes
     using MaterialElectric<T>::position;
     using MaterialElectric<T>::idx_list;
     std::vector<ConstElectricParam<T> > param_list;
+
+  private:
+    static const std::string tag; // "ConstElectric"
   }; // template ConstElectric
+
+  template <typename T>
+  const std::string ConstElectric<T>::tag = "ConstElectric";
 
   template <typename T> 
   class ConstEx: public ConstElectric<T>
@@ -118,6 +130,12 @@ namespace gmes
   class ConstMagnetic: public MaterialMagnetic<T>
   {
   public:
+    const std::string& 
+    name() const
+    {
+      return ConstMagnetic<T>::tag;
+    }
+
     double
     get_mu_inf(const int* const idx, int idx_size) const
     {
@@ -142,6 +160,15 @@ namespace gmes
       idx_list.push_back(index);
       param_list.push_back(const_param);
 
+      return this;
+    }
+
+    PwMaterial<T>*
+    merge(const PwMaterial<T>* const pm_ptr)
+    {
+      auto const_ptr = static_cast<const ConstMagnetic<T>*>(pm_ptr);
+      std::copy(const_ptr->idx_list.begin(), const_ptr->idx_list.end(), std::back_inserter(idx_list));
+      std::copy(const_ptr->param_list.begin(), const_ptr->param_list.end(), std::back_inserter(param_list));
       return this;
     }
 
@@ -181,7 +208,13 @@ namespace gmes
     using MaterialMagnetic<T>::position;
     using MaterialMagnetic<T>::idx_list;
     std::vector<ConstMagneticParam<T> > param_list;
+
+  private:
+    static const std::string tag; // "ConstMagnetic"
   }; // template ConstMagnetic
+
+  template <typename T>
+  const std::string ConstMagnetic<T>::tag = "ConstMagnetic";
 
   template <typename T> class ConstHx: public ConstMagnetic<T>
   {

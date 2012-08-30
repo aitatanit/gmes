@@ -27,6 +27,9 @@ class PwSource(object):
     def __init__(self):
         self._param = {}
 
+    def name(self):
+        raise NotImplementedError
+
     def attach(self, idx, parameter):
         key = tuple(idx)
         if self._param.has_key(key):
@@ -63,6 +66,9 @@ class PointSourceParam(PwSourceParam):
 
 
 class PointSourceElectric(PwSource):
+    def name(self):
+        return 'PointSourceElectric'
+
     def _update(self, e, h1, h2, dr1, dr2, dt, n, idx, param):
         """
         This _update should be called after that the pw_material._update 
@@ -89,6 +95,9 @@ class PointSourceEz(PointSourceElectric): pass
 
 
 class PointSourceMagnetic(PwSource):
+    def name(self):
+        return 'PointSourceMagnetic'
+
     def _update(self, h, e1, e2, dr1, dr2, dt, n, idx, param):
         """
         This _update should be called after that the pw_material._update 
@@ -151,7 +160,12 @@ class TransparentMagneticParam(TransparentParam):
         self.r0 = {directional: 1 - r1_value}
 
 
-class TransparentEx(PwSource):
+class TransparentElectric(PwSource):
+    def name(self):
+        return 'TransparentElectric'
+
+
+class TransparentEx(TransparentElectric):
     def __init__(self):
         PwSource.__init__(self)
         self._consist_cond = {const.MinusY: self._consistency_minus_y,
@@ -189,7 +203,7 @@ class TransparentEx(PwSource):
         ex[idx] -= dt / (param.eps_inf * dz) * param.amp[face] * incident_hy
         
         
-class TransparentEy(PwSource):
+class TransparentEy(TransparentElectric):
     def __init__(self):
         PwSource.__init__(self)
         self._consist_cond = {const.MinusZ: self._consistency_minus_z,
@@ -226,7 +240,7 @@ class TransparentEy(PwSource):
         ey[idx] -= dt / (param.eps_inf * dx) * param.amp[face] * incident_hz
         
 
-class TransparentEz(PwSource):
+class TransparentEz(TransparentElectric):
     def __init__(self):
         PwSource.__init__(self)
         self._consist_cond = {const.MinusX: self._consistency_minus_x,
@@ -263,7 +277,12 @@ class TransparentEz(PwSource):
         ez[idx] -= dt / (param.eps_inf * dy) * param.amp[face] * incident_hx
 
         
-class TransparentHx(PwSource):
+class TransparentMagnetic(PwSource):
+    def name(self):
+        return 'TransparentMagnetic'
+
+
+class TransparentHx(TransparentMagnetic):    
     def __init__(self):
         PwSource.__init__(self)
         self._consist_cond = {const.MinusY: self._consistency_minus_y,
@@ -300,7 +319,7 @@ class TransparentHx(PwSource):
         hx[idx] += dt / (param.mu_inf * dz) * param.amp[face] * incident_ey
         
 
-class TransparentHy(PwSource):
+class TransparentHy(TransparentMagnetic):
     def __init__(self):
         PwSource.__init__(self)
         self._consist_cond = {const.MinusZ: self._consistency_minus_z,
@@ -337,7 +356,7 @@ class TransparentHy(PwSource):
         hy[idx] += dt / (param.mu_inf * dx) * param.amp[face] * incident_ez
         
 
-class TransparentHz(PwSource):
+class TransparentHz(TransparentMagnetic):
     def __init__(self):
         PwSource.__init__(self)
         self._consist_cond = {const.MinusX: self._consistency_minus_x,

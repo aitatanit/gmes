@@ -1,7 +1,6 @@
 #ifndef PW_DUMMY_HH_
 #define PW_DUMMY_HH_
 
-#include <iostream>
 #include "pw_material.hh"
 
 namespace gmes
@@ -20,6 +19,12 @@ namespace gmes
   class DummyElectric: public MaterialElectric<T>
   {
   public:
+    const std::string& 
+    name() const
+    {
+      return DummyElectric<T>::tag;
+    }
+
     double
     get_eps_inf(const int* const idx, int idx_size) const
     {
@@ -72,7 +77,13 @@ namespace gmes
     using MaterialElectric<T>::position;
     using MaterialElectric<T>::idx_list;
     std::vector<DummyElectricParam<T> > param_list;
+
+  private:
+    static const std::string tag; // "DrudeElectric"
   }; // template DummyElectric
+
+  template <typename T>
+  const std::string DummyElectric<T>::tag = "DummyElectric";
   
   template <typename T> class DummyEx: public DummyElectric<T>
   {
@@ -90,6 +101,12 @@ namespace gmes
   class DummyMagnetic: public MaterialMagnetic<T>
   {
   public:
+    const std::string& 
+    name() const
+    {
+      return DummyMagnetic<T>::tag;
+    }
+    
     double
     get_mu_inf(const int* const idx, int idx_size) const
     {
@@ -142,7 +159,13 @@ namespace gmes
     using MaterialMagnetic<T>::position;
     using MaterialMagnetic<T>::idx_list;
     std::vector<DummyMagneticParam<T> > param_list;
+
+  private:
+    static const std::string tag; // "DummyMagnetic"
   }; // template DummyMagnetic
+
+  template <typename T>
+  const std::string DummyMagnetic<T>::tag = "DummyMagnetic";
 
   template <typename T> 
   class DummyHx: public DummyMagnetic<T>

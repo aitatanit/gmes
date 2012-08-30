@@ -365,17 +365,10 @@ class Snapshot(Thread):
                    const.Hy: fdtd.space.hy_index_to_space,
                    const.Hz: fdtd.space.hz_index_to_space}
 
-        materials = {const.Ex: fdtd.material_ex, 
-                     const.Ey: fdtd.material_ey, 
-                     const.Ez: fdtd.material_ez,
-                     const.Hx: fdtd.material_hx, 
-                     const.Hy: fdtd.material_hy,
-                     const.Hz: fdtd.material_hz}
-
         fields = {const.Ex: fdtd.ex, const.Ey: fdtd.ey, const.Ez: fdtd.ez,
                   const.Hx: fdtd.hx, const.Hy: fdtd.hy, const.Hz: fdtd.hz}
 
-        material = materials[comp]
+        material = fdtd.pw_material[comp]
         field = fields[comp]
 
         if issubclass(comp, const.Electric):

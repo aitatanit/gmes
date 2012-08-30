@@ -1,21 +1,20 @@
-/* The implementation of Drude-critical points model based on the following
- * articles.
+/* The implementation of Drude-critical points model based on the 
+ * following articles.
  *
- * P. G. Etchegoin, E. C. Le Ru, and M. Meyer, "An analytic model for the 
- * optical properties of gold," The Journal of Chemical Physics, vol. 125,
- * no. 16, pp. 164705-3, Oct. 2006.
+ * J. Leng, J. Opsal, H. Chu, M. Senko, and D. E. Aspnes, 
+ * "Analytic representations of the dielectric functions of 
+ * materials for device and structural modeling," Thin Solid Films
+ * 313-314, 132-136 (1998).
  *
- * P. G. Etchegoin, E. C. Le Ru, and M. Meyer, "Erratum: An analytic model
- * for the optical properties of gold" [J. Chem. Phys. 125, 164705 (2006)]," 
- * The Journal of Chemical Physics, vol. 127, no. 18, pp. 189901-1, Nov. 2007.
- *
- * A. Taflove and S. C. Hagness, Computational Electrodynamics: The Finite-
- * Difference Time-Domain Method, 3rd ed. Artech House Publishers, 2005.
+ * P. G. Etchegoin, E. C. Le Ru, and M. Meyer, "An analytic model
+ * for the optical properties of gold," J. Chem. Phys. 125, 
+ * 164705-3 (2006).
  */
 
 #ifndef PW_DCP_HH_
 #define PW_DCP_HH_
 
+#include <array>
 #include <complex>
 #include <iostream>
 #include <numeric>
@@ -33,19 +32,29 @@
 // to increase the calculation speed.
 namespace gmes
 {
-  /**************************************************/
-  /* Auxiliary Differential Equation Implementation */
-  /**************************************************/
+  /* The following auxiliary differential equation(ADE) 
+   * implementation of the DCP model is based on the following 
+   * article.
+   *
+   * L. J. Prokopeva, J. D. Borneman, and A. V. Kildishev, "Optical
+   * Dispersion Models for Time-Domain Modeling of Metal-
+   * Dielectric Nanostructures," IEEE Trans. Magn. 47, 1150-1153 
+   * (2011).
+   */
 
+  typedef std::vector<std::array<double, 3> > AdeCoeffA;
+  typedef std::vector<std::array<double, 5> > AdeCoeffB;
+  typedef std::array<double, 4> AdeCoeffC;
+    
   template <typename T> 
   struct DcpAdeElectricParam: ElectricParam<T>
   {
-    // parameters for the ADE of the Drude model
-    std::vector<std::array<double, 3> > a;
-    // parameters for the ADE of critical points model
-    std::vector<std::array<double, 4> > b;
+    // parameters for the ADE of the Drude terms
+    AdeCoeffA a;
+    // parameters for the ADE of critical point terms
+    AdeCoeffB b;
     // parameters for the electric field update equations
-    std::array<double, 4> c;
+    AdeCoeffC c;
     T e_old;
     std::vector<T> q_old, q_now, p_old, p_now;
   }; // template DcpAdeElectricParam
@@ -53,7 +62,7 @@ namespace gmes
   template <typename T> 
   struct DcpAdeMagneticParam: MagneticParam<T>
   {
-  }; // template DcpAdeMagneticParam
+  }; // DcpAdemagneticParam
 
   template <typename T> 
   class DcpAdeElectric: public MaterialElectric<T>
@@ -78,14 +87,14 @@ namespace gmes
       Index3 index;
       std::copy(idx, idx + idx_size, index.begin());
 
-      const auto& dcp_param = *static_cast<const DcpAdeElectricParam<T>* const>(pm_param_ptr);
-
+      const auto& dcp_param = *static_cast<const DcpAdeElectricParam<T> * const>(pm_param_ptr);
+      
       idx_list.push_back(index);
       param_list.push_back(dcp_param);
 
       return this;
     }
-
+    
     PwMaterial<T>*
     merge(const PwMaterial<T>* const pm_ptr)
     {
@@ -94,7 +103,7 @@ namespace gmes
       std::copy(dcp_ptr->param_list.begin(), dcp_ptr->param_list.end(), std::back_inserter(param_list));
       return this;
     }
-    
+
     T 
     dps_sum(const T& init, const DcpAdeElectricParam<T>& dcp_param) const
     {
@@ -104,12 +113,12 @@ namespace gmes
       
       T sum(init);
       for (typename std::vector<T>::size_type i = 0; i < a.size(); ++i) {
-	sum += a[i][0] * q_old[i] + (a[i][1] - 1) * q_now[i];
+	sum += (1 - a[i][1]) * q_now[i] - a[i][0] * q_old[i];
       }
 
       return sum;
     }
-      
+    
     T 
     cps_sum(const T& init, const DcpAdeElectricParam<T>& dcp_param) const
     {
@@ -119,14 +128,15 @@ namespace gmes
 
       T sum(init);
       for (typename std::vector<T>::size_type i = 0; i < b.size(); ++i) {
-	sum += b[i][0] * p_old[i] + (b[i][1] - 1) * p_now[i];
+	sum += (1 - b[i][1]) * p_now[i] - b[i][0] * p_old[i];
       }
       
       return sum;
     }
 
     void 
-    update_q(const T& e_now, DcpAdeElectricParam<T>& dcp_param)
+    update_q(const T& e_old, const T& e_now, const T& e_new,
+	     DcpAdeElectricParam<T>& dcp_param)
     {
       const auto& a = dcp_param.a;
       auto& q_old = dcp_param.q_old;
@@ -134,7 +144,7 @@ namespace gmes
 
       std::vector<T> q_new(a.size());
       for (typename std::vector<T>::size_type i = 0; i < a.size(); ++i) {
-	q_new[i] = a[i][0] * q_old[i] + a[i][1] * q_now[i] + a[i][2] * e_now;
+	q_new[i] = a[i][0] * q_old[i] + a[i][1] * q_now[i] + a[i][2] * (e_old + 2.0 * e_now + e_new);
       }
       
       std::copy(q_now.begin(), q_now.end(), q_old.begin());
@@ -152,7 +162,7 @@ namespace gmes
       std::vector<T> p_new(b.size());
       for (typename std::vector<T>::size_type i = 0; i < b.size(); ++i) {
 	p_new[i] = b[i][0] * p_old[i] + b[i][1] * p_now[i] + b[i][2] 
-	  * (e_old - e_new) + b[i][3] * e_now;
+	  * e_old + b[i][3] * e_now + b[i][4] * e_new;
       }
       std::copy(p_now.begin(), p_now.end(), p_old.begin());
       std::copy(p_new.begin(), p_new.end(), p_now.begin());
@@ -162,9 +172,10 @@ namespace gmes
     using MaterialElectric<T>::position;
     using MaterialElectric<T>::idx_list;
     std::vector<DcpAdeElectricParam<T> > param_list;
-  };
+  }; // template DcpAdeElectric
 
-  template <typename T> class DcpAdeEx: public DcpAdeElectric<T>
+  template <typename T> 
+  class DcpAdeEx: public DcpAdeElectric<T>
   {
   public:
     void
@@ -189,13 +200,13 @@ namespace gmes
 	   const T* const hy, int hy_x_size, int hy_y_size, int hy_z_size,
 	   double dy, double dz, double dt, double n,
 	   const Index3& idx,
-	   DcpAdeElectricParam<T> dcp_param)
+	   DcpAdeElectricParam<T>& dcp_param)
     {
       const int i = idx[0], j = idx[1], k = idx[2];
-
+      
       const auto& c = dcp_param.c;
       T& e_old = dcp_param.e_old;
- 
+
       const T& e_now = ex(i,j,k);
       const T e_new = c[0] * ((hz(i+1,j+1,k) - hz(i+1,j,k)) / dy - 
 			      (hy(i+1,j,k+1) - hy(i+1,j,k)) / dz) 
@@ -203,7 +214,7 @@ namespace gmes
 		  cps_sum(static_cast<T>(0), dcp_param))
 	+ c[2] * e_old + c[3] * e_now;
       
-      update_q(e_now, dcp_param);
+      update_q(e_old, e_now, e_new, dcp_param);
       update_p(e_old, e_now, e_new, dcp_param);
       
       e_old = e_now;
@@ -259,7 +270,7 @@ namespace gmes
 		  cps_sum(static_cast<T>(0), dcp_param))
 	+ c[2] * e_old + c[3] * e_now;
 
-      update_q(e_now, dcp_param);
+      update_q(e_old, e_now, e_new, dcp_param);
       update_p(e_old, e_now, e_new, dcp_param);
       
       e_old = e_now;
@@ -273,7 +284,7 @@ namespace gmes
     using DcpAdeElectric<T>::cps_sum;
     using DcpAdeElectric<T>::update_q;
     using DcpAdeElectric<T>::update_p;
-  }; // template DcpAdeEy
+  };
 
   template <typename T> 
   class DcpAdeEz: public DcpAdeElectric<T>
@@ -304,7 +315,7 @@ namespace gmes
 	   DcpAdeElectricParam<T>& dcp_param)
     {
       const int i = idx[0], j = idx[1], k = idx[2];
-
+      
       const auto& c = dcp_param.c;
       T& e_old = dcp_param.e_old;
 
@@ -315,7 +326,7 @@ namespace gmes
 		  cps_sum(static_cast<T>(0), dcp_param))
 	+ c[2] * e_old + c[3] * e_now;
       
-      update_q(e_now, dcp_param);
+      update_q(e_old, e_now, e_new, dcp_param);
       update_p(e_old, e_now, e_new, dcp_param);
       
       e_old = e_now;
@@ -334,340 +345,62 @@ namespace gmes
   template <typename T> 
   class DcpAdeHx: public DielectricHx<T>
   {
+  public:
+    const std::string& 
+    name() const
+    {
+      return DcpAdeHx<T>::tag;
+    }
+
+  private:
+    static const std::string tag; // "DcpMagnetic"
   }; // template DcpAdeHx
+
+  template <typename T>
+  const std::string DcpAdeHx<T>::tag = "DcpMagnetic";
 
   template <typename T> 
   class DcpAdeHy: public DielectricHy<T>
   {
+  public:
+    const std::string& 
+    name() const
+    {
+      return DcpAdeHy<T>::tag;
+    }
+
+  private:
+    static const std::string tag; // "DcpMagnetic"
   }; // template DcpAdeHy
+
+  template <typename T>
+  const std::string DcpAdeHy<T>::tag = "DcpMagnetic";
 
   template <typename T> 
   class DcpAdeHz: public DielectricHz<T>
   {
+  public:
+    const std::string& 
+    name() const
+    {
+      return DcpAdeHz<T>::tag;
+    }
+
+  private:
+    static const std::string tag; // "DcpMagnetic"
   }; // template DcpAdeHz
 
-  /***********************************************************/
-  /* Improved Auxiliary Differential Equation Implementation */
-  /***********************************************************/
+  template <typename T>
+  const std::string DcpAdeHz<T>::tag = "DcpMagnetic";
 
-  typedef std::vector<std::array<double, 3> > Ade2CoeffA;
-  typedef std::vector<std::array<double, 5> > Ade2CoeffB;
-  typedef std::array<double, 4> Ade2CoeffC;
-    
-  template <typename T> 
-  struct DcpAde2ElectricParam: ElectricParam<T>
-  {
-    // parameters for the ADE of the Drude terms
-    Ade2CoeffA a;
-    // parameters for the ADE of critical point terms
-    Ade2CoeffB b;
-    // parameters for the electric field update equations
-    Ade2CoeffC c;
-    T e_old;
-    std::vector<T> q_old, q_now, p_old, p_now;
-  }; // template DcpAde2ElectricParam
-  
-  template <typename T> 
-  struct DcpAde2MagneticParam: MagneticParam<T>
-  {
-  }; // DcpAde2magneticParam
-
-  template <typename T> 
-  class DcpAde2Electric: public MaterialElectric<T>
-  {
-  public:
-    double
-    get_eps_inf(const int* const idx, int idx_size) const
-    {
-      Index3 index;
-      std::copy(idx, idx + idx_size, index.begin());
-      const int i = position(index);
-      if (i < 0)
-	return 0;
-      else
-	return param_list[i].eps_inf;
-    }
-
-    PwMaterial<T>*
-    attach(const int* const idx, int idx_size,
-	   const PwMaterialParam* const pm_param_ptr)
-    {
-      Index3 index;
-      std::copy(idx, idx + idx_size, index.begin());
-
-      const auto& dcp_param = *static_cast<const DcpAde2ElectricParam<T> * const>(pm_param_ptr);
-      
-      idx_list.push_back(index);
-      param_list.push_back(dcp_param);
-
-      return this;
-    }
-    
-    PwMaterial<T>*
-    merge(const PwMaterial<T>* const pm_ptr)
-    {
-      auto dcp_ptr = static_cast<const DcpAde2Electric<T>*>(pm_ptr);
-      std::copy(dcp_ptr->idx_list.begin(), dcp_ptr->idx_list.end(), std::back_inserter(idx_list));
-      std::copy(dcp_ptr->param_list.begin(), dcp_ptr->param_list.end(), std::back_inserter(param_list));
-      return this;
-    }
-
-    T 
-    dps_sum(const T& init, const DcpAde2ElectricParam<T>& dcp_param) const
-    {
-      const auto& a = dcp_param.a;
-      const auto& q_old = dcp_param.q_old;
-      const auto& q_now = dcp_param.q_now;
-      
-      T sum(init);
-      for (typename std::vector<T>::size_type i = 0; i < a.size(); ++i) {
-	sum += (1 - a[i][1]) * q_now[i] - a[i][0] * q_old[i];
-      }
-
-      return sum;
-    }
-    
-    T 
-    cps_sum(const T& init, const DcpAde2ElectricParam<T>& dcp_param) const
-    {
-      const auto& b = dcp_param.b;
-      const auto& p_old = dcp_param.p_old;
-      const auto& p_now = dcp_param.p_now;
-
-      T sum(init);
-      for (typename std::vector<T>::size_type i = 0; i < b.size(); ++i) {
-	sum += (1 - b[i][1]) * p_now[i] - b[i][0] * p_old[i];
-      }
-      
-      return sum;
-    }
-
-    void 
-    update_q(const T& e_old, const T& e_now, const T& e_new,
-	     DcpAde2ElectricParam<T>& dcp_param)
-    {
-      const auto& a = dcp_param.a;
-      auto& q_old = dcp_param.q_old;
-      auto& q_now = dcp_param.q_now;
-
-      std::vector<T> q_new(a.size());
-      for (typename std::vector<T>::size_type i = 0; i < a.size(); ++i) {
-	q_new[i] = a[i][0] * q_old[i] + a[i][1] * q_now[i] + a[i][2] * (e_old + 2.0 * e_now + e_new);
-      }
-      
-      std::copy(q_now.begin(), q_now.end(), q_old.begin());
-      std::copy(q_new.begin(), q_new.end(), q_now.begin());
-    }
-    
-    void 
-    update_p(const T& e_old, const T& e_now, const T& e_new,
-	     DcpAde2ElectricParam<T>& dcp_param)
-    {
-      const auto& b = dcp_param.b;
-      auto& p_old = dcp_param.p_old;
-      auto& p_now = dcp_param.p_now;
-    
-      std::vector<T> p_new(b.size());
-      for (typename std::vector<T>::size_type i = 0; i < b.size(); ++i) {
-	p_new[i] = b[i][0] * p_old[i] + b[i][1] * p_now[i] + b[i][2] 
-	  * e_old + b[i][3] * e_now + b[i][4] * e_new;
-      }
-      std::copy(p_now.begin(), p_now.end(), p_old.begin());
-      std::copy(p_new.begin(), p_new.end(), p_now.begin());
-    }
-  
-  protected:
-    using MaterialElectric<T>::position;
-    using MaterialElectric<T>::idx_list;
-    std::vector<DcpAde2ElectricParam<T> > param_list;
-  }; // template DcpAde2Electric
-
-  template <typename T> 
-  class DcpAde2Ex: public DcpAde2Electric<T>
-  {
-  public:
-    void
-    update_all(T* const ex, int ex_x_size, int ex_y_size, int ex_z_size,
-	       const T* const hz, int hz_x_size, int hz_y_size, int hz_z_size,
-	       const T* const hy, int hy_x_size, int hy_y_size, int hy_z_size,
-	       double dy, double dz, double dt, double n)
-    {
-      for (auto idx = idx_list.begin(), param = param_list.begin();
-	   idx != idx_list.end(); ++idx, ++param) {
-    	update(ex, ex_x_size, ex_y_size, ex_z_size,
-	       hz, hz_x_size, hz_y_size, hz_z_size,
-	       hy, hy_x_size, hy_y_size, hy_z_size,
-	       dy, dz, dt, n, *idx, *param);
-      }
-    }
-
-  private:
-    void 
-    update(T* const ex, int ex_x_size, int ex_y_size, int ex_z_size,
-	   const T* const hz, int hz_x_size, int hz_y_size, int hz_z_size,
-	   const T* const hy, int hy_x_size, int hy_y_size, int hy_z_size,
-	   double dy, double dz, double dt, double n,
-	   const Index3& idx,
-	   DcpAde2ElectricParam<T>& dcp_param)
-    {
-      const int i = idx[0], j = idx[1], k = idx[2];
-      
-      const auto& c = dcp_param.c;
-      T& e_old = dcp_param.e_old;
-
-      const T& e_now = ex(i,j,k);
-      const T e_new = c[0] * ((hz(i+1,j+1,k) - hz(i+1,j,k)) / dy - 
-			      (hy(i+1,j,k+1) - hy(i+1,j,k)) / dz) 
-	+ c[1] * (dps_sum(static_cast<T>(0), dcp_param) + 
-		  cps_sum(static_cast<T>(0), dcp_param))
-	+ c[2] * e_old + c[3] * e_now;
-      
-      update_q(e_old, e_now, e_new, dcp_param);
-      update_p(e_old, e_now, e_new, dcp_param);
-      
-      e_old = e_now;
-      ex(i,j,k) = e_new;
-    }
-    
-  protected:
-    using DcpAde2Electric<T>::idx_list;
-    using DcpAde2Electric<T>::param_list;
-    using DcpAde2Electric<T>::dps_sum;
-    using DcpAde2Electric<T>::cps_sum;
-    using DcpAde2Electric<T>::update_q;
-    using DcpAde2Electric<T>::update_p;
-  }; // template DcpAde2Ex
-
-  template <typename T> 
-  class DcpAde2Ey: public DcpAde2Electric<T>
-  {
-  public:
-    void
-    update_all(T* const ey, int ey_x_size, int ey_y_size, int ey_z_size,
-	       const T* const hx, int hx_x_size, int hx_y_size, int hx_z_size,
-	       const T* const hz, int hz_x_size, int hz_y_size, int hz_z_size,
-	       double dz, double dx, double dt, double n)
-    {
-      for (auto idx = idx_list.begin(), param = param_list.begin();
-	   idx != idx_list.end(); ++idx, ++param) {
-    	update(ey, ey_x_size, ey_y_size, ey_z_size,
-	       hx, hx_x_size, hx_y_size, hx_z_size,
-	       hz, hz_x_size, hz_y_size, hz_z_size,
-	       dz, dx, dt, n, *idx, *param);
-      }
-    }
-
-  private:
-    void 
-    update(T* const ey, int ey_x_size, int ey_y_size, int ey_z_size,
-	   const T* const hx, int hx_x_size, int hx_y_size, int hx_z_size,
-	   const T* const hz, int hz_x_size, int hz_y_size, int hz_z_size,
-	   double dz, double dx, double dt, double n,
-	   const Index3& idx,
-	   DcpAde2ElectricParam<T>& dcp_param)
-    {
-      const int i = idx[0], j = idx[1], k = idx[2];
-      
-      const auto& c = dcp_param.c;
-      T& e_old = dcp_param.e_old;
-      
-      const T& e_now = ey(i,j,k);
-      T e_new = c[0] * ((hx(i,j+1,k+1) - hx(i,j+1,k)) / dz - 
-			(hz(i+1,j+1,k) - hz(i,j+1,k)) / dx)
-	+ c[1] * (dps_sum(static_cast<T>(0), dcp_param) + 
-		  cps_sum(static_cast<T>(0), dcp_param))
-	+ c[2] * e_old + c[3] * e_now;
-
-      update_q(e_old, e_now, e_new, dcp_param);
-      update_p(e_old, e_now, e_new, dcp_param);
-      
-      e_old = e_now;
-      ey(i,j,k) = e_new;
-    }
-    
-  protected:
-    using DcpAde2Electric<T>::idx_list;
-    using DcpAde2Electric<T>::param_list;
-    using DcpAde2Electric<T>::dps_sum;
-    using DcpAde2Electric<T>::cps_sum;
-    using DcpAde2Electric<T>::update_q;
-    using DcpAde2Electric<T>::update_p;
-  };
-
-  template <typename T> 
-  class DcpAde2Ez: public DcpAde2Electric<T>
-  {
-  public:
-    void
-    update_all(T* const ez, int ez_x_size, int ez_y_size, int ez_z_size,
-	       const T* const hy, int hy_x_size, int hy_y_size, int hy_z_size,
-	       const T* const hx, int hx_x_size, int hx_y_size, int hx_z_size,
-	       double dx, double dy, double dt, double n)
-    {
-      for (auto idx = idx_list.begin(), param = param_list.begin();
-	   idx != idx_list.end(); ++idx, ++param) {
-    	update(ez, ez_x_size, ez_y_size, ez_z_size,
-	       hy, hy_x_size, hy_y_size, hy_z_size,
-	       hx, hx_x_size, hx_y_size, hx_z_size,
-	       dx, dy, dt, n, *idx, *param);
-      }
-    }
-
-  private:
-    void 
-    update(T* const ez, int ez_x_size, int ez_y_size, int ez_z_size,
-	   const T* const hy, int hy_x_size, int hy_y_size, int hy_z_size,
-	   const T* const hx, int hx_x_size, int hx_y_size, int hx_z_size,
-	   double dx, double dy, double dt, double n,
-	   const Index3& idx,
-	   DcpAde2ElectricParam<T>& dcp_param)
-    {
-      const int i = idx[0], j = idx[1], k = idx[2];
-      
-      const auto& c = dcp_param.c;
-      T& e_old = dcp_param.e_old;
-
-      const T& e_now = ez(i,j,k);
-      T e_new = c[0] * ((hy(i+1,j,k+1) - hy(i,j,k+1)) / dx - 
-			(hx(i,j+1,k+1) - hx(i,j,k+1)) / dy)
-	+ c[1] * (dps_sum(static_cast<T>(0), dcp_param) + 
-		  cps_sum(static_cast<T>(0), dcp_param))
-	+ c[2] * e_old + c[3] * e_now;
-      
-      update_q(e_old, e_now, e_new, dcp_param);
-      update_p(e_old, e_now, e_new, dcp_param);
-      
-      e_old = e_now;
-      ez(i,j,k) = e_new;
-    }
-
-  protected:
-    using DcpAde2Electric<T>::idx_list;
-    using DcpAde2Electric<T>::param_list;
-    using DcpAde2Electric<T>::dps_sum;
-    using DcpAde2Electric<T>::cps_sum;
-    using DcpAde2Electric<T>::update_q;
-    using DcpAde2Electric<T>::update_p;
-  }; // template DcpAde2Ez
-
-  template <typename T> 
-  class DcpAde2Hx: public DielectricHx<T>
-  {
-  }; // template DcpAde2Hx
-
-  template <typename T> 
-  class DcpAde2Hy: public DielectricHy<T>
-  {
-  }; // template DcpAde2Hy
-
-  template <typename T> 
-  class DcpAde2Hz: public DielectricHz<T>
-  {
-  }; // template DcpAde2Hz
-
-  /*********************************************************/
-  /* Piecewise-Linear Recursive Convolution Implementation */
-  /*********************************************************/
+  /* The following piecewise-linear recursive-convolution(PLRC) 
+   * implementation  of the DCP model is based on the following
+   * references.
+   * 
+   * Taflove and S. C. Hagness, Computational Electrodynamics: The
+   * Finite-Difference Time-Domain Method, 3rd ed. (Artech House 
+   * Publishers, 2005).
+   */
 
   template <typename T> 
   struct DcpPlrcElectricParam: ElectricParam<T>
@@ -690,6 +423,12 @@ namespace gmes
   class DcpPlrcElectric: public MaterialElectric<T>
   {
   public:
+    const std::string& 
+    name() const
+    {
+      return DcpPlrcElectric<T>::tag;
+    }
+
     double
     get_eps_inf(const int* const idx, int idx_size) const
     {
@@ -783,8 +522,14 @@ namespace gmes
     using MaterialElectric<T>::position;
     using MaterialElectric<T>::idx_list;
     std::vector<DcpPlrcElectricParam<T> > param_list;
+
+  private:
+    static const std::string tag; // "DcpPlrcElectric"
   }; // template DcpPlrcElectric
-  
+
+  template <typename T>
+  const std::string DcpPlrcElectric<T>::tag = "DcpPlrcElectric";
+
   template <typename S, typename T>
   static inline T& 
   assign(const std::complex<S>& in, T& out)
@@ -955,17 +700,53 @@ namespace gmes
   template <typename T> 
   class DcpPlrcHx: public DielectricHx<T>
   {
+  public:
+    const std::string& 
+    name() const
+    {
+      return DcpPlrcHx<T>::tag;
+    }
+
+  private:
+    static const std::string tag; // "DcpPlrcMagnetic"
   }; // template DcpPlrcHx
+
+  template <typename T>
+  const std::string DcpPlrcHx<T>::tag = "DcpPlrcMagnetic";
 
   template <typename T> 
   class DcpPlrcHy: public DielectricHy<T>
   {
+  public:
+    const std::string& 
+    name() const
+    {
+      return DcpPlrcHy<T>::tag;
+    }
+
+  private:
+    static const std::string tag; // "DcpPlrcMagnetic"
   }; // template DcpPlrcHy
+
+  template <typename T>
+  const std::string DcpPlrcHy<T>::tag = "DcpPlrcMagnetic";
 
   template <typename T> 
   class DcpPlrcHz: public DielectricHz<T>
   {
+  public:
+    const std::string& 
+    name() const
+    {
+      return DcpPlrcHz<T>::tag;
+    }
+
+  private:
+    static const std::string tag; // "DcpPlrcMagnetic"
   }; // template DcpPlrcHz
+
+  template <typename T>
+  const std::string DcpPlrcHz<T>::tag = "DcpPlrcMagnetic";
 }
 
 #undef ex

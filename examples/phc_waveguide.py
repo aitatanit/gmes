@@ -19,12 +19,12 @@ geom_list.extend([Cylinder(material=Dielectric(8.9),
                   for x in xrange(-8, 9) 
                   for y in xrange(-4, 5)
                   if y != 0])
-geom_list.append(Boundary(material=Cpml())
+geom_list.append(Boundary(material=Cpml()))
 src_list = [PointSource(src_time=Continuous(freq=0.43),
                         component=Ez,
                         center=(-7,0,0))]
 my_fdtd = TMzFDTD(space, geom_list, src_list)
 my_fdtd.init()
-my_fdtd.show_permittivity_ez(Z, 0)
-my_fdtd.show_ez(Z, 0)
+my_fdtd.show_permittivity(Ez, Z, 0)
+my_fdtd.show_field(Ez, Z, 0)
 my_fdtd.step_until_t(200)

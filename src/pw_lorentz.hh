@@ -8,8 +8,8 @@
 #ifndef PW_LORENTZ_HH_
 #define PW_LORENTZ_HH_
 
+#include <array>
 #include <vector>
-
 #include "pw_dielectric.hh"
 
 #define ex(i,j,k) ex[ex_y_size==1?0:((i)*ex_y_size+(j))*ex_z_size+(k)]
@@ -38,6 +38,12 @@ namespace gmes
   class LorentzElectric: public MaterialElectric<T>
   {
   public:
+    const std::string& 
+    name() const
+    {
+      return LorentzElectric<T>::tag;
+    }
+
     double
     get_eps_inf(const int* const idx, int idx_size) const
     {
@@ -112,8 +118,14 @@ namespace gmes
     using MaterialElectric<T>::position;
     using MaterialElectric<T>::idx_list;
     std::vector<LorentzElectricParam<T> > param_list;
+
+  private:
+    static const std::string tag; // "LorentzElectric"
   }; // template LorentzElectric
 
+  template <typename T>
+  const std::string LorentzElectric<T>::tag = "LorentzElectric";
+  
   template <typename T> 
   class LorentzEx: public LorentzElectric<T>
   {
@@ -255,17 +267,53 @@ namespace gmes
   template <typename T> 
   class LorentzHx: public DielectricHx<T>
   {
+  public:
+    const std::string& 
+    name() const
+    {
+      return LorentzHx<T>::tag;
+    }
+
+  private:
+    static const std::string tag; // "LorentzMagnetic"
   }; // template LorentzHx
+
+  template <typename T>
+  const std::string LorentzHx<T>::tag = "LorentzMagnetic";
 
   template <typename T> 
   class LorentzHy: public DielectricHy<T>
   {
+  public:
+    const std::string& 
+    name() const
+    {
+      return LorentzHy<T>::tag;
+    }
+
+  private:
+    static const std::string tag; // "LorentzMagnetic"
   }; // template LorentzHy
+
+  template <typename T>
+  const std::string LorentzHy<T>::tag = "LorentzMagnetic";
 
   template <typename T>
   class LorentzHz: public DielectricHz<T>
   {
+  public:
+    const std::string& 
+    name() const
+    {
+      return LorentzHz<T>::tag;
+    }
+
+  private:
+    static const std::string tag; // "LorentzMagnetic"
   }; // template LorentzHz
+
+  template <typename T>
+  const std::string LorentzHz<T>::tag = "LorentzMagnetic";
 } // namespace gmes
 
 #undef ex

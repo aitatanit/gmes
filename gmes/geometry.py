@@ -143,15 +143,12 @@ class Cartesian(object):
                 self.res = array(resolution, np.double)
         except TypeError:
             self.res = array((resolution,)*3, np.double)
-        
-        self.dx, self.dy, self.dz = 1 / self.res
 
-        # local spatial differentials to calculate dt
-        dx, dy, dz = self.dx, self.dy, self.dz
-        
+        self.dr = array(1 / self.res, np.double)
+
         self.half_size = 0.5 * array(size, np.double)
         
-        for i, v in enumerate((self.dx, self.dy, self.dz)):
+        for i, v in enumerate(self.dr):
             if self.half_size[i] == 0:
                 self.half_size[i] = .5 * v
             
@@ -361,9 +358,9 @@ class Cartesian(object):
         idx = array((i, j, k), np.int)  
         global_idx = idx + self.general_field_size * self.my_cart_idx
         
-        spc_0 = (global_idx[0] + .5) * self.dx - self.half_size[0]
-        spc_1 = global_idx[1] * self.dy - self.half_size[1]
-        spc_2 = global_idx[2] * self.dz - self.half_size[2]
+        spc_0 = (global_idx[0] + .5) * self.dr[0] - self.half_size[0]
+        spc_1 = global_idx[1] * self.dr[1] - self.half_size[1]
+        spc_2 = global_idx[2] * self.dr[2] - self.half_size[2]
         
         return spc_0, spc_1, spc_2
 
@@ -381,9 +378,9 @@ class Cartesian(object):
         coords = array((x,y,z), np.double)
 
         global_idx = empty(3, np.double)
-        global_idx[0] = (coords[0] + self.half_size[0]) / self.dx - .5
-        global_idx[1] = (coords[1] + self.half_size[1]) / self.dy
-        global_idx[2] = (coords[2] + self.half_size[2]) / self.dz
+        global_idx[0] = (coords[0] + self.half_size[0]) / self.dr[0] - .5
+        global_idx[1] = (coords[1] + self.half_size[1]) / self.dr[1]
+        global_idx[2] = (coords[2] + self.half_size[2]) / self.dr[2]
         
         idx = empty(3, np.double)
         for i in xrange(3):
@@ -409,9 +406,9 @@ class Cartesian(object):
         spc = array((x,y,z), np.double)
 
         global_idx = empty(3, np.int)
-        global_idx[0] = (spc[0] + self.half_size[0]) / self.dx
-        global_idx[1] = (spc[1] + self.half_size[1]) / self.dy + .5
-        global_idx[2] = (spc[2] + self.half_size[2]) / self.dz + .5
+        global_idx[0] = (spc[0] + self.half_size[0]) / self.dr[0]
+        global_idx[1] = (spc[1] + self.half_size[1]) / self.dr[1] + .5
+        global_idx[2] = (spc[2] + self.half_size[2]) / self.dr[2] + .5
 
         idx = empty(3, np.int)
         for i in xrange(3):
@@ -437,9 +434,9 @@ class Cartesian(object):
             
         global_idx = idx + self.general_field_size * self.my_cart_idx
         
-        coords_0 = global_idx[0] * self.dx - self.half_size[0]
-        coords_1 = (global_idx[1] + .5) * self.dy - self.half_size[1]
-        coords_2 = global_idx[2] * self.dz - self.half_size[2]
+        coords_0 = global_idx[0] * self.dr[0] - self.half_size[0]
+        coords_1 = (global_idx[1] + .5) * self.dr[1] - self.half_size[1]
+        coords_2 = global_idx[2] * self.dr[2] - self.half_size[2]
         
         return coords_0, coords_1, coords_2
 
@@ -457,9 +454,9 @@ class Cartesian(object):
         coords = array((x,y,z), np.double)
             
         global_idx = empty(3, np.double)
-        global_idx[0] = (coords[0] + self.half_size[0]) / self.dx
-        global_idx[1] = (coords[1] + self.half_size[1]) / self.dy - .5
-        global_idx[2] = (coords[2] + self.half_size[2]) / self.dz
+        global_idx[0] = (coords[0] + self.half_size[0]) / self.dr[0]
+        global_idx[1] = (coords[1] + self.half_size[1]) / self.dr[1] - .5
+        global_idx[2] = (coords[2] + self.half_size[2]) / self.dr[2]
     
         idx = empty(3, np.double)
         for i in xrange(3):
@@ -485,9 +482,9 @@ class Cartesian(object):
         coords = array((x,y,z), np.double)
             
         global_idx = empty(3, np.int)
-        global_idx[0] = (coords[0] + self.half_size[0]) / self.dx + .5
-        global_idx[1] = (coords[1] + self.half_size[1]) / self.dy
-        global_idx[2] = (coords[2] + self.half_size[2]) / self.dz + .5
+        global_idx[0] = (coords[0] + self.half_size[0]) / self.dr[0] + .5
+        global_idx[1] = (coords[1] + self.half_size[1]) / self.dr[1]
+        global_idx[2] = (coords[2] + self.half_size[2]) / self.dr[2] + .5
     
         idx = empty(3, np.int)
         for i in xrange(3):
@@ -513,9 +510,9 @@ class Cartesian(object):
             
         global_idx = idx + self.general_field_size * self.my_cart_idx
         
-        coords_0 = global_idx[0] * self.dx - self.half_size[0]
-        coords_1 = global_idx[1] * self.dy - self.half_size[1]
-        coords_2 = (global_idx[2] + .5) * self.dz - self.half_size[2]
+        coords_0 = global_idx[0] * self.dr[0] - self.half_size[0]
+        coords_1 = global_idx[1] * self.dr[1] - self.half_size[1]
+        coords_2 = (global_idx[2] + .5) * self.dr[2] - self.half_size[2]
         
         return coords_0, coords_1, coords_2
 
@@ -533,9 +530,9 @@ class Cartesian(object):
         coords = array((x, y, z), np.double)
             
         global_idx = empty(3, np.double)
-        global_idx[0] = (coords[0] + self.half_size[0]) / self.dx
-        global_idx[1] = (coords[1] + self.half_size[1]) / self.dy
-        global_idx[2] = (coords[2] + self.half_size[2]) / self.dz - .5
+        global_idx[0] = (coords[0] + self.half_size[0]) / self.dr[0]
+        global_idx[1] = (coords[1] + self.half_size[1]) / self.dr[1]
+        global_idx[2] = (coords[2] + self.half_size[2]) / self.dr[2] - .5
         
         idx = empty(3, np.double)
         for i in xrange(3):
@@ -561,9 +558,9 @@ class Cartesian(object):
         coords = array((x,y,z), np.double)
             
         global_idx = empty(3, np.int)
-        global_idx[0] = (coords[0] + self.half_size[0]) / self.dx + .5
-        global_idx[1] = (coords[1] + self.half_size[1]) / self.dy + .5
-        global_idx[2] = (coords[2] + self.half_size[2]) / self.dz
+        global_idx[0] = (coords[0] + self.half_size[0]) / self.dr[0] + .5
+        global_idx[1] = (coords[1] + self.half_size[1]) / self.dr[1] + .5
+        global_idx[2] = (coords[2] + self.half_size[2]) / self.dr[2]
         
         idx = empty(3, np.int)
         for i in xrange(3):
@@ -589,9 +586,9 @@ class Cartesian(object):
             
         global_idx = idx + self.general_field_size * self.my_cart_idx
         
-        coords_0 = global_idx[0] * self.dx - self.half_size[0]
-        coords_1 = (global_idx[1] - .5) * self.dy - self.half_size[1]
-        coords_2 = (global_idx[2] - .5) * self.dz - self.half_size[2]
+        coords_0 = global_idx[0] * self.dr[0] - self.half_size[0]
+        coords_1 = (global_idx[1] - .5) * self.dr[1] - self.half_size[1]
+        coords_2 = (global_idx[2] - .5) * self.dr[2] - self.half_size[2]
         
         return coords_0, coords_1, coords_2
 
@@ -609,9 +606,9 @@ class Cartesian(object):
         coords = array((x,y,z), np.double)
             
         global_idx = empty(3, np.double)
-        global_idx[0] = (coords[0] + self.half_size[0]) / self.dx
-        global_idx[1] = (coords[1] + self.half_size[1]) / self.dy + .5
-        global_idx[2] = (coords[2] + self.half_size[2]) / self.dz + .5
+        global_idx[0] = (coords[0] + self.half_size[0]) / self.dr[0]
+        global_idx[1] = (coords[1] + self.half_size[1]) / self.dr[1] + .5
+        global_idx[2] = (coords[2] + self.half_size[2]) / self.dr[2] + .5
 
         idx = global_idx - self.my_cart_idx * self.general_field_size
         if self.whole_field_size[0] == 1:
@@ -637,9 +634,9 @@ class Cartesian(object):
         coords = array((x,y,z), np.double)
             
         global_idx = empty(3, np.int)
-        global_idx[0] = (coords[0] + self.half_size[0]) / self.dx + .5
-        global_idx[1] = (coords[1] + self.half_size[1]) / self.dy + 1
-        global_idx[2] = (coords[2] + self.half_size[2]) / self.dz + 1
+        global_idx[0] = (coords[0] + self.half_size[0]) / self.dr[0] + .5
+        global_idx[1] = (coords[1] + self.half_size[1]) / self.dr[1] + 1
+        global_idx[2] = (coords[2] + self.half_size[2]) / self.dr[2] + 1
 
         idx = global_idx - self.my_cart_idx * self.general_field_size
         if self.whole_field_size[0] == 1:
@@ -665,9 +662,9 @@ class Cartesian(object):
             
         global_idx = idx + self.general_field_size * self.my_cart_idx
         
-        coords_0 = (global_idx[0] - .5) * self.dx - self.half_size[0]
-        coords_1 = global_idx[1] * self.dy - self.half_size[1]
-        coords_2 = (global_idx[2] - .5) * self.dz - self.half_size[2]
+        coords_0 = (global_idx[0] - .5) * self.dr[0] - self.half_size[0]
+        coords_1 = global_idx[1] * self.dr[1] - self.half_size[1]
+        coords_2 = (global_idx[2] - .5) * self.dr[2] - self.half_size[2]
         
         return coords_0, coords_1, coords_2
         
@@ -685,9 +682,9 @@ class Cartesian(object):
         coords = array((x,y,z), np.double)
             
         global_idx = empty(3, np.double)
-        global_idx[0] = (coords[0] + self.half_size[0]) / self.dx + .5
-        global_idx[1] = (coords[1] + self.half_size[1]) / self.dy
-        global_idx[2] = (coords[2] + self.half_size[2]) / self.dz + .5
+        global_idx[0] = (coords[0] + self.half_size[0]) / self.dr[0] + .5
+        global_idx[1] = (coords[1] + self.half_size[1]) / self.dr[1]
+        global_idx[2] = (coords[2] + self.half_size[2]) / self.dr[2] + .5
 
         idx = global_idx - self.my_cart_idx * self.general_field_size
         if self.whole_field_size[0] == 1:
@@ -713,9 +710,9 @@ class Cartesian(object):
         coords = array((x,y,z), np.double)
             
         global_idx = empty(3, np.int)
-        global_idx[0] = (coords[0] + self.half_size[0]) / self.dx + 1
-        global_idx[1] = (coords[1] + self.half_size[1]) / self.dy + .5
-        global_idx[2] = (coords[2] + self.half_size[2]) / self.dz + 1
+        global_idx[0] = (coords[0] + self.half_size[0]) / self.dr[0] + 1
+        global_idx[1] = (coords[1] + self.half_size[1]) / self.dr[1] + .5
+        global_idx[2] = (coords[2] + self.half_size[2]) / self.dr[2] + 1
 
         idx = global_idx - self.my_cart_idx * self.general_field_size
         if self.whole_field_size[0] == 1:
@@ -741,9 +738,9 @@ class Cartesian(object):
             
         global_idx = idx + self.general_field_size * self.my_cart_idx
         
-        coords_0 = (global_idx[0] - .5) * self.dx - self.half_size[0]
-        coords_1 = (global_idx[1] - .5) * self.dy - self.half_size[1]
-        coords_2 = global_idx[2] * self.dz - self.half_size[2]
+        coords_0 = (global_idx[0] - .5) * self.dr[0] - self.half_size[0]
+        coords_1 = (global_idx[1] - .5) * self.dr[1] - self.half_size[1]
+        coords_2 = global_idx[2] * self.dr[2] - self.half_size[2]
         
         return coords_0, coords_1, coords_2
 
@@ -761,9 +758,9 @@ class Cartesian(object):
         coords = array((x,y,z), np.double)
             
         global_idx = empty(3, np.double)
-        global_idx[0] = (coords[0] + self.half_size[0]) / self.dx + .5
-        global_idx[1] = (coords[1] + self.half_size[1]) / self.dy + .5
-        global_idx[2] = (coords[2] + self.half_size[2]) / self.dz
+        global_idx[0] = (coords[0] + self.half_size[0]) / self.dr[0] + .5
+        global_idx[1] = (coords[1] + self.half_size[1]) / self.dr[1] + .5
+        global_idx[2] = (coords[2] + self.half_size[2]) / self.dr[2]
 
         idx = global_idx - self.my_cart_idx * self.general_field_size
         if self.whole_field_size[0] == 1:
@@ -789,9 +786,9 @@ class Cartesian(object):
         coords = array((x,y,z), np.double)
             
         global_idx = empty(3, np.int)
-        global_idx[0] = (coords[0] + self.half_size[0]) / self.dx + 1
-        global_idx[1] = (coords[1] + self.half_size[1]) / self.dy + 1
-        global_idx[2] = (coords[2] + self.half_size[2]) / self.dz + .5
+        global_idx[0] = (coords[0] + self.half_size[0]) / self.dr[0] + 1
+        global_idx[1] = (coords[1] + self.half_size[1]) / self.dr[1] + 1
+        global_idx[2] = (coords[2] + self.half_size[2]) / self.dr[2] + .5
 
         idx = global_idx - self.my_cart_idx * self.general_field_size
         if self.whole_field_size[0] == 1:
@@ -814,7 +811,7 @@ class Cartesian(object):
         print "resolution:", self.res
         
         print " " * indent,
-        print "dx:", self.dx, "dy:", self.dy, "dz:", self.dz
+        print "dx:", self.dr[0], "dy:", self.dr[1], "dz:", self.dr[2]
         
         print " " * indent,
         print "number of participating nodes:", self.numprocs

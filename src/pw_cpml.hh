@@ -1,9 +1,9 @@
 /* This implementation is based on the following article.
  *
- * S. Gedney, "Perfectly Matched Layer Absorbing Boundary Conditions,"
- * Computational Electrodynamics: The Finite-Difference Time-Domain Method,
- * A. Taflove and S.C. Hagness, 3rd eds., Artech House Publishers, 2005, 
- * pp. 273-328.
+ * S. Gedney, "Perfectly Matched Layer Absorbing Boundary 
+ * Conditions," in Computational Electrodynamics: The Finite-
+ * Difference Time-Domain Method, A. Taflove and S.C. Hagness, 
+ * 3rd eds., Artech House Publishers, 2005, pp. 273-328.
  */ 
 
 #ifndef PW_CPML_HH_
@@ -39,6 +39,12 @@ namespace gmes
   class CpmlElectric: public MaterialElectric<T>
   {
   public:
+    const std::string& 
+    name() const
+    {
+      return CpmlElectric<T>::tag;
+    }
+
     double
     get_eps_inf(const int* const idx, int idx_size) const
     {
@@ -79,7 +85,13 @@ namespace gmes
     using MaterialElectric<T>::position;
     using MaterialElectric<T>::idx_list;
     std::vector<CpmlElectricParam<T> > param_list;
+
+  private:
+    static const std::string tag; // "CpmlElectric"
   }; // template CpmlElectric
+
+  template <typename T>
+  const std::string CpmlElectric<T>::tag = "CpmlElectric";
 
   template <typename T> 
   class CpmlEx: public CpmlElectric<T>
@@ -244,6 +256,12 @@ namespace gmes
   class CpmlMagnetic: public MaterialMagnetic<T>
   {
   public:
+    const std::string& 
+    name() const
+    {
+      return CpmlMagnetic<T>::tag;
+    }
+
     double
     get_mu_inf(const int* const idx, int idx_size) const
     {
@@ -284,7 +302,13 @@ namespace gmes
     using MaterialMagnetic<T>::position;
     using PwMaterial<T>::idx_list;
     std::vector<CpmlMagneticParam<T> > param_list;
+
+  private:
+    static const std::string tag; // "CpmlMagnetic"
   }; // template CpmlMagnetic
+
+  template <typename T>
+  const std::string CpmlMagnetic<T>::tag = "CpmlMagnetic";
 
   template <typename T> 
   class CpmlHx: public CpmlMagnetic<T>

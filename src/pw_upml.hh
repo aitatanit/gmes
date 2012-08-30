@@ -8,7 +8,6 @@
 #ifndef PW_UPML_HH_
 #define PW_UPML_HH_
 
-#include <iostream>
 #include "pw_material.hh"
 
 #define ex(i,j,k) ex[ex_y_size==1?0:((i)*ex_y_size+(j))*ex_z_size+(k)]
@@ -38,6 +37,12 @@ namespace gmes
   class UpmlElectric: public MaterialElectric<T>
   {
   public:
+    const std::string& 
+    name() const
+    {
+      return UpmlElectric<T>::tag;
+    }
+
     double
     get_eps_inf(const int* const idx, int idx_size) const
     {
@@ -78,7 +83,13 @@ namespace gmes
     using MaterialElectric<T>::position;
     using MaterialElectric<T>::idx_list;
     std::vector<UpmlElectricParam<T> > param_list;
+
+  private:
+    static const std::string tag; // "UpmlElectric"
   }; // template UpmlElectric
+
+  template <typename T>
+  const std::string UpmlElectric<T>::tag = "UpmlElectric";
 
   template <typename T> 
   class UpmlEx: public UpmlElectric<T>
@@ -236,6 +247,12 @@ namespace gmes
   class UpmlMagnetic: public MaterialMagnetic<T>
   {
   public:
+    const std::string& 
+    name() const
+    {
+      return UpmlMagnetic<T>::tag;
+    }
+
     double
     get_mu_inf(const int* const idx, int idx_size) const
     {
@@ -276,7 +293,13 @@ namespace gmes
     using MaterialMagnetic<T>::position;
     using MaterialMagnetic<T>::idx_list;
     std::vector<UpmlMagneticParam<T> > param_list;
+
+  private:
+    static const std::string tag; // "UpmlMagnetic"
   }; // template UpmlMagnetic
+
+  template <typename T>
+  const std::string UpmlMagnetic<T>::tag = "UpmlMagnetic";
 
   template <typename T> 
   class UpmlHx: public UpmlMagnetic<T>

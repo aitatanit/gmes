@@ -29,12 +29,14 @@ namespace gmes
   typedef std::array<int, 3> Index3;  
   typedef std::vector<Index3> IdxCnt;
 
-  template<class T> 
+  template <typename T> 
   class PwMaterial 
   {
   public:
     virtual
     ~PwMaterial() {}
+
+    virtual const std::string& name() const = 0;
 
     // TODO: just copy PwMaterialParam*.
     virtual PwMaterial<T>*

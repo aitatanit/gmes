@@ -1039,17 +1039,12 @@ cdef class Boundary(GeometricObject):
     def init(self, space):
         self.half_size = np.array(space.half_size, np.double)
 
-        if 2 * self.half_size[0] < space.dx:
-            self.half_size[0] = 0.5 * space.dx
-        
-        if 2 * self.half_size[1] < space.dy:
-            self.half_size[1] = 0.5 * space.dy
-            
-        if 2 * self.half_size[2] < space.dz:
-            self.half_size[2] = 0.5 * space.dz
+        for i in range(3):
+            if 2 * self.half_size[i] < space.dr[i]:
+                self.half_size[i] = 0.5 * space.dr[i]
         
         if self.d > 0:
-            if 2 * self.half_size[0] > space.dx:
+            if 2 * self.half_size[0] > space.dr[0]:
                 if self.plus_x:
                     low = (self.half_size[0] - self.d, -self.half_size[1],
                            -self.half_size[2])
@@ -1061,7 +1056,7 @@ cdef class Boundary(GeometricObject):
                             self.half_size[2])
                     self.box_list.append(GeomBox(low, high))
 
-            if 2 * self.half_size[1] > space.dy:
+            if 2 * self.half_size[1] > space.dr[1]:
                 if self.plus_y:
                     low = (-self.half_size[0], self.half_size[1] - self.d,
                            -self.half_size[2])
@@ -1073,7 +1068,7 @@ cdef class Boundary(GeometricObject):
                             self.half_size[2])
                     self.box_list.append(GeomBox(low, high))
 
-            if 2 * self.half_size[2] > space.dz:
+            if 2 * self.half_size[2] > space.dr[2]:
                 if self.plus_z:
                     low = (-self.half_size[0], -self.half_size[1],
                            self.half_size[2] - self.d)
