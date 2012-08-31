@@ -163,19 +163,16 @@ class ShowLine(Thread):
 
     def run(self):
         self.manager = new_figure_manager(self.id)
-        self.ax = self.manager.canvas.figure.add_subplot(111)
-        self.line, = self.ax.plot(self.xdata, self.ydata)
-        self.ax.set_xlabel(self.xlabel)
-        self.ax.set_ylabel(self.ylabel)
-        self.ax.set_xlim(self.xdata[0], self.xdata[-1])
-        self.ax.set_ylim(self.vrange[0], self.vrange[1])
-        self.ax.grid(True)
-        self.ax.set_title(self.title)
-        self.time_note = \
-            self.manager.canvas.figure.text(.6, .92, self.note_form % 
-                                             self.time_step.t)
+        ax = self.manager.canvas.figure.add_subplot(111)
+        self.line, = ax.plot(self.xdata, self.ydata)
+        ax.set_xlabel(self.xlabel)
+        ax.set_ylabel(self.ylabel)
+        ax.set_xlim(self.xdata[0], self.xdata[-1])
+        ax.set_ylim(self.vrange[0], self.vrange[1])
+        ax.grid(True)
+        ax.set_title(self.title)
+        self.time_note = self.manager.canvas.figure.text(.6, .92, self.note_form % self.time_step.t)
         self.manager.window.title(self.window_title)
-        
         self.animate()
         self.manager.show()
         self.manager.window.mainloop()
@@ -315,11 +312,8 @@ class ShowPlane(Thread):
         ax.set_ylabel(self.ylabel)
         ax.set_title(self.title)
         self.manager.canvas.figure.colorbar(self.im)
-        self.time_note = \
-            self.manager.canvas.figure.text(.6, .92, self.note_form % 
-                                             self.time_step.t, animated=True)
+        self.time_note = self.manager.canvas.figure.text(.6, .92, self.note_form % self.time_step.t)
         self.manager.window.title(self.window_title)
-        
         self.animate()
         self.manager.show()
         self.manager.window.mainloop()
