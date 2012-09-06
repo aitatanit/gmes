@@ -39,7 +39,7 @@ as packages on Debian and Ubuntu distributions, except the MPICH2 and
 MPI for Python.
 
 * python >= 2.5 (tested with 2.5.2 and 2.7.1+) (Debian package: python)
-* g++ (to compile) (Debian package: g++)
+* g++ >= 4.6.3 (to compile) (Debian package: g++)
 * swig >= 1.3.36 (to compile) (Debian package: swig)
 * cython >= 0.9.8-1 (to compile) (Debian package: cython)
 * numpy (Debian package: python-numpy)
