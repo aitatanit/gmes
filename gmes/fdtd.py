@@ -440,7 +440,7 @@ class FDTD(object):
             mat_obj, underneath = self.geom_tree.material_of_point(spc)
             if idx[0] == 0 or idx[1] == 0:
                 mat_obj = Dummy(mat_obj.eps_inf, mat_obj.mu_inf)
-            pw_obj = mat_obj.get_pw_pw_material_hz(idx, spc, underneath, self.cmplx)
+            pw_obj = mat_obj.get_pw_material_hz(idx, spc, underneath, self.cmplx)
 
             if self.pw_material[Hz].has_key(type(pw_obj)):
                 self.pw_material[Hz][type(pw_obj)].merge(pw_obj)
