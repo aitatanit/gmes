@@ -128,14 +128,14 @@ class Cartesian(object):
         the electromagnetic field of this node except the communication buffers
             
     """
-    def __init__(self, size, resolution=15, parallel=True):
+    def __init__(self, size, resolution=15, parallel=False):
         """Constructor
 
         Keyword arguments:
         size -- a length three sequence consists of non-negative numbers
         resolution -- number of sections of one unit. scalar or 3-tuple
             (default 15)
-        parallel -- whether space be divided into segments (default True)    
+        parallel -- whether space be divided into segments (default False)    
 
         """
         try:
