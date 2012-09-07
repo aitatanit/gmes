@@ -1029,22 +1029,8 @@ class CriticalPoint(object):
         print "energy of the gap:", self.omega,
         print "broadening:", self.gamma
         
-        
+
 class DcpAde(Dielectric):
-    """
-    The auxiliary differential equation implementation of Drude-critical points model 
-    based on the following references.
-    * P. G. Etchegoin, E. C. Le Ru, and M. Meyer, "An analytic model for the optical 
-      properties of gold," The Journal of Chemical Physics, vol. 125, no. 16, 
-      pp. 164705-3, Oct. 2006.
-
-    * P. G. Etchegoin, E. C. Le Ru, and M. Meyer, "Erratum: An analytic model
-      for the optical properties of gold [J. Chem. Phys. 125, 164705 (2006)]," 
-    * A. Taflove and S. C. Hagness, Computational Electrodynamics: The Finite-
-      Difference Time-Domain Method, Third Edition, 3rd ed. Artech House Publishers, 
-      2005.
-
-    """
     def __init__(self, eps_inf=1, mu_inf=1, sigma=0, dps=(), cps=()):
         """
         eps_inf: The (frequency-independent) isotropic relative permittivity. Default is 1.
@@ -1096,28 +1082,29 @@ class DcpAde(Dielectric):
         self.a = empty((len(self.dps),3), np.double)
         for i in xrange(len(self.dps)):
             pole = self.dps[i]
-            denom = self.dt * pole.gamma + 2.
+            denom = float(self.dt * pole.gamma + 2)
             self.a[i,0] = (self.dt * pole.gamma - 2) / denom
             self.a[i,1] = 4 / denom
-            self.a[i,2] = 2 * (self.dt * pole.omega)**2 / denom
-        
+            self.a[i,2] = 0.5 * (self.dt * pole.omega)**2 / denom
+
         # parameters for the ADE of critical points model
-        self.b = empty((len(self.cps),4), np.double)
+        self.b = empty((len(self.cps),5), np.double)
         for i in xrange(len(self.cps)):
             pnt = self.cps[i]
-            denom = self.dt * pnt.gamma + 1.
-            self.b[i,0] = (self.dt * pnt.gamma - 1) / denom
-            self.b[i,1] = (2 - self.dt**2 * (pnt.gamma**2 + pnt.omega**2)) / denom
-            self.b[i,2] = self.dt * sin(pnt.phi) * pnt.amp * pnt.omega / denom
-            self.b[i,3] = 2 * self.dt**2 * pnt.amp * pnt.omega * (cos(pnt.phi) * pnt.omega - sin(pnt.phi) * pnt.gamma) / denom
+            denom = (self.dt * pnt.gamma + 2)**2 + (self.dt * pnt.omega)**2
+            self.b[i,0] = -((self.dt * pnt.gamma - 2)**2 + (self.dt * pnt.omega)**2) / denom
+            self.b[i,1] = 2 * (4 - self.dt**2 * (pnt.gamma**2 + pnt.omega**2)) / denom
+            self.b[i,2] = 2 * self.dt * pnt.amp * pnt.omega * (self.dt * cos(pnt.phi) * pnt.omega + sin(pnt.phi) * (2 - self.dt * pnt.gamma)) / denom
+            self.b[i,3] = 4 * self.dt**2 * pnt.amp * pnt.omega * (cos(pnt.phi) * pnt.omega - sin(pnt.phi) * pnt.gamma) / denom
+            self.b[i,4] = 2 * self.dt * pnt.amp * pnt.omega * (self.dt * cos(pnt.phi) * pnt.omega - sin(pnt.phi) * (2 + self.dt * pnt.gamma)) / denom
             
         # parameters for the electric field update equations.
         self.c = empty(4, np.double)
-        denom = self.dt * self.sigma + 2. * (self.eps_inf - sum(self.b[:,2]))
-        self.c[0] = 2 * self.dt / denom
-        self.c[1] = -2 / denom
-        self.c[2] = -2 * sum(self.b[:,2]) / denom
-        self.c[3] = (2 * (self.eps_inf - sum(self.a[:,2]) - sum(self.b[:,3])) - self.dt * self.sigma) / denom
+        denom = 0.5 * self.dt * self.sigma + sum(self.a[:,2]) + sum(self.b[:,4]) + self.eps_inf
+        self.c[0] = self.dt / denom
+        self.c[1] = 1 / denom
+        self.c[2] = -(sum(self.a[:,2]) + sum(self.b[:,2])) / denom
+        self.c[3] = -(0.5 * self.dt * self.sigma + 2 * sum(self.a[:,2]) + sum(self.b[:,3]) - self.eps_inf) / denom
 
         self.initialized = True
         
@@ -1231,204 +1218,6 @@ class DcpAde(Dielectric):
         else:
             pw_obj = DcpAdeHzReal()
             pw_param = DcpAdeMagneticParamReal()
-            
-        if underneath is None:
-            pw_param.mu_inf = self.mu_inf
-        else:
-            pw_param.mu_inf = underneath.mu_inf
-        
-        pw_obj.attach(idx, pw_param)
-        return pw_obj
-    
-
-class DcpAde2(Dielectric):
-    def __init__(self, eps_inf=1, mu_inf=1, sigma=0, dps=(), cps=()):
-        """
-        eps_inf: The (frequency-independent) isotropic relative permittivity. Default is 1.
-        mu_inf: The (frequency-independent) isotropic relative permeability. Default is 1.
-        sigma: The (frequency-independent) isotropic conductivity. Default is 0.
-        dps: list of Drude poles. Default is ().
-        cps: list of critical points. Default is ().
-        
-        """
-        Dielectric.__init__(self, eps_inf, mu_inf)
-        self.sigma = float(sigma) # instant conductivity
-        self.dps = tuple(dps) # tuple of Drude poles
-        self.cps = tuple(cps) # tuple of critical points
-        self.initialized = False
-        
-    def __getstate__(self):
-        d = Dielectric.__getstate__(self)
-        d['sigma'] = self.sigma
-        d['dps'] = self.dps
-        d['cps'] = self.cps
-        d['initialized'] = self.initialized
-
-        if self.initialized:
-            d['dt'] = self.dt
-            d['a'] = self.a
-            d['b'] = self.b
-            d['c'] = self.c
-            
-        return d
-
-    def __setstate__(self, d):
-        Dielectric.__setstate__(self, d)
-        
-        self.sigma = d['sigma']
-        self.dps = deepcopy(d['dps'])
-        self.cps = deepcopy(d['cps'])
-        self.initialized = d['initialized']
-
-        if self.initialized:
-            self.dt = d['dt']
-            self.a = d['a'].copy()
-            self.b = d['b'].copy()
-            self.c = d['c'].copy()
-            
-    def init(self, space, param=None):
-        self.dt = space.dt
-        
-        # parameters for the ADE of the Drude model
-        self.a = empty((len(self.dps),3), np.double)
-        for i in xrange(len(self.dps)):
-            pole = self.dps[i]
-            denom = float(self.dt * pole.gamma + 2)
-            self.a[i,0] = (self.dt * pole.gamma - 2) / denom
-            self.a[i,1] = 4 / denom
-            self.a[i,2] = 0.5 * (self.dt * pole.omega)**2 / denom
-
-        # parameters for the ADE of critical points model
-        self.b = empty((len(self.cps),5), np.double)
-        for i in xrange(len(self.cps)):
-            pnt = self.cps[i]
-            denom = (self.dt * pnt.gamma + 2)**2 + (self.dt * pnt.omega)**2
-            self.b[i,0] = -((self.dt * pnt.gamma - 2)**2 + (self.dt * pnt.omega)**2) / denom
-            self.b[i,1] = 2 * (4 - self.dt**2 * (pnt.gamma**2 + pnt.omega**2)) / denom
-            self.b[i,2] = 2 * self.dt * pnt.amp * pnt.omega * (self.dt * cos(pnt.phi) * pnt.omega + sin(pnt.phi) * (2 - self.dt * pnt.gamma)) / denom
-            self.b[i,3] = 4 * self.dt**2 * pnt.amp * pnt.omega * (cos(pnt.phi) * pnt.omega - sin(pnt.phi) * pnt.gamma) / denom
-            self.b[i,4] = 2 * self.dt * pnt.amp * pnt.omega * (self.dt * cos(pnt.phi) * pnt.omega - sin(pnt.phi) * (2 + self.dt * pnt.gamma)) / denom
-            
-        # parameters for the electric field update equations.
-        self.c = empty(4, np.double)
-        denom = 0.5 * self.dt * self.sigma + sum(self.a[:,2]) + sum(self.b[:,4]) + self.eps_inf
-        self.c[0] = self.dt / denom
-        self.c[1] = 1 / denom
-        self.c[2] = -(sum(self.a[:,2]) + sum(self.b[:,2])) / denom
-        self.c[3] = -(0.5 * self.dt * self.sigma + 2 * sum(self.a[:,2]) + sum(self.b[:,3]) - self.eps_inf) / denom
-
-        self.initialized = True
-        
-    def display_info(self, indent=0):
-        """Display the parameter values.
-        
-        """
-        print " " * indent, "Drude-critical points dispersive media"
-        print " " * indent,
-        print "frequency independent permittivity:", self.eps_inf,
-        print "frequency independent permeability:", self.mu_inf,
-        print "conductivity:", self.sigma
-        
-        print " " * indent, "Drude pole(s):"
-        for i in self.dps:
-            i.display_info(indent+4)
-        print " " * indent, "critical point(s):"
-        for i in self.cps:
-            i.display_info(indent+4)
-        
-    def get_pw_material_ex(self, idx, coords, underneath=None, cmplx=False):
-        if cmplx:
-            pw_obj = DcpAde2ExCmplx()
-            pw_param = DcpAde2ElectricParamCmplx()
-        else:
-            pw_obj = DcpAde2ExReal()
-            pw_param = DcpAde2ElectricParamReal()
-                
-        if underneath is None:
-            pw_param.eps_inf = self.eps_inf
-        else:
-            pw_param.eps_inf = underneath.eps_inf
-        
-        pw_param.set(self.a, self.b, self.c)
-        
-        pw_obj.attach(idx, pw_param)
-        return pw_obj
-    
-    def get_pw_material_ey(self, idx, coords, underneath=None, cmplx=False):
-        if cmplx:
-            pw_obj = DcpAde2EyCmplx()
-            pw_param = DcpAde2ElectricParamCmplx()
-        else:
-            pw_obj = DcpAde2EyReal()
-            pw_param = DcpAde2ElectricParamReal()
-                
-        if underneath is None:
-            pw_param.eps_inf = self.eps_inf
-        else:
-            pw_param.eps_inf = underneath.eps_inf
-        
-        pw_param.set(self.a, self.b, self.c)
-        
-        pw_obj.attach(idx, pw_param)
-        return pw_obj
-    
-    def get_pw_material_ez(self, idx, coords, underneath=None, cmplx=False):
-        if cmplx:
-            pw_obj = DcpAde2EzCmplx()
-            pw_param = DcpAde2ElectricParamCmplx()
-        else:
-            pw_obj = DcpAde2EzReal()
-            pw_param = DcpAde2ElectricParamReal()
-                
-        if underneath is None:
-            pw_param.eps_inf = self.eps_inf
-        else:
-            pw_param.eps_inf = underneath.eps_inf
-        
-        pw_param.set(self.a, self.b, self.c)
-        
-        pw_obj.attach(idx, pw_param)
-        return pw_obj
-    
-    def get_pw_material_hx(self, idx, coords, underneath=None, cmplx=False):
-        if cmplx:
-            pw_obj = DcpAde2HxCmplx()
-            pw_param = DcpAde2MagneticParamCmplx()
-        else:
-            pw_obj = DcpAde2HxReal()
-            pw_param = DcpAde2MagneticParamReal()
-            
-        if underneath is None:
-            pw_param.mu_inf = self.mu_inf
-        else:
-            pw_param.mu_inf = underneath.mu_inf
-        
-        pw_obj.attach(idx, pw_param)
-        return pw_obj
-    
-    def get_pw_material_hy(self, idx, coords, underneath=None, cmplx=False):
-        if cmplx:
-            pw_obj = DcpAde2HyCmplx()
-            pw_param = DcpAde2MagneticParamCmplx()
-        else:
-            pw_obj = DcpAde2HyReal()
-            pw_param = DcpAde2MagneticParamReal()
-            
-        if underneath is None:
-            pw_param.mu_inf = self.mu_inf
-        else:
-            pw_param.mu_inf = underneath.mu_inf
-        
-        pw_obj.attach(idx, pw_param)
-        return pw_obj
-    
-    def get_pw_material_hz(self, idx, coords, underneath=None, cmplx=False):
-        if cmplx:
-            pw_obj = DcpAde2HzCmplx()
-            pw_param = DcpAde2MagneticParamCmplx()
-        else:
-            pw_obj = DcpAde2HzReal()
-            pw_param = DcpAde2MagneticParamReal()
             
         if underneath is None:
             pw_param.mu_inf = self.mu_inf
