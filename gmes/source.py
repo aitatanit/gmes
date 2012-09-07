@@ -238,7 +238,7 @@ class PointSource(Src):
         print ' ' * indent, 'center:', self.center
         print ' ' * indent, 'component:', self.comp.str()
         print ' ' * indent, 'maximum amp.:', self.amp
-        print ' ' * indent, 'source recording: ', self.filename
+        print ' ' * indent, 'source recording:', self.filename
         
         self.src_time.display_info(4)
         

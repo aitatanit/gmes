@@ -275,9 +275,9 @@ import_array();
     std::copy(c, c + c_size, $self->c.begin());
     
     $self->psi_dp_re.resize(a_size1);
-    $self->psi_dp_re.resize(a_size1);
+    $self->psi_dp_im.resize(a_size1);
     $self->psi_cp_re.resize(b_size1);
-    $self->psi_cp_re.resize(b_size1);
+    $self->psi_cp_im.resize(b_size1);
   }
 };
 

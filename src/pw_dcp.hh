@@ -16,8 +16,8 @@
 
 #include <array>
 #include <complex>
-#include <iostream>
 #include <numeric>
+#include <string>
 #include <vector>
 #include "pw_dielectric.hh"
 
@@ -68,6 +68,12 @@ namespace gmes
   class DcpAdeElectric: public MaterialElectric<T>
   {
   public:
+    const std::string& 
+    name() const
+    {
+      return DcpAdeElectric<T>::tag;
+    }
+
     double
     get_eps_inf(const int* const idx, int idx_size) const
     {
@@ -172,7 +178,13 @@ namespace gmes
     using MaterialElectric<T>::position;
     using MaterialElectric<T>::idx_list;
     std::vector<DcpAdeElectricParam<T> > param_list;
+
+  private:
+    static const std::string tag; // "DcpAdeElectric"
   }; // template DcpAdeElectric
+
+  template <typename T>
+  const std::string DcpAdeElectric<T>::tag = "DcpAdeElectric";
 
   template <typename T> 
   class DcpAdeEx: public DcpAdeElectric<T>
@@ -408,8 +420,8 @@ namespace gmes
     std::vector<std::array<double, 3> > a;
     std::vector<std::array<std::complex<double>, 3> > b;
     std::array<double, 3> c;
-    // *_re and *_im are for the real and imaginary part of the e-field, 
-    // respectively.
+    // *_re and *_im are for the real and imaginary part of the 
+    // e-field, respectively.
     std::vector<double> psi_dp_re, psi_dp_im;
     std::vector<std::complex<double> > psi_cp_re, psi_cp_im;
   }; // template DcpPlrcElectricParam
@@ -475,10 +487,10 @@ namespace gmes
       auto& psi_dp_im = dcp_param.psi_dp_im;
       
       for (typename std::vector<T>::size_type i = 0; i < a.size(); ++i) {
-	psi_dp_re[i] = a[i][0] * e_new.real() + a[i][1] * e_now.real() 
-	  + a[i][2] * psi_dp_re[i];
-	psi_dp_im[i] = a[i][0] * e_new.imag() + a[i][1] * e_now.imag() 
-	  + a[i][2] * psi_dp_im[i];
+	psi_dp_re[i] = a[i][0] * e_new.real() 
+	  + a[i][1] * e_now.real() + a[i][2] * psi_dp_re[i];
+	psi_dp_im[i] = a[i][0] * e_new.imag() 
+	  + a[i][1] * e_now.imag() + a[i][2] * psi_dp_im[i];
       }
     }
 
@@ -492,10 +504,10 @@ namespace gmes
       auto& psi_cp_im = dcp_param.psi_cp_im;
       
       for (typename std::vector<std::complex<double> >::size_type i = 0; i < b.size(); ++i) {
-	psi_cp_re[i] = b[i][0] * e_new.real() + b[i][1] * e_now.real()
-	  + b[i][2] * psi_cp_re[i];
-	psi_cp_im[i] = b[i][0] * e_new.imag() + b[i][1] * e_now.imag()
-	  + b[i][2] * psi_cp_im[i];
+	psi_cp_re[i] = b[i][0] * e_new.real() 
+	  + b[i][1] * e_now.real() + b[i][2] * psi_cp_re[i];
+	psi_cp_im[i] = b[i][0] * e_new.imag()
+	  + b[i][1] * e_now.imag() + b[i][2] * psi_cp_im[i];
       }
     }
 
@@ -575,8 +587,8 @@ namespace gmes
       
       const auto& c = dcp_param.c;
 
-      const auto e_now = ex(i,j,k);
-      const auto e_new = 
+      const std::complex<double> e_now = ex(i,j,k);
+      const std::complex<double> e_new = 
 	c[0] * ((hz(i+1,j+1,k) - hz(i+1,j,k)) / dy - 
 		(hy(i+1,j,k+1) - hy(i+1,j,k)) / dz) +
 	c[1] * e_now + c[2] * psi_total(dcp_param);
@@ -626,8 +638,8 @@ namespace gmes
       
       const auto& c = dcp_param.c;
 
-      const auto e_now = ey(i,j,k);
-      const auto e_new = 
+      const std::complex<double> e_now = ey(i,j,k);
+      const std::complex<double> e_new = 
 	c[0] * ((hx(i,j+1,k+1) - hx(i,j+1,k)) / dz - 
 		(hz(i+1,j+1,k) - hz(i,j+1,k)) / dx) +
 	c[1] * e_now + c[2] * psi_total(dcp_param);
@@ -677,8 +689,8 @@ namespace gmes
       
       const auto& c = dcp_param.c;
 
-      const auto e_now = ez(i,j,k);
-      const auto e_new = 
+      const std::complex<double> e_now = ez(i,j,k);
+      const std::complex<double> e_new = 
 	c[0] * ((hy(i+1,j,k+1) - hy(i,j,k+1)) / dx - 
 		(hx(i,j+1,k+1) - hx(i,j,k+1)) / dy) +
 	c[1] * e_now + c[2] * psi_total(dcp_param);

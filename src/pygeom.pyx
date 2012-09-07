@@ -4,6 +4,7 @@
 
 from __future__ import division
 from copy import deepcopy
+from math import sqrt
 import numpy as np
 from material import Compound, Pml
 
@@ -13,7 +14,7 @@ cimport cython
 
 
 cdef double norm(object p):
-    return np.sqrt(p[0]**2 + p[1]**2 + p[2]**2)
+    return sqrt(p[0]**2 + p[1]**2 + p[2]**2)
 
 
 cdef class Material(object):
@@ -497,7 +498,7 @@ cdef class GeometricObject(object):
         material -- The material that the object is made of. No default.
             
         """ 
-        self.material = deepcopy(material)
+        self.material = material
 
     def __getstate__(self):
         d = {}
@@ -645,13 +646,13 @@ cdef class Cone(GeometricObject):
         p = np.array(point, np.double)
         r = p - self.center
         proj = np.dot(self.axis, r)
-        if np.abs(proj) <= .5 * self.height:
+        if abs(proj) <= .5 * self.height:
             if self.radius2 == self.radius == np.inf:
                 truth = True
             else:
                 radius = self.radius
                 radius += (proj / self.height + .5) * (self.radius2 - radius)
-                truth = norm(r - proj * self.axis) <= np.abs(radius)
+                truth = norm(r - proj * self.axis) <= abs(radius)
         else:
             truth = False
 

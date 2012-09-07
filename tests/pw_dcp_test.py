@@ -8,8 +8,67 @@ sys.path.append(new_path)
 import unittest
 import numpy as np
 
-from gmes.material import GoldPlrc, GoldAde
+from gmes.material import DcpPlrc, DcpAde, DrudePole, CriticalPoint
+from gmes.constant import c0
 from gmes.geometry import Cartesian
+
+
+class Gold(DcpAde):
+    """This gold permittivity value in the range of 200-1,000 nm.
+
+    This parameters has a fitness value of 0.0907699 to the real 
+    permittivity data in the range of 200-1,000 nm of 
+
+    P. B. Johnson and R. W. Christy, "Optical constants of the
+    noble metals," Phys. Rev. B 6, 4370 (1972).
+
+    """
+    def __init__(self, a):
+        """
+        a: lattice constant in meters.
+        
+        """
+        dp1 = DrudePole(omega=1.31839e16 * a / c0, 
+                        gamma=1.09173e14 * a / c0)
+        cp1 = CriticalPoint(amp=0.273222,
+                            phi=-1.18299,
+                            omega=3.88123e15 * a / c0, 
+                            gamma=4.52006e14 * a / c0)
+        cp2 = CriticalPoint(amp=3.04155,
+                            phi=-1.09115,
+                            omega=4.20737e15 * a / c0, 
+                            gamma=2.35409e15 * a / c0)
+        DcpAde.__init__(self, eps_inf=1.11683, mu_inf=1, sigma=0, 
+                        dps=(dp1,), cps=(cp1,cp2))
+
+
+class Silver(DcpPlrc):
+    """This silver permittivity value in the range of 200-1,000 nm.
+    
+    This parameters has a fitness value of 0.0266134 to the real 
+    permittivity data in the range of 200-1,000 nm of 
+    
+    P. B. Johnson and R. W. Christy, "Optical constants of the 
+    noble metals,"  Phys. Rev. B 6, 4370 (1972).
+    
+    """
+    def __init__(self, a):
+        """
+        a: lattice constant in meters.
+        
+        """
+        dp1 = DrudePole(omega=1.38737e16 * a / c0, 
+                        gamma=2.07331e13 * a / c0)
+        cp1 = CriticalPoint(amp=1.3735,
+                            phi=-0.504658,
+                            omega=7.59914e15 * a / c0, 
+                            gamma=4.28431e15 * a / c0)
+        cp2 = CriticalPoint(amp=0.304478,
+                            phi=-1.48944,
+                            omega=6.15009e15 * a / c0, 
+                            gamma=6.59262e14 * a / c0)
+        DcpPlrc.__init__(self, eps_inf=0.89583, mu_inf=1, sigma=0,
+                         dps=(dp1,), cps=(cp1,cp2))
 
 
 class TestSequence(unittest.TestCase):
@@ -19,10 +78,10 @@ class TestSequence(unittest.TestCase):
         self.spc = Cartesian((0, 0, 0))
         self.spc.dt = 1
         
-        self.dcp_ade = GoldAde(a=1)
+        self.dcp_ade = Gold(a=1e-6)
         self.dcp_ade.init(self.spc)
         
-        self.dcp_plrc = GoldPlrc(a=1e-6)
+        self.dcp_plrc = Silver(a=1e-6)
         self.dcp_plrc.init(self.spc)
         
     def testAdeExReal(self):
@@ -315,7 +374,7 @@ class TestSequence(unittest.TestCase):
 
     def testPlrcExCmplx(self):
         sample = self.dcp_plrc.get_pw_material_ex(self.idx, (0,0,0), cmplx=True)
-        
+
         for idx in np.ndindex(3, 3, 3):
             if idx == self.idx:
                 self.assertEqual(sample.get_eps_inf(idx), self.dcp_plrc.eps_inf)
