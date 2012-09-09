@@ -45,6 +45,10 @@ constant = Extension(name = 'gmes._constant',
 pygeom = Extension(name = 'gmes.pygeom',
                    sources = ['src/pygeom.pyx'])
 
+# material module
+material = Extension(name = 'gmes.material',
+                     sources = ['src/material.pyx'])
+
 setup(name = PACKAGE,
       version = VERSION,
       description = "GIST Maxwell's Equations Solver",
@@ -57,15 +61,15 @@ setup(name = PACKAGE,
       maintainer_email = 'kwchun@gist.ac.kr',
       url = 'http://sourceforge.net/projects/gmes',
       classifiers = [
-        'Development Status :: 2 - Pre-Alpha',
+        'Development Status :: 3 - Alpha',
         'User Interface :: Console/Terminal',
         'Intended Audience :: Science/Research',
-        'License :: GNU General Public License (GPL)',
+        'License :: GNU General Public License version 3.0 (GPLv3)',
         'Operating System :: OS Portable (Source code to work with many OS platforms)',
         'Programming Language :: C++, Python',
         'Topic :: Physics, Simulations',
-        'Translations: Korean'],
+        'Translations: English, Korean'],
       license = 'http://www.gnu.org/licenses/gpl.html',
       packages = [PACKAGE],
-      ext_modules = [pw_material, constant, pygeom],
+      ext_modules = [pw_material, constant, pygeom, material],
       cmdclass = {'build_ext': build_ext})

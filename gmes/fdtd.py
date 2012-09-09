@@ -12,7 +12,7 @@ except ImportError:
 
 from copy import deepcopy
 from math import sqrt
-from cmath import exp
+from cmath import exp as cexp
 from numpy import ndindex, arange, inf, array
 from time import time, sleep
 
@@ -698,7 +698,7 @@ class FDTD(object):
             src_spc = self.space.cart_comm.sendrecv(src_spc, dest, Ex.tag,
                                                     None, src, Ex.tag)
             
-            phase_shift = exp(1j * self.bloch[1] * (dest_spc - src_spc))
+            phase_shift = cexp(1j * self.bloch[1] * (dest_spc - src_spc))
         else:
             phase_shift = 1
         
@@ -718,7 +718,7 @@ class FDTD(object):
             src_spc = self.space.cart_comm.sendrecv(src_spc, dest, Ex.tag,
                                                     None, src, Ex.tag)
         
-            phase_shift = exp(1j * self.bloch[2] * (dest_spc - src_spc))
+            phase_shift = cexp(1j * self.bloch[2] * (dest_spc - src_spc))
         else:
             phase_shift = 1
         
@@ -744,7 +744,7 @@ class FDTD(object):
             src_spc = self.space.cart_comm.sendrecv(src_spc, dest, Ey.tag,
                                                     None, src, Ey.tag) 
         
-            phase_shift = exp(1j * self.bloch[2] * (dest_spc - src_spc))
+            phase_shift = cexp(1j * self.bloch[2] * (dest_spc - src_spc))
         else:
             phase_shift = 1
             
@@ -764,7 +764,7 @@ class FDTD(object):
             src_spc = self.space.cart_comm.sendrecv(src_spc, dest, Ey.tag,
                                                     None, src, Ey.tag)
             
-            phase_shift = exp(1j * self.bloch[0] * (dest_spc - src_spc))
+            phase_shift = cexp(1j * self.bloch[0] * (dest_spc - src_spc))
         else:
             phase_shift = 1
             
@@ -790,7 +790,7 @@ class FDTD(object):
             src_spc = self.space.cart_comm.sendrecv(src_spc, dest, Ez.tag,
                                                     None, src, Ez.tag) 
             
-            phase_shift = exp(1j * self.bloch[0] * (dest_spc - src_spc))
+            phase_shift = cexp(1j * self.bloch[0] * (dest_spc - src_spc))
         else:
             phase_shift = 1
         
@@ -810,7 +810,7 @@ class FDTD(object):
             src_spc = self.space.cart_comm.sendrecv(src_spc, dest, Ez.tag,
                                                     None, src, Ez.tag) 
             
-            phase_shift = exp(1j * self.bloch[1] * (dest_spc - src_spc))
+            phase_shift = cexp(1j * self.bloch[1] * (dest_spc - src_spc))
         else:
             phase_shift = 1
 
@@ -836,7 +836,7 @@ class FDTD(object):
             src_spc = self.space.cart_comm.sendrecv(src_spc, dest, Hx.tag,
                                                     None, src, Hx.tag)
         
-            phase_shift = exp(1j * self.bloch[1] * (dest_spc - src_spc))
+            phase_shift = cexp(1j * self.bloch[1] * (dest_spc - src_spc))
         else:
             phase_shift = 1
         
@@ -856,7 +856,7 @@ class FDTD(object):
             src_spc = self.space.cart_comm.sendrecv(src_spc, dest, Hx.tag,
                                                     None, src, Hx.tag)
         
-            phase_shift = exp(1j * self.bloch[2] * (dest_spc - src_spc))
+            phase_shift = cexp(1j * self.bloch[2] * (dest_spc - src_spc))
         else:
             phase_shift = 1
         
@@ -882,7 +882,7 @@ class FDTD(object):
             src_spc = self.space.cart_comm.sendrecv(src_spc, dest, Hy.tag,
                                                     None, src, Hy.tag)
         
-            phase_shift = exp(1j * self.bloch[2] * (dest_spc - src_spc))
+            phase_shift = cexp(1j * self.bloch[2] * (dest_spc - src_spc))
         else:
             phase_shift = 1
         
@@ -902,7 +902,7 @@ class FDTD(object):
             src_spc = self.space.cart_comm.sendrecv(src_spc, dest, Hy.tag,
                                                     None, src, Hy.tag)
         
-            phase_shift = exp(1j * self.bloch[0] * (dest_spc - src_spc))
+            phase_shift = cexp(1j * self.bloch[0] * (dest_spc - src_spc))
         else:
             phase_shift = 1
         
@@ -928,7 +928,7 @@ class FDTD(object):
             src_spc = self.space.cart_comm.sendrecv(src_spc, dest, Hz.tag,
                                                     None, src, Hz.tag)
         
-            phase_shift = exp(1j * self.bloch[0] * (dest_spc - src_spc))
+            phase_shift = cexp(1j * self.bloch[0] * (dest_spc - src_spc))
         else:
             phase_shift = 1
         
@@ -948,7 +948,7 @@ class FDTD(object):
             src_spc = self.space.cart_comm.sendrecv(src_spc, dest, Hz.tag,
                                                     None, src, Hz.tag)
         
-            phase_shift = exp(1j * self.bloch[1] * (dest_spc - src_spc))
+            phase_shift = cexp(1j * self.bloch[1] * (dest_spc - src_spc))
         else:
             phase_shift = 1
         
