@@ -213,6 +213,8 @@ class FDTD(object):
         """Initialize sources.
 
         """
+        st = time()
+        
         if self.verbose:
             print 'Allocating memory for the electromagnetic fields...',
             
@@ -247,6 +249,9 @@ class FDTD(object):
 
         self.init_source()
 
+        et = time()
+        print 'Elapsed time: %f s.' % (et - st)
+        
     def _print_pw_obj(self, pw_obj):
         """Print information of the piecewise material and source.
 
@@ -1026,14 +1031,23 @@ class FDTD(object):
 
         """
         st = time()
+
+        if self.time_step.n < n:
+            self.step()
+            if self.time_step.n % modulus == 0:
+                print 'n:', self.time_step.n, 't:', self.time_step.t
+                
+            et = time()
+            estimated_t = (n - 1) * (et - st)
+            print 'Estimated time of completion:', estimated_t, 's'
+        
         while self.time_step.n < n:
             self.step()
             if self.time_step.n % modulus == 0:
                 print 'n:', self.time_step.n, 't:', self.time_step.t
 
         et = time()
-
-        print 'Elapsed time: %f s' % (et -st)
+        print 'Elapsed time: %f s' % (et - st)
 
     def step_until_t(self, t=0, modulus=inf):
         """Run self.step() until time reaches t.
@@ -1042,13 +1056,23 @@ class FDTD(object):
         st = time()
         sn = self.time_step.n
 
+        if self.time_step.t < t:
+            self.step()
+            if self.time_step.n % modulus == 0:
+                print 'n:', self.time_step.n, 't:', self.time_step.t
+
+            et = time()
+            num_of_steps = (t - self.time_step.t) / self.time_step.dt
+            estimated_t = num_of_steps * (et - st)
+            print 'Estimated time of completion:', estimated_t, 's'
+        
         while self.time_step.t < t:
             self.step()
             if self.time_step.n % modulus == 0:
                 print 'n:', self.time_step.n, 't:', self.time_step.t
+                
         et = time()
         en = self.time_step.n
-
         print 'Elapsed time: %f s, (%d timesteps)' % (et - st, en - sn)
 
     def show_field_line(self, comp, start, end, vrange=(-1,1), interval=2500):
