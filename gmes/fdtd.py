@@ -14,7 +14,7 @@ from copy import deepcopy
 from math import sqrt
 from cmath import exp as cexp
 from numpy import ndindex, arange, inf, array
-from time import time, sleep
+from datetime import datetime, timedelta
 
 import numpy as np
 
@@ -213,7 +213,7 @@ class FDTD(object):
         """Initialize sources.
 
         """
-        st = time()
+        st = datetime.now()
         
         if self.verbose:
             print 'Allocating memory for the electromagnetic fields...',
@@ -249,8 +249,8 @@ class FDTD(object):
 
         self.init_source()
 
-        et = time()
-        print 'Elapsed time: %f s.' % (et - st)
+        et = datetime.now()
+        print 'Elapsed time:', (et - st)
         
     def _print_pw_obj(self, pw_obj):
         """Print information of the piecewise material and source.
@@ -1030,30 +1030,30 @@ class FDTD(object):
         """Run self.step() until time step reaches n.
 
         """
-        st = time()
+        st = datetime.now()
 
         if self.time_step.n < n:
             self.step()
             if self.time_step.n % modulus == 0:
                 print 'n:', self.time_step.n, 't:', self.time_step.t
                 
-            et = time()
-            estimated_t = (n - 1) * (et - st)
-            print 'Estimated time of completion:', estimated_t, 's'
+            et = datetime.now()
+            estimated_t = (n - 1) * (et - st).seconds
+            print 'Estimated time of completion:', timedelta(seconds=estimated_t)
         
         while self.time_step.n < n:
             self.step()
             if self.time_step.n % modulus == 0:
                 print 'n:', self.time_step.n, 't:', self.time_step.t
 
-        et = time()
-        print 'Elapsed time: %f s' % (et - st)
+        et = datetime.now()
+        print 'Elapsed time:', (et - st)
 
     def step_until_t(self, t=0, modulus=inf):
         """Run self.step() until time reaches t.
 
         """
-        st = time()
+        st = datetime.now()
         sn = self.time_step.n
 
         if self.time_step.t < t:
@@ -1061,19 +1061,20 @@ class FDTD(object):
             if self.time_step.n % modulus == 0:
                 print 'n:', self.time_step.n, 't:', self.time_step.t
 
-            et = time()
+            et = datetime.now()
             num_of_steps = (t - self.time_step.t) / self.time_step.dt
-            estimated_t = num_of_steps * (et - st)
-            print 'Estimated time of completion:', estimated_t, 's'
+            estimated_t = num_of_steps * (et - st).seconds
+            print 'Estimated time of completion:', timedelta(seconds=estimated_t)
         
         while self.time_step.t < t:
             self.step()
             if self.time_step.n % modulus == 0:
                 print 'n:', self.time_step.n, 't:', self.time_step.t
                 
-        et = time()
+        et = datetime.now()
         en = self.time_step.n
-        print 'Elapsed time: %f s, (%d timesteps)' % (et - st, en - sn)
+        print 'Elapsed time:', (et - st),
+        print '(%d timesteps)' % (en - sn)
 
     def show_field_line(self, comp, start, end, vrange=(-1,1), interval=2500):
         """Show the real value of the feild along the line.
