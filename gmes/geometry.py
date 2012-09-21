@@ -158,7 +158,7 @@ class Cartesian(object):
         
         self.my_id = 0
         self.numprocs = 1
-        self.cart_comm = AuxiCartComm()
+        self.cart_comm = AuxiCartComm((1,1,1), (1,1,1))
         try:
             if parallel:
                 from mpi4py import MPI

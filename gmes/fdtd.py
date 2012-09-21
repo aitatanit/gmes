@@ -576,7 +576,7 @@ class FDTD(object):
             if self.verbose:
                 self._print_pw_obj(self.pw_source[comp])
         
-    def set_probe(self, p, prefix):
+    def set_probe(self, p, prefix=None):
         """
         p: space coordinates. type: tuple-3
         prefix: prefix of the recording file name. type: str
@@ -616,7 +616,10 @@ class FDTD(object):
         for comp in self.e_field_compnt:
             idx = spc2idx[comp](*p)
             if validity[comp](idx):
-                filename = prefix + postfix[comp]
+                if prefix:
+                    filename = prefix + postfix[comp]
+                else:
+                    filename = postfix[comp]
                 recorder = Probe(idx, self.field[comp], filename)
                 loc = idx2spc[comp](*idx)
                 recorder.write_header(loc, self.time_step.dt)
@@ -625,7 +628,10 @@ class FDTD(object):
         for comp in self.h_field_compnt:
             idx = spc2idx[comp](*p)
             if validity[comp](idx):
-                filename = prefix + postfix[comp]
+                if prefix:
+                    filename = prefix + postfix[comp]
+                else:
+                    filename = postfix[comp]
                 recorder = Probe(idx, self.field[comp], filename)
                 loc = idx2spc[comp](*idx)
                 recorder.write_header(loc, self.time_step.dt)

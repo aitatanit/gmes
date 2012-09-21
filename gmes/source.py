@@ -12,7 +12,7 @@ except ImportError:
     
 from copy import deepcopy
 from math import sqrt, pi, sin, cos, exp
-import cmath as cm
+from cmath import exp as cexp
 
 import numpy as np
 from numpy import inf, cross, dot, ndindex
@@ -130,7 +130,7 @@ class Continuous(SrcTime):
         else:
             env = 1
         
-        osc = env * cm.exp(-2j * pi * self.freq * time - 1j * self.phase)
+        osc = env * cexp(2j * pi * self.freq * time + 1j * self.phase)
         if self.cmplx:
             return osc
         else:
@@ -174,7 +174,7 @@ class Bandpass(SrcTime):
         cfactor = 1.0 / (-2j * pi * self.freq)
         
         osc = cfactor * exp(-0.5 * (tt / self.width)**2) \
-            * cm.exp(-2j * pi * self.freq * time - self.phase)
+            * cexp(2j * pi * self.freq * time + 1j * self.phase)
         if self.cmplx:
             return osc
         else:
@@ -201,7 +201,7 @@ class DifferentiatedGaussian(SrcTime):
         
     def oscillator(self, time):
         exponent = -((time - self.t0) / self.tw)**2
-        osc = -2 * (time - self.t0) / self.tw * cm.exp(exponent)
+        osc = -2 * (time - self.t0) / self.tw * cexp(exponent)
         if self.cmplx:
             return osc
         else:

@@ -350,4 +350,4 @@ namespace gmes
 
 }
 
-#endif /*CONSTANT_HH_*/
+#endif // CONSTANT_HH_
