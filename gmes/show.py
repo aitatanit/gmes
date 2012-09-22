@@ -75,10 +75,7 @@ class ShowLine(Thread):
                    const.Hy: fdtd.space.hy_index_to_space,
                    const.Hz: fdtd.space.hz_index_to_space}
             
-        fields = {const.Ex: fdtd.ex, const.Ey: fdtd.ey, const.Ez: fdtd.ez,
-                  const.Hx: fdtd.hx, const.Hy: fdtd.hy, const.Hz: fdtd.hz}
-
-        field = fields[comp].real
+        field = fdtd.field[comp].real
 
         if issubclass(comp, const.Electric):
             start_boundary_idx = (0, 0, 0)            
@@ -94,11 +91,11 @@ class ShowLine(Thread):
         elif issubclass(comp, const.Magnetic):
             end_boundary_idx = [i - 1 for i in field.shape]
             if comp is const.Hx:
-                start_boundary_idx = idx2spc[comp](0, 1, 1)
+                start_boundary_idx = (0, 1, 1)
             elif comp is const.Hy:
-                start_boundary_idx = idx2spc[comp](1, 0, 1)
+                start_boundary_idx = (1, 0, 1)
             elif comp is const.Hz:
-                start_boundary_idx = idx2spc[comp](1, 1, 0)
+                start_boundary_idx = (1, 1, 0)
  	else:
             msg = "component should be of class constant.Component."
             raise ValueError(msg)
@@ -223,10 +220,7 @@ class ShowPlane(Thread):
                    const.Hy: fdtd.space.hy_index_to_space,
                    const.Hz: fdtd.space.hz_index_to_space}
         
-        fields = {const.Ex: fdtd.ex, const.Ey: fdtd.ey, const.Ez: fdtd.ez,
-                  const.Hx: fdtd.hx, const.Hy: fdtd.hy, const.Hz: fdtd.hz}
-
-        field = fields[comp].real
+        field = fdtd.field[comp].real
 
         if issubclass(comp, const.Electric):
             start_boundary_idx = (0, 0, 0)            
@@ -359,11 +353,8 @@ class Snapshot(Thread):
                    const.Hy: fdtd.space.hy_index_to_space,
                    const.Hz: fdtd.space.hz_index_to_space}
 
-        fields = {const.Ex: fdtd.ex, const.Ey: fdtd.ey, const.Ez: fdtd.ez,
-                  const.Hx: fdtd.hx, const.Hy: fdtd.hy, const.Hz: fdtd.hz}
-
         material = fdtd.pw_material[comp]
-        field = fields[comp]
+        field = fdtd.field[comp]
 
         if issubclass(comp, const.Electric):
             start_boundary_idx = (0, 0, 0)            

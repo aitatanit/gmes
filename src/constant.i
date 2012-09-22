@@ -57,21 +57,21 @@ class Ex(Electric):
 
     @classmethod
     def str(cls):
-        return 'Ex'
+        return 'ex'
 
 class Ey(Electric):
     tag = _ey_get_tag()
 
     @classmethod
     def str(cls):
-        return 'Ey'
+        return 'ey'
 
 class Ez(Electric):
     tag = _ez_get_tag()
 
     @classmethod
     def str(cls):
-        return 'Ez'
+        return 'ez'
 
 class Magnetic(Component):
     tag = _magnetic_get_tag()
@@ -81,21 +81,21 @@ class Hx(Magnetic):
 
     @classmethod
     def str(cls):
-        return 'Hx'
+        return 'hx'
 
 class Hy(Magnetic):
     tag = _hy_get_tag()
 
     @classmethod
     def str(cls):
-        return 'Hy'
+        return 'hy'
 
 class Hz(Magnetic):
     tag = _hz_get_tag()
 
     @classmethod
     def str(cls):
-        return 'Hz'
+        return 'hz'
 
 class ElectricCurrent(Component):
   tag = _electriccurrent_get_tag()
@@ -105,21 +105,21 @@ class Jx(ElectricCurrent):
 
     @classmethod
     def str(cls):
-        return 'Jx'
+        return 'jx'
 
 class Jy(ElectricCurrent):
     tag = _jy_get_tag()
 
     @classmethod
     def str(cls):
-        return 'Jy'
+        return 'jy'
 
 class Jz(ElectricCurrent):
     tag = _jz_get_tag()
 
     @classmethod
     def str(cls):
-        return 'Jz'
+        return 'jz'
 
 class MagneticCurrent(Component):
     tag = _magneticcurrent_get_tag()
@@ -129,21 +129,21 @@ class Mx(Magnetic):
 
     @classmethod
     def str(cls):
-        return 'Mx'
+        return 'mx'
 
 class My(MagneticCurrent):
     tag = _my_get_tag()
 
     @classmethod
     def str(cls):
-        return 'My'
+        return 'my'
 
 class Mz(MagneticCurrent):
     tag = _mz_get_tag()
 
     @classmethod
     def str(cls):
-        return 'Mz'
+        return 'mz'
 
 class Directional(_directional):
     tag = _directional_get_tag()

@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+from __future__ import division
+
 from sys import stderr
 
 try:
@@ -24,6 +26,7 @@ from file_io import Probe
 #from file_io import write_hdf5, snapshot
 from show import ShowLine, ShowPlane, Snapshot
 from material import Dummy
+from pygeom import GeomBox
 from constant import *
 
 
@@ -1010,13 +1013,9 @@ class FDTD(object):
                       Hy: self.space.space_to_hy_index,
                       Hz: self.space.space_to_hz_index}
 
-        field = {Ex: self.ex, Ey: self.ey,
-                 Ez: self.ez, Hx: self.hx,
-                 Hy: self.hy, Hz: self.hz}
-
         idx = spc_to_idx[component](*point)
 
-        if in_range(idx, field[component].shape, component):
+        if in_range(idx, self.field[component].shape, component):
             hot_node = self.space.my_id
         else:
             hot_node = None
@@ -1028,7 +1027,7 @@ class FDTD(object):
             self.step()
             if self.time_step.n % modulus == 0:
                 print 'n:', self.time_step.n, 't:', self.time_step.t
-            if self.space.my_id == hot_node and field[component][idx] != 0:
+            if self.space.my_id == hot_node and self.field[component][idx] != 0:
                 flag = False
             flag = self.space.cart_comm.bcast(flag, hot_node)
 
@@ -1168,7 +1167,7 @@ class FDTD(object):
         showcase.start()
         return showcase
         
-    def write_field(self, comp, low=None, high=None, prefix=None, postfix=None):
+    def write_field(self, comp, low=(-inf,-inf,-inf), high=(inf,inf,inf), prefix=None, postfix=None):
         """Dump the field values on a file.
 
         comp: component of the field
@@ -1176,6 +1175,9 @@ class FDTD(object):
         high: coordinate of higher boundary
         prefix: prefix of the output filename
         postfix: postfix of the output filename
+
+        The current version saves the field in npy format. The 
+        format will be changed to hdf5 for the metadata.
 
         """
         spc2idx = {Ex: self.space.space_to_ex_index,
@@ -1185,20 +1187,66 @@ class FDTD(object):
                    Hy: self.space.space_to_hy_index,
                    Hz: self.space.space_to_hz_index}
         
-        field_name = {Ex: 'ex', Ey: 'ey', Ez: 'ez',
-                      Hx: 'hx', Hy: 'hy', Hz: 'hz'}
-                   
-        if low is None:
-            low_idx = (0, 0, 0)
-        else:
-            low_idx = spc2idx[comp](low)
-            
-        if low is None:
-            high_idx = self.field[comp].shape
-        else:
-            high_idx = [i + 1 for i in self.spc2idx[comp](high)]
+        idx2spc = {Ex: self.space.ex_index_to_space,
+                   Ey: self.space.ey_index_to_space,
+                   Ez: self.space.ez_index_to_space,
+                   Hx: self.space.hx_index_to_space,
+                   Hy: self.space.hy_index_to_space,
+                   Hz: self.space.hz_index_to_space}
+
+        low = array(low, np.double)
+        high = array(high, np.double)
         
-        name = field_name[comp]
+        for i, diff in enumerate(high - low):
+            if 0 <= diff < self.space.dr[i]:
+                high[i] += self.space.dr[i] / 2
+                low[i] -= self.space.dr[i] / 2
+            elif diff < 0:
+                print 'ERROR'
+
+        dump_volume = GeomBox(low, high)
+
+        if issubclass(comp, Electric):
+            low_bndry_idx = (0, 0, 0)
+            if comp is Ex:
+                high_bndry_idx = (self.field[comp].shape[0] - 1, 
+                                  self.field[comp].shape[1] - 2,
+                                  self.field[comp].shape[2] - 2)
+            elif comp is Ey:
+                high_bndry_idx = (self.field[comp].shape[0] - 2, 
+                                  self.field[comp].shape[1] - 1,
+                                  self.field[comp].shape[2] - 2)
+            elif comp is Ez:
+                high_bndry_idx = (self.field[comp].shape[0] - 2, 
+                                  self.field[comp].shape[1] - 2,
+                                  self.field[comp].shape[2] - 1)
+        elif issubclass(comp, Magnetic):
+            high_bndry_idx = [i - 1 for i in self.field[comp].shape]
+            if comp is Hx:
+                low_bndry_idx = (0, 1, 1)
+            elif comp is Hy:
+                low_bndry_idx = (1, 0, 1)
+            elif comp is Hz:
+                low_bndry_idx = (1, 1, 0)
+ 	else:
+            msg = "component should be of class constant.Component."
+            raise ValueError(msg)
+
+        low_bndry_pnt = idx2spc[comp](*low_bndry_idx)
+        high_bndry_pnt = idx2spc[comp](*high_bndry_idx)
+
+        field_volume = GeomBox(low_bndry_pnt, high_bndry_pnt)
+        
+        if field_volume.overlap(dump_volume):
+            dump_volume.intersection(field_volume)
+        else:
+            return None
+                
+        low_idx = spc2idx[comp](*(dump_volume.low))
+        high_idx = map(lambda i: i + 1, spc2idx[comp](*(dump_volume.high)))
+
+        topo = self.space.cart_comm.topo[2]
+        name = '%s_t=%f_(%d,%d,%d)' % (comp.str(), self.time_step.t, topo[0], topo[1], topo[2])
         if prefix is not None:
             name = prefix + name
         if postfix is not None:
@@ -1209,7 +1257,7 @@ class FDTD(object):
                                        low_idx[2]: high_idx[2]])
     	
     def snapshot_field(self, comp, axis, cut):
-        """Take a snapshot of a field.
+        """Take a graphical snapshot of a field.
 
         comp: field component
         axis: normal axis to the snapshot plane
