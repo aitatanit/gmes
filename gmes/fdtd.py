@@ -1170,11 +1170,13 @@ class FDTD(object):
     def write_field(self, comp, low=(-inf,-inf,-inf), high=(inf,inf,inf), prefix=None, postfix=None):
         """Dump the field values on a file.
 
-        comp: component of the field
-        low: coordinate of lower boundary
-        high: coordinate of higher boundary
-        prefix: prefix of the output filename
-        postfix: postfix of the output filename
+        comp: Component of the field
+        low: Coordinate of lower boundary
+        high: Coordinate of higher boundary
+        prefix: A prefix of the output filename. It should not contain
+                parentheses.
+        postfix: A postfix of the output filename. It should not contain
+                 parentheses.
 
         The current version saves the field in npy format. The 
         format will be changed to hdf5 for the metadata.
