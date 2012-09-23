@@ -177,6 +177,11 @@ class FDTD(object):
         else:
             self.cmplx = True
 
+            self.bloch = np.array(bloch, np.double)
+
+            if self.verbose:
+                print 'Bloch wave vector is', self.bloch
+
             # Calculate accurate a Bloch wave vector using equation 4.14a 
             # at p.112 of 'A. Taflove and S. C. Hagness, Computational 
             # Electrodynamics: The Finite-Difference Time-Domain Method, 
@@ -189,11 +194,10 @@ class FDTD(object):
             c = 1 / sqrt(eps_inf * mu_inf)
             S = c * time_step_size / ds
             ref_n = sqrt(eps_inf)
-            self.bloch = np.array(bloch, np.double)
-            self.bloch = 2 * ref_n / ds * np.arcsin(np.sin(self.bloch * S * ds / 2) / S)
-            
-        if self.verbose:
-            print 'Bloch wave vector is', self.bloch
+            numeric_bloch = 2 * ref_n / ds * np.arcsin(np.sin(self.bloch * S * ds / 2) / S)
+
+            if self.verbose:
+                print 'numerical Bloch wave vector is', numeric_bloch
             
         if self.verbose:
             print 'Initializing source...',
