@@ -1261,7 +1261,16 @@ class FDTD(object):
         np.save(name, self.field[comp][low_idx[0]: high_idx[0],
                                        low_idx[1]: high_idx[1],
                                        low_idx[2]: high_idx[2]])
-    	
+
+    def write_field_all(self, low=(-inf,-inf,-inf), high=(inf,inf,inf), prefix=None, postfix=None):
+        """Write the all current fields.
+        
+        """
+        for comp in self.e_field_compnt:
+            self.write_field(comp, low, high, prefix, postfix)
+        for comp in self.h_field_compnt:
+            self.write_field(comp, low, high, prefix, postfix)
+        
     def snapshot_field(self, comp, axis, cut):
         """Take a graphical snapshot of a field.
 

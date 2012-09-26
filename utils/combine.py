@@ -12,40 +12,44 @@ import sys
 fname = sys.argv[1]
 head = fname.split('(')[0][:-1]
 
-i_size, j_size, k_size = 0, 0, 0
+i_min, j_min, k_min = np.inf, np.inf, np.inf
+i_max, j_max, k_max = 0, 0, 0
 for fname in sys.argv[1:]:
     string_coordinate = fname.split('(')[1].split(')')[0].split(',')
     i, j, k = map(int, string_coordinate)
-    if i > i_size:
-        i_size = i
-    if j > j_size:
-        j_size = j
-    if k > k_size:
-        k_size = k
+    if i < i_min:
+        i_min = i
+    if j < j_min:
+        j_min = j
+    if k < k_min:
+        k_min = k
+    if i > i_max:
+        i_max = i
+    if j > j_max:
+        j_max = j
+    if k > k_max:
+        k_max = k
 
-i_size += 1
-j_size += 1
-k_size += 1
-
-data = np.empty((i_size, j_size, k_size), object)
+data = np.empty((i_max + 1, j_max + 1, k_max + 1), object)
 for fname in sys.argv[1:]:
     string_coordinate = fname.split('(')[1].split(')')[0].split(',')
     i, j, k = map(int, string_coordinate)
     data[i,j,k] = np.load(fname)
-
-for i, j in np.ndindex(i_size, j_size):
-    for k in range(1, k_size):
-        data[i,j,0] = np.dstack(data[i,j,0], data[i,j,k])
-
-data = data[:,:,0]
-
-for i in range(i_size):
-    for k in range(1, j_size):
-        data[i,0] = np.hstack((data[i,0], data[i,j]))
-
-data = data[:,0]
-
-for i in range(1, i_size):
-    data[0] = np.vstack((data[0], data[i]))
     
-np.save(head, data[0])
+for i in range(i_min, i_max + 1):
+    for j in range(j_min, j_max + 1):
+        for k in range(k_min + 1, k_max + 1):
+            data[i,j,k_min] = np.dstack((data[i,j,k_min], data[i,j,k]))
+
+data = data[:,:,k_min]
+
+for i in range(i_min, i_max + 1):
+    for j in range(j_min + 1, j_max + 1):
+        data[i,j_min] = np.hstack((data[i,j_min], data[i,j]))
+
+data = data[:,j_min]
+
+for i in range(i_min + 1, i_max + 1):
+    data[i_min] = np.vstack((data[i_min], data[i]))
+    
+np.save(head, data[i_min])
