@@ -96,7 +96,7 @@ class Continuous(SrcTime):
         self.end = float(end)
         
         if width is None:
-            self.width = 3 / self.freq
+            self.width = 5 / self.freq
         else:
             self.width = float(width)
 
@@ -399,6 +399,7 @@ class TotalFieldScatteredField(Src):
         self.src_time.init(cmplx)
         
         self.aux_fdtd = self._get_aux_fdtd(space, geom_tree, cmplx)
+        self.aux_fdtd.init()
 
     def step(self):
         self.aux_fdtd.step()
