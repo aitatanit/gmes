@@ -20,7 +20,7 @@ from numpy.linalg import norm
 from scipy.optimize import bisect
 
 import constant as const
-from geometry import Cartesian, DefaultMedium, Boundary, in_range
+from geometry import Cartesian, DefaultMedium, Shell, in_range
 from fdtd import TEMzFDTD
 from material import Dielectric, Cpml
 
@@ -574,8 +574,8 @@ class TotalFieldScatteredField(Src):
                               resolution=1/delta_1d,
                               parallel=False)
         aux_geom_list = (DefaultMedium(material=mat_objs),
-                         Boundary(material=Cpml(),
-                                  thickness=pml_thickness))
+                         Shell(material=Cpml(),
+                               thickness=pml_thickness))
         src_pnt = (0, 0, -max_dist - delta_1d)
         aux_src_list = (PointSource(src_time=deepcopy(self.src_time),
                                     component=const.Ex,

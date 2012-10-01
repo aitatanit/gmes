@@ -53,7 +53,7 @@ for y in range(-2, 4):
     geom_list.append(Sphere(Silver(75 * NANO),
                                    radius=1.0 / 3,
                                    center=(0, y, 0)))
-geom_list.append(Boundary(Cpml(), thickness=0.5))
+geom_list.append(Shell(Cpml(), thickness=0.5))
 src_list = [PointSource(Continuous(freq=0.2072),
                         center=(0, -3, 0),
                         component=Jy)]

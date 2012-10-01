@@ -94,7 +94,7 @@ geom_list = (DefaultMedium(material=AIR),
              Block(material=Si, 
                    size=(SIZE[0], SIZE[1], SLAB_CORE))) + \
                    make_crystals(*SIZE[:2]) + make_line_defect(SIZE[0]) + \
-                   (Boundary(material=Cpml(), thickness=PML_THICK),)
+                   (Shell(material=Cpml(), thickness=PML_THICK),)
 
 space = Cartesian(size=SIZE, resolution=RESOLUTION)
 

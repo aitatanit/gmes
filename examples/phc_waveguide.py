@@ -19,7 +19,7 @@ geom_list.extend([Cylinder(material=Dielectric(8.9),
                   for x in xrange(-8, 9) 
                   for y in xrange(-4, 5)
                   if y != 0])
-geom_list.append(Boundary(material=Cpml()))
+geom_list.append(Shell(material=Cpml()))
 src_list = [PointSource(src_time=Continuous(freq=0.43),
                         component=Ez,
                         center=(-7,0,0))]

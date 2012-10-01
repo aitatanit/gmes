@@ -60,7 +60,7 @@ import pw_material, pw_source
 # List here only the objects we want to be publicly available
 _module = ['fdtd', 'geometry', 'show', 'constant', 'source', 'pw_source', 'material', 'pw_material']
 _class = ['TimeStep', 'FDTD', 'TExFDTD', 'TEyFDTD', 'TEzFDTD', 'TMxFDTD', 'TMyFDTD', 'TMzFDTD', 'TEMxFDTD', 'TEMyFDTD', 'TEMzFDTD', 
-          'Cartesian', 'DefaultMedium', 'Cone', 'Cylinder', 'Block', 'Ellipsoid', 'Sphere', 'Boundary', 
+          'Cartesian', 'DefaultMedium', 'Cone', 'Cylinder', 'Block', 'Ellipsoid', 'Sphere', 'Shell', 
           'Ex', 'Ey', 'Ez', 'Hx', 'Hy', 'Hz', 'Jx', 'Jy', 'Jz', 'Mx', 'My', 'Mz', 'X', 'Y', 'Z', 'PlusX', 'MinusX', 'PlusY', 'MinusY', 'PlusZ', 'MinusZ', 
           'Continuous', 'Bandpass', 'DifferentiatedGaussian', 'PointSource', 'TotalFieldScatteredField', 'GaussianBeam', 
           'Dummy', 'Const', 'Dielectric', 'Upml', 'Cpml', 'DrudePole', 'LorentzPole', 'CriticalPoint', 'DcpAde', 'DcpPlrc', 'DcpRc', 'Drude', 'Lorentz']

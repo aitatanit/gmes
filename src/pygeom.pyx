@@ -540,8 +540,8 @@ cdef class GeometricObject(object):
         """Display some information about this geometric object.
         
         """
-        print " " * indent, "geometric object"
-        print " " * indent, "center", self.center
+        print ' ' * indent, 'geometric object'
+        print ' ' * indent, 'center:', self.center
         if self.material:
             self.material.display_info(indent + 5)
        
@@ -573,7 +573,7 @@ cdef class DefaultMedium(GeometricObject):
         Override GeometricObject.display_info.
         
         """
-        print " " * indent, "default medium"
+        print ' ' * indent, 'default medium'
         if self.material:
             self.material.display_info(indent + 5)
     
@@ -591,7 +591,7 @@ cdef class Cone(GeometricObject):
     cdef public double radius, radius2, height
     cdef public np.ndarray center, axis
 
-    def __init__(self, material, double radius2=0, object axis=(1,0,0), double radius=1, double height=1, object center=(0,0,0)):
+    def __init__(self, material, object center=(0,0,0), double radius2=0, object axis=(1,0,0), double radius=1, double height=1):
         """
         
         Keyword arguments:
@@ -663,13 +663,13 @@ cdef class Cone(GeometricObject):
         Override GeometricObject.display_info.
         
         """
-        print " " * indent, "cone"
-        print " " * indent,
-        print "center", self.center,
-        print "radius", self.radius,
-        print "height" , self.height,
-        print "axis", self.axis,
-        print "radius2", self.radius2
+        print ' ' * indent, 'cone'
+        print ' ' * indent,
+        print 'center:', self.center,
+        print 'radius:', self.radius,
+        print 'height:' , self.height,
+        print 'axis:', self.axis,
+        print 'radius2:', self.radius2
         if self.material:
             self.material.display_info(indent + 5)
         
@@ -704,32 +704,32 @@ class Cylinder(Cone):
     """Form a cylinder.
     
     """	
-    def __init__(self, material, axis=(0, 0, 1),
-                 radius=1, height=1, center=(0, 0, 0)):
+    def __init__(self, material, center=(0, 0, 0), axis=(0, 0, 1),
+                 radius=1, height=1):
         """
         Keyword arguments:
+            material -- The material that the object is made of. 
+                No default.
+            center -- Center point of the object. Default is (0,0,0). 
             axis -- Direction of the cylinder's axis; the length of 
                 this vector is ignored. Defaults to point parallel to 
                 the z axis i.e., (0,0,1).
             radius -- Radius of the cylinder's cross-section. Default is 1.
             height -- Length of the cylinder along its axis. Default is 1. 
-            material -- The material that the object is made of. 
-                No default.
-            center -- Center point of the object. Default is (0,0,0). 
         
         """
-        Cone.__init__(self, material, radius, axis, radius, height, center)
+        Cone.__init__(self, material, center, radius, axis, radius, height)
 
     def display_info(self, indent=0):
         """Display information of this cylinder.
         
         """
-        print " " * indent, "cylinder"
-        print " " * indent,
-        print "center", self.center,
-        print "radius", self.radius,
-        print "height", self.height,
-        print "axis", self.axis
+        print ' ' * indent, 'cylinder'
+        print ' ' * indent,
+        print 'center:', self.center,
+        print 'radius:', self.radius,
+        print 'height:', self.height,
+        print 'axis:', self.axis
         if self.material:
             self.material.display_info(indent + 5)
 
@@ -740,15 +740,17 @@ cdef class Block(GeometricObject):
     """
     cdef public np.ndarray center, e1, e2, e3, size, projection_matrix
 
-    def __init__(self, material, e1=(1, 0, 0), e2=(0, 1, 0), e3=(0, 0, 1), size=(1, 1, 1), center=(0, 0, 0)):
+    def __init__(self, material, center=(0, 0, 0), 
+                 e1=(1, 0, 0), e2=(0, 1, 0), e3=(0, 0, 1), 
+                 size=(1, 1, 1)):
         """
         Keyword arguments:
+            center -- center location. Default is (0, 0, 0).
             e1, e2, e3 -- The directions of the axes of the block; the 
                 lengths of these vectors are ignored. Must be linearly 
                 independent. They default to the three Cartesian axis.
             size -- The lengths of the block edges along each of its 
                 three axes. Default is (1, 1, 1).
-            center -- center location. Default is (0, 0, 0).
             
         """
         GeometricObject.__init__(self, material)
@@ -823,11 +825,11 @@ cdef class Block(GeometricObject):
         """Display information of this block.
 
         """
-        print " " * indent, "block"
-        print " " * indent,
-        print "center", self.center,
-        print "size", self.size,
-        print "axes", self.e1, self.e2, self.e3
+        print ' ' * indent, 'block'
+        print ' ' * indent,
+        print 'center:', self.center,
+        print 'size:', self.size,
+        print 'axes:', self.e1, self.e2, self.e3
         if self.material:
             self.material.display_info(indent + 5)
 
@@ -838,13 +840,13 @@ cdef class Ellipsoid(Block):
     """
     cdef public np.ndarray inverse_semi_axes
 
-    def __init__(self, material,
+    def __init__(self, material, center=(0, 0, 0),
                  e1=(1, 0, 0), e2=(0, 1, 0), e3=(0, 0, 1),
-                 size=(1, 1, 1), center=(0, 0, 0)):
+                 size=(1, 1, 1)):
         """
 
         """
-        Block.__init__(self, material, e1, e2, e3, size, center)
+        Block.__init__(self, material, center, e1, e2, e3, size)
         self.inverse_semi_axes = 2 / np.array(size, np.double)
 
     def __getstate__(self):
@@ -875,11 +877,11 @@ cdef class Ellipsoid(Block):
         """Display information of this ellipsoid.
 
         """
-        print " " * indent, "ellipsoid"
-        print " " * indent,
-        print "center", self.center,
-        print "size", self.size,
-        print "axis", self.e1, self.e2, self.e3
+        print ' ' * indent, 'ellipsoid'
+        print ' ' * indent,
+        print 'center:', self.center,
+        print 'size:', self.size,
+        print 'axis:', self.e1, self.e2, self.e3
         if self.material:
             self.material.display_info(indent + 5)
 
@@ -894,7 +896,7 @@ cdef class Sphere(GeometricObject):
     cdef public double radius
     cdef public np.ndarray center
 
-    def __init__(self, material, radius=1, center=(0, 0, 0)):
+    def __init__(self, material, center=(0, 0, 0), radius=1):
         """
         
         Keyword arguments:
@@ -954,50 +956,54 @@ cdef class Sphere(GeometricObject):
         """Display information of the sphere.
 
         """
-        print " " * indent, "sphere"
-        print " " * indent,
-        print "center", self.center,
-        print "radius", self.radius
+        print ' ' * indent, 'sphere'
+        print ' ' * indent,
+        print 'center:', self.center,
+        print 'radius:', self.radius
         if self.material:
             self.material.display_info(indent + 5)
 
 
-cdef class Boundary(GeometricObject):
+cdef class Shell(GeometricObject):
     """Form a boundary.
      
     """
     cdef public double d
-    cdef public np.ndarray half_size
+    cdef public np.ndarray center, half_size
     cdef public list box_list
     cdef public bint minus_x, plus_x, minus_y, plus_y, minus_z, plus_z
+    cdef public bint boundary
 
-    def __init__(self, material, thickness=1,
+    def __init__(self, material, center=(0,0,0), size=None,
+                 thickness=1,
                  plus_x=True, minus_x=True,
                  plus_y=True, minus_y=True,
                  plus_z=True, minus_z=True):
         """
-        
-         Keyword arguments:
-             material -- The filling material
-             thickness -- The spatial thickness of the Boundary layer 
-                 (which extends from the boundary towards the inside of
-                 the computational cell). Default value.
-             plus_x -- Specify whether the high of the boundary in 
-                 direction x is set. Default is True.
-             minus_x -- Specify whether the low of the boundary in 
-                 direction x is set. Default is True.
-             plus_y -- Specify whether the high of the boundary in 
-                 direction y is set. Default is True.
-             minus_y -- Specify whether the low of the boundary in 
-                 direction y is set. Default is True.
-             plus_z -- Specify whether the high of the boundary in 
-                 direction z is set. Default is True.
-             minus_z -- Specify whether the low of the boundary in 
-                 direction z is set. Default is True.
+        Keyword arguments:
+            material -- The filling material
+            center -- coordinates of the center of this geometric object. Default is (0,0,0).
+            size -- size of ot the shell. Default is None.
+            thickness -- The spatial thickness of the Shell (the 
+                distance between inner and outer surface)
+                Default value is 1.
+            plus_x -- Specify whether the high of the boundary in 
+                direction x is set. Default is True.
+            minus_x -- Specify whether the low of the boundary in 
+                direction x is set. Default is True.
+            plus_y -- Specify whether the high of the boundary in 
+                direction y is set. Default is True.
+            minus_y -- Specify whether the low of the boundary in 
+                direction y is set. Default is True.
+            plus_z -- Specify whether the high of the boundary in 
+                direction z is set. Default is True.
+            minus_z -- Specify whether the low of the boundary in 
+                direction z is set. Default is True.
         
         """
         GeometricObject.__init__(self, material)
         
+        self.center = np.array(center, np.double)
         self.d = float(thickness)
         
         self.box_list = []
@@ -1005,17 +1011,24 @@ cdef class Boundary(GeometricObject):
         self.minus_x, self.plus_x = minus_x, plus_x
         self.minus_y, self.plus_y = minus_y, plus_y
         self.minus_z, self.plus_z = minus_z, plus_z
-
-        self.half_size = np.zeros((3,), np.double)
-
+        
+        if size is None:
+            self.half_size = np.zeros((3,), np.double)
+            self.boundary = True
+        else:
+            self.half_size = np.array(map(lambda i: 0.5 * i, size),
+                                      np.double)
+            self.boundary = False
+            
         # do someting for the PML derived class?
         if isinstance(material, Pml):
             pass
-
+        
     def __getstate__(self):
         d = GeometricObject.__getstate__(self)
-        d['d'] = self.d
+        d['center'] = self.center
         d['half_size'] = self.half_size
+        d['d'] = self.d
         d['box_list'] = self.box_list
         d['minus_x'] = self.minus_x
         d['plus_x'] = self.plus_x
@@ -1023,12 +1036,14 @@ cdef class Boundary(GeometricObject):
         d['plus_y'] = self.plus_y
         d['minus_z'] = self.minus_z
         d['plus_z'] = self.plus_z
+        d['boundary'] = self.boundary
         return d
        
     def __setstate__(self, d):
         GeometricObject.__setstate__(self, d)
-        self.d = d['d']
+        self.center.setfield(d['center'], np.double)
         self.half_size.setfield(d['half_size'], np.double)
+        self.d = d['d']
         self.box_list = deepcopy(d['box_list'])
         self.minus_x = d['minus_x']
         self.plus_x = d['plus_x']
@@ -1036,54 +1051,67 @@ cdef class Boundary(GeometricObject):
         self.plus_y = d['plus_y']
         self.minus_z = d['minus_z']
         self.plus_z = d['plus_z']
+        self.boundary = d['boundary']
 
     def init(self, space):
-        self.half_size = np.array(space.half_size, np.double)
+        if self.boundary:
+            self.half_size.setfield(space.half_size, np.double)
 
         for i in range(3):
             if 2 * self.half_size[i] < space.dr[i]:
                 self.half_size[i] = 0.5 * space.dr[i]
-        
-        if self.d > 0:
-            if 2 * self.half_size[0] > space.dr[0]:
-                if self.plus_x:
-                    low = (self.half_size[0] - self.d, -self.half_size[1],
-                           -self.half_size[2])
-                    high = self.half_size[:]
-                    self.box_list.append(GeomBox(low, high))
-                if self.minus_x:
-                    low = -self.half_size[:]
-                    high = (-self.half_size[0] + self.d, self.half_size[1],
-                            self.half_size[2])
-                    self.box_list.append(GeomBox(low, high))
 
-            if 2 * self.half_size[1] > space.dr[1]:
-                if self.plus_y:
-                    low = (-self.half_size[0], self.half_size[1] - self.d,
-                           -self.half_size[2])
-                    high = self.half_size[:]
-                    self.box_list.append(GeomBox(low, high))
-                if self.minus_y:
-                    low = -self.half_size[:]
-                    high = (self.half_size[0], -self.half_size[1] + self.d,
-                            self.half_size[2])
-                    self.box_list.append(GeomBox(low, high))
+        if 2 * self.half_size[0] <= space.dr[0]:
+            self.plus_x = False
+            self.minus_x = False
 
-            if 2 * self.half_size[2] > space.dr[2]:
-                if self.plus_z:
-                    low = (-self.half_size[0], -self.half_size[1],
-                           self.half_size[2] - self.d)
-                    high = self.half_size[:]
-                    self.box_list.append(GeomBox(low, high))
-                if self.minus_z:
-                    low = -self.half_size[:]
-                    high = (self.half_size[0], self.half_size[1],
-                            -self.half_size[2] + self.d)
-                    self.box_list.append(GeomBox(low, high))
+        if 2 * self.half_size[1] <= space.dr[1]:
+            self.plus_y = False
+            self.minus_y = False
+
+        if 2 * self.half_size[2] <= space.dr[2]:
+            self.plus_z = False
+            self.minus_z = False
+
+        if self.plus_x:
+            low = (self.half_size[0] - self.d, -self.half_size[1],
+                   -self.half_size[2])
+            high = self.half_size[:]
+            self.box_list.append(GeomBox(low, high))
+
+        if self.minus_x:
+            low = -self.half_size[:]
+            high = (-self.half_size[0] + self.d, self.half_size[1],
+                    self.half_size[2])
+            self.box_list.append(GeomBox(low, high))
+
+        if self.plus_y:
+            low = (-self.half_size[0], self.half_size[1] - self.d,
+                   -self.half_size[2])
+            high = self.half_size[:]
+            self.box_list.append(GeomBox(low, high))
+
+        if self.minus_y:
+            low = -self.half_size[:]
+            high = (self.half_size[0], -self.half_size[1] + self.d,
+                    self.half_size[2])
+            self.box_list.append(GeomBox(low, high))
+
+        if self.plus_z:
+            low = (-self.half_size[0], -self.half_size[1],
+                   self.half_size[2] - self.d)
+            high = self.half_size[:]
+            self.box_list.append(GeomBox(low, high))
+
+        if self.minus_z:
+            low = -self.half_size[:]
+            high = (self.half_size[0], self.half_size[1],
+                    -self.half_size[2] + self.d)
+            self.box_list.append(GeomBox(low, high))
         
-        self.material.init(space, self.d)
+        self.material.init(space, (self.d, self.half_size))
         self.box = self.geom_box()
-        
+
     cpdef bint in_object(self, tuple point):
         cdef GeomBox box
 
@@ -1096,10 +1124,12 @@ cdef class Boundary(GeometricObject):
         return GeomBox(-self.half_size, self.half_size)
         
     def display_info(self, indent=0):
-        print " " * indent, "boundary"
-        print " " * indent,
-        print "+x:", self.plus_x, "-x:", self.minus_x,
-        print "+y:", self.plus_y, "-y:", self.minus_y,
-        print "+z:", self.plus_z, "-z:", self.minus_z
+        print ' ' * indent, 'shell'
+        print ' ' * indent, 'center:', self.center
+        print ' ' * indent, 'size:', 2 * self.half_size
+        print ' ' * indent,
+        print '+x:', self.plus_x, '-x:', self.minus_x,
+        print '+y:', self.plus_y, '-y:', self.minus_y,
+        print '+z:', self.plus_z, '-z:', self.minus_z
         if self.material:
             self.material.display_info(indent + 5)

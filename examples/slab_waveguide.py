@@ -22,7 +22,7 @@ space = Cartesian(size=(16,8,0), resolution=10)
 geom_list = [DefaultMedium(material=Dielectric()),
              Block(material=Dielectric(12),
                    size=(inf, 1, inf)),
-             Boundary(material=Cpml())]
+             Shell(material=Cpml())]
 src_list = [PointSource(src_time=Continuous(freq=0.15),
                         component=Ez,
                         center=(-7,0,0))]

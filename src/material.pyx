@@ -454,23 +454,24 @@ class Pml(Material, Compound):
         
     def init(self, space, param=None):
         """
-        The thickness of PML layer is provided from the boundary instance 
-        which contain the PML. Also, the differential of space and time 
-        should get from the space instance.
+        The thickness of PML layer and size of the Shell instance
+        which contain the PML, are required. Also, the 
+        differential of space and time should get from the space 
+        instance.
         
-        param: thickness of the PML layer.
+        param: (thickness of the PML, half size of the Shell).
 
         """
         if param is None:
             self.d = 0
+            half_size = []
+            for i in space.half_size:
+                if i <= self.d: i = inf
+                half_size.append(i)
+            self.half_size = array(half_size, np.double)
         else:
-            self.d = float(param)
-        
-        half_size = []
-        for i in space.half_size:
-            if i <= self.d: i = inf
-            half_size.append(i)
-        self.half_size = array(half_size, np.double)
+            self.d = param[0]
+            self.half_size = array(param[1], np.double)
         
         self.dt = space.dt
         self.dw = array(space.dr, np.double)

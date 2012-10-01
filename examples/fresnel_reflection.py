@@ -31,8 +31,8 @@ cylinder = Cylinder(center=(0, 0, 0),
                     radius=1000,
                     height=1,
                     material=gold)
-boundary = Boundary(material=Cpml(),
-                    minus_y=False, plus_y=False)
+boundary = Shell(material=Cpml(),
+                 minus_y=False, plus_y=False)
 
 space = Cartesian(size=SIZE, resolution=100, parallel=True)
 geom_list = (host, cylinder, boundary)

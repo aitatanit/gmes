@@ -23,7 +23,7 @@ SIZE = (10,10,0)
 
 space = Cartesian(size=SIZE, resolution=20)
 geom_list = [DefaultMedium(material=Dielectric()),
-             Boundary(material=Cpml())]
+             Shell(material=Cpml())]
 src_list = [PointSource(src_time=Continuous(freq=0.8),
                         center=(0,0,0),
                         component=Ez)]
@@ -33,7 +33,7 @@ my_fdtd = TMzFDTD(space, geom_list, src_list)
 my_fdtd.init()
 
 my_fdtd.show_field(Ez, Z, 0)
-my_fdtd.show_field(Hx, Z, 0)
-my_fdtd.show_field(Hy, Z, 0)
-
-my_fdtd.step_until_t(100)
+#my_fdtd.show_field(Hx, Z, 0)
+#my_fdtd.show_field(Hy, Z, 0)
+my_fdtd.step_until_t(10)
+my_fdtd.write_field(Ez, (-5,-5,0), (5,5,0))
