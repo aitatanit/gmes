@@ -1,4 +1,4 @@
-This README file describes how to compile and set up GMES.
+This README file describes how to compile and set up GMES. 
 
 1. Download Latest Version
 
@@ -7,9 +7,9 @@ You can download the latest release at the GMES project page of sourceforge:
 http://sourceforge.net/projects/gmes
 
 The latest development version can be checked out through SVN with the 
-following instruction set:
+following instruction:
 
-svn co https://gmes.svn.sourceforge.net/svnroot/gmes gmes 
+svn checkout svn://svn.code.sf.net/p/gmes/code/trunk gmes-code
 
 2. Compatibility
 
@@ -17,23 +17,23 @@ GMES follows the C++ standard, thus it is OS portable in source code level.
 
 2.1. GNU/Linux
 
-GMES has been tested on Debian GNU/Linux 5.0.8 Lenny (32 bit), Ubuntu 10.04
-Lucid Lynx (32 bit), and Ubuntu 11.10 Oneiric Ocelot (64 bit).
+GMES has been tested on Debian GNU/Linux 5.0.8 Lenny (32 bit), Ubuntu 
+12.04.1 LTS Precise Pangolin (32 & 64 bit).
 
 2.2. Windows
 
-GMES has been tested on Windows 7 Enterprise K Service Pack 1 (32 and 64 
+GMES has been tested on Windows 7 Enterprise K Service Pack 1 (32 & 64 
 bit).
 
 2.3. Mac
 
-GMES has not been tested on Mac. Any contributions are welcomed.
+GMES has not been tested on Mac. Any contributions are welcome.
 
 3. Preliminaries
 
 3.1. GNU/Linux
 
-GMES uses various Python and non-Python programs. You will need following 
+GMES uses various Python and non-Python programs. You will need the following 
 programs to install and execute GMES. The following programs are provided 
 as packages on Debian and Ubuntu distributions, except the MPICH2 and 
 MPI for Python.
@@ -50,8 +50,9 @@ MPI for Python.
 
 3.2. Windows
 
-We haven't tested the MPI environment on Windows. Any contributions are 
-welcomed.
+We haven't tested the MPI environment of GMES on Windows. Any contributions 
+are welcome. The followings are prerequites to install and execute GMES on 
+Windows.
 
 * python >= 2.7.2
 * MinGW with C++ compiler >= 20110802 (to compile)
@@ -101,29 +102,29 @@ $ python setup.py build_ext --compile=mingw32
 5.1. GNU/Linux with MPI2
 
 Your MPI2 implementation may requires pre- or post- commands to exploit the 
-parallel environment. Consult the manuals of your MPI2 implementation for 
+parallel environment. Refer the manuals of your MPI2 implementation for 
 these commands. <N> and <GMES SCRIPT> indicate the number of parallel 
 process and your script which uses the GMES package.
  
-$ mpiexec -l -n <N> python <GMES SCRIPT>
+$ mpiexec -l -n <N> python-mpi <GMES SCRIPT>
 
-If you use SLURM process manager, a special Python interpreter is required. 
-Check the MPI for Python user manual at http://mpi4py.scipy.org/docs/usrman/.
+Also, in the parallel environment, a MPI-enabled Python interpreter is
+required. Check the MPI for Python user manual at 
+http://mpi4py.scipy.org/docs/usrman/.
 
 6. Known Issues
 
 6.1. Matplotlib in Windows
 
 The EPD version of the Matplotlib package which is required by fdtd.show_* 
-methods seems that it does not handle multiple plots in multiple windows.
-Thus, on Windows, the multiple real-time display windows using fdtd.show_* 
-methods could be freeze. The Linux version of matplotlib does not have this 
-problem.
+methods does not handle multiple plots in multiple windows. Thus, on Windows,
+multiple real-time display windows using fdtd.show_* methods could freeze.
+The Linux version of matplotlib does not have this problem.
 
 6.2. numpy.inf
 
-GMES does not treat well the value of numpy.inf. Please use big enough 
-value instead of numpy.inf.
+Please use a large number instead of numpy.inf since GMES does not
+correctly treat the value of numpy.inf as infinity.
 
 6.3. compile failure on Windows
 
@@ -133,7 +134,7 @@ following error.
 g++: build\temp.win32-2.5\Release\src\lib_pointwise_material.a: No such
 file or directory
 
-If you meet this error, comment out the following third line from 
+If you encounter this error, comment out the following third line from 
 C:<Python Folder>\Lib\distutils\cygwinccompiler.py.
 
 # dllwrap uses different options than gcc/ld
@@ -144,7 +145,7 @@ if self.linker_dll == "dllwrap":
     
 6.4. compile failure on Windows
 
-If you use EPD(>=7.1-2) with MinGW on Windows 7, you will meet the 
+If you use EPD(>=7.1-2) with MinGW on Windows 7, you will encounter the 
 following error message when you compile GMES.
 
 In file included from c:\mingw\bin\../lib/gcc/mingw32/4.5.2/include/c++/cmath:629:0,
@@ -160,4 +161,10 @@ This problem is not yet solved.
 
 GMES has not tested with Python 3.
 
-Kyungwon Chun (kwchun@gist.ac.kr)
+6.6 User Manual
+
+The current version of GMES does not have a user manual. Please, refer the 
+examples in the 'examples' and 'tests' directories. Also, any contributions on 
+the user manual are welcome.
+
+For any enquiries, please email Kyungwon Chun (kwchun@gist.ac.kr)
