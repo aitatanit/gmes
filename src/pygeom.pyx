@@ -1074,42 +1074,49 @@ cdef class Shell(GeometricObject):
             self.minus_z = False
 
         if self.plus_x:
-            low = (self.half_size[0] - self.d, -self.half_size[1],
-                   -self.half_size[2])
-            high = self.half_size[:]
+            low = (self.center[0] + self.half_size[0] - self.d,
+                   self.center[1] - self.half_size[1],
+                   self.center[2] - self.half_size[2])
+            high = self.center + self.half_size
             self.box_list.append(GeomBox(low, high))
 
         if self.minus_x:
-            low = -self.half_size[:]
-            high = (-self.half_size[0] + self.d, self.half_size[1],
-                    self.half_size[2])
+            low = self.center - self.half_size
+            high = (self.center[0] - self.half_size[0] + self.d, 
+                    self.center[1] + self.half_size[1],
+                    self.center[2] + self.half_size[2])
             self.box_list.append(GeomBox(low, high))
 
         if self.plus_y:
-            low = (-self.half_size[0], self.half_size[1] - self.d,
-                   -self.half_size[2])
-            high = self.half_size[:]
+            low = (self.center[0] - self.half_size[0], 
+                   self.center[1] + self.half_size[1] - self.d,
+                   self.center[2] - self.half_size[2])
+            high = self.center + self.half_size
             self.box_list.append(GeomBox(low, high))
 
         if self.minus_y:
-            low = -self.half_size[:]
-            high = (self.half_size[0], -self.half_size[1] + self.d,
-                    self.half_size[2])
+            low = self.center - self.half_size
+            high = (self.center[0] + self.half_size[0], 
+                    self.center[1] - self.half_size[1] + self.d,
+                    self.center[2] + self.half_size[2])
             self.box_list.append(GeomBox(low, high))
 
         if self.plus_z:
-            low = (-self.half_size[0], -self.half_size[1],
-                   self.half_size[2] - self.d)
-            high = self.half_size[:]
+            low = (self.center[0] - self.half_size[0], 
+                   self.center[1] - self.half_size[1],
+                   self.center[2] + self.half_size[2] - self.d)
+            high = self.center + self.half_size
             self.box_list.append(GeomBox(low, high))
 
         if self.minus_z:
-            low = -self.half_size[:]
-            high = (self.half_size[0], self.half_size[1],
-                    -self.half_size[2] + self.d)
+            low = self.center - self.half_size
+            high = (self.center[0] + self.half_size[0],
+                    self.center[1] + self.half_size[1],
+                    self.center[2] - self.half_size[2] + self.d)
             self.box_list.append(GeomBox(low, high))
         
-        self.material.init(space, (self.d, self.half_size))
+        self.material.init(space, 
+                           (self.center, self.half_size, self.d))
         self.box = self.geom_box()
 
     cpdef bint in_object(self, tuple point):

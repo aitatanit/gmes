@@ -434,8 +434,9 @@ class Pml(Material, Compound):
         d['initialized'] = self.initialized
 
         if self.initialized:
-            d['d'] = self.d
+            d['center'] = self.center
             d['half_size'] = self.half_size
+            d['d'] = self.d
             d['dt'] = self.dt
             d['dw'] = self.dw
             d['sigma_max'] = self.sigma_max
@@ -446,11 +447,12 @@ class Pml(Material, Compound):
         Material.__setstate__(self, d)
         
         if d['initialized']:
+            self.center.setfield(d['center'])
+            self.half_size.setfield(d['half_size'])
             self.d = d['d']
-            self.half_size = d['half_size'].copy()
             self.dt = d['dt']
             self.dw = d['dw'].copy()
-            self.sigma_max = d['sigma_max'].copy()
+            self.sigma_max.setfield(d['sigma_max'])
         
     def init(self, space, param=None):
         """
@@ -459,20 +461,24 @@ class Pml(Material, Compound):
         differential of space and time should get from the space 
         instance.
         
-        param: (thickness of the PML, half size of the Shell).
+        param: (center, half size, thickness) of the the Shell.
 
         """
         if param is None:
-            self.d = 0
+            self.center = np.zeros(3)
+
             half_size = []
             for i in space.half_size:
                 if i <= self.d: i = inf
                 half_size.append(i)
             self.half_size = array(half_size, np.double)
+
+            self.d = 0
         else:
-            self.d = param[0]
+            self.center = np.array(param[0], np.double)
             self.half_size = array(param[1], np.double)
-        
+            self.d = param[2]
+
         self.dt = space.dt
         self.dw = array(space.dr, np.double)
         self.sigma_max = self.sigma_max_ratio * self.get_sigma_opt()
@@ -490,7 +496,9 @@ class Pml(Material, Compound):
         """Polynomial grading of conductivity.
         
         """
+        w -= self.center[component]
         half_size = self.half_size[component]
+        
         if w <= self.d - half_size:
             return self.sigma_max[component] * (1 - (half_size + w) / self.d)**self.m
         elif half_size - self.d <= w:
@@ -502,6 +510,7 @@ class Pml(Material, Compound):
         """Polynomial grading of kappa.
         
         """
+        w -= self.center[component]
         half_size = self.half_size[component]
         if w <= self.d - half_size:
             return 1 + (self.kappa_max - 1) * (1 - (half_size + w) / self.d)**self.m
@@ -802,14 +811,16 @@ class Cpml(Pml):
         print 'a_max:', self.a_max
 
     def a(self, w, component):
+        w -= self.center[component]
         half_size = self.half_size[component]
+
         if w <= self.d - half_size:
             return self.a_max * ((half_size + w) / self.d)**self.m_a
         elif half_size - self.d <= w:
             return self.a_max * ((half_size - w) / self.d)**self.m_a
         else:
             return 0
-       
+        
     def b(self, w, component):
         exponent = -(self.sigma(w, component) / self.kappa(w, component) + self.a(w, component)) * self.dt
         return exp(exponent)
