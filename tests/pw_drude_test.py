@@ -8,8 +8,9 @@ sys.path.append(new_path)
 import unittest
 import numpy as np
 
-from gmes.material import Gold2
+from gmes.material import Drude, DrudePole
 from gmes.geometry import Cartesian
+from gmes.constant import c0
 
 
 class TestSequence(unittest.TestCase):
@@ -18,16 +19,23 @@ class TestSequence(unittest.TestCase):
         self.spc = Cartesian((0, 0, 0))
         self.spc.dt = 1
         
-        self.drude = Gold2(a=1)
-        self.drude.init(self.spc)
+        # The parameters are from the following article.
+        # M. Okoniewski and E. Okoniewska, "Drude dispersion in 
+        # ADE FDTD revisited," Electron. Lett., vol. 42, no. 9, 
+        # pp. 503-504, 2006.
+
+        a = 1
+        dp1 = DrudePole(omega=1.196e16 * a / c0, 
+                        gamma=8.052e13 * a / c0)
+        self.gold = Drude(eps_inf=1, mu_inf=1, sigma=0, dps=(dp1,))
+        self.gold.init(self.spc)
         
     def testExReal(self):
-        sample = \
-            self.drude.get_pw_material_ex(self.idx, (0,0,0), cmplx=False)
+        sample = self.gold.get_pw_material_ex(self.idx, (0,0,0))
 
         for idx in np.ndindex(3, 3, 3):
             if idx == self.idx:
-                self.assertEqual(sample.get_eps_inf(idx), self.drude.eps_inf)
+                self.assertEqual(sample.get_eps_inf(idx), self.gold.eps_inf)
             else:
                 self.assertEqual(sample.get_eps_inf(idx), 0)
 
@@ -39,12 +47,11 @@ class TestSequence(unittest.TestCase):
             self.assertEqual(ex[idx], 0)
 
     def testEyReal(self):
-        sample = \
-            self.drude.get_pw_material_ey(self.idx, (0,0,0), cmplx=False)
+        sample = self.gold.get_pw_material_ey(self.idx, (0,0,0))
 
         for idx in np.ndindex(3, 3, 3):
             if idx == self.idx:
-                self.assertEqual(sample.get_eps_inf(idx), self.drude.eps_inf)
+                self.assertEqual(sample.get_eps_inf(idx), self.gold.eps_inf)
             else:
                 self.assertEqual(sample.get_eps_inf(idx), 0)
 
@@ -56,12 +63,11 @@ class TestSequence(unittest.TestCase):
             self.assertEqual(ey[idx], 0)
 
     def testEzReal(self):
-        sample = \
-            self.drude.get_pw_material_ez(self.idx, (0,0,0), cmplx=False)
+        sample = self.gold.get_pw_material_ez(self.idx, (0,0,0))
 
         for idx in np.ndindex(3, 3, 3):
             if idx == self.idx:
-                self.assertEqual(sample.get_eps_inf(idx), self.drude.eps_inf)
+                self.assertEqual(sample.get_eps_inf(idx), self.gold.eps_inf)
             else:
                 self.assertEqual(sample.get_eps_inf(idx), 0)
 
@@ -73,12 +79,11 @@ class TestSequence(unittest.TestCase):
             self.assertEqual(ez[idx], 0)
 
     def testHxReal(self):
-        sample = \
-            self.drude.get_pw_material_hx(self.idx, (0,0,0), cmplx=False)
+        sample = self.gold.get_pw_material_hx(self.idx, (0,0,0))
 
         for idx in np.ndindex(3, 3, 3):
             if idx == self.idx:
-                self.assertEqual(sample.get_mu_inf(idx), self.drude.mu_inf)
+                self.assertEqual(sample.get_mu_inf(idx), self.gold.mu_inf)
             else:
                 self.assertEqual(sample.get_mu_inf(idx), 0)
 
@@ -90,12 +95,11 @@ class TestSequence(unittest.TestCase):
             self.assertEqual(hx[idx], 0)
 
     def testHyReal(self):
-        sample = \
-            self.drude.get_pw_material_hy(self.idx, (0,0,0), cmplx=False)
+        sample = self.gold.get_pw_material_hy(self.idx, (0,0,0))
 
         for idx in np.ndindex(3, 3, 3):
             if idx == self.idx:
-                self.assertEqual(sample.get_mu_inf(idx), self.drude.mu_inf)
+                self.assertEqual(sample.get_mu_inf(idx), self.gold.mu_inf)
             else:
                 self.assertEqual(sample.get_mu_inf(idx), 0)
 
@@ -107,12 +111,11 @@ class TestSequence(unittest.TestCase):
             self.assertEqual(hy[idx], 0)
 
     def testHzReal(self):
-        sample = \
-            self.drude.get_pw_material_hz(self.idx, (0,0,0), cmplx=False)
+        sample = self.gold.get_pw_material_hz(self.idx, (0,0,0))
 
         for idx in np.ndindex(3, 3, 3):
             if idx == self.idx:
-                self.assertEqual(sample.get_mu_inf(idx), self.drude.mu_inf)
+                self.assertEqual(sample.get_mu_inf(idx), self.gold.mu_inf)
             else:
                 self.assertEqual(sample.get_mu_inf(idx), 0)
 
@@ -124,12 +127,11 @@ class TestSequence(unittest.TestCase):
             self.assertEqual(hz[idx], 0)
 
     def testExCmplx(self):
-        sample = \
-            self.drude.get_pw_material_ex(self.idx, (0,0,0), cmplx=True)
+        sample = self.gold.get_pw_material_ex(self.idx, (0,0,0), cmplx=True)
 
         for idx in np.ndindex(3, 3, 3):
             if idx == self.idx:
-                self.assertEqual(sample.get_eps_inf(idx), self.drude.eps_inf)
+                self.assertEqual(sample.get_eps_inf(idx), self.gold.eps_inf)
             else:
                 self.assertEqual(sample.get_eps_inf(idx), 0)
 
@@ -141,12 +143,11 @@ class TestSequence(unittest.TestCase):
             self.assertEqual(ex[idx], 0j)
 
     def testEyCmplx(self):
-        sample = \
-            self.drude.get_pw_material_ey(self.idx, (0,0,0), cmplx=True)
+        sample = self.gold.get_pw_material_ey(self.idx, (0,0,0), cmplx=True)
 
         for idx in np.ndindex(3, 3, 3):
             if idx == self.idx:
-                self.assertEqual(sample.get_eps_inf(idx), self.drude.eps_inf)
+                self.assertEqual(sample.get_eps_inf(idx), self.gold.eps_inf)
             else:
                 self.assertEqual(sample.get_eps_inf(idx), 0)
 
@@ -158,12 +159,11 @@ class TestSequence(unittest.TestCase):
             self.assertEqual(ey[idx], 0j)
 
     def testEzCmplx(self):
-        sample = \
-            self.drude.get_pw_material_ez(self.idx, (0,0,0), cmplx=True)
+        sample = self.gold.get_pw_material_ez(self.idx, (0,0,0), cmplx=True)
 
         for idx in np.ndindex(3, 3, 3):
             if idx == self.idx:
-                self.assertEqual(sample.get_eps_inf(idx), self.drude.eps_inf)
+                self.assertEqual(sample.get_eps_inf(idx), self.gold.eps_inf)
             else:
                 self.assertEqual(sample.get_eps_inf(idx), 0)
 
@@ -175,12 +175,11 @@ class TestSequence(unittest.TestCase):
             self.assertEqual(ez[idx], 0j)
 
     def testHxCmplx(self):
-        sample = \
-            self.drude.get_pw_material_hx(self.idx, (0,0,0), cmplx=True)
+        sample = self.gold.get_pw_material_hx(self.idx, (0,0,0), cmplx=True)
 
         for idx in np.ndindex(3, 3, 3):
             if idx == self.idx:
-                self.assertEqual(sample.get_mu_inf(idx), self.drude.mu_inf)
+                self.assertEqual(sample.get_mu_inf(idx), self.gold.mu_inf)
             else:
                 self.assertEqual(sample.get_mu_inf(idx), 0)
 
@@ -192,12 +191,11 @@ class TestSequence(unittest.TestCase):
             self.assertEqual(hx[idx], 0j)
 
     def testHyCmplx(self):
-        sample = \
-            self.drude.get_pw_material_hy(self.idx, (0,0,0), cmplx=True)
+        sample = self.gold.get_pw_material_hy(self.idx, (0,0,0), cmplx=True)
 
         for idx in np.ndindex(3, 3, 3):
             if idx == self.idx:
-                self.assertEqual(sample.get_mu_inf(idx), self.drude.mu_inf)
+                self.assertEqual(sample.get_mu_inf(idx), self.gold.mu_inf)
             else:
                 self.assertEqual(sample.get_mu_inf(idx), 0)
 
@@ -209,12 +207,11 @@ class TestSequence(unittest.TestCase):
             self.assertEqual(hy[idx], 0j)
 
     def testHzCmplx(self):
-        sample = \
-            self.drude.get_pw_material_hz(self.idx, (0,0,0), cmplx=True)
+        sample = self.gold.get_pw_material_hz(self.idx, (0,0,0), cmplx=True)
 
         for idx in np.ndindex(3, 3, 3):
             if idx == self.idx:
-                self.assertEqual(sample.get_mu_inf(idx), self.drude.mu_inf)
+                self.assertEqual(sample.get_mu_inf(idx), self.gold.mu_inf)
             else:
                 self.assertEqual(sample.get_mu_inf(idx), 0)
 

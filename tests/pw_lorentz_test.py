@@ -8,7 +8,7 @@ sys.path.append(new_path)
 import unittest
 import numpy as np
 
-from gmes.material import Meep
+from gmes.material import Lorentz, LorentzPole
 from gmes.geometry import Cartesian
 
 
@@ -18,16 +18,23 @@ class TestSequence(unittest.TestCase):
         self.spc = Cartesian((0, 0, 0))
         self.spc.dt = 1
 
-        self.lorentz = Meep(a=1)
-        self.lorentz.init(self.spc)
+        # The parameters are from the 'Meep Tutorial/Material 
+        # dispersion'.
+        lp1 = LorentzPole(omega=1.1,
+                          gamma=1e-5,
+                          amp=0.5)
+        lp2 = LorentzPole(omega=0.5,
+                          gamma=0.1,
+                          amp=2e-5)
+        self.meep = Lorentz(eps_inf=1, mu_inf=1, sigma=0, lps=(lp1,lp2))
+        self.meep.init(self.spc)
         
     def testExReal(self):
-        sample = \
-            self.lorentz.get_pw_material_ex(self.idx, (0,0,0), cmplx=False)
+        sample = self.meep.get_pw_material_ex(self.idx, (0,0,0))
 
         for idx in np.ndindex(3, 3, 3):
             if idx == self.idx:
-                self.assertEqual(sample.get_eps_inf(idx), self.lorentz.eps_inf)
+                self.assertEqual(sample.get_eps_inf(idx), self.meep.eps_inf)
             else:
                 self.assertEqual(sample.get_eps_inf(idx), 0)
 
@@ -39,12 +46,11 @@ class TestSequence(unittest.TestCase):
             self.assertEqual(ex[idx], 0)
 
     def testEyReal(self):
-        sample = \
-            self.lorentz.get_pw_material_ey(self.idx, (0,0,0), cmplx=False)
+        sample = self.meep.get_pw_material_ey(self.idx, (0,0,0))
 
         for idx in np.ndindex(3, 3, 3):
             if idx == self.idx:
-                self.assertEqual(sample.get_eps_inf(idx), self.lorentz.eps_inf)
+                self.assertEqual(sample.get_eps_inf(idx), self.meep.eps_inf)
             else:
                 self.assertEqual(sample.get_eps_inf(idx), 0)
 
@@ -56,12 +62,11 @@ class TestSequence(unittest.TestCase):
             self.assertEqual(ey[idx], 0)
 
     def testEzReal(self):
-        sample = \
-            self.lorentz.get_pw_material_ez(self.idx, (0,0,0), cmplx=False)
+        sample = self.meep.get_pw_material_ez(self.idx, (0,0,0))
 
         for idx in np.ndindex(3, 3, 3):
             if idx == self.idx:
-                self.assertEqual(sample.get_eps_inf(idx), self.lorentz.eps_inf)
+                self.assertEqual(sample.get_eps_inf(idx), self.meep.eps_inf)
             else:
                 self.assertEqual(sample.get_eps_inf(idx), 0)
 
@@ -73,12 +78,11 @@ class TestSequence(unittest.TestCase):
             self.assertEqual(ez[idx], 0)
 
     def testHxReal(self):
-        sample = \
-            self.lorentz.get_pw_material_hx(self.idx, (0,0,0), cmplx=False)
+        sample = self.meep.get_pw_material_hx(self.idx, (0,0,0))
 
         for idx in np.ndindex(3, 3, 3):
             if idx == self.idx:
-                self.assertEqual(sample.get_mu_inf(idx), self.lorentz.mu_inf)
+                self.assertEqual(sample.get_mu_inf(idx), self.meep.mu_inf)
             else:
                 self.assertEqual(sample.get_mu_inf(idx), 0)
 
@@ -90,12 +94,11 @@ class TestSequence(unittest.TestCase):
             self.assertEqual(hx[idx], 0)
 
     def testHyReal(self):
-        sample = \
-            self.lorentz.get_pw_material_hy(self.idx, (0,0,0), cmplx=False)
+        sample = self.meep.get_pw_material_hy(self.idx, (0,0,0))
 
         for idx in np.ndindex(3, 3, 3):
             if idx == self.idx:
-                self.assertEqual(sample.get_mu_inf(idx), self.lorentz.mu_inf)
+                self.assertEqual(sample.get_mu_inf(idx), self.meep.mu_inf)
             else:
                 self.assertEqual(sample.get_mu_inf(idx), 0)
 
@@ -107,12 +110,11 @@ class TestSequence(unittest.TestCase):
             self.assertEqual(hy[idx], 0)
 
     def testHzReal(self):
-        sample = \
-            self.lorentz.get_pw_material_hz(self.idx, (0,0,0), cmplx=False)
+        sample = self.meep.get_pw_material_hz(self.idx, (0,0,0))
 
         for idx in np.ndindex(3, 3, 3):
             if idx == self.idx:
-                self.assertEqual(sample.get_mu_inf(idx), self.lorentz.mu_inf)
+                self.assertEqual(sample.get_mu_inf(idx), self.meep.mu_inf)
             else:
                 self.assertEqual(sample.get_mu_inf(idx), 0)
 
@@ -125,11 +127,11 @@ class TestSequence(unittest.TestCase):
 
     def testExCmplx(self):
         sample = \
-            self.lorentz.get_pw_material_ex(self.idx, (0,0,0), cmplx=True)
+            self.meep.get_pw_material_ex(self.idx, (0,0,0), cmplx=True)
 
         for idx in np.ndindex(3, 3, 3):
             if idx == self.idx:
-                self.assertEqual(sample.get_eps_inf(idx), self.lorentz.eps_inf)
+                self.assertEqual(sample.get_eps_inf(idx), self.meep.eps_inf)
             else:
                 self.assertEqual(sample.get_eps_inf(idx), 0)
 
@@ -142,11 +144,11 @@ class TestSequence(unittest.TestCase):
 
     def testEyCmplx(self):
         sample = \
-            self.lorentz.get_pw_material_ey(self.idx, (0,0,0), cmplx=True)
+            self.meep.get_pw_material_ey(self.idx, (0,0,0), cmplx=True)
 
         for idx in np.ndindex(3, 3, 3):
             if idx == self.idx:
-                self.assertEqual(sample.get_eps_inf(idx), self.lorentz.eps_inf)
+                self.assertEqual(sample.get_eps_inf(idx), self.meep.eps_inf)
             else:
                 self.assertEqual(sample.get_eps_inf(idx), 0)
 
@@ -159,11 +161,11 @@ class TestSequence(unittest.TestCase):
 
     def testEzCmplx(self):
         sample = \
-            self.lorentz.get_pw_material_ez(self.idx, (0,0,0), cmplx=True)
+            self.meep.get_pw_material_ez(self.idx, (0,0,0), cmplx=True)
 
         for idx in np.ndindex(3, 3, 3):
             if idx == self.idx:
-                self.assertEqual(sample.get_eps_inf(idx), self.lorentz.eps_inf)
+                self.assertEqual(sample.get_eps_inf(idx), self.meep.eps_inf)
             else:
                 self.assertEqual(sample.get_eps_inf(idx), 0)
 
@@ -176,11 +178,11 @@ class TestSequence(unittest.TestCase):
 
     def testHxCmplx(self):
         sample = \
-            self.lorentz.get_pw_material_hx(self.idx, (0,0,0), cmplx=True)
+            self.meep.get_pw_material_hx(self.idx, (0,0,0), cmplx=True)
 
         for idx in np.ndindex(3, 3, 3):
             if idx == self.idx:
-                self.assertEqual(sample.get_mu_inf(idx), self.lorentz.mu_inf)
+                self.assertEqual(sample.get_mu_inf(idx), self.meep.mu_inf)
             else:
                 self.assertEqual(sample.get_mu_inf(idx), 0)
 
@@ -193,11 +195,11 @@ class TestSequence(unittest.TestCase):
 
     def testHyCmplx(self):
         sample = \
-            self.lorentz.get_pw_material_hy(self.idx, (0,0,0), cmplx=True)
+            self.meep.get_pw_material_hy(self.idx, (0,0,0), cmplx=True)
 
         for idx in np.ndindex(3, 3, 3):
             if idx == self.idx:
-                self.assertEqual(sample.get_mu_inf(idx), self.lorentz.mu_inf)
+                self.assertEqual(sample.get_mu_inf(idx), self.meep.mu_inf)
             else:
                 self.assertEqual(sample.get_mu_inf(idx), 0)
 
@@ -210,11 +212,11 @@ class TestSequence(unittest.TestCase):
 
     def testHzCmplx(self):
         sample = \
-            self.lorentz.get_pw_material_hz(self.idx, (0,0,0), cmplx=True)
+            self.meep.get_pw_material_hz(self.idx, (0,0,0), cmplx=True)
 
         for idx in np.ndindex(3, 3, 3):
             if idx == self.idx:
-                self.assertEqual(sample.get_mu_inf(idx), self.lorentz.mu_inf)
+                self.assertEqual(sample.get_mu_inf(idx), self.meep.mu_inf)
             else:
                 self.assertEqual(sample.get_mu_inf(idx), 0)
 
