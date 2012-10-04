@@ -21,11 +21,10 @@ class TestSequence(unittest.TestCase):
         self.spc.dt = 1
         
         self.upml = Upml()
-        self.upml.init(self.spc, 1)
+        self.upml.init(self.spc, ((0, 0, 0), (1, 1, 1), 0.5))
 
     def testExReal(self):
-        sample = \
-            self.upml.get_pw_material_ex(self.idx, (0,0,0), cmplx=False)
+        sample = self.upml.get_pw_material_ex(self.idx, (0,0,0))
 
         for idx in np.ndindex(3, 3, 3):
             if idx == self.idx:
@@ -41,8 +40,7 @@ class TestSequence(unittest.TestCase):
             self.assertEqual(ex[idx], 0)
 
     def testEyReal(self):
-        sample = \
-            self.upml.get_pw_material_ey(self.idx, (0,0,0), cmplx=False)
+        sample = self.upml.get_pw_material_ey(self.idx, (0,0,0))
 
         for idx in np.ndindex(3, 3, 3):
             if idx == self.idx:
@@ -58,8 +56,7 @@ class TestSequence(unittest.TestCase):
             self.assertEqual(ey[idx], 0)
 
     def testEzReal(self):
-        sample = \
-            self.upml.get_pw_material_ez(self.idx, (0,0,0), cmplx=False)
+        sample = self.upml.get_pw_material_ez(self.idx, (0,0,0))
 
         for idx in np.ndindex(3, 3, 3):
             if idx == self.idx:
@@ -75,8 +72,7 @@ class TestSequence(unittest.TestCase):
             self.assertEqual(ez[idx], 0)
 
     def testHxReal(self):
-        sample = \
-            self.upml.get_pw_material_hx(self.idx, (0,0,0), cmplx=False)
+        sample = self.upml.get_pw_material_hx(self.idx, (0,0,0))
 
         for idx in np.ndindex(3, 3, 3):
             if idx == self.idx:
@@ -92,8 +88,7 @@ class TestSequence(unittest.TestCase):
             self.assertEqual(hx[idx], 0)
 
     def testHyReal(self):
-        sample = \
-            self.upml.get_pw_material_hy(self.idx, (0,0,0), cmplx=False)
+        sample = self.upml.get_pw_material_hy(self.idx, (0,0,0))
 
         for idx in np.ndindex(3, 3, 3):
             if idx == self.idx:
@@ -109,8 +104,7 @@ class TestSequence(unittest.TestCase):
             self.assertEqual(hy[idx], 0)
 
     def testHzReal(self):
-        sample = \
-            self.upml.get_pw_material_hz(self.idx, (0,0,0), cmplx=False)
+        sample = self.upml.get_pw_material_hz(self.idx, (0,0,0))
 
         for idx in np.ndindex(3, 3, 3):
             if idx == self.idx:

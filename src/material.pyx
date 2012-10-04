@@ -454,31 +454,24 @@ class Pml(Material, Compound):
             self.dw = d['dw'].copy()
             self.sigma_max.setfield(d['sigma_max'])
         
-    def init(self, space, param=None):
+    def init(self, space, param):
         """
         The thickness of PML layer and size of the Shell instance
         which contain the PML, are required. Also, the 
         differential of space and time should get from the space 
         instance.
         
-        param: (center, half size, thickness) of the the Shell.
+        param: (center, half_size, thickness) of the the Shell.
 
         """
-        if param is None:
-            self.center = np.zeros(3)
+        self.center = np.array(param[0], np.double)
+        self.half_size = array(param[1], np.double)
+        self.d = param[2]
 
-            half_size = []
-            for i in space.half_size:
-                if i <= self.d: i = inf
-                half_size.append(i)
-            self.half_size = array(half_size, np.double)
-
-            self.d = 0
-        else:
-            self.center = np.array(param[0], np.double)
-            self.half_size = array(param[1], np.double)
-            self.d = param[2]
-
+        for i in range(3):
+            if self.half_size[i] < self.d:
+                half_size[i] = np.inf
+        
         self.dt = space.dt
         self.dw = array(space.dr, np.double)
         self.sigma_max = self.sigma_max_ratio * self.get_sigma_opt()

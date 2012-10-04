@@ -53,8 +53,9 @@ setup(name = PACKAGE,
       version = VERSION,
       description = "GIST Maxwell's Equations Solver",
       long_description = """
-      GMES is a Python package to solve the Maxwell's equations
-      using the explicit Finite-Difference Time-Domain method.""",
+      GMES is a free Python package to solve the Maxwell's 
+      equations using the explicit Finite-Difference Time-Domain 
+      method.""",
       author = 'Kyungwon Chun',
       author_email = 'kwchun@gist.ac.kr',
       maintainer = 'Kyungwon Chun',
