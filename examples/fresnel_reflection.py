@@ -16,26 +16,34 @@ from math import pi, sin, cos
 from numpy import inf
 from gmes import *
 
-ORDINAL = float(argv[1])
-NJOBS = float(argv[2])
 x_size, y_size = 4, 0.5
 SIZE = (x_size, y_size, 0)
 angle = 0
-wl= 10 + (50 - 10) * ORDINAL / NJOBS
+wl= 10
 k0 = 2 * pi / wl
-air = Dielectric()
-gold = GoldRc(a=20e-9)
-host = DefaultMedium(material=air)
-cylinder = Cylinder(center=(0, 0, 0),
-                    axis=(1, 0, 0),
-                    radius=1000,
-                    height=1,
-                    material=gold)
-boundary = Shell(material=Cpml(),
-                 minus_y=False, plus_y=False)
+
+a=20e-9
+dp = DrudePole(omega=13.1839e15 * a / c0,
+               gamma=0.109173e15 * a / c0)
+cp1 = CriticalPoint(amp=0.273222,
+                    phi=-1.18299,
+                    omega=3.88123e15 * a / c0,
+                    gamma=0.452006e15 * a / c0)
+cp2 = CriticalPoint(amp=3.04155,
+                    phi=-1.09115,
+                    omega=4.20737 * a / c0,
+                    gamma=2.35409 * a / c0)
+gold = DcpPlrc(eps_inf=1.11683, mu_inf=1, dps=(dp,), cps=(cp1, cp2))
 
 space = Cartesian(size=SIZE, resolution=100, parallel=True)
-geom_list = (host, cylinder, boundary)
+geom_list = [DefaultMedium(),
+             Cylinder(center=(0, 0, 0),
+                      axis=(1, 0, 0),
+                      radius=1000,
+                      height=1,
+                      material=gold),
+             Shell(material=Cpml(),
+                   minus_y=False, plus_y=False)]
 source_list = [GaussianBeam(
         src_time=Continuous(freq=1/wl, width=50),
         directivity=MinusX,
@@ -52,21 +60,5 @@ my_fdtd = TMzFDTD(space,
 # directory = os.path.dirname(__file__) + '/../data'
 # my_fdtd.set_probe((0.7, 0, 0), directory + '/r_wl=%f' % wl)
 # my_fdtd.set_probe((-0.7, 0, 0), directory + '/t_wl=%f' % wl)
-
-# if os.uname()[1] == 'magi':
-#     my_fdtd.show_ez(Z, 0)
-
-end_time = datetime.now()
-print 'ending initialization:', end_time
-print 'elasped time:', end_time - start_time
-
-start_time = datetime.now()
-print 'starting update:', start_time
+my_fdtd.init()
 my_fdtd.step_until_t(200)
-
-print 'n:', my_fdtd.time_step.n
-print 't:', my_fdtd.time_step.t
-end_time = datetime.now()
-print 'ending update:', end_time
-print 'elasped time:', end_time - start_time
-print my_fdtd.time_step.n

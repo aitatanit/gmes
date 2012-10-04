@@ -470,7 +470,7 @@ class Pml(Material, Compound):
 
         for i in range(3):
             if self.half_size[i] < self.d:
-                half_size[i] = np.inf
+                self.half_size[i] = np.inf
         
         self.dt = space.dt
         self.dw = array(space.dr, np.double)
