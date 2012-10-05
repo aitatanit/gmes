@@ -11,11 +11,11 @@ crystal slab waveguides with two-dimensional photonic crystal
 waveguides: Efficient butt coupling into these photonic crystal 
 waveguides," J. Appl. Phys., vol. 93, no. 9, pp. 4986-4991, 2003.'
 
-A transparent source is located at the one end of the waveguide. 
-You should be careful to execute this script, because it consumes 
-lots of memory.
+This script requires about 1.3GB of memory.
 
 """
+
+from __future__ import division
 
 import os, sys
 new_path = os.path.abspath('../')
@@ -45,8 +45,8 @@ def make_hole(center):
     """Punch a air hole on the slab.
 
     """
-    return Cylinder(material=AIR, axis=(0,0,1), radius=RADIUS,
-                    height=SLAB_THICK, center=center)
+    return Cylinder(material=AIR, center=center, axis=(0,0,1), 
+                    radius=RADIUS, height=SLAB_THICK)
 
 
 def make_crystals(x_size, y_size):
@@ -69,10 +69,10 @@ def fill_hole(center):
     """Remove a air hole.
 
     """
-    filler = (Cylinder(material=SiO2, axis=(0,0,1), radius=RADIUS,
+    filler = [Cylinder(material=SiO2, axis=(0,0,1), radius=RADIUS,
                        height=SLAB_THICK, center=center),
               Cylinder(material=Si, axis=(0,0,1), radius=RADIUS,
-                       height=SLAB_CORE, center=center))
+                       height=SLAB_CORE, center=center)]
 
     return filler
 
@@ -82,32 +82,27 @@ def make_line_defect(length):
 
     """
     line_defect = []
-    for i in arange(-.5 * length - 1, .5 * length + 2):
+
+    for i in xrange(int(-length / 2), int(length / 2 + 1)):
         line_defect += fill_hole((i, 0, 0))
 
     return line_defect
     
     
-geom_list = [DefaultMedium(material=AIR),
-             Block(material=SiO2, 
+geom_list = ([DefaultMedium(material=AIR),
+              Block(material=SiO2, 
                    size=(SIZE[0], SIZE[1], SLAB_THICK)),
-             Block(material=Si, 
-                   size=(SIZE[0], SIZE[1], SLAB_CORE))] + \
-                   make_crystals(*SIZE[:2]) + make_line_defect(SIZE[0]) + \
-                   [Shell(material=Cpml(), thickness=PML_THICK)]
+              Block(material=Si, 
+                    size=(SIZE[0], SIZE[1], SLAB_CORE))] +
+             make_crystals(*SIZE[:2]) +
+             make_line_defect(SIZE[0]) +
+             [Shell(material=Cpml(), thickness=PML_THICK)])
 
 space = Cartesian(size=SIZE, resolution=RESOLUTION, parallel=True)
 
 src_list = [PointSource(src_time=Continuous(freq=FREQ),
-                        center=(-.5 * SIZE[0] + 1, 0, 0),
+                        center=(-SIZE[0] / 2 + 1, 0, 0),
                         component=Hz)]
-
-# src_list = (GaussianBeam(src_time=Continuous(freq=FREQ),
-#                          directivity=PlusX,
-#                          center=(-.5 * SIZE[0] + 1, 0, 0),
-#                          size=(0, RADIUS, 0),
-#                          direction=(1,0,0),
-#                          polarization=(0,0,1)),)
 
 my_fdtd = fdtd.FDTD(space, geom_list, src_list)
 my_fdtd.init()
