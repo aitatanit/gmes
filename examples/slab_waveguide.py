@@ -1,9 +1,10 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-"""A simple example showing the Ez field in a dielectric slab waveguide.
+"""Shows an Ez field in a dielectric slab waveguide.
 
-This is a GMES version of the script in Fig.12 of
+A simple example showing the Ez field in a dielectric slab 
+waveguide. This is a GMES version of the script in Fig.12 of
 
 A. F. Oskooi, D. Roundy, M. Ibanescu, P. Bermel, J. D. 
 Joannopoulos, and S. G. Johnson, "Meep: A flexible free-software 

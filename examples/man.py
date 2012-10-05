@@ -1,6 +1,14 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+""" Shows a man-shaped structure.
+
+This script shows how to set up a geometrical structure in the 
+calculation domain. You can see a man-shaped structure in three-
+dimensional space constructed using the script.
+
+"""
+
 import os, sys, datetime
 new_path = os.path.abspath('../')
 sys.path.append(new_path)
@@ -33,15 +41,7 @@ geom_list = (DefaultMedium(Dielectric(10)),
 
 my_fdtd = fdtd.FDTD(space, geom_list, ())
 my_fdtd.init()
-#import cProfile, pstats
-#cProfile.runctx('my_fdtd.init()', globals(), locals(), 'man.prof')
-#s = pstats.Stats('man.prof')
-#s.strip_dirs().sort_stats('time').print_stats()
 
-# my_fdtd.show_permittivity_ex(axis=constant.X, cut=0)
-# my_fdtd.show_permittivity_ex(axis=constant.Y, cut=0)
-# my_fdtd.show_permittivity_ex(axis=constant.Z, cut=0)
-
-print 'done'
-import time
-time.sleep(60)
+my_fdtd.show_permittivity(Ex, X, 0)
+my_fdtd.show_permittivity(Ex, Y, 0)
+my_fdtd.show_permittivity(Ex, Z, 0)

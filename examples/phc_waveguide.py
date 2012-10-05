@@ -1,7 +1,10 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-"""A simple example showing the Ez field in a photonic crystal waveguide.
+"""Shows a Ez field in a photonic crystal waveguide.
+
+A simple example showing the Ez field in a two-dimensional 
+photonic crystal waveguide.
 
 """
 

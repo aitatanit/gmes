@@ -91,7 +91,9 @@ $ sudo python setup.py install build_ext --compile=mingw32
 5. Testing
 If you completed the installation or compiled with inplace option,
 you can test the proper execution of GMES using the unit tests in 
-the 'tests' directory.
+the 'tests' directory. If you see 'OK' without any error, it's ok.
+
+$ python <test.py>
 
 6. Execution Commands
 
@@ -108,20 +110,34 @@ Also, in the parallel environment, a MPI-enabled Python
 interpreter is required. Check the MPI for Python user manual at 
 http://mpi4py.scipy.org/docs/usrman/.
 
-6. Known Issues
+7. User Manual
+The current version of GMES does not have a separate user manual. 
+However, you can start from examples in the 'examples' and 'tests'
+directories. If you need more detailed documentations on the 
+classes and parameters of GMES, please use the 'dir' and 'help'
+command in the Python interpreter.
 
-6.1. Matplotlib in Windows
+8. Participation
+Please report any errors and submit patches (if possible)! Any 
+contributions are welcome. If you would like to join the GMES 
+development team or contribute to the distribution, please contact
+the gmes-user mailing list, details at 
+http://sourceforge.net/p/gmes/mailman/.
+
+9. Known Issues
+
+9.1. Matplotlib in Windows
 The EPD version of the Matplotlib package which is required by 
 fdtd.show_* methods does not handle multiple plots in multiple 
 windows. Thus, on Windows, multiple real-time display windows 
 using fdtd.show_* methods could freeze. The Linux version of 
 matplotlib does not have this problem.
 
-6.2. numpy.inf
+9.2. numpy.inf
 Please use a large number instead of numpy.inf since GMES does not
 correctly treat the value of numpy.inf as infinity.
 
-6.3. compile failure on Windows
+9.3. Compile Failure on Windows
 On Windows with EPD(<6.1) and MinGW, the compile command may die 
 with the following error.
 
@@ -137,7 +153,7 @@ if self.linker_dll == "dllwrap":
     # for dllwrap we have to use a special option
     extra_preargs.extend(["--def", def_file])
     
-6.4. compile failure on Windows
+9.4. Compile Failure on Windows
 If you use EPD(>=7.1-2) with MinGW on Windows 7, you will 
 encounter the following error message when you compile GMES.
 
@@ -150,15 +166,16 @@ error: command 'gcc' failed with exit status 1
 
 This problem is not yet solved.
 
-6.5 Python 3 support
+9.5. Warnings on Compilation
+Cython sets '-Wunused-but-set-variable' compile option and it 
+generates the following warnings during compilation.
+
+src/material.c: In function ‘__pyx_pf_4gmes_8material_7Lorentz_10get_pw_material_hz’:
+src/material.c:33412:13: warning: variable ‘__pyx_v_coords’ set but not used [-Wunused-but-set-variable]
+
+These warnings are not harmful and you can safely ignore them.
+
+9.6. Python 3 Support
 GMES has not tested with Python 3.
-
-6.6 User Manual
-The current version of GMES does not have a user manual. Please, 
-refer the examples in the 'examples' and 'tests' directories. 
-Also, any contributions on the user manual are welcome.
-
-7. Participation
-Please report any errors and submit patches (if possible)! All contributions help. If you would like to join the GMES development team or contribute to the distribution, please contact the gmes-user mailing list, details at http://sourceforge.net/p/gmes/mailman/.
 
  -- Kyungwon Chun (kwchun@gist.ac.kr)

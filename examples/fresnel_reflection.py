@@ -1,6 +1,15 @@
 #!/usr/local/bin/python2.5-mpi
 # -*- coding: utf-8 -*-
 
+""" Transmittance and reflectance through a thin gold layer.
+
+This script is to obtain the transmittance and reflectance of 
+TE polarized light through a thin gold layer.
+
+"""
+
+from __future__ import division
+
 import os, sys, datetime
 new_path = os.path.abspath('../')
 sys.path.append(new_path)
@@ -36,7 +45,7 @@ cp2 = CriticalPoint(amp=3.04155,
 gold = DcpPlrc(eps_inf=1.11683, mu_inf=1, dps=(dp,), cps=(cp1, cp2))
 
 space = Cartesian(size=SIZE, resolution=100, parallel=True)
-geom_list = [DefaultMedium(),
+geom_list = [DefaultMedium(Dielectric()),
              Cylinder(center=(0, 0, 0),
                       axis=(1, 0, 0),
                       radius=1000,
@@ -57,8 +66,7 @@ my_fdtd = TMzFDTD(space,
                   source_list,
                   bloch=(0, k0 * sin(angle), 0))
 
-# directory = os.path.dirname(__file__) + '/../data'
-# my_fdtd.set_probe((0.7, 0, 0), directory + '/r_wl=%f' % wl)
-# my_fdtd.set_probe((-0.7, 0, 0), directory + '/t_wl=%f' % wl)
+my_fdtd.set_probe((0.7, 0, 0), 'r_wl=%f' % wl)
+my_fdtd.set_probe((-0.7, 0, 0), 't_wl=%f' % wl)
 my_fdtd.init()
 my_fdtd.step_until_t(200)

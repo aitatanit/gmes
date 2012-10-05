@@ -1,9 +1,10 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-"""Launch a planewave in vacuum.
+"""Launch a planwave in vacuum with a scatterer.
 
-A simple example which showing how to use launch a planewave.
+A simple example which showing how to launch a planewave in vacuum 
+with a cylindrical dielectric scatterer.
 
 """
 
@@ -16,7 +17,11 @@ from gmes import *
 SIZE = (5,5,0)
 
 space = Cartesian(size=SIZE, resolution=20)
-geom_list = [DefaultMedium(material=Dielectric()),
+geom_list = [DefaultMedium(Dielectric()),
+             Cylinder(Dielectric(3),
+                      center=(0,0,0),
+                      radius=1,
+                      axis=(0,0,1)),
              Shell(material=Cpml(), thickness=0.5)]
 src_list = [TotalFieldScatteredField(src_time=Continuous(freq=0.8),
                                      center=(0,0,0),

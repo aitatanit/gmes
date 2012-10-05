@@ -62,7 +62,7 @@ def make_crystals(x_size, y_size):
             center = tuple(i * a1 + j * a2) + (0,)
             if fabs(center[0]) <= .5 * x_size + RADIUS and fabs(center[1]) <= .5 * y_size + RADIUS:
                 crystals.append(make_hole(center))
-    return tuple(crystals)
+    return crystals
 
 
 def fill_hole(center):
@@ -81,25 +81,26 @@ def make_line_defect(length):
     """Remove air holes to form a line defect.
 
     """
-    line_defect = ()
+    line_defect = []
     for i in arange(-.5 * length - 1, .5 * length + 2):
         line_defect += fill_hole((i, 0, 0))
 
-    return tuple(line_defect)
+    return line_defect
     
     
-geom_list = (DefaultMedium(material=AIR),
+geom_list = [DefaultMedium(material=AIR),
              Block(material=SiO2, 
                    size=(SIZE[0], SIZE[1], SLAB_THICK)),
              Block(material=Si, 
-                   size=(SIZE[0], SIZE[1], SLAB_CORE))) + \
+                   size=(SIZE[0], SIZE[1], SLAB_CORE))] + \
                    make_crystals(*SIZE[:2]) + make_line_defect(SIZE[0]) + \
-                   (Shell(material=Cpml(), thickness=PML_THICK),)
+                   [Shell(material=Cpml(), thickness=PML_THICK)]
 
-space = Cartesian(size=SIZE, resolution=RESOLUTION)
+space = Cartesian(size=SIZE, resolution=RESOLUTION, parallel=True)
 
-src_list = (PointSource(src_time=Continuous(freq=FREQ),
-                        component=Hz, pos=(-.5 * SIZE[0] + 1, 0, 0)),)
+src_list = [PointSource(src_time=Continuous(freq=FREQ),
+                        center=(-.5 * SIZE[0] + 1, 0, 0),
+                        component=Hz)]
 
 # src_list = (GaussianBeam(src_time=Continuous(freq=FREQ),
 #                          directivity=PlusX,

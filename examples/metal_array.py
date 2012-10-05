@@ -6,10 +6,12 @@ air.
 
 This script models a plasmon waveguide consisting of six silver 
 nanospheres in the air. A dipole source oscilating along the array
-is used for a field excitation. A simple on-time visualization 
+is used for field excitation. A simple on-time visualization 
 display will show the Ey fields of the propagating longitudinal
-mode. This script should be executed using a MPI-enabled Python
-interpreter, like python-mpi in the mpi4py package.
+mode. This script was set to use the parallel environment when it 
+is executed using a MPI-enabled Python interpreter, like 
+'python-mpi' in the mpi4py package. This script requires about 1.1
+GB of memory.
 
 """
 
@@ -54,7 +56,7 @@ for y in range(-2, 4):
                                    radius=1.0 / 3,
                                    center=(0, y, 0)))
 geom_list.append(Shell(Cpml(), thickness=0.5))
-src_list = [PointSource(Continuous(freq=0.2072),
+src_list = [PointSource(Continuous(freq=0.207),
                         center=(0, -3, 0),
                         component=Jy)]
 my_fdtd = FDTD(space, geom_list, src_list, courant_ratio=0.5)
