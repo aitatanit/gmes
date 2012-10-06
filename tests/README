@@ -1,0 +1,7 @@
+The scripts in this directory test the instantiation and basic 
+functioning of the individual classes in the aspect of software 
+engineering.
+
+To run the test, enter
+
+$ python <test file name>

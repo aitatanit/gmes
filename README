@@ -50,7 +50,7 @@ distributions except the recent version of swig.
 
 3.2. Windows
 We haven't tested the MPI environment of GMES on Windows. Any 
-contributions are welcome. The followings are prerequites to 
+contributions are welcome. The followings are prerequisites to 
 install and execute GMES on Windows.
 
 * python >= 2.7.2
@@ -91,7 +91,7 @@ $ sudo python setup.py install build_ext --compile=mingw32
 5. Testing
 If you completed the installation or compiled with inplace option,
 you can test the proper execution of GMES using the unit tests in 
-the 'tests' directory. If you see 'OK' without any error, it's ok.
+the 'tests' directory. If you see 'OK' without any error, it's OK.
 
 $ python <test.py>
 

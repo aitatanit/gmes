@@ -1,4 +1,130 @@
-These scripts are to provide an idea of how to use GMES package. 
-You can find a simple description of the model in the begining of 
-each script. Be aware that some examples consumes a lot of memory 
-if it is executed on a single process.
+These scripts are to provide an idea of how to use the GMES 
+package. You can find a simple description of the model in the 
+beginning of each script. Be aware that some examples consumes a 
+lot of memory if it is executed on a single process.
+
+The run time specified at this file is measured on 2.53 GHz Intel 
+Core i3 with Ubuntu 12.04 LTS 64 bit. All scripts are executed on 
+a single process. The display function was commented out during 
+measurement of the execution time.
+
+To run the examples enter 
+
+$ python <example file name>
+
+###################################################################
+air2d.py
+
+Models two-dimensional TMz cylindrical-wave propagation in air.
+
+This script models two-dimensional TMz cylindrical-wave 
+propagation in air. A single Ez component located at the center of
+the space oscillates sinusoidally. A simple on-time visualization 
+display will show the Ez, Hx, and Hy fields of the outgoing wave 
+distributed within the grid. You can compare the spatial-symmetry 
+properties of these fields with respect to the center of the space
+where the excitation is applied.
+
+Approximate run time: 25s
+
+###################################################################
+fresnel_reflection.py
+
+Transmittance and reflectance through a thin gold layer.
+
+This script is to obtain the transmittance and reflectance of 
+TE polarized light through a thin gold layer.
+
+Approximate run time: 4m30s
+
+###################################################################
+mam.py
+
+Shows a man-shaped structure.
+
+This script shows how to set up a geometrical structure in the 
+calculation domain. You can see a man-shaped structure in three-
+dimensional space constructed using the script.
+
+Approximate run time: 22m30s
+
+###################################################################
+metal_array.py
+
+A plasmon waveguide consisting of six silver nanospheres in the
+air.
+
+This script models a plasmon waveguide consisting of six silver 
+nanospheres in the air. A dipole source oscillating along the array
+is used for field excitation. A simple on-time visualization 
+display will show the Ey fields of the propagating longitudinal
+mode. This script was set to use the parallel environment when it 
+is executed using a MPI-enabled Python interpreter, like 
+'python-mpi' in the mpi4py package. This script requires about 1.1
+GB of memory.
+
+Approximate run time: 1h43m6s
+
+###################################################################
+phc_slab.py
+
+Simulate a photonic crystal slab waveguide.
+
+The photonic crystal slab consists of a silicon-on-insulator 
+substrate with a triangular array of holes. The whole waveguide is
+in the air. This structure is presented at 
+
+'N. Moll and G.-L. Bona, "Comparison of three-dimensional photonic
+crystal slab waveguides with two-dimensional photonic crystal 
+waveguides: Efficient butt coupling into these photonic crystal 
+waveguides," J. Appl. Phys., vol. 93, no. 9, pp. 4986-4991, 2003.'
+
+This script requires about 1.3GB of memory.
+
+Approximate run time: 1h37m48s
+
+###################################################################
+phc_waveguide.py
+
+Shows a Ez field in a photonic crystal waveguide.
+
+A simple example showing the Ez field in a two-dimensional 
+photonic crystal waveguide.
+
+Approximate run time: 1m15s
+
+###################################################################
+slab_waveguide.py
+
+Shows an Ez field in a dielectric slab waveguide.
+
+A simple example showing the Ez field in a dielectric slab 
+waveguide. This is a GMES version of the script in Fig.12 of
+
+A. F. Oskooi, D. Roundy, M. Ibanescu, P. Bermel, J. D. 
+Joannopoulos, and S. G. Johnson, "Meep: A flexible free-software 
+package for electromagnetic simulations by the FDTD method," 
+Comput. Phys. Commun. 181, 687-702 (2010).
+
+Approximate run time: 14s
+
+###################################################################
+tfsf.py
+
+Launch a planewave in vacuum.
+
+A simple example which showing how to use launch a planewave.
+
+Approximate run time: 47s
+
+###################################################################
+tfsf_with_scatterer.py
+
+Launch a planwave in vacuum with a scatterer.
+
+A simple example which showing how to launch a planewave in vacuum 
+with a cylindrical dielectric scatterer.
+
+Approximate run time: 50s
+
+###################################################################

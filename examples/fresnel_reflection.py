@@ -66,7 +66,7 @@ my_fdtd = TMzFDTD(space,
                   source_list,
                   bloch=(0, k0 * sin(angle), 0))
 
+my_fdtd.init()
 my_fdtd.set_probe((0.7, 0, 0), 'r_wl=%f' % wl)
 my_fdtd.set_probe((-0.7, 0, 0), 't_wl=%f' % wl)
-my_fdtd.init()
 my_fdtd.step_until_t(200)
