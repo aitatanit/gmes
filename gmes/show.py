@@ -248,27 +248,35 @@ class ShowPlane(Thread):
         start_boundary_spc = idx2spc[comp](*start_boundary_idx)
         end_boundary_spc = idx2spc[comp](*end_boundary_idx)
 
-        direct2int = {const.X:0, const.Y:1, const.Z:2}
-        axis_int = direct2int[axis]
-        self.extent = (start_boundary_spc[(axis_int + 2) % 3], 
-                       end_boundary_spc[(axis_int + 2) % 3], 
-                       end_boundary_spc[(axis_int + 1) % 3], 
-                       start_boundary_spc[(axis_int + 1) % 3])
+        axis2int = {const.X:0, const.Y:1, const.Z:2}
+        axis_int = axis2int[axis]
         cut_spc = array(end_boundary_spc, np.double)
         cut_spc[axis_int] = cut
         cut_idx = spc2idx[comp](*cut_spc)
         if in_range(cut_idx, field.shape, comp) is False:
             return None
 
-        if axis_int == 0:
+        if axis is const.X:
             self.xlabel = 'z'
             self.ylabel = 'y'
-        elif axis_int == 1:
+            self.extent = (start_boundary_spc[2], 
+                           end_boundary_spc[2], 
+                           end_boundary_spc[1], 
+                           start_boundary_spc[1])
+        elif axis is const.Y:
             self.xlabel = 'z'
             self.ylabel = 'x'
-        elif axis_int == 2:
+            self.extent = (start_boundary_spc[2], 
+                           end_boundary_spc[2], 
+                           end_boundary_spc[0], 
+                           start_boundary_spc[0])
+        elif axis is const.Z:
             self.xlabel = 'y'
             self.ylabel = 'x'
+            self.extent = (start_boundary_spc[1], 
+                           end_boundary_spc[1], 
+                           end_boundary_spc[0], 
+                           start_boundary_spc[0])
 
         if axis is const.X:
             self.data = field[cut_idx[0], 
@@ -382,27 +390,35 @@ class Snapshot(Thread):
         start_boundary_spc = idx2spc[comp](*start_boundary_idx)
         end_boundary_spc = idx2spc[comp](*end_boundary_idx)
 
-        direct2int = {const.X:0, const.Y:1, const.Z:2}
-        axis_int = direct2int[axis]
-        self.extent = (start_boundary_spc[(axis_int + 2) % 3], 
-                       end_boundary_spc[(axis_int + 2) % 3], 
-                       end_boundary_spc[(axis_int + 1) % 3], 
-                       start_boundary_spc[(axis_int + 1) % 3])
+        axis2int = {const.X:0, const.Y:1, const.Z:2}
+        axis_int = axis2int[axis]
         cut_spc = array(end_boundary_spc, np.double)
         cut_spc[axis_int] = cut
         cut_idx = spc2idx[comp](*cut_spc)
         if in_range(cut_idx, field.shape, comp) is False:
             return None
 
-        if axis_int == 0:
+        if axis is const.X:
             self.xlabel = 'z'
             self.ylabel = 'y'
-        elif axis_int == 1:
+            self.extent = (start_boundary_spc[2], 
+                           end_boundary_spc[2], 
+                           end_boundary_spc[1], 
+                           start_boundary_spc[1])
+        elif axis is const.Y:
             self.xlabel = 'z'
             self.ylabel = 'x'
-        elif axis_int == 2:
+            self.extent = (start_boundary_spc[2], 
+                           end_boundary_spc[2], 
+                           end_boundary_spc[0], 
+                           start_boundary_spc[0])
+        elif axis is const.Z:
             self.xlabel = 'y'
             self.ylabel = 'x'
+            self.extent = (start_boundary_spc[1], 
+                           end_boundary_spc[1], 
+                           end_boundary_spc[0], 
+                           start_boundary_spc[0])
 
         data_shape_3d = array(end_boundary_idx) - array(start_boundary_idx) + 1
         data_shape_2d = [v for i, v in enumerate(data_shape_3d) 
