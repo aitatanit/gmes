@@ -27,7 +27,7 @@ if not 'matplotlib.backends' in modules:
 from matplotlib.pyplot import new_figure_manager, cm, show
 
 # GMES modules
-import constant as const
+from constant import *
 from geometry import in_range
 
 
@@ -61,41 +61,41 @@ class ShowLine(Thread):
 
         comp = component
 
-        spc2idx = {const.Ex: fdtd.space.space_to_ex_index,
-                   const.Ey: fdtd.space.space_to_ey_index,
-                   const.Ez: fdtd.space.space_to_ez_index,
-                   const.Hx: fdtd.space.space_to_hx_index,
-                   const.Hy: fdtd.space.space_to_hy_index,
-                   const.Hz: fdtd.space.space_to_hz_index}
+        spc2idx = {Ex: fdtd.space.space_to_ex_index,
+                   Ey: fdtd.space.space_to_ey_index,
+                   Ez: fdtd.space.space_to_ez_index,
+                   Hx: fdtd.space.space_to_hx_index,
+                   Hy: fdtd.space.space_to_hy_index,
+                   Hz: fdtd.space.space_to_hz_index}
         
-        idx2spc = {const.Ex: fdtd.space.ex_index_to_space,
-                   const.Ey: fdtd.space.ey_index_to_space,
-                   const.Ez: fdtd.space.ez_index_to_space,
-                   const.Hx: fdtd.space.hx_index_to_space,
-                   const.Hy: fdtd.space.hy_index_to_space,
-                   const.Hz: fdtd.space.hz_index_to_space}
+        idx2spc = {Ex: fdtd.space.ex_index_to_space,
+                   Ey: fdtd.space.ey_index_to_space,
+                   Ez: fdtd.space.ez_index_to_space,
+                   Hx: fdtd.space.hx_index_to_space,
+                   Hy: fdtd.space.hy_index_to_space,
+                   Hz: fdtd.space.hz_index_to_space}
             
         field = fdtd.field[comp].real
 
-        if issubclass(comp, const.Electric):
-            start_boundary_idx = (0, 0, 0)            
-            if comp is const.Ex:
-                end_boundary_idx = (field.shape[0] - 1, field.shape[1] - 2,
+        if issubclass(comp, Electric):
+            start_bndry_idx = (0, 0, 0)            
+            if comp is Ex:
+                end_bndry_idx = (field.shape[0] - 1, field.shape[1] - 2,
                                     field.shape[2] - 2)
-            elif comp is const.Ey:
-                end_boundary_idx = (field.shape[0] - 2, field.shape[1] - 1,
+            elif comp is Ey:
+                end_bndry_idx = (field.shape[0] - 2, field.shape[1] - 1,
                                     field.shape[2] - 2)
-            elif comp is const.Ez:
-                end_boundary_idx = (field.shape[0] - 2, field.shape[1] - 2,
+            elif comp is Ez:
+                end_bndry_idx = (field.shape[0] - 2, field.shape[1] - 2,
                                     field.shape[2] - 1)
-        elif issubclass(comp, const.Magnetic):
-            end_boundary_idx = [i - 1 for i in field.shape]
-            if comp is const.Hx:
-                start_boundary_idx = (0, 1, 1)
-            elif comp is const.Hy:
-                start_boundary_idx = (1, 0, 1)
-            elif comp is const.Hz:
-                start_boundary_idx = (1, 1, 0)
+        elif issubclass(comp, Magnetic):
+            end_bndry_idx = [i - 1 for i in field.shape]
+            if comp is Hx:
+                start_bndry_idx = (0, 1, 1)
+            elif comp is Hy:
+                start_bndry_idx = (1, 0, 1)
+            elif comp is Hz:
+                start_bndry_idx = (1, 1, 0)
  	else:
             msg = "component should be of class constant.Component."
             raise ValueError(msg)
@@ -106,25 +106,25 @@ class ShowLine(Thread):
         for i, v in enumerate(end_idx - start_idx):
             if v > 0:
                 for j in (j for j in xrange(3) if j != i):
-                    tmp1_idx = array(start_boundary_idx, int)
+                    tmp1_idx = array(start_bndry_idx, int)
                     tmp1_idx[j] = start_idx[j]
                     if in_range(tmp1_idx, field.shape, comp) is False:
                         return None
-                    tmp2_idx = array(end_boundary_idx, int)
+                    tmp2_idx = array(end_bndry_idx, int)
                     tmp2_idx[j] = end_idx[j]
                     if in_range(tmp2_idx, field.shape, comp) is False:
                         return None
                     
                 if in_range(start_idx, field.shape, comp) is False:
-                    if start_idx[i] > end_boundary_idx[i]:
+                    if start_idx[i] > end_bndry_idx[i]:
                         return None
-                    start_idx[i] = start_boundary_idx[i]
+                    start_idx[i] = start_bndry_idx[i]
                     if in_range(start_idx, field.shape, comp) is False:
                         return None
                 if in_range(end_idx, field.shape, comp) is False:
-                    if end_idx[i] < start_boundary_idx[i]:
+                    if end_idx[i] < start_bndry_idx[i]:
                         return None
-                    end_idx[i] = end_boundary_idx[i]
+                    end_idx[i] = end_bndry_idx[i]
                     if in_range(end_idx, field.shape, comp) is False:
                         return None
                 
@@ -206,89 +206,86 @@ class ShowPlane(Thread):
         
         comp = component
         
-        spc2idx = {const.Ex: fdtd.space.space_to_ex_index,
-                   const.Ey: fdtd.space.space_to_ey_index,
-                   const.Ez: fdtd.space.space_to_ez_index,
-                   const.Hx: fdtd.space.space_to_hx_index,
-                   const.Hy: fdtd.space.space_to_hy_index,
-                   const.Hz: fdtd.space.space_to_hz_index}
+        spc2idx = {Ex: fdtd.space.space_to_ex_index,
+                   Ey: fdtd.space.space_to_ey_index,
+                   Ez: fdtd.space.space_to_ez_index,
+                   Hx: fdtd.space.space_to_hx_index,
+                   Hy: fdtd.space.space_to_hy_index,
+                   Hz: fdtd.space.space_to_hz_index}
         
-        idx2spc = {const.Ex: fdtd.space.ex_index_to_space,
-                   const.Ey: fdtd.space.ey_index_to_space,
-                   const.Ez: fdtd.space.ez_index_to_space,
-                   const.Hx: fdtd.space.hx_index_to_space,
-                   const.Hy: fdtd.space.hy_index_to_space,
-                   const.Hz: fdtd.space.hz_index_to_space}
+        idx2spc = {Ex: fdtd.space.ex_index_to_space,
+                   Ey: fdtd.space.ey_index_to_space,
+                   Ez: fdtd.space.ez_index_to_space,
+                   Hx: fdtd.space.hx_index_to_space,
+                   Hy: fdtd.space.hy_index_to_space,
+                   Hz: fdtd.space.hz_index_to_space}
         
         field = fdtd.field[comp].real
 
-        if issubclass(comp, const.Electric):
-            start_boundary_idx = (0, 0, 0)            
-            if comp is const.Ex:
-                end_boundary_idx = (field.shape[0] - 1, field.shape[1] - 2,
-                                    field.shape[2] - 2)
-            elif comp is const.Ey:
-                end_boundary_idx = (field.shape[0] - 2, field.shape[1] - 1,
-                                    field.shape[2] - 2)
-            elif comp is const.Ez:
-                end_boundary_idx = (field.shape[0] - 2, field.shape[1] - 2,
-                                    field.shape[2] - 1)
-        elif issubclass(comp, const.Magnetic):
-            end_boundary_idx = [i - 1 for i in field.shape]
-            if comp is const.Hx:
-                start_boundary_idx = (0, 1, 1)
-            elif comp is const.Hy:
-                start_boundary_idx = (1, 0, 1)
-            elif comp is const.Hz:
-                start_boundary_idx = (1, 1, 0)
+        if issubclass(comp, Electric):
+            start_bndry_idx = (0, 0, 0)            
+            if comp is Ex:
+                end_bndry_idx = (field.shape[0] - 1, 
+                                 field.shape[1] - 2,
+                                 field.shape[2] - 2)
+            elif comp is Ey:
+                end_bndry_idx = (field.shape[0] - 2, 
+                                 field.shape[1] - 1,
+                                 field.shape[2] - 2)
+            elif comp is Ez:
+                end_bndry_idx = (field.shape[0] - 2, 
+                                 field.shape[1] - 2,
+                                 field.shape[2] - 1)
+        elif issubclass(comp, Magnetic):
+            end_bndry_idx = [i - 1 for i in field.shape]
+            if comp is Hx:
+                start_bndry_idx = (0, 1, 1)
+            elif comp is Hy:
+                start_bndry_idx = (1, 0, 1)
+            elif comp is Hz:
+                start_bndry_idx = (1, 1, 0)
  	else:
             msg = "component should be of class constant.Component."
             raise ValueError(msg)
 
-        start_boundary_spc = idx2spc[comp](*start_boundary_idx)
-        end_boundary_spc = idx2spc[comp](*end_boundary_idx)
+        start_bndry_spc = idx2spc[comp](*start_bndry_idx)
+        end_bndry_spc = idx2spc[comp](*end_bndry_idx)
 
-        axis2int = {const.X:0, const.Y:1, const.Z:2}
+        axis2int = {X:0, Y:1, Z:2}
         axis_int = axis2int[axis]
-        cut_spc = array(end_boundary_spc, np.double)
+        cut_spc = array(end_bndry_spc, np.double)
         cut_spc[axis_int] = cut
         cut_idx = spc2idx[comp](*cut_spc)
         if in_range(cut_idx, field.shape, comp) is False:
             return None
 
-        if axis is const.X:
+        if axis is X:
             self.xlabel = 'z'
             self.ylabel = 'y'
-            self.extent = (start_boundary_spc[2], 
-                           end_boundary_spc[2], 
-                           end_boundary_spc[1], 
-                           start_boundary_spc[1])
-        elif axis is const.Y:
+            self.extent = (start_bndry_spc[2], end_bndry_spc[2], 
+                           end_bndry_spc[1], start_bndry_spc[1])
+        elif axis is Y:
             self.xlabel = 'z'
             self.ylabel = 'x'
-            self.extent = (start_boundary_spc[2], 
-                           end_boundary_spc[2], 
-                           end_boundary_spc[0], 
-                           start_boundary_spc[0])
-        elif axis is const.Z:
+            self.extent = (start_bndry_spc[2], end_bndry_spc[2], 
+                           end_bndry_spc[0], start_bndry_spc[0])
+        elif axis is Z:
             self.xlabel = 'y'
             self.ylabel = 'x'
-            self.extent = (start_boundary_spc[1], 
-                           end_boundary_spc[1], 
-                           end_boundary_spc[0], 
-                           start_boundary_spc[0])
+            self.extent = (start_bndry_spc[1], end_bndry_spc[1], 
+                           end_bndry_spc[0], start_bndry_spc[0])
 
-        if axis is const.X:
+        if axis is X:
             self.data = field[cut_idx[0], 
-                              start_boundary_idx[1]:end_boundary_idx[1], 
-                              start_boundary_idx[2]:end_boundary_idx[2]]
-        elif axis is const.Y:
-            self.data = field[start_boundary_idx[0]:end_boundary_idx[0], 
+                              start_bndry_idx[1]:end_bndry_idx[1], 
+                              start_bndry_idx[2]:end_bndry_idx[2]]
+        elif axis is Y:
+            self.data = field[start_bndry_idx[0]:end_bndry_idx[0], 
                               cut_idx[1], 
-                              start_boundary_idx[2]:end_boundary_idx[2]]
-        elif axis is const.Z:
-            self.data = field[start_boundary_idx[0]:end_boundary_idx[0], 
-                              start_boundary_idx[1]:end_boundary_idx[1], 
+                              start_bndry_idx[2]:end_bndry_idx[2]]
+        elif axis is Z:
+            self.data = field[start_bndry_idx[0]:end_bndry_idx[0], 
+                              start_bndry_idx[1]:end_bndry_idx[1], 
                               cut_idx[2]]
         else:
             msg = "axis must be gmes.constant.Directional."
@@ -347,80 +344,77 @@ class Snapshot(Thread):
         
         comp = component
 
-        spc2idx = {const.Ex: fdtd.space.space_to_ex_index,
-                   const.Ey: fdtd.space.space_to_ey_index,
-                   const.Ez: fdtd.space.space_to_ez_index,
-                   const.Hx: fdtd.space.space_to_hx_index,
-                   const.Hy: fdtd.space.space_to_hy_index,
-                   const.Hz: fdtd.space.space_to_hz_index}
+        spc2idx = {Ex: fdtd.space.space_to_ex_index,
+                   Ey: fdtd.space.space_to_ey_index,
+                   Ez: fdtd.space.space_to_ez_index,
+                   Hx: fdtd.space.space_to_hx_index,
+                   Hy: fdtd.space.space_to_hy_index,
+                   Hz: fdtd.space.space_to_hz_index}
         
-        idx2spc = {const.Ex: fdtd.space.ex_index_to_space,
-                   const.Ey: fdtd.space.ey_index_to_space,
-                   const.Ez: fdtd.space.ez_index_to_space,
-                   const.Hx: fdtd.space.hx_index_to_space,
-                   const.Hy: fdtd.space.hy_index_to_space,
-                   const.Hz: fdtd.space.hz_index_to_space}
+        idx2spc = {Ex: fdtd.space.ex_index_to_space,
+                   Ey: fdtd.space.ey_index_to_space,
+                   Ez: fdtd.space.ez_index_to_space,
+                   Hx: fdtd.space.hx_index_to_space,
+                   Hy: fdtd.space.hy_index_to_space,
+                   Hz: fdtd.space.hz_index_to_space}
 
         material = fdtd.pw_material[comp]
         field = fdtd.field[comp]
 
-        if issubclass(comp, const.Electric):
-            start_boundary_idx = (0, 0, 0)            
-            if comp is const.Ex:
-                end_boundary_idx = (field.shape[0] - 1, field.shape[1] - 2,
-                                    field.shape[2] - 2)
-            elif comp is const.Ey:
-                end_boundary_idx = (field.shape[0] - 2, field.shape[1] - 1,
-                                    field.shape[2] - 2)
-            elif comp is const.Ez:
-                end_boundary_idx = (field.shape[0] - 2, field.shape[1] - 2,
-                                    field.shape[2] - 1)
-        elif issubclass(comp, const.Magnetic):
-            end_boundary_idx = [i - 1 for i in field.shape]
-            if comp is const.Hx:
-                start_boundary_idx = idx2spc[comp](0, 1, 1)
-            elif comp is const.Hy:
-                start_boundary_idx = idx2spc[comp](1, 0, 1)
-            elif comp is const.Hz:
-                start_boundary_idx = idx2spc[comp](1, 1, 0)
+        if issubclass(comp, Electric):
+            start_bndry_idx = (0, 0, 0)            
+            if comp is Ex:
+                end_bndry_idx = (field.shape[0] - 1, 
+                                 field.shape[1] - 2,
+                                 field.shape[2] - 2)
+            elif comp is Ey:
+                end_bndry_idx = (field.shape[0] - 2, 
+                                 field.shape[1] - 1,
+                                 field.shape[2] - 2)
+            elif comp is Ez:
+                end_bndry_idx = (field.shape[0] - 2, 
+                                 field.shape[1] - 2,
+                                 field.shape[2] - 1)
+        elif issubclass(comp, Magnetic):
+            end_bndry_idx = [i - 1 for i in field.shape]
+            if comp is Hx:
+                start_bndry_idx = idx2spc[comp](0, 1, 1)
+            elif comp is Hy:
+                start_bndry_idx = idx2spc[comp](1, 0, 1)
+            elif comp is Hz:
+                start_bndry_idx = idx2spc[comp](1, 1, 0)
  	else:
             msg = "component should be of class constant.Component."
             raise ValueError(msg)
     
-        start_boundary_spc = idx2spc[comp](*start_boundary_idx)
-        end_boundary_spc = idx2spc[comp](*end_boundary_idx)
+        start_bndry_spc = idx2spc[comp](*start_bndry_idx)
+        end_bndry_spc = idx2spc[comp](*end_bndry_idx)
 
-        axis2int = {const.X:0, const.Y:1, const.Z:2}
+        axis2int = {X:0, Y:1, Z:2}
         axis_int = axis2int[axis]
-        cut_spc = array(end_boundary_spc, np.double)
+        cut_spc = array(end_bndry_spc, np.double)
         cut_spc[axis_int] = cut
         cut_idx = spc2idx[comp](*cut_spc)
         if in_range(cut_idx, field.shape, comp) is False:
             return None
 
-        if axis is const.X:
+        if axis is X:
             self.xlabel = 'z'
             self.ylabel = 'y'
-            self.extent = (start_boundary_spc[2], 
-                           end_boundary_spc[2], 
-                           end_boundary_spc[1], 
-                           start_boundary_spc[1])
-        elif axis is const.Y:
+            self.extent = (start_bndry_spc[2], end_bndry_spc[2], 
+                           end_bndry_spc[1], start_bndry_spc[1])
+        elif axis is Y:
             self.xlabel = 'z'
             self.ylabel = 'x'
-            self.extent = (start_boundary_spc[2], 
-                           end_boundary_spc[2], 
-                           end_boundary_spc[0], 
-                           start_boundary_spc[0])
-        elif axis is const.Z:
+            self.extent = (start_bndry_spc[2], end_bndry_spc[2], 
+                           end_bndry_spc[0], start_bndry_spc[0])
+        elif axis is Z:
             self.xlabel = 'y'
             self.ylabel = 'x'
-            self.extent = (start_boundary_spc[1], 
-                           end_boundary_spc[1], 
-                           end_boundary_spc[0], 
-                           start_boundary_spc[0])
+            self.extent = (start_bndry_spc[1], end_bndry_spc[1], 
+                           end_bndry_spc[0], start_bndry_spc[0])
 
-        data_shape_3d = array(end_boundary_idx) - array(start_boundary_idx) + 1
+        data_shape_3d = array(end_bndry_idx) - array(start_bndry_idx) + 1
         data_shape_2d = [v for i, v in enumerate(data_shape_3d) 
                          if i != axis_int]
         self.data = empty(data_shape_2d, np.double)
@@ -429,20 +423,20 @@ class Snapshot(Thread):
             mat_idx = empty(3, np.double)
             
             if axis_int == 0:
-                mat_idx[1] = idx[0] + start_boundary_idx[1]
-                mat_idx[2] = idx[1] + start_boundary_idx[2]
+                mat_idx[1] = idx[0] + start_bndry_idx[1]
+                mat_idx[2] = idx[1] + start_bndry_idx[2]
             elif axis_int == 1:
-                mat_idx[0] = idx[0] + start_boundary_idx[0]
-                mat_idx[2] = idx[1] + start_boundary_idx[2]
+                mat_idx[0] = idx[0] + start_bndry_idx[0]
+                mat_idx[2] = idx[1] + start_bndry_idx[2]
             elif axis_int == 2:
-                mat_idx[0] = idx[0] + start_boundary_idx[0]
-                mat_idx[1] = idx[1] + start_boundary_idx[1]
+                mat_idx[0] = idx[0] + start_bndry_idx[0]
+                mat_idx[1] = idx[1] + start_bndry_idx[1]
             
             mat_idx[axis_int] = cut_idx[axis_int]
             for pw_mat in material.itervalues():
-                if issubclass(comp, const.Electric):
+                if issubclass(comp, Electric):
                     value = pw_mat.get_eps_inf(tuple(mat_idx))
-                elif issubclass(comp, const.Magnetic): 
+                elif issubclass(comp, Magnetic): 
                     value = pw_mat.get_mu_inf(tuple(mat_idx))
                 if value != 0:
                     self.data[idx] = value
@@ -466,8 +460,10 @@ class Snapshot(Thread):
     def run(self):
         self.manager = new_figure_manager(self.id)
         ax = self.manager.canvas.figure.add_subplot(111)
-        self.im = ax.imshow(self.data, extent=self.extent, aspect='auto', 
-                            vmin=self.vrange[0], vmax=self.vrange[1], 
+        self.im = ax.imshow(self.data, extent=self.extent, 
+                            aspect='auto', 
+                            vmin=self.vrange[0], 
+                            vmax=self.vrange[1], 
                             cmap=cm.bone)
         ax.set_xlabel(self.xlabel)
         ax.set_ylabel(self.ylabel)
