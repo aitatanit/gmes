@@ -141,7 +141,7 @@ class Bandpass(SrcTime):
     """a pulse source with Gaussian-envelope
     
     """
-    def __init__(self, freq, fwidth, s=5, phase=0):
+    def __init__(self, freq, fwidth, s=10, phase=0):
         self.freq = float(freq)
         self.phase = float(phase)
         self.fwidth = float(fwidth)
