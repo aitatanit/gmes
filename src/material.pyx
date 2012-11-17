@@ -1306,11 +1306,11 @@ class DcpPlrc(Dielectric):
             self.b[i,2] = cexp(-self.dt * (pnt.gamma + 1j * pnt.omega))
             
         # parameters for the electric field update equations.
-        chi_0 = sum(map(self.chi_dp_0, self.dps) + 
-                    map(self.chi_cp_0, self.cps)).real
+        chi_0 = (sum(map(self.chi_dp_0, self.dps) + 
+                     map(self.chi_cp_0, self.cps)) + 0j).real
 
-        xi_0 = sum(map(self.xi_dp_0, self.dps) + 
-                   map(self.xi_cp_0, self.cps)).real
+        xi_0 = (sum(map(self.xi_dp_0, self.dps) + 
+                    map(self.xi_cp_0, self.cps)) + 0j).real
         
         self.c = empty(3, np.double)
         denom = self.eps_inf - xi_0 + chi_0
