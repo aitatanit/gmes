@@ -4,7 +4,7 @@
 
 from __future__ import division
 from copy import deepcopy
-from math import sqrt
+from scipy import sqrt
 import numpy as np
 from material import Compound, Pml
 

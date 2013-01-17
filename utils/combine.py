@@ -53,3 +53,4 @@ for i in range(i_min + 1, i_max + 1):
     data[i_min] = np.vstack((data[i_min], data[i]))
     
 np.save(head, data[i_min])
+print head + '.npy'
