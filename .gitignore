@@ -1,0 +1,7 @@
+build
+*.so
+gmes/constant.py
+gmes/pw_material.py
+*_wrap.cpp
+*.c
+*~
