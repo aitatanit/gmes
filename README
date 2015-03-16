@@ -75,7 +75,7 @@ $ python setup.py build_ext --inplace
 $ python setup.py build_ext --swig-opts="-c++"
 
 4.1.3. install
-$ sudo python setup.py install build_ext --swig-opts="-c++"
+$ sudo python setup.py install
 
 4.2. For Windows
 
@@ -85,8 +85,8 @@ $ python setup.py build_ext --inplace --compile=mingw32
 4.2.2. compile
 $ python setup.py build_ext --compile=mingw32
 
-4.2.3. compile & install
-$ sudo python setup.py install build_ext --compile=mingw32
+4.2.3. install
+$ sudo python setup.py install
 
 5. Testing
 If you completed the installation or compiled with inplace option,
