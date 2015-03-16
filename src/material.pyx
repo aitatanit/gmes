@@ -14,7 +14,7 @@ except ImportError:
 
 from math import sqrt, sin, cos, tanh, exp
 from cmath import exp as cexp
-from numpy import array, inf, empty
+from numpy import array, inf, empty, zeros
 from copy import deepcopy
 import numpy as np
 
@@ -1854,6 +1854,198 @@ class Lorentz(Dielectric):
         else:
             pw_obj = LorentzHzReal()
             pw_param = LorentzMagneticParamReal()
+            
+        if underneath is None:
+            pw_param.mu_inf = self.mu_inf
+        else:
+            pw_param.mu_inf = underneath.mu_inf
+        
+        pw_obj.attach(idx, pw_param)
+        return pw_obj
+
+
+class Dm2(Dielectric):
+    """
+    The predictor-corrector implementation of the density matrix of
+    a two-level atom system.
+    
+    """
+    def __init__(self, eps_inf=1, mu_inf=1, omega0=1, rho30=-1, n_atom=1, gamma=1, t1=1, t2=1):
+        """
+        Arguments:
+            eps_inf: The (frequency-independent) isotropic relative permittivity. Default is 1.
+            mu_inf: The (frequency-independent) isotropic relative permeability. Default is 1.
+            omega0: the atomic transition resonance frequency from the ground level 
+                    to the excited level. Default is 1.
+            rho30: the initial population difference in the system. Default is 1.
+            n_atom: the density of polarizable atoms. Default is -1.
+            gamma: the dipole coupling coefficient. Default is 1.
+            t1: the excited-state lifetime. Default is 1.
+            t2: the dephasing time. Default is 1.
+            
+        """
+        Dielectric.__init__(self, eps_inf, mu_inf)
+        self.omega0 = float(omega0)
+        self.rho30 = float(rho30)
+        self.n_atom = float(n_atom)
+        self.gamma = float(gamma)
+        self.t1 = float(t1)
+        self.t2 = float(t2)
+        
+    def __getstate__(self):
+        d = Dielectric.__setstate__(self)
+        d['omega0'] = self.omega0
+        d['rho30'] = self.rho30
+        d['n_atom'] = self.n_atom
+        d['gamma'] = self.gamma
+        d['t1'] = self.t1
+        d['t2'] = self.t2
+        d['initialized'] = self.initialized
+
+        if self.initialized:
+            d['dt'] = self.dt
+
+    def __setstate__(self, d):
+        self.omega0 = d['omega0']
+        self.rho30 = d['rho30']
+        self.n_atom = d['n_atom']
+        self.gamma = d['gamma']
+        self.t1 = d['t1']
+        self.t2 = d['t2']
+        self.initialized = d['initialized']
+
+        if self.initialized:
+            self.dt = d['dt']
+            
+    def init(self, space, param=None):
+        self.dt = space.dt
+        self.initialized = True
+        
+    def display_info(self, indent=0):
+        """Display the parameter values.
+        
+        """
+        print " " * indent, "2 level atom media"
+        print " " * indent, 
+        print "frequency independent permittivity:", self.eps_inf,
+        print "frequency independent permeability:", self.mu_inf,
+        print "atomic transition resonance frequency:", self.omega0,
+        print "initial populaiton difference:", self.rho30,
+        print "density of polarizable atoms:", self.n_atom,
+        print "dipole coupling coefficient:", self.gamma,
+        print "excited-state lifetime:", self.t1,
+        print "dephasing time:", self.t2
+
+    def get_pw_material_ex(self, idx, coords, underneath=None, cmplx=False):
+        if cmplx:
+            pw_obj = Dm2ExCmplx()
+            pw_param = Dm2ElectricParamCmplx()
+
+        else:
+            pw_obj = Dm2ExReal()
+            pw_param = Dm2ElectricParamReal()
+
+        if underneath is None:
+            pw_param.eps_inf = self.eps_inf
+        else:
+            pw_param.eps_inf = underneath.eps_inf
+            
+        pw_param.omega0 = self.omega0
+        pw_param.rho30 = self.rho30
+        pw_param.n_atom = self.n_atom
+        pw_param.gamma = self.gamma
+        pw_param.t1 = self.t1
+        pw_param.t2 = self.t2
+        pw_param.init_u()
+
+        pw_obj.attach(idx, pw_param)
+        return pw_obj
+        
+    def get_pw_material_ey(self, idx, coords, underneath=None, cmplx=False):
+        if cmplx:
+            pw_obj = Dm2EyCmplx()
+            pw_param = Dm2ElectricParamCmplx()
+        else:
+            pw_obj = Dm2EyReal()
+            pw_param = Dm2ElectricParamReal()
+            
+        if underneath is None:
+            pw_param.eps_inf = self.eps_inf
+        else:
+            pw_param.eps_inf = underneath.eps_inf
+        
+        pw_param.omega0 = self.omega0
+        pw_param.rho30 = self.rho30
+        pw_param.n_atom = self.n_atom
+        pw_param.gamma = self.gamma
+        pw_param.t1 = self.t1
+        pw_param.t2 = self.t2
+        
+        pw_obj.attach(idx, pw_param)
+        return pw_obj
+
+    def get_pw_material_ez(self, idx, coords, underneath=None, cmplx=False):
+        if cmplx:
+            pw_obj = Dm2EzCmplx()
+            pw_param = Dm2ElectricParamCmplx()
+        else:
+            pw_obj = Dm2EzReal()
+            pw_param = Dm2ElectricParamReal()
+            
+        if underneath is None:
+            pw_param.eps_inf = self.eps_inf
+        else:
+            pw_param.eps_inf = underneath.eps_inf
+        
+        pw_param.omega0 = self.omega0
+        pw_param.rho30 = self.rho30
+        pw_param.n_atom = self.n_atom
+        pw_param.gamma = self.gamma
+        pw_param.t1 = self.t1
+        pw_param.t2 = self.t2
+
+        pw_obj.attach(idx, pw_param)
+        return pw_obj
+
+    def get_pw_material_hx(self, idx, coords, underneath=None, cmplx=False):
+        if cmplx:
+            pw_obj = Dm2HxCmplx()
+            pw_param = Dm2MagneticParamCmplx()
+        else:
+            pw_obj = Dm2HxReal()
+            pw_param = Dm2MagneticParamReal()
+            
+        if underneath is None:
+            pw_param.mu_inf = self.mu_inf
+        else:
+            pw_param.mu_inf = underneath.mu_inf
+        
+        pw_obj.attach(idx, pw_param)    
+        return pw_obj
+
+    def get_pw_material_hy(self, idx, coords, underneath=None, cmplx=False):
+        if cmplx:
+            pw_obj = Dm2HyCmplx()
+            pw_param = Dm2MagneticParamCmplx()
+        else:
+            pw_obj = Dm2HyReal()
+            pw_param = Dm2MagneticParamReal()
+            
+        if underneath is None:
+            pw_param.mu_inf = self.mu_inf
+        else:
+            pw_param.mu_inf = underneath.mu_inf
+        
+        pw_obj.attach(idx, pw_param)
+        return pw_obj
+
+    def get_pw_material_hz(self, idx, coords, underneath=None, cmplx=False):
+        if cmplx:
+            pw_obj = Dm2HzCmplx()
+            pw_param = Dm2MagneticParamCmplx()
+        else:
+            pw_obj = Dm2HzReal()
+            pw_param = Dm2MagneticParamReal()
             
         if underneath is None:
             pw_param.mu_inf = self.mu_inf

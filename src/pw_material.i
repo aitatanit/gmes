@@ -11,6 +11,7 @@
 #include "pw_drude.hh"
 #include "pw_lorentz.hh"
 #include "pw_dcp.hh"
+#include "pw_dm2.hh"
 %}
 
 %include <std_string.i>
@@ -79,6 +80,7 @@ import_array();
 %include "pw_drude.hh"
 %include "pw_lorentz.hh"
 %include "pw_dcp.hh"
+%include "pw_dm2.hh"
 
 // Instantiate template classes
 %define %template_wrap(T, postfix)
@@ -278,6 +280,25 @@ import_array();
     $self->psi_dp_im.resize(a_size1);
     $self->psi_cp_re.resize(b_size1);
     $self->psi_cp_im.resize(b_size1);
+  }
+};
+
+// density matrix implementation
+%template(Dm2ElectricParam ## postfix) gmes::Dm2ElectricParam<T >;
+%template(Dm2MagneticParam ## postfix) gmes::Dm2MagneticParam<T >;
+%template(Dm2Electric ## postfix) gmes::Dm2Electric<T >;
+%template(Dm2Ex ## postfix) gmes::Dm2Ex<T >;
+%template(Dm2Ey ## postfix) gmes::Dm2Ey<T >;
+%template(Dm2Ez ## postfix) gmes::Dm2Ez<T >;
+%template(Dm2Hx ## postfix) gmes::Dm2Hx<T >;
+%template(Dm2Hy ## postfix) gmes::Dm2Hy<T >;
+%template(Dm2Hz ## postfix) gmes::Dm2Hz<T >;
+
+%extend gmes::Dm2ElectricParam<T >
+{
+  void init_u()
+  {
+    $self->u.fill(static_cast<T >(.0));
   }
 };
 

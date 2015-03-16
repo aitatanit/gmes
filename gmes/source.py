@@ -1304,8 +1304,6 @@ class GaussianBeam(TotalFieldScatteredField):
            type: a tuple with three real numbers.
         direction -- propagation direction of the beam.
            type: a tuple with three real numbers.
-        freq -- oscillating frequency of the beam.
-           type: a real number
         polarization -- electric field direction of the beam.
            type: a tuple with three real numbers.
         waist -- the Gaussian beam radius. The default is inf.

@@ -10,30 +10,41 @@ namespace gmes
   // the ratio of the circumference of a circle to its diameter
   const double pi = 4 * atan(1);
 
+  // the Planck constant
+  const double h = 6.6260695729e-34; // in Joule/Second
+
+  // the reduced Planck constant
+  const double hbar = h / (2 * pi);
+
   // speed of light in vacuum
   const double c0 = 299792458; // in Meter/Second
 
-  // Vacuum permeability
+  // vacuum permeability
   const double mu0 = 4 * pi * 1e-7; // in Henry/Meter
 
-  // Vacuum permittivity
+  // vacuum permittivity
   const double eps0 = 1 / (c0 * c0 * mu0); // in Farad/Meter
 
   // vacuum impedance
   const double Z0 = sqrt(mu0 / eps0);
 
   // decimal factors
-  const double PETA = 1e15;
-  const double TERA = 1e12;
-  const double GIGA = 1e9;
-  const double MEGA = 1e6;
-  const double KILO = 1e3;
+  const double YOTTA = 1e24;
+  const double ZETTA = 1e21;
+  const double EXA   = 1e18;
+  const double PETA  = 1e15;
+  const double TERA  = 1e12;
+  const double GIGA  = 1e9;
+  const double MEGA  = 1e6;
+  const double KILO  = 1e3;
   const double MILLI = 1e-3;
   const double MICRO = 1e-6;
-  const double NANO = 1e-9;
-  const double PICO = 1e-12;
+  const double NANO  = 1e-9;
+  const double PICO  = 1e-12;
   const double FEMTO = 1e-15;
-  const double ATTO = 1e-18;
+  const double ATTO  = 1e-18;
+  const double ZEPTO = 1e-21;
+  const double YOCTO = 1e-24;
 
   class Component
   {

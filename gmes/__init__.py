@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env pythonssssssssssssssssssssssssssssssssssssssssssssssssssss
 # -*- coding: utf-8 -*-
 
 ##    gmes - GIST Maxwell's Equations Solver
@@ -63,11 +63,10 @@ _class = ['TimeStep', 'FDTD', 'TExFDTD', 'TEyFDTD', 'TEzFDTD', 'TMxFDTD', 'TMyFD
           'Cartesian', 'DefaultMedium', 'Cone', 'Cylinder', 'Block', 'Ellipsoid', 'Sphere', 'Shell', 
           'Ex', 'Ey', 'Ez', 'Hx', 'Hy', 'Hz', 'Jx', 'Jy', 'Jz', 'Mx', 'My', 'Mz', 'X', 'Y', 'Z', 'PlusX', 'MinusX', 'PlusY', 'MinusY', 'PlusZ', 'MinusZ', 
           'Continuous', 'Bandpass', 'DifferentiatedGaussian', 'PointSource', 'TotalFieldScatteredField', 'GaussianBeam', 
-          'Dummy', 'Const', 'Dielectric', 'Upml', 'Cpml', 'DrudePole', 'LorentzPole', 'CriticalPoint', 'DcpAde', 'DcpPlrc', 'DcpRc', 'Drude', 'Lorentz']
+          'Dummy', 'Const', 'Dielectric', 'Upml', 'Cpml', 'DrudePole', 'LorentzPole', 'CriticalPoint', 'DcpAde', 'DcpPlrc', 'DcpRc', 'Drude', 'Lorentz', 'Dm2']
 _constant = ['pi', 'c0', 'mu0', 'eps0', 'Z0', 'PETA', 'TERA', 'GIGA', 'MEGA', 'KILO', 'MILLI', 'MICRO', 'NANO', 'PICO', 'FEMTO', 'ATTO',
              'inf']
 __all__ = []
 __all__.extend(_module)
 __all__.extend(_class)
 __all__.extend(_constant)
-
