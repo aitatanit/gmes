@@ -8,10 +8,10 @@ sourceforge:
 
 http://sourceforge.net/projects/gmes
 
-The latest development version is always available from our svn 
+The latest development version is always available from our code 
 repository:
 
-http://sourceforge.net/p/gmes/code/
+http://sourceforge.net/p/gmes/code-git/
 
 2. Compatibility
 GMES follows the C++11 standard and is compatible to Python 2.5, 
