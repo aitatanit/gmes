@@ -39,11 +39,13 @@ constant = Extension(name = 'gmes._constant',
                      depends = ['src/constant.hh'],
                      include_dirs = [numpy_include],
                      swig_opts = ['-c++', '-outdir', 'gmes'],
-                     language = 'c++')
+                     language = 'c++',
+                     extra_compile_args=['-std=c++0x'])
 
 # pygeom module
 pygeom = Extension(name = 'gmes.pygeom',
-                   sources = ['src/pygeom.pyx'])
+                   sources = ['src/pygeom.pyx'],
+                   include_dirs = [numpy_include])
 
 # material module
 material = Extension(name = 'gmes.material',
