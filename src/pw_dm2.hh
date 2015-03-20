@@ -12,8 +12,9 @@
 
 #include <array>
 #include <vector>
+#include <cmath>
 #include "pw_dielectric.hh"
-#include <iostream>
+
 using namespace std;
 
 #define ex(i,j,k) ex[ex_y_size==1?0:((i)*ex_y_size+(j))*ex_z_size+(k)]
@@ -226,14 +227,13 @@ namespace gmes
       std::array<T, 4> u_new, u_tmp;
       u_new[0] = ex(i,j,k);
       std::copy(u.begin(), u.end(), next(u_new.begin()));
-      std::copy(u.begin(), u.end(), u_tmp.begin());
 
       const T e_old = ex(i,j,k);
       const T hy_dz = (hy(i+1,j,k+1) - hy(i+1,j,k)) / dz;
-      
-      // It may be safe to compare the current and previous values using
-      // std::equal.
-      for (int i = 0; i < 4; ++i) {
+
+      do {
+        std::copy(u_new.begin(), u_new.end(), u_tmp.begin());
+        
 	u_new[0] = e_old - dt * hy_dz
 	  - .5 * dt * a * (u_new[1] + u[0])
 	  + .5 * dt * b * (u_new[2] + u[1]);
@@ -246,8 +246,13 @@ namespace gmes
 	  + .5 * dt * d * (u_new[0] + e_old);
 	u_new[3] = u[2] 
 	  - .25 * dt * c_minus * (u_new[2] + u[1]) * (u_new[0] + e_old);
-
-      }
+        
+      // Ziolkowski tests the saturation with norm of u. However,
+      // I tests each element of u, for the sake of simplicity.
+      } while(!std::equal(u_new.begin(), u_new.end(), u_tmp.begin(), 
+                          [] (const T& a, const T& b) 
+                          { return std::abs(a - b) <= 1e-5 * std::abs(b); }));
+      
       ex(i,j,k) = u_new[0];
       std::copy(next(u_new.begin()), u_new.end(), u.begin());
     }
