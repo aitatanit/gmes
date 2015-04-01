@@ -12,6 +12,7 @@
 
 #include <array>
 #include <cmath>
+#include <stdexcept>
 #include <vector>
 
 #include "constant.hh"
@@ -59,19 +60,20 @@ namespace gmes
       const int i = position(index);
 
       if (i < 0)
-	return 0;
+        return 0;
       else {
-	const auto& p = param_list[i];
+        const auto& p = param_list[i];
 	  
-	switch (rho_idx)
-	  {
-	  case 0:
-	  case 1:
-	    return exp(-t / p.t2) * p.u[rho_idx];
+        switch (rho_idx)
+          {
+          case 0:
+          case 1:
+            return exp(-t / p.t2) * p.u[rho_idx];
 	  case 2:
-	    return p.rho30 + exp(-t / p.t1) * p.u[rho_idx];
+            return p.rho30 + exp(-t / p.t1) * p.u[rho_idx];
 	  default:
-	    return 0;
+            throw std::out_of_range("rho_idx should be in [0, 2]");
+            return 0;
 	  }
       }
     }
@@ -249,8 +251,8 @@ namespace gmes
 	u_new[3] = u[2] 
 	  - .25 * dt * c_minus * (u_new[2] + u[1]) * (u_new[0] + e_old);
         
-      // Ziolkowski tests the saturation with norm of u. However,
-      // I tests each element of u, for the sake of simplicity.
+        // Ziolkowski tests the saturation with norm of u. However,
+        // I tests each element of u, for the sake of simplicity.
       } while(!std::equal(u_new.begin(), u_new.end(), u_tmp.begin(), 
                           [] (const T& a, const T& b) 
                           { return std::abs(a - b) <= 1e-5 * std::abs(b); }));
