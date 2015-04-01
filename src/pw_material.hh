@@ -26,7 +26,7 @@ namespace gmes
     double mu_inf;
   }; // template MagneticParam
 
-  typedef std::array<int, 3> Index3;  
+  typedef std::array<int, 3> Index3;
   typedef std::vector<Index3> IdxCnt;
 
   template <typename T> 

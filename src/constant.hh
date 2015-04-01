@@ -14,7 +14,7 @@ namespace gmes
   const double h = 6.6260695729e-34; // in Joule/Second
 
   // the reduced Planck constant
-  const double hbar = h / (2 * pi);
+  const double hbar = h / (2 * pi); // in Joule/Second
 
   // speed of light in vacuum
   const double c0 = 299792458; // in Meter/Second
@@ -26,7 +26,7 @@ namespace gmes
   const double eps0 = 1 / (c0 * c0 * mu0); // in Farad/Meter
 
   // vacuum impedance
-  const double Z0 = sqrt(mu0 / eps0);
+  const double Z0 = sqrt(mu0 / eps0); // in Ohm
 
   // decimal factors
   const double YOTTA = 1e24;

@@ -1870,12 +1870,12 @@ class Dm2(Dielectric):
     a two-level atom system.
     
     """
-    def __init__(self, eps_inf=1, mu_inf=1, omega0=1, rho30=-1, n_atom=1, gamma=1, t1=1, t2=1):
+    def __init__(self, eps_inf=1, mu_inf=1, freq0=1, rho30=-1, n_atom=1, gamma=1, t1=1, t2=1):
         """
         Arguments:
             eps_inf: The (frequency-independent) isotropic relative permittivity. Default is 1.
             mu_inf: The (frequency-independent) isotropic relative permeability. Default is 1.
-            omega0: the atomic transition resonance frequency from the ground level 
+            freq0: the atomic transition resonance frequency from the ground level 
                     to the excited level. Default is 1.
             rho30: the initial population difference in the system. Default is 1.
             n_atom: the density of polarizable atoms. Default is -1.
@@ -1885,7 +1885,7 @@ class Dm2(Dielectric):
             
         """
         Dielectric.__init__(self, eps_inf, mu_inf)
-        self.omega0 = float(omega0)
+        self.freq0 = float(freq0)
         self.rho30 = float(rho30)
         self.n_atom = float(n_atom)
         self.gamma = float(gamma)
@@ -1894,7 +1894,7 @@ class Dm2(Dielectric):
         
     def __getstate__(self):
         d = Dielectric.__setstate__(self)
-        d['omega0'] = self.omega0
+        d['freq0'] = self.freq0
         d['rho30'] = self.rho30
         d['n_atom'] = self.n_atom
         d['gamma'] = self.gamma
@@ -1906,7 +1906,7 @@ class Dm2(Dielectric):
             d['dt'] = self.dt
 
     def __setstate__(self, d):
-        self.omega0 = d['omega0']
+        self.freq0 = d['freq0']
         self.rho30 = d['rho30']
         self.n_atom = d['n_atom']
         self.gamma = d['gamma']
@@ -1929,7 +1929,7 @@ class Dm2(Dielectric):
         print " " * indent, 
         print "frequency independent permittivity:", self.eps_inf,
         print "frequency independent permeability:", self.mu_inf,
-        print "atomic transition resonance frequency:", self.omega0,
+        print "atomic transition resonance frequency:", self.freq0,
         print "initial populaiton difference:", self.rho30,
         print "density of polarizable atoms:", self.n_atom,
         print "dipole coupling coefficient:", self.gamma,
@@ -1950,7 +1950,7 @@ class Dm2(Dielectric):
         else:
             pw_param.eps_inf = underneath.eps_inf
             
-        pw_param.omega0 = self.omega0
+        pw_param.freq0 = self.freq0
         pw_param.rho30 = self.rho30
         pw_param.n_atom = self.n_atom
         pw_param.gamma = self.gamma
@@ -1974,7 +1974,7 @@ class Dm2(Dielectric):
         else:
             pw_param.eps_inf = underneath.eps_inf
         
-        pw_param.omega0 = self.omega0
+        pw_param.freq0 = self.freq0
         pw_param.rho30 = self.rho30
         pw_param.n_atom = self.n_atom
         pw_param.gamma = self.gamma
@@ -1997,7 +1997,7 @@ class Dm2(Dielectric):
         else:
             pw_param.eps_inf = underneath.eps_inf
         
-        pw_param.omega0 = self.omega0
+        pw_param.freq0 = self.freq0
         pw_param.rho30 = self.rho30
         pw_param.n_atom = self.n_atom
         pw_param.gamma = self.gamma
