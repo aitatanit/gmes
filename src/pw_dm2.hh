@@ -15,7 +15,6 @@
 #include <stdexcept>
 #include <vector>
 
-#include "constant.hh"
 #include "pw_dielectric.hh"
 
 using namespace std;
@@ -32,11 +31,12 @@ namespace gmes
   template <typename T> 
   struct Dm2ElectricParam: public ElectricParam<T>
   {
-    double freq0;
+    double omega;
     double rho30;
     double n_atom;
     double gamma;
     double t1, t2;
+    double hbar;
 
     std::array<T, 3> u;
   }; // template Dm2ElectricParam
@@ -145,10 +145,10 @@ namespace gmes
     {
       const auto& n_atom = dm2_param.n_atom;
       const auto& gamma = dm2_param.gamma;
-      const auto& omega0 = 2 * pi * dm2_param.freq0;
+      const auto& omega = dm2_param.omega;
       const auto& t2 = dm2_param.t2;
 
-      return n_atom * gamma * omega0 * exp(-t / t2);
+      return n_atom * gamma * omega * exp(-t / t2);
     }
 
     double 
@@ -157,8 +157,9 @@ namespace gmes
       const auto& gamma = dm2_param.gamma;
       const auto& t1 = dm2_param.t1;
       const auto& t2 = dm2_param.t2;
+      const auto& hbar = dm2_param.hbar;
 
-      return 4 * pi * gamma * exp(-t * (1 / t1 - 1 / t2));
+      return 2 / hbar * gamma * exp(-t * (1 / t1 - 1 / t2));
     }
 
     double
@@ -167,8 +168,9 @@ namespace gmes
       const auto& gamma = dm2_param.gamma;
       const auto& t1 = dm2_param.t1;
       const auto& t2 = dm2_param.t2;
+      const auto& hbar = dm2_param.hbar;
 
-      return 4 * pi * gamma * exp(-t * (1 / t2 - 1 / t1));
+      return 2 / hbar * gamma * exp(-t * (1 / t2 - 1 / t1));
     }
 
     double
@@ -177,8 +179,9 @@ namespace gmes
       const auto& gamma = dm2_param.gamma;
       const auto& rho30 = dm2_param.rho30;
       const auto& t2 = dm2_param.t2;
+      const auto& hbar = dm2_param.hbar;
 
-      return 4 * pi * gamma * rho30 * exp(t / t2);
+      return 2 / hbar * gamma * rho30 * exp(t / t2);
     }
     
   private:
@@ -218,7 +221,7 @@ namespace gmes
 	   Dm2ElectricParam<T>& dm2_param)
     {
       const int i = idx[0], j = idx[1], k = idx[2];
-      const double omega0 = 2 * pi * dm2_param.freq0;
+      const double omega = dm2_param.omega;
       std::array<T, 3>& u = dm2_param.u;
       
       const double t = (n + 0.5) * dt;
@@ -243,9 +246,9 @@ namespace gmes
 	  + .5 * dt * b * (u_new[2] + u[1]);
 
 	u_new[1] = u[0] 
-	  + .5 * dt * omega0 * (u_new[2] + u[1]);
+	  + .5 * dt * omega * (u_new[2] + u[1]);
 	u_new[2] = u[1] 
-	  - .5 * dt * omega0 * (u_new[1] + u[0])
+	  - .5 * dt * omega * (u_new[1] + u[0])
 	  + .25 * dt * c_plus * (u_new[3] + u[2]) * (u_new[0] + e_old) 
 	  + .5 * dt * d * (u_new[0] + e_old);
 	u_new[3] = u[2] 
