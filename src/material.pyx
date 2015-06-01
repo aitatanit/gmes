@@ -12,7 +12,7 @@ try:
 except ImportError:
     pass
 
-from math import sqrt, sin, cos, tanh, exp
+from math import sqrt, sin, cos, tanh, exp, pi
 from cmath import exp as cexp
 from numpy import array, inf, empty, zeros
 from copy import deepcopy
@@ -1870,7 +1870,7 @@ class Dm2(Dielectric):
     a two-level atom system.
     
     """
-    def __init__(self, eps_inf=1, mu_inf=1, omega=1, rho30=-1, n_atom=1, gamma=1, t1=1, t2=1, hbar=1):
+    def __init__(self, eps_inf=1, mu_inf=1, omega=1, rho30=-1, n_atom=1, gamma=1, t1=1, t2=1, hbar=1, rtol=10e-5):
         """
         Arguments:
             eps_inf: float, optional
@@ -1892,7 +1892,9 @@ class Dm2(Dielectric):
                 The dephasing time. Defaults to 1.
             hbar: float, optional
                 The normalized reduced Planck constant. Defaults to 1.
-            
+            rtol: float, optional
+                relative tolerance for solution. Default is 10e-5.
+
         """
         Dielectric.__init__(self, eps_inf, mu_inf)
         self.omega = float(omega)
@@ -1902,6 +1904,7 @@ class Dm2(Dielectric):
         self.t1 = float(t1)
         self.t2 = float(t2)
         self.hbar = float(hbar)
+        self.rtol = float(rtol)
 
     def __getstate__(self):
         d = Dielectric.__setstate__(self)
@@ -1912,6 +1915,7 @@ class Dm2(Dielectric):
         d['t1'] = self.t1
         d['t2'] = self.t2
         d['hbar'] = self.hbar
+        d['rtol'] = self.rtol
         d['initialized'] = self.initialized
 
         if self.initialized:
@@ -1925,6 +1929,7 @@ class Dm2(Dielectric):
         self.t1 = d['t1']
         self.t2 = d['t2']
         self.hbar = d['hbar']
+        self.rtol = d['rtol']
         self.initialized = d['initialized']
 
         if self.initialized:
@@ -1942,13 +1947,14 @@ class Dm2(Dielectric):
         print " " * indent, 
         print "frequency independent permittivity:", self.eps_inf,
         print "frequency independent permeability:", self.mu_inf,
-        print "atomic transition energy:", self.omega,
+        print "angular frequency of atomic transition resonance energy:", self.omega,
         print "initial populaiton difference:", self.rho30,
         print "density of polarizable atoms:", self.n_atom,
         print "dipole coupling coefficient:", self.gamma,
         print "excited-state lifetime:", self.t1,
         print "dephasing time:", self.t2
         print "normzlied reduced Planck constant:", self.hbar
+        print "relative tolerance:", self.rtol
 
     def get_pw_material_ex(self, idx, coords, underneath=None, cmplx=False):
         if cmplx:
@@ -1971,6 +1977,8 @@ class Dm2(Dielectric):
         pw_param.t1 = self.t1
         pw_param.t2 = self.t2
         pw_param.hbar = self.hbar
+        pw_param.rtol = self.rtol
+
         pw_param.init_u()
 
         pw_obj.attach(idx, pw_param)
@@ -1996,6 +2004,7 @@ class Dm2(Dielectric):
         pw_param.t1 = self.t1
         pw_param.t2 = self.t2
         pw_param.hbar = self.hbar
+        pw_param.rtol = self.rtol
 
         pw_obj.attach(idx, pw_param)
         return pw_obj
@@ -2020,6 +2029,7 @@ class Dm2(Dielectric):
         pw_param.t1 = self.t1
         pw_param.t2 = self.t2
         pw_param.hbar = self.hbar
+        pw_param.rtol = self.rtol
 
         pw_obj.attach(idx, pw_param)
         return pw_obj

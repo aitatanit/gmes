@@ -5,6 +5,11 @@
  * Phys. Rev. A 52, 3082-3094 (1995).
  *
  * This module just handles 1D case with Ex and Hy fields.
+ *
+ * TODOs
+ * 1. array will be replaced by valarray.
+ * 2. inhomogeneous medium
+ * 3. 3-level medium
  */
 
 #ifndef PW_DM2_HH_
@@ -12,6 +17,8 @@
 
 #include <array>
 #include <cmath>
+#include <complex>
+#include <numeric>
 #include <stdexcept>
 #include <vector>
 
@@ -27,7 +34,30 @@ using namespace std;
 #define hz(i,j,k) hz[hz_x_size==1?0:((i)*hz_y_size+(j))*hz_z_size+(k)]
 
 namespace gmes
-{
+{  
+// TODO: l2_norm should be a local function.
+  template <typename T>
+  double l2_norm(const std::array<T, 4> &u)
+  {
+    T accu = 0;
+    for (int i = 0; i < 4; i++) {
+      accu += u[i] * u[i];
+    }
+    // T accu = std::inner_product(u.begin(), u.end(). u.begin(), static_cast<T>(0));
+    return std::sqrt(accu);
+  }
+
+  template <typename T>
+  double l2_norm(const std::array<complex<T>, 4> &u)
+  {
+    T accu = 0;
+    for (int i = 0; i < 4; i++) {
+      accu += std::norm(u[i]);
+    }
+    // T accu = std::inner_product(u.begin(), u.end(). u.begin(), static_cast<T>(0));
+    return std::sqrt(accu);
+  }
+
   template <typename T> 
   struct Dm2ElectricParam: public ElectricParam<T>
   {
@@ -37,6 +67,7 @@ namespace gmes
     double gamma;
     double t1, t2;
     double hbar;
+    double rtol;
 
     std::array<T, 3> u;
   }; // template Dm2ElectricParam
@@ -222,6 +253,7 @@ namespace gmes
     {
       const int i = idx[0], j = idx[1], k = idx[2];
       const double omega = dm2_param.omega;
+      const double rtol = dm2_param.rtol;
       std::array<T, 3>& u = dm2_param.u;
       
       const double t = (n + 0.5) * dt;
@@ -238,6 +270,8 @@ namespace gmes
       const T e_old = ex(i,j,k);
       const T hy_dz = (hy(i+1,j,k+1) - hy(i+1,j,k)) / dz;
 
+      double error;
+      std::array<T, 4> diff;
       do {
         std::copy(u_new.begin(), u_new.end(), u_tmp.begin());
         
@@ -253,12 +287,13 @@ namespace gmes
 	  + .5 * dt * d * (u_new[0] + e_old);
 	u_new[3] = u[2] 
 	  - .25 * dt * c_minus * (u_new[2] + u[1]) * (u_new[0] + e_old);
-        
-        // Ziolkowski tests the saturation with norm of u. However,
-        // I tests each element of u, for the sake of simplicity.
-      } while(!std::equal(u_new.begin(), u_new.end(), u_tmp.begin(), 
-                          [] (const T& a, const T& b) 
-                          { return std::abs(a - b) <= 1e-5 * std::abs(b); }));
+
+        // Compare a relative error and the given tolerance.
+        for (int i = 0; i < 4; i++) {
+          diff[i] = u_tmp[i] - u_new[i];
+        }
+        error = l2_norm(diff) / l2_norm(u_new);
+      } while (error > rtol);
       
       ex(i,j,k) = u_new[0];
       std::copy(next(u_new.begin()), u_new.end(), u.begin());
