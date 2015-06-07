@@ -83,7 +83,7 @@ import_array();
 %include "pw_dm2.hh"
 
 // Instantiate template classes
-%define %template_wrap(T, postfix)
+%define %linear_wrap(T, postfix)
 
 %template(ElectricParam ## postfix) gmes::ElectricParam<T >;
 %template(MagneticParam ## postfix) gmes::MagneticParam<T >;
@@ -283,6 +283,10 @@ import_array();
   }
 };
 
+%enddef    /* linear_wrap() macro */
+
+%define %nonlinear_wrap(T, postfix)
+
 // density matrix implementation
 %template(Dm2ElectricParam ## postfix) gmes::Dm2ElectricParam<T >;
 %template(Dm2MagneticParam ## postfix) gmes::Dm2MagneticParam<T >;
@@ -302,7 +306,9 @@ import_array();
   }
 };
 
-%enddef    /* template_wrap() macro */
+%enddef    /* dm2_wrap() macro */
 
-%template_wrap(double, Real)
-%template_wrap(std::complex<double>, Cmplx)
+%linear_wrap(double, Real)
+%linear_wrap(std::complex<double>, Cmplx)
+
+%nonlinear_wrap(double, Real)

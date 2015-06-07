@@ -17,7 +17,6 @@
 
 #include <array>
 #include <cmath>
-#include <complex>
 #include <numeric>
 #include <stdexcept>
 #include <vector>
@@ -42,17 +41,6 @@ namespace gmes
     T accu = 0;
     for (int i = 0; i < 4; i++) {
       accu += u[i] * u[i];
-    }
-    // T accu = std::inner_product(u.begin(), u.end(). u.begin(), static_cast<T>(0));
-    return std::sqrt(accu);
-  }
-
-  template <typename T>
-  double l2_norm(const std::array<complex<T>, 4> &u)
-  {
-    T accu = 0;
-    for (int i = 0; i < 4; i++) {
-      accu += std::norm(u[i]);
     }
     // T accu = std::inner_product(u.begin(), u.end(). u.begin(), static_cast<T>(0));
     return std::sqrt(accu);
