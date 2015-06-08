@@ -1881,9 +1881,9 @@ class Dm2(Dielectric):
                 The angular resonance frequency of atomic transition from the ground level 
                 to the excited level. Defaults to 1.
             rho30: float, optional
-                The initial population difference in the system. Defaults to 1.
+                The initial population difference in the system. Defaults to -1.
             n_atom: float, optional
-                The density of polarizable atoms. Defaults to -1.
+                The density of polarizable atoms. Defaults to 1.
             gamma: float, optional
                 The dipole coupling coefficient. Defaults to 1.
             t1: float, optional
