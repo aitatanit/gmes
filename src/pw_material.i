@@ -70,6 +70,9 @@ import_array();
 %apply (std::complex<double>* IN_ARRAY2, int DIM1, int DIM2) {(const std::complex<double>* const b, int b_size1, int b_size2)};
 %apply (double* IN_ARRAY1, int DIM1) {(const double* const c, int c_size)};
 
+%apply (double* IN_ARRAY1, int DIM1) {(const double* const omega, int omega_size)};
+%apply (double* IN_ARRAY1, int DIM1) {(const double* const n, int n_size)};
+
 // Include the header file to be wrapped
 %include "pw_material.hh"
 %include "pw_dummy.hh"
@@ -300,9 +303,17 @@ import_array();
 
 %extend gmes::Dm2ElectricParam<T >
 {
-  void init_u()
+  void set(const double* const omega, int omega_size,
+           const double* const n, int n_size)
   {
-    $self->u.fill(static_cast<T >(.0));
+    for (int i = 0; i < omega_size; i++) {
+      $self->omega.push_back(*(omega + i));
+      $self->n_atom.push_back(*(n + i));
+      
+      std::array<double, 3> u_tmp;
+      u_tmp.fill(static_cast<T>(0));
+      $self->u.push_back(u_tmp);
+    }
   }
 };
 

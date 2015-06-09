@@ -12,10 +12,11 @@ try:
 except ImportError:
     pass
 
-from math import sqrt, sin, cos, tanh, exp, pi
 from cmath import exp as cexp
-from numpy import array, inf, empty, zeros
+from collections import Sequence
 from copy import deepcopy
+from math import sqrt, sin, cos, tanh, exp, pi
+from numpy import array, inf, empty, zeros
 import numpy as np
 
 from pygeom import Material
@@ -1870,20 +1871,20 @@ class Dm2(Dielectric):
     a two-level atom system.
     
     """
-    def __init__(self, eps_inf=1, mu_inf=1, omega=1, rho30=-1, n_atom=1, gamma=1, t1=1, t2=1, hbar=1, rtol=10e-5):
+    def __init__(self, eps_inf=1, mu_inf=1, omega=(1,), n_atom=(1,), rho30=-1, gamma=1, t1=1, t2=1, hbar=1, rtol=10e-5):
         """
         Arguments:
             eps_inf: float, optional
                 The (frequency-independent) isotropic relative permittivity. Defaults to 1.
             mu_inf: float, optional
                 The (frequency-independent) isotropic relative permeability. Defaults to 1.
-            omega: float, optional
-                The angular resonance frequency of atomic transition from the ground level 
-                to the excited level. Defaults to 1.
+            omega: tuple, optional
+                The angular resonance frequencies of atomic transition from the ground level 
+                to the excited level. Defaults to (1,).
+            n_atom: tuple, optional
+                The densities of polarizable atoms. Defaults to (1,).
             rho30: float, optional
                 The initial population difference in the system. Defaults to -1.
-            n_atom: float, optional
-                The density of polarizable atoms. Defaults to 1.
             gamma: float, optional
                 The dipole coupling coefficient. Defaults to 1.
             t1: float, optional
@@ -1897,9 +1898,17 @@ class Dm2(Dielectric):
 
         """
         Dielectric.__init__(self, eps_inf, mu_inf)
-        self.omega = float(omega)
+        if isinstance(omega, Sequence):
+            self.omega = tuple(map(float, omega))
+        else:
+            self.omega = (float(omega),)
+
+        if isinstance(n_atom, Sequence):
+            self.n_atom = tuple(map(float, n_atom))
+        else:
+            self.n_atom = (float(n_atom),)
+
         self.rho30 = float(rho30)
-        self.n_atom = float(n_atom)
         self.gamma = float(gamma)
         self.t1 = float(t1)
         self.t2 = float(t2)
@@ -1908,9 +1917,9 @@ class Dm2(Dielectric):
 
     def __getstate__(self):
         d = Dielectric.__setstate__(self)
-        d['omega'] = self.omega
+        d['omega'] = deepcopoy(self.omega)
+        d['n_atom'] = deepcopy(self.n_atom)
         d['rho30'] = self.rho30
-        d['n_atom'] = self.n_atom
         d['gamma'] = self.gamma
         d['t1'] = self.t1
         d['t2'] = self.t2
@@ -1922,9 +1931,9 @@ class Dm2(Dielectric):
             d['dt'] = self.dt
 
     def __setstate__(self, d):
-        self.omega = d['omega']
+        self.omega = deepcopy(d['omega'])
+        self.n_atom = deepcopy(d['n_atom'])
         self.rho30 = d['rho30']
-        self.n_atom = d['n_atom']
         self.gamma = d['gamma']
         self.t1 = d['t1']
         self.t2 = d['t2']
@@ -1947,9 +1956,9 @@ class Dm2(Dielectric):
         print " " * indent, 
         print "frequency independent permittivity:", self.eps_inf,
         print "frequency independent permeability:", self.mu_inf,
-        print "angular frequency of atomic transition resonance energy:", self.omega,
+        print "angular frequencies of atomic transition resonance energy:", self.omega,
+        print "densities of polarizable atoms:", self.n_atom,
         print "initial populaiton difference:", self.rho30,
-        print "density of polarizable atoms:", self.n_atom,
         print "dipole coupling coefficient:", self.gamma,
         print "excited-state lifetime:", self.t1,
         print "dephasing time:", self.t2
@@ -1970,16 +1979,13 @@ class Dm2(Dielectric):
         else:
             pw_param.eps_inf = underneath.eps_inf
             
-        pw_param.omega = self.omega
+        pw_param.set(self.omega, self.n_atom)
         pw_param.rho30 = self.rho30
-        pw_param.n_atom = self.n_atom
         pw_param.gamma = self.gamma
         pw_param.t1 = self.t1
         pw_param.t2 = self.t2
         pw_param.hbar = self.hbar
         pw_param.rtol = self.rtol
-
-        pw_param.init_u()
 
         pw_obj.attach(idx, pw_param)
         return pw_obj

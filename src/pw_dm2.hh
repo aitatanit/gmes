@@ -1,25 +1,30 @@
-/* This implementation is based on the following article:
+/* This implementation is based on the following articles:
  *
- * Ziolkowski, R. W., Arnold, J. M. & Gogny, D. M. 
- * "Ultrafast pulse interactions with two-level atoms. 
- * Phys. Rev. A 52, 3082-3094 (1995).
+ * 1. Ziolkowski, R. W., Arnold, J. M. & Gogny, D. M. 
+ * Ultrafast pulse interactions with two-level atoms. 
+ * Phys. Rev. A 52, 3082–3094 (1995).
+ *
+ * 2. Schlottau, F., Piket-May, M. & Wagner, K. Modeling 
+ * of femtosecond pulse interaction with inhomogeneously 
+ * broadened media using an iterative predictor corrector 
+ * FDTD method. Opt. Express 13, 182–194 (2005).
  *
  * This module just handles 1D case with Ex and Hy fields.
  *
  * TODOs
- * 1. array will be replaced by valarray.
- * 2. inhomogeneous medium
- * 3. 3-level medium
+ * 1. Replace array with valarray.
+ * 2. 3-level medium
  */
 
 #ifndef PW_DM2_HH_
 #define PW_DM2_HH_
 
 #include <array>
-#include <cmath>
 #include <numeric>
 #include <stdexcept>
 #include <vector>
+
+#include <iostream>
 
 #include "pw_dielectric.hh"
 
@@ -34,34 +39,61 @@ using namespace std;
 
 namespace gmes
 {  
-// TODO: l2_norm should be a local function.
+  // TODO: l2_norm should be a local function.
   template <typename T>
-  double l2_norm(const std::array<T, 4> &u)
+  double 
+  l2_norm(const T& e, const std::vector<std::array<T, 3> >& u)
   {
-    T accu = 0;
-    for (int i = 0; i < 4; i++) {
-      accu += u[i] * u[i];
+    T accu = e * e;
+    for (std::size_t i = 0; i < u.size(); ++i) {  
+      accu += std::inner_product(u[i].begin(), u[i].end(), 
+                                 u[i].begin(), static_cast<T>(0));
     }
-    // T accu = std::inner_product(u.begin(), u.end(). u.begin(), static_cast<T>(0));
+
     return std::sqrt(accu);
-  }
+  } // template l2_norm
+
+
+  // TODO: rel_error should be a local function.
+  template <typename T>
+  double
+  rel_error(const T& e_new, const std::vector<std::array<T, 3> >& u_new,
+            const T& e_ref, const std::vector<std::array<T, 3> >& u_ref)
+  {
+    T e_diff = e_new - e_ref;
+
+    std::vector<std::array<T, 3> > u_diff;
+    u_diff.reserve(u_ref.size());
+
+    for (std::size_t  i = 0; i < u_ref.size(); ++i) {
+      std::set_difference(u_new[i].begin(), u_new[i].end(),
+                          u_ref[i].begin(), u_ref[i].end(),
+                          u_diff[i].begin());
+    }
+
+    double denom = l2_norm(e_diff, u_diff);
+    double num = l2_norm(e_ref, u_ref);
+    
+    return denom / num;
+  } // template rel_error
+
 
   template <typename T> 
   struct Dm2ElectricParam: public ElectricParam<T>
   {
-    double omega;
+    std::vector<double> omega;
+    std::vector<double> n_atom;
     double rho30;
-    double n_atom;
     double gamma;
     double t1, t2;
     double hbar;
     double rtol;
 
-    std::array<T, 3> u;
+    std::vector<std::array<T, 3> > u;
   }; // template Dm2ElectricParam
   
 
-  template <typename T> 
+  template <typename T>
   struct Dm2MagneticParam: public MagneticParam<T>
   {
   }; // template Dm2MagneticParam
@@ -71,8 +103,9 @@ namespace gmes
   class Dm2Electric: public MaterialElectric<T>
   {
   public:
+    // TODO: range check of bin
     T
-    get_rho(const int* const idx, int idx_size, int rho_idx, double t) const
+    get_rho(const int* const idx, int idx_size, int bin, int rho_idx, double t) const
     {
       Index3 index;
       std::copy(idx, idx + idx_size, index.begin());
@@ -87,9 +120,9 @@ namespace gmes
           {
           case 0:
           case 1:
-            return exp(-t / p.t2) * p.u[rho_idx];
+            return exp(-t / p.t2) * p.u[bin][rho_idx];
 	  case 2:
-            return p.rho30 + exp(-t / p.t1) * p.u[rho_idx];
+            return p.rho30 + exp(-t / p.t1) * p.u[bin][rho_idx];
 	  default:
             throw std::out_of_range("rho_idx should be in [0, 2]");
             return 0;
@@ -149,58 +182,67 @@ namespace gmes
     using MaterialElectric<T>::idx_list;
     std::vector<Dm2ElectricParam<T> > param_list;
 
-    double
-    a(double t, const Dm2ElectricParam<T>& dm2_param) const 
+    void
+    a(double t, const Dm2ElectricParam<T>& dm2_param,
+      std::vector<double>& a_out) const 
     {
       const auto& n_atom = dm2_param.n_atom;
       const auto& gamma = dm2_param.gamma;
       const auto& t2 = dm2_param.t2;
 
-      return n_atom * gamma / t2 * exp(-t / t2);
+      for (std::size_t i = 0; i < n_atom.size(); ++i) {
+        a_out.push_back(n_atom[i] * gamma / t2 * exp(-t / t2));
+      }
     }
 
-    double
-    b(double t, const Dm2ElectricParam<T>& dm2_param) const
+    void
+    b(double t, const Dm2ElectricParam<T>& dm2_param,
+      std::vector<double>& b_out) const
     {
       const auto& n_atom = dm2_param.n_atom;
       const auto& gamma = dm2_param.gamma;
       const auto& omega = dm2_param.omega;
       const auto& t2 = dm2_param.t2;
 
-      return n_atom * gamma * omega * exp(-t / t2);
+      for (std::size_t i = 0; i < n_atom.size(); ++i) {
+        b_out.push_back(n_atom[i] * gamma * omega[i] * exp(-t / t2));
+      }
     }
 
-    double 
-    c_plus(double t, const Dm2ElectricParam<T>& dm2_param) const
+    void 
+    c_plus(double t, const Dm2ElectricParam<T>& dm2_param,
+           double& c_out) const
+    {
+      const auto& gamma = dm2_param.gamma;
+      const auto& t1 = dm2_param.t1;
+      const auto& t2 = dm2_param.t2;
+      const auto& hbar = dm2_param.hbar;
+      
+      c_out = 2 / hbar * gamma * exp(-t * (1 / t1 - 1 / t2));
+    }
+
+    void
+    c_minus(double t, const Dm2ElectricParam<T>& dm2_param,
+            double& c_out) const
     {
       const auto& gamma = dm2_param.gamma;
       const auto& t1 = dm2_param.t1;
       const auto& t2 = dm2_param.t2;
       const auto& hbar = dm2_param.hbar;
 
-      return 2 / hbar * gamma * exp(-t * (1 / t1 - 1 / t2));
+      c_out = 2 / hbar * gamma * exp(-t * (1 / t2 - 1 / t1));
     }
 
-    double
-    c_minus(double t, const Dm2ElectricParam<T>& dm2_param) const
-    {
-      const auto& gamma = dm2_param.gamma;
-      const auto& t1 = dm2_param.t1;
-      const auto& t2 = dm2_param.t2;
-      const auto& hbar = dm2_param.hbar;
-
-      return 2 / hbar * gamma * exp(-t * (1 / t2 - 1 / t1));
-    }
-
-    double
-    d(double t, const Dm2ElectricParam<T>& dm2_param) const
+    void
+    d(double t, const Dm2ElectricParam<T>& dm2_param,
+      double& d_out) const
     {
       const auto& gamma = dm2_param.gamma;
       const auto& rho30 = dm2_param.rho30;
       const auto& t2 = dm2_param.t2;
       const auto& hbar = dm2_param.hbar;
 
-      return 2 / hbar * gamma * rho30 * exp(t / t2);
+      d_out = 2 / hbar * gamma * rho30 * exp(t / t2);
     }
     
   private:
@@ -240,51 +282,54 @@ namespace gmes
 	   Dm2ElectricParam<T>& dm2_param)
     {
       const int i = idx[0], j = idx[1], k = idx[2];
-      const double omega = dm2_param.omega;
+      const std::vector<double>& omega = dm2_param.omega;
       const double rtol = dm2_param.rtol;
-      std::array<T, 3>& u = dm2_param.u;
+      std::vector<std::array<T, 3> >& u = dm2_param.u;
       
       const double t = (n + 0.5) * dt;
-      const double a = this->a(t, dm2_param);
-      const double b = this->b(t, dm2_param);
-      const double c_plus = this->c_plus(t, dm2_param);
-      const double c_minus = this->c_minus(t, dm2_param);
-      const double d = this->d(t, dm2_param);
       
-      std::array<T, 4> u_new, u_tmp;
-      u_new[0] = ex(i,j,k);
-      std::copy(u.begin(), u.end(), next(u_new.begin()));
+      std::vector<double> a, b;
+      double c_plus, c_minus, d;
+
+      this->a(t, dm2_param, a);
+      this->b(t, dm2_param, b);
+      this->c_plus(t, dm2_param, c_plus);
+      this->c_minus(t, dm2_param, c_minus);
+      this->d(t, dm2_param, d);
+      
+      T e_new = ex(i,j,k);
+      std::vector<std::array<T, 3> > u_new = u;
 
       const T e_old = ex(i,j,k);
       const T hy_dz = (hy(i+1,j,k+1) - hy(i+1,j,k)) / dz;
 
       double error;
-      std::array<T, 4> diff;
       do {
-        std::copy(u_new.begin(), u_new.end(), u_tmp.begin());
+        T e_tmp = e_new;
+        std::vector<std::array<T, 3> > u_tmp = u_new;
         
-	u_new[0] = e_old - dt * hy_dz
-	  - .5 * dt * a * (u_new[1] + u[0])
-	  + .5 * dt * b * (u_new[2] + u[1]);
-
-	u_new[1] = u[0] 
-	  + .5 * dt * omega * (u_new[2] + u[1]);
-	u_new[2] = u[1] 
-	  - .5 * dt * omega * (u_new[1] + u[0])
-	  + .25 * dt * c_plus * (u_new[3] + u[2]) * (u_new[0] + e_old) 
-	  + .5 * dt * d * (u_new[0] + e_old);
-	u_new[3] = u[2] 
-	  - .25 * dt * c_minus * (u_new[2] + u[1]) * (u_new[0] + e_old);
-
-        // Compare a relative error and the given tolerance.
-        for (int i = 0; i < 4; i++) {
-          diff[i] = u_tmp[i] - u_new[i];
+	e_new = e_old - dt * hy_dz;
+        for (std::size_t i = 0; i < u.size(); ++i) {
+	  e_new -= .5 * dt * a[i] * (u_new[i][0] + u[i][0]);
+	  e_new += .5 * dt * b[i] * (u_new[i][1] + u[i][1]);
         }
-        error = l2_norm(diff) / l2_norm(u_new);
+
+        for (std::size_t i = 0; i < u.size(); ++i) {
+          u_new[i][0] = u[i][0] 
+            + .5 * dt * omega[i] * (u_new[i][1] + u[i][1]);
+          u_new[i][1] = u[i][1] 
+            - .5 * dt * omega[i] * (u_new[i][0] + u[i][0])
+            + .25 * dt * c_plus * (u_new[i][2] + u[i][2]) * (e_new + e_old) 
+            + .5 * dt * d * (e_new + e_old);
+          u_new[i][2] = u[i][2] 
+            - .25 * dt * c_minus * (u_new[i][1] + u[i][1]) * (e_new + e_old);
+        }
+        
+        error = rel_error(e_new, u_new, e_tmp, u_tmp);
       } while (error > rtol);
       
-      ex(i,j,k) = u_new[0];
-      std::copy(next(u_new.begin()), u_new.end(), u.begin());
+      ex(i,j,k) = e_new;
+      std::copy(u_new.begin(), u_new.end(), u.begin());
     }
     
   protected:
