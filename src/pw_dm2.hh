@@ -50,6 +50,15 @@ namespace gmes
                                  u[i].begin(), static_cast<T>(0));
     }
 
+    // accu += std::accumulate(u.begin(), u.end(), 0,
+    //                         [](int a, const std::array<int, 3>& b)
+    //                         { 
+    //                           return a + std::inner_product(b.begin(), b.end(), 
+    //                                                         b.begin(),
+    //                                                         static_cast<T>(0));
+    //                         }
+    //                         );
+
     return std::sqrt(accu);
   } // template l2_norm
 

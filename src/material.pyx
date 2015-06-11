@@ -1898,12 +1898,12 @@ class Dm2(Dielectric):
 
         """
         Dielectric.__init__(self, eps_inf, mu_inf)
-        if isinstance(omega, Sequence):
+        if isinstance(omega, (Sequence, np.ndarray)) :
             self.omega = tuple(map(float, omega))
         else:
             self.omega = (float(omega),)
 
-        if isinstance(n_atom, Sequence):
+        if isinstance(n_atom, (Sequence, np.ndarray)):
             self.n_atom = tuple(map(float, n_atom))
         else:
             self.n_atom = (float(n_atom),)
