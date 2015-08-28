@@ -73,6 +73,10 @@ import_array();
 %apply (double* IN_ARRAY1, int DIM1) {(const double* const omega, int omega_size)};
 %apply (double* IN_ARRAY1, int DIM1) {(const double* const n, int n_size)};
 
+%apply (double* ARGOUT_ARRAY1, int DIM1) {(double* const u, int u_size)};
+%apply (double* ARGOUT_ARRAY1, int DIM1) {(double* const v, int v_size)};
+%apply (double* ARGOUT_ARRAY1, int DIM1) {(double* const w, int w_size)};
+
 // Include the header file to be wrapped
 %include "pw_material.hh"
 %include "pw_dummy.hh"

@@ -10,10 +10,12 @@
  * FDTD method. Opt. Express 13, 182–194 (2005).
  *
  * This module just handles 1D case with Ex and Hy fields.
+ * The dipole moments are assumed to be aligned along the 
+ * electric field.
  *
  * TODOs
  * 1. Replace array with valarray.
- * 2. 3-level medium
+ * 2. multi dimension support
  */
 
 #ifndef PW_DM2_HH_
@@ -24,11 +26,7 @@
 #include <stdexcept>
 #include <vector>
 
-#include <iostream>
-
 #include "pw_dielectric.hh"
-
-using namespace std;
 
 #define ex(i,j,k) ex[ex_y_size==1?0:((i)*ex_y_size+(j))*ex_z_size+(k)]
 #define ey(i,j,k) ey[ey_z_size==1?0:((i)*ey_y_size+(j))*ey_z_size+(k)]
@@ -139,6 +137,63 @@ namespace gmes
       }
     }
     
+    void
+    get_u(const int* const idx, int idx_size, double t, double* const u, int u_size) const
+    {
+      Index3 index;
+      std::copy(idx, idx + idx_size, index.begin());
+      const int i = position(index);
+
+      if (i < 0)
+        return;
+      else {
+        const auto& p = param_list[i];
+
+        double factor = exp(-t / p.t2);
+        for (int j = 0; j < u_size; ++j) {
+          u[j] = factor * p.u[j][0];
+        }
+      }
+    }
+
+    void
+    get_v(const int* const idx, int idx_size, double t, double* const v, int v_size) const
+    {
+      Index3 index;
+      std::copy(idx, idx + idx_size, index.begin());
+      const int i = position(index);
+
+      if (i < 0)
+        return;
+      else {
+        const auto& p = param_list[i];
+
+        double factor = exp(-t / p.t2);
+        for (int j = 0; j < v_size; ++j) {
+          v[j] = factor * p.u[j][1];
+        }
+      }
+    }
+
+    void
+    get_w(const int* const idx, int idx_size, double t, double* const w, int w_size) const
+    {
+      Index3 index;
+      std::copy(idx, idx + idx_size, index.begin());
+      const int i = position(index);
+
+      if (i < 0)
+        return;
+      else {
+        const auto& p = param_list[i];
+
+        double factor = exp(-t / p.t1);
+        for (int j = 0; j < w_size; ++j) {
+          w[j] = p.rho30 + factor * p.u[j][2];
+        }
+      }
+    }
+
     const std::string& 
     name() const
     {
@@ -373,12 +428,57 @@ namespace gmes
 	   const T* const hz, int hz_x_size, int hz_y_size, int hz_z_size,
 	   double dz, double dx, double dt, double n, 
 	   const Index3& idx, 
-	   const Dm2ElectricParam<T>& dm2_param) const
+	   Dm2ElectricParam<T>& dm2_param)
     {
-      // const int i = idx[0], j = idx[1], k = idx[2];
+      const int i = idx[0], j = idx[1], k = idx[2];
+      const std::vector<double>& omega = dm2_param.omega;
+      const double rtol = dm2_param.rtol;
+      std::vector<std::array<T, 3> >& u = dm2_param.u;
+      
+      const double t = (n + 0.5) * dt;
+      
+      std::vector<double> a, b;
+      double c_plus, c_minus, d;
 
-      // ey(i,j,k) += dt * ((hx(i,j+1,k+1) - hx(i,j+1,k)) / dz - 
-      // 			 (hz(i+1,j+1,k) - hz(i,j+1,k)) / dx);
+      this->a(t, dm2_param, a);
+      this->b(t, dm2_param, b);
+      this->c_plus(t, dm2_param, c_plus);
+      this->c_minus(t, dm2_param, c_minus);
+      this->d(t, dm2_param, d);
+      
+      T e_new = ey(i,j,k);
+      std::vector<std::array<T, 3> > u_new = u;
+
+      const T e_old = ey(i,j,k);
+      const T hz_dx = (hz(i+1,j+1,k) - hz(i,j+1,k)) / dx;
+
+      double error;
+      do {
+        T e_tmp = e_new;
+        std::vector<std::array<T, 3> > u_tmp = u_new;
+        
+	e_new = e_old - dt * hz_dx;
+        for (std::size_t i = 0; i < u.size(); ++i) {
+	  e_new -= .5 * dt * a[i] * (u_new[i][0] + u[i][0]);
+	  e_new += .5 * dt * b[i] * (u_new[i][1] + u[i][1]);
+        }
+
+        for (std::size_t i = 0; i < u.size(); ++i) {
+          u_new[i][0] = u[i][0] 
+            + .5 * dt * omega[i] * (u_new[i][1] + u[i][1]);
+          u_new[i][1] = u[i][1] 
+            - .5 * dt * omega[i] * (u_new[i][0] + u[i][0])
+            + .25 * dt * c_plus * (u_new[i][2] + u[i][2]) * (e_new + e_old) 
+            + .5 * dt * d * (e_new + e_old);
+          u_new[i][2] = u[i][2] 
+            - .25 * dt * c_minus * (u_new[i][1] + u[i][1]) * (e_new + e_old);
+        }
+        
+        error = rel_error(e_new, u_new, e_tmp, u_tmp);
+      } while (error > rtol);
+      
+      ey(i,j,k) = e_new;
+      std::copy(u_new.begin(), u_new.end(), u.begin());
     }
 
   protected:
@@ -413,12 +513,57 @@ namespace gmes
 	   const T* const hx, int hx_x_size, int hx_y_size, int hx_z_size,
 	   double dx, double dy, double dt, double n, 
 	   const Index3& idx, 
-	   const Dm2ElectricParam<T>& dm2_param) const
+	   Dm2ElectricParam<T>& dm2_param)
     {
-      // const int i = idx[0], j = idx[1], k = idx[2];
+      const int i = idx[0], j = idx[1], k = idx[2];
+      const std::vector<double>& omega = dm2_param.omega;
+      const double rtol = dm2_param.rtol;
+      std::vector<std::array<T, 3> >& u = dm2_param.u;
+      
+      const double t = (n + 0.5) * dt;
+      
+      std::vector<double> a, b;
+      double c_plus, c_minus, d;
 
-      // ez(i,j,k) += dt * ((hy(i+1,j,k+1) - hy(i,j,k+1)) / dx -
-      // 			 (hx(i,j+1,k+1) - hx(i,j,k+1)) / dy);
+      this->a(t, dm2_param, a);
+      this->b(t, dm2_param, b);
+      this->c_plus(t, dm2_param, c_plus);
+      this->c_minus(t, dm2_param, c_minus);
+      this->d(t, dm2_param, d);
+      
+      T e_new = ez(i,j,k);
+      std::vector<std::array<T, 3> > u_new = u;
+
+      const T e_old = ez(i,j,k);
+      const T hx_dy = (hx(i,j+1,k+1) - hx(i,j,k+1)) / dy;
+
+      double error;
+      do {
+        T e_tmp = e_new;
+        std::vector<std::array<T, 3> > u_tmp = u_new;
+        
+	e_new = e_old - dt * hx_dy;
+        for (std::size_t i = 0; i < u.size(); ++i) {
+	  e_new -= .5 * dt * a[i] * (u_new[i][0] + u[i][0]);
+	  e_new += .5 * dt * b[i] * (u_new[i][1] + u[i][1]);
+        }
+
+        for (std::size_t i = 0; i < u.size(); ++i) {
+          u_new[i][0] = u[i][0] 
+            + .5 * dt * omega[i] * (u_new[i][1] + u[i][1]);
+          u_new[i][1] = u[i][1] 
+            - .5 * dt * omega[i] * (u_new[i][0] + u[i][0])
+            + .25 * dt * c_plus * (u_new[i][2] + u[i][2]) * (e_new + e_old) 
+            + .5 * dt * d * (e_new + e_old);
+          u_new[i][2] = u[i][2] 
+            - .25 * dt * c_minus * (u_new[i][1] + u[i][1]) * (e_new + e_old);
+        }
+        
+        error = rel_error(e_new, u_new, e_tmp, u_tmp);
+      } while (error > rtol);
+      
+      ez(i,j,k) = e_new;
+      std::copy(u_new.begin(), u_new.end(), u.begin());
     }
 
   protected:
