@@ -1039,8 +1039,8 @@ class CriticalPoint(object):
 class DcpAde(Dielectric):
     def __init__(self, eps_inf=1, mu_inf=1, sigma=0, dps=(), cps=()):
         """
-        eps_inf: The (frequency-independent) isotropic relative permittivity. Default is 1.
-        mu_inf: The (frequency-independent) isotropic relative permeability. Default is 1.
+        eps_inf: The (frequency-independent) relative permittivity. Default is 1.
+        mu_inf: The (frequency-independent) relative permeability. Default is 1.
         sigma: The (frequency-independent) isotropic conductivity. Default is 0.
         dps: list of Drude poles. Default is ().
         cps: list of critical points. Default is ().
@@ -1248,8 +1248,8 @@ class DcpPlrc(Dielectric):
     """
     def __init__(self, eps_inf=1, mu_inf=1, sigma=0, dps=(), cps=()):
         """
-        eps_inf: The (frequency-independent) isotropic relative permittivity. Default is 1.
-        mu_inf: The (frequency-independent) isotropic relative permeability. Default is 1.
+        eps_inf: The (frequency-independent) relative permittivity. Default is 1.
+        mu_inf: The (frequency-independent) relative permeability. Default is 1.
         sigma: The (frequency-independent) isotropic conductivity. Default is 0.
         dps: list of Drude poles. Default is ().
         cps: list of critical points. Default is ().
@@ -1517,10 +1517,10 @@ class Drude(Dielectric):
     def __init__(self, eps_inf=1, mu_inf=1, sigma=0, dps=()):
         """
         Arguments:
-            eps_inf: The (frequency-independent) isotropic relative permittivity. Default is 1.
-            mu_inf: The (frequency-independent) isotropic relative permeability. Default is 1.
+            eps_inf: The (frequency-independent) relative permittivity. Default is 1.
+            mu_inf: The (frequency-independent) relative permeability. Default is 1.
             sigma: The (frequency-independent) isotropic conductivity. Default is 0.
-            dps: list of Drude poles. Default is().
+            dps: list of Drude poles. Default is ().
             
         """
         Dielectric.__init__(self, eps_inf=eps_inf, mu_inf=mu_inf)
@@ -1698,10 +1698,10 @@ class Lorentz(Dielectric):
     def __init__(self, eps_inf=1, mu_inf=1, sigma=0, lps=()):
         """
         Arguments:
-            eps_inf: The (frequency-independent) isotropic relative permittivity. Default is 1.
-            mu_inf: The (frequency-independent) isotropic relative permeability. Default is 1.
-            sigma: The (frequency-independent) isotropic conductivity. Default is 0.
-            lps: list of Lorentz poles. Default is().
+            eps_inf: The (frequency-independent) relative permittivity. Default is 1.
+            mu_inf: The (frequency-independent) relative permeability. Default is 1.
+            sigma: The (frequency-independent) conductivity. Default is 0.
+            lps: list of Lorentz poles. Default is ().
             
         """
         Dielectric.__init__(self, eps_inf, mu_inf)
@@ -1868,16 +1868,16 @@ class Lorentz(Dielectric):
 class Dm2(Dielectric):
     """
     The predictor-corrector implementation of the density matrix of
-    a two-level atom system.
+    a two-level medium.
     
     """
     def __init__(self, eps_inf=1, mu_inf=1, omega=(1,), n_atom=(1,), rho30=-1, gamma=1, t1=1, t2=1, hbar=1, rtol=10e-5):
         """
         Arguments:
             eps_inf: float, optional
-                The (frequency-independent) isotropic relative permittivity. Defaults to 1.
+                The (frequency-independent) relative permittivity. Defaults to 1.
             mu_inf: float, optional
-                The (frequency-independent) isotropic relative permeability. Defaults to 1.
+                The (frequency-independent) relative permeability. Defaults to 1.
             omega: tuple, optional
                 The angular resonance frequencies of atomic transition from the ground level 
                 to the excited level. Defaults to (1,).
@@ -1952,7 +1952,7 @@ class Dm2(Dielectric):
         """Display the parameter values.
         
         """
-        print " " * indent, "2 level atom media"
+        print " " * indent, "2-level media"
         print " " * indent, 
         print "frequency independent permittivity:", self.eps_inf,
         print "frequency independent permeability:", self.mu_inf,
@@ -1967,9 +1967,7 @@ class Dm2(Dielectric):
 
     def get_pw_material_ex(self, idx, coords, underneath=None, cmplx=False):
         if cmplx:
-            pw_obj = Dm2ExCmplx()
-            pw_param = Dm2ElectricParamCmplx()
-
+            raise ValueError('Dm2 class supports real fields only')
         else:
             pw_obj = Dm2ExReal()
             pw_param = Dm2ElectricParamReal()
@@ -1992,8 +1990,7 @@ class Dm2(Dielectric):
         
     def get_pw_material_ey(self, idx, coords, underneath=None, cmplx=False):
         if cmplx:
-            pw_obj = Dm2EyCmplx()
-            pw_param = Dm2ElectricParamCmplx()
+            raise ValueError('Dm2 class supports real fields only')
         else:
             pw_obj = Dm2EyReal()
             pw_param = Dm2ElectricParamReal()
@@ -2017,8 +2014,7 @@ class Dm2(Dielectric):
 
     def get_pw_material_ez(self, idx, coords, underneath=None, cmplx=False):
         if cmplx:
-            pw_obj = Dm2EzCmplx()
-            pw_param = Dm2ElectricParamCmplx()
+            raise ValueError('Dm2 class supports real fields only')
         else:
             pw_obj = Dm2EzReal()
             pw_param = Dm2ElectricParamReal()
@@ -2042,8 +2038,7 @@ class Dm2(Dielectric):
 
     def get_pw_material_hx(self, idx, coords, underneath=None, cmplx=False):
         if cmplx:
-            pw_obj = Dm2HxCmplx()
-            pw_param = Dm2MagneticParamCmplx()
+            raise ValueError('Dm2 class supports real fields only')
         else:
             pw_obj = Dm2HxReal()
             pw_param = Dm2MagneticParamReal()
@@ -2058,8 +2053,7 @@ class Dm2(Dielectric):
 
     def get_pw_material_hy(self, idx, coords, underneath=None, cmplx=False):
         if cmplx:
-            pw_obj = Dm2HyCmplx()
-            pw_param = Dm2MagneticParamCmplx()
+            raise ValueError('Dm2 class supports real fields only')
         else:
             pw_obj = Dm2HyReal()
             pw_param = Dm2MagneticParamReal()
@@ -2074,8 +2068,7 @@ class Dm2(Dielectric):
 
     def get_pw_material_hz(self, idx, coords, underneath=None, cmplx=False):
         if cmplx:
-            pw_obj = Dm2HzCmplx()
-            pw_param = Dm2MagneticParamCmplx()
+            raise ValueError('Dm2 class supports real fields only')
         else:
             pw_obj = Dm2HzReal()
             pw_param = Dm2MagneticParamReal()
